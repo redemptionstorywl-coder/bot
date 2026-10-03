@@ -1,0 +1,42 @@
+<section class="page-header">
+  <div><h2 class="page-title">Membres</h2><p class="muted"><%= fmt.number(total) %> membres · <%= fmt.number(cached) %> en cache. Recherche par pseudo ou ID Discord.</p></div>
+  <form method="get" action="/guilds/<%= guild.id %>/members" class="page-actions search-form">
+    <input type="search" name="q" class="input" value="<%= q %>" placeholder="Pseudo, nom d'utilisateur ou ID…" aria-label="Rechercher un membre" maxlength="100">
+    <button type="submit" class="btn btn-primary">Rechercher</button>
+    <% if (q) { %><a class="btn btn-ghost" href="/guilds/<%= guild.id %>/members">Effacer</a><% } %>
+  </form>
+</section>
+
+<div class="card">
+  <% if (!members.length) { %>
+    <p class="muted"><%= q ? 'Aucun membre ne correspond à cette recherche.' : 'Aucun membre en cache pour le moment.' %></p>
+  <% } else { %>
+  <div class="table-wrap">
+    <table class="table" id="members-table">
+      <thead><tr><th>Membre</th><th>Rôles</th><th>Langue</th><th>Arrivée</th><th></th></tr></thead>
+      <tbody>
+        <% for (const m of members) { %>
+          <tr>
+            <td>
+              <div class="user-cell">
+                <img class="avatar avatar-sm" src="<%= m.avatarUrl %>" alt="">
+                <div><strong><%= m.displayName %></strong><% if (m.bot) { %> <span class="badge badge-muted">BOT</span><% } %><br><small class="muted">@<%= m.username %> · <span class="mono"><%= m.id %></span></small></div>
+              </div>
+            </td>
+            <td>
+              <div class="badges">
+                <% for (const r of m.roles) { %><span class="badge role-badge" data-role-color="<%= r.color %>"><span class="role-dot" aria-hidden="true"></span><%= r.name %></span><% } %>
+                <% if (m.roleCount > m.roles.length) { %><span class="badge badge-muted">+<%= m.roleCount - m.roles.length %></span><% } %>
+                <% if (!m.roleCount) { %><span class="muted">—</span><% } %>
+              </div>
+            </td>
+            <td><% if (m.language && languages[m.language]) { %><%= languages[m.language].flag %> <%= languages[m.language].nativeLabel %><% } else { %><span class="muted">non choisie</span><% } %></td>
+            <td class="nowrap" title="<%= fmt.dateTime(m.joinedAt) %>"><%= fmt.date(m.joinedAt) %></td>
+            <td class="right"><a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/members/<%= m.id %>">Fiche</a></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</div>

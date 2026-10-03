@@ -1,0 +1,12 @@
+<section class="error-page">
+  <div class="error-code"><%= status %></div>
+  <h2 class="error-title"><%= statusTitle %></h2>
+  <p class="error-message"><%= message %></p>
+  <% if (details && details.length) { %>
+    <ul class="error-details"><% for (const d of details) { %><li><%= d %></li><% } %></ul>
+  <% } %>
+  <div class="error-actions">
+    <a class="btn btn-primary" href="<%= user ? '/guilds' : '/' %>" data-back>← Retour</a>
+    <a class="btn btn-ghost" href="<%= user ? '/guilds' : '/' %>">Accueil</a>
+  </div>
+</section>

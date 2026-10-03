@@ -1,0 +1,54 @@
+<section class="page-header">
+  <div><h2 class="page-title">Traductions</h2><p class="muted"><%= fmt.number(totalKeys) %> clés dans le catalogue · <%= overrideCount %> override(s) sur ce serveur pour cette langue.</p></div>
+  <div class="page-actions">
+    <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/translations/export?lang=<%= lang %>&scope=overrides">Exporter les overrides</a>
+    <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/translations/export?lang=<%= lang %>&scope=merged">Exporter tout (JSON)</a>
+  </div>
+</section>
+
+<form method="get" action="/guilds/<%= guild.id %>/translations" class="card filter-bar">
+  <div class="field"><label for="t-lang">Langue</label>
+    <select id="t-lang" name="lang" class="select" data-submit-on-change>
+      <% for (const l of languages) { %><option value="<%= l.code %>" <%= l.code === lang ? 'selected' : '' %>><%= l.flag %> <%= l.nativeLabel %><%= enabledLanguages.includes(l.code) ? '' : ' (désactivée)' %></option><% } %>
+    </select>
+  </div>
+  <div class="field"><label for="t-q">Recherche</label><input id="t-q" name="q" class="input" value="<%= q %>" placeholder="clé ou texte…" maxlength="100"></div>
+  <div class="field"><label for="t-only">Afficher</label>
+    <select id="t-only" name="only" class="select"><option value="all" <%= only === 'all' ? 'selected' : '' %>>Toutes les clés</option><option value="overrides" <%= only === 'overrides' ? 'selected' : '' %>>Overrides uniquement</option></select>
+  </div>
+  <div class="field field-actions"><button type="submit" class="btn btn-primary">Filtrer</button></div>
+</form>
+
+<div class="card">
+  <% if (!rows.length) { %><p class="muted">Aucune clé ne correspond.</p><% } else { %>
+  <div class="table-wrap">
+    <table class="table table-translations" id="translations-table">
+      <thead><tr><th>Clé</th><th>Valeur par défaut</th><th>Override serveur</th><th></th></tr></thead>
+      <tbody>
+        <% const returnTo = `/guilds/${guild.id}/translations?${baseQuery}&page=${pagination.page}`; %>
+        <% for (const r of rows) { %>
+          <tr data-translation-row="<%= r.key %>" class="<%= r.override !== null ? 'row-overridden' : '' %>">
+            <td class="cell-key"><code><%= r.key %></code><% if (r.globalOverride !== null) { %><br><small class="muted" title="Override global (tous serveurs)">global : <%= fmt.truncate(r.globalOverride, 40) %></small><% } %></td>
+            <td class="cell-default"><span class="pre-wrap"><%= r.defaultValue %></span></td>
+            <td class="cell-override">
+              <form method="post" action="/guilds/<%= guild.id %>/translations" class="inline-edit" data-translation-form>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" name="lang" value="<%= lang %>">
+                <input type="hidden" name="key" value="<%= r.key %>">
+                <input type="hidden" name="returnTo" value="<%= returnTo %>">
+                <textarea name="value" class="textarea textarea-sm" rows="2" maxlength="4000" placeholder="<%= r.defaultValue %>" aria-label="Override pour <%= r.key %>"><%= r.override !== null ? r.override : '' %></textarea>
+                <div class="inline-edit-actions">
+                  <button type="submit" name="_action" value="save" class="btn btn-primary btn-sm">Enregistrer</button>
+                  <% if (r.override !== null) { %><button type="submit" name="_action" value="delete" class="btn btn-danger btn-sm" data-confirm="Supprimer l'override de « <%= r.key %> » et revenir à la valeur par défaut ?">Réinitialiser</button><% } %>
+                </div>
+              </form>
+            </td>
+            <td class="cell-state"><% if (r.override !== null) { %><span class="badge badge-primary">personnalisé</span><% } else { %><span class="badge badge-muted">défaut</span><% } %></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+  <%- include('../partials/pagination', { pagination, baseQuery, baseUrl: `/guilds/${guild.id}/translations` }) %>
+</div>

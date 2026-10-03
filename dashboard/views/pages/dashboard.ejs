@@ -1,0 +1,81 @@
+<section class="page-header">
+  <div>
+    <h2 class="page-title"><%= guild.name %></h2>
+    <p class="muted"><%= overview.kindLabel %> · langue par défaut <strong><%= overview.defaultLanguage.toUpperCase() %></strong> · <%= overview.enabledLanguages.length %> langue(s) activée(s)</p>
+  </div>
+  <div class="page-actions">
+    <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/settings">Paramètres</a>
+    <a class="btn btn-primary btn-sm" href="/guilds/<%= guild.id %>/logs">Voir les logs</a>
+  </div>
+</section>
+
+<section class="stat-grid">
+  <div class="stat-card"><span class="stat-label">Membres</span><strong class="stat-value" data-stat="members"><%= fmt.number(overview.members) %></strong></div>
+  <div class="stat-card"><span class="stat-label">Salons</span><strong class="stat-value" data-stat="channels"><%= fmt.number(overview.channels) %></strong></div>
+  <div class="stat-card"><span class="stat-label">Rôles</span><strong class="stat-value" data-stat="roles"><%= fmt.number(overview.roles) %></strong></div>
+  <div class="stat-card"><span class="stat-label">Modules actifs</span><strong class="stat-value"><span data-stat="modules-active"><%= overview.modules.active %></span><span class="stat-sub">/ <%= overview.modules.total %></span></strong></div>
+  <div class="stat-card"><span class="stat-label">Uptime du bot</span><strong class="stat-value stat-value-sm" data-stat="uptime"><%= fmt.duration(overview.uptimeSeconds) %></strong></div>
+  <div class="stat-card"><span class="stat-label">Latence</span><strong class="stat-value" data-stat="ping"><%= overview.pingMs >= 0 ? overview.pingMs + ' ms' : '—' %></strong></div>
+  <div class="stat-card"><span class="stat-label">Tickets ouverts</span><strong class="stat-value" data-stat="openTickets"><%= overview.counts.openTickets %></strong></div>
+  <div class="stat-card"><span class="stat-label">Avertissements actifs</span><strong class="stat-value" data-stat="activeWarnings"><%= overview.counts.activeWarnings %></strong></div>
+</section>
+
+<div class="grid-2">
+  <section class="card">
+    <div class="card-head"><h3 class="card-title">Membres par langue</h3><span class="muted"><%= fmt.number(overview.languageUsers) %> membres ont choisi une langue</span></div>
+    <% if (!overview.languages.length) { %>
+      <p class="muted">Aucune langue activée.</p>
+    <% } else { %>
+    <ul class="bars">
+      <% for (const l of overview.languages) { %>
+        <li class="bar-row">
+          <span class="bar-label"><span aria-hidden="true"><%= l.flag %></span> <%= l.label %> <% if (!overview.enabledLanguages.includes(l.code)) { %><span class="badge badge-muted">désactivée</span><% } %></span>
+          <span class="bar-track"><span class="bar-fill" data-pct="<%= l.percent %>"></span></span>
+          <span class="bar-value"><%= fmt.number(l.count) %> <small>(<%= l.percent %> %)</small></span>
+        </li>
+      <% } %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h3 class="card-title">Modules</h3><a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Gérer</a></div>
+    <ul class="module-chips" data-module-chips>
+      <% for (const m of overview.modules.list) { %>
+        <li class="chip <%= m.enabled ? 'chip-on' : 'chip-off' %>" data-module-chip="<%= m.key %>"><span class="chip-dot" aria-hidden="true"></span><%= m.label %></li>
+      <% } %>
+    </ul>
+  </section>
+</div>
+
+<div class="grid-2">
+  <section class="card">
+    <div class="card-head"><h3 class="card-title">Derniers logs</h3><a class="link" href="/guilds/<%= guild.id %>/logs">Tout voir</a></div>
+    <% if (!logs.length) { %><p class="muted">Aucun log enregistré pour l'instant.</p><% } else { %>
+    <div class="table-wrap">
+      <table class="table table-compact" id="recent-logs">
+        <thead><tr><th>Date</th><th>Catégorie</th><th>Action</th><th>Acteur</th></tr></thead>
+        <tbody>
+          <% for (const l of logs) { %>
+            <tr>
+              <td class="nowrap" title="<%= fmt.dateTime(l.createdAt) %>"><%= fmt.relative(l.createdAt) %></td>
+              <td><span class="badge badge-muted"><%= constants.LOG_CATEGORY_LABELS[l.category] || l.category %></span></td>
+              <td><code><%= l.action %></code></td>
+              <td class="mono"><%= l.actorId ? `<@${l.actorId}>` : '—' %></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <div class="card-head"><h3 class="card-title">Tâches planifiées</h3><span class="muted"><%= overview.tasks.length %> tâche(s)</span></div>
+    <% if (!overview.tasks.length) { %><p class="muted">Aucune tâche enregistrée.</p><% } else { %>
+    <ul class="task-list">
+      <% for (const t of overview.tasks) { %><li><span class="status-dot ok" aria-hidden="true"></span><code><%= t %></code></li><% } %>
+    </ul>
+    <% } %>
+  </section>
+</div>

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="<%= csrfToken || '' %>">
+  <meta name="color-scheme" content="dark">
+  <title><%= typeof title === 'string' && title ? title + ' · ' : '' %><%= brand.name %></title>
+  <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body class="<%= user ? 'has-sidebar' : 'no-sidebar' %>" data-guild-id="<%= guild ? guild.id : '' %>" data-page="<%= page || view || '' %>">
+  <a class="skip-link" href="#main">Aller au contenu</a>
+  <% if (user) { %>
+    <div class="sidebar-backdrop" data-sidebar-close hidden></div>
+    <%- include('../partials/sidebar') %>
+  <% } %>
+  <div class="shell">
+    <%- include('../partials/header') %>
+    <main id="main" class="main">
+      <%- include('../partials/flash') %>
+      <%- body %>
+    </main>
+    <%- include('../partials/footer') %>
+  </div>
+  <div id="toasts" class="toasts" aria-live="polite" aria-atomic="true"></div>
+  <%- include('../partials/modal') %>
+  <% if (user) { %><script src="/socket.io/socket.io.js" defer></script><% } %>
+  <script src="/js/app.js" defer></script>
+</body>
+</html>

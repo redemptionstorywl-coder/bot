@@ -1,0 +1,55 @@
+<section class="page-header">
+  <a class="link" href="/guilds/<%= guild.id %>/members">← Retour aux membres</a>
+</section>
+
+<div class="grid-2 grid-2-aside">
+  <aside class="card profile-card">
+    <img class="avatar avatar-xl" src="<%= member.avatarUrl %>" alt="">
+    <h2 class="profile-name"><%= member.displayName %> <% if (member.bot) { %><span class="badge badge-muted">BOT</span><% } %></h2>
+    <p class="muted">@<%= member.username %><br><span class="mono"><%= member.id %></span></p>
+    <% if (!member.inGuild) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Cet utilisateur n'est plus membre du serveur.</span></div><% } %>
+    <dl class="dl">
+      <dt>Compte créé</dt><dd><%= fmt.date(member.createdAt) %></dd>
+      <dt>Arrivée</dt><dd><%= fmt.dateTime(member.joinedAt) %></dd>
+      <dt>Langue</dt><dd><% if (member.language && languages[member.language]) { %><%= languages[member.language].flag %> <%= languages[member.language].nativeLabel %><% } else { %><span class="muted">non choisie</span><% } %></dd>
+      <% if (member.timeoutUntil && new Date(member.timeoutUntil) > new Date()) { %><dt>Exclusion temporaire</dt><dd class="text-danger">jusqu'au <%= fmt.dateTime(member.timeoutUntil) %></dd><% } %>
+    </dl>
+    <h3 class="card-subtitle">Rôles (<%= member.roles.length %>)</h3>
+    <div class="badges">
+      <% for (const r of member.roles) { %><span class="badge role-badge" data-role-color="<%= r.color %>"><span class="role-dot" aria-hidden="true"></span><%= r.name %></span><% } %>
+      <% if (!member.roles.length) { %><span class="muted">Aucun rôle</span><% } %>
+    </div>
+  </aside>
+
+  <div class="stack">
+    <section class="card">
+      <div class="card-head"><h3 class="card-title">Avertissements</h3><span class="badge <%= warnings.filter((w) => w.active).length ? 'badge-danger' : 'badge-muted' %>"><%= warnings.filter((w) => w.active).length %> actif(s)</span></div>
+      <% if (!warnings.length) { %><p class="muted">Aucun avertissement.</p><% } else { %>
+      <div class="table-wrap"><table class="table table-compact">
+        <thead><tr><th>#</th><th>Date</th><th>Modérateur</th><th>Raison</th><th>État</th></tr></thead>
+        <tbody><% for (const w of warnings) { %><tr class="<%= w.active ? '' : 'row-disabled' %>"><td><%= w.id %></td><td class="nowrap"><%= fmt.dateTime(w.createdAt) %></td><td class="mono"><%= w.moderatorId %></td><td><%= w.reason %></td><td><span class="badge <%= w.active ? 'badge-danger' : 'badge-muted' %>"><%= w.active ? 'actif' : 'levé' %></span></td></tr><% } %></tbody>
+      </table></div>
+      <% } %>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h3 class="card-title">Sanctions</h3><span class="badge badge-muted"><%= sanctions.length %></span></div>
+      <% if (!sanctions.length) { %><p class="muted">Aucune sanction.</p><% } else { %>
+      <div class="table-wrap"><table class="table table-compact">
+        <thead><tr><th>Cas</th><th>Type</th><th>Date</th><th>Modérateur</th><th>Durée</th><th>Raison</th></tr></thead>
+        <tbody><% for (const s of sanctions) { %><tr><td>#<%= s.caseNumber %></td><td><span class="badge <%= ['BAN','TEMPBAN','KICK','TIMEOUT','MUTE','WARN'].includes(s.type) ? 'badge-danger' : 'badge-muted' %>"><%= s.type %></span></td><td class="nowrap"><%= fmt.dateTime(s.createdAt) %></td><td class="mono"><%= s.moderatorId %></td><td><%= s.duration ? fmt.duration(s.duration) : '—' %></td><td><%= s.reason || '—' %></td></tr><% } %></tbody>
+      </table></div>
+      <% } %>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h3 class="card-title">Tickets</h3><span class="badge badge-muted"><%= tickets.length %></span></div>
+      <% if (!tickets.length) { %><p class="muted">Aucun ticket.</p><% } else { %>
+      <div class="table-wrap"><table class="table table-compact">
+        <thead><tr><th>N°</th><th>Type</th><th>Statut</th><th>Ouvert</th><th>Fermé</th><th>Pris en charge</th></tr></thead>
+        <tbody><% for (const t of tickets) { %><tr><td>#<%= t.number %></td><td><%= t.type ? t.type.name : '—' %></td><td><span class="badge <%= t.status === 'OPEN' || t.status === 'CLAIMED' ? 'badge-primary' : 'badge-muted' %>"><%= t.status %></span></td><td class="nowrap"><%= fmt.dateTime(t.createdAt) %></td><td class="nowrap"><%= fmt.dateTime(t.closedAt) %></td><td class="mono"><%= t.claimedById || '—' %></td></tr><% } %></tbody>
+      </table></div>
+      <% } %>
+    </section>
+  </div>
+</div>

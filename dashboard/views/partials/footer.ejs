@@ -1,0 +1,6 @@
+<footer class="footer">
+  <span>© <%= new Date().getFullYear() %> <%= brand.name %></span>
+  <span class="footer-sep">·</span>
+  <span>Dashboard du bot Discord</span>
+  <% if (botUser) { %><span class="footer-sep">·</span><span>Bot : <%= botUser.username %></span><% } %>
+</footer>

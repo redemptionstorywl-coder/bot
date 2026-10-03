@@ -1,0 +1,12 @@
+<%# Attend : channels (ChannelOption[]), selected (string|''), allowEmpty (bool), emptyLabel %>
+<% if (typeof allowEmpty === 'undefined' || allowEmpty) { %><option value="" <%= !selected ? 'selected' : '' %>><%= typeof emptyLabel === 'string' ? emptyLabel : '— Aucun —' %></option><% } %>
+<% let currentParent = null; let open = false; %>
+<% for (const c of channels) { %>
+  <% if (c.parentId !== currentParent) { %>
+    <% if (open) { %></optgroup><% } %>
+    <% currentParent = c.parentId; open = Boolean(c.parentId); %>
+    <% if (open) { %><optgroup label="<%= c.parentName %>"><% } %>
+  <% } %>
+  <option value="<%= c.id %>" <%= selected === c.id ? 'selected' : '' %>><%= c.type === 'announcement' ? '📣' : c.type === 'voice' ? '🔊' : c.type === 'forum' ? '🗂' : '#' %> <%= c.name %></option>
+<% } %>
+<% if (open) { %></optgroup><% } %>

@@ -1,0 +1,50 @@
+<aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+  <div class="sidebar-brand">
+    <a href="/" class="brand-link" aria-label="<%= brand.name %>">
+      <span class="brand-mark" aria-hidden="true"><%- include('logo') %></span>
+      <span class="brand-text"><span class="brand-name">Redemption Story</span><span class="brand-sub">Studio · Dashboard</span></span>
+    </a>
+    <button type="button" class="icon-btn sidebar-close" data-sidebar-close aria-label="Fermer le menu">✕</button>
+  </div>
+
+  <% if (guild) { %>
+  <div class="sidebar-guild">
+    <% if (guild.iconUrl) { %><img class="avatar avatar-sm" src="<%= guild.iconUrl %>" alt=""><% } else { %><span class="avatar avatar-sm avatar-fallback"><%= fmt.initials(guild.name) %></span><% } %>
+    <div class="sidebar-guild-meta">
+      <strong class="truncate" title="<%= guild.name %>"><%= guild.name %></strong>
+      <small><%= fmt.number(guild.memberCount) %> membres</small>
+    </div>
+  </div>
+  <% } %>
+
+  <nav class="sidebar-nav">
+    <% const groups = ['general', 'modules', 'advanced', 'global']; %>
+    <% for (const group of groups) { %>
+      <% const entries = nav.filter((e) => e.group === group && (!e.ownerOnly || isOwner) && (guild || e.path === null)); %>
+      <% if (!entries.length) continue; %>
+      <div class="nav-group">
+        <div class="nav-group-label"><%= navGroups[group] %></div>
+        <% for (const entry of entries) { %>
+          <% const disabled = entry.module && config && !config.modules[entry.module]; %>
+          <a href="<%= navHref(entry, guild ? guild.id : null) %>" class="nav-item<%= page === entry.key ? ' active' : '' %><%= disabled ? ' nav-item-dim' : '' %>" <%- page === entry.key ? 'aria-current="page"' : '' %> title="<%= entry.label %><%= disabled ? ' (module désactivé)' : '' %>">
+            <span class="nav-icon" aria-hidden="true"><%= entry.icon %></span>
+            <span class="nav-label"><%= entry.label %></span>
+            <% if (disabled) { %><span class="nav-dot" aria-label="désactivé"></span><% } %>
+          </a>
+        <% } %>
+      </div>
+    <% } %>
+  </nav>
+
+  <div class="sidebar-user">
+    <img class="avatar avatar-sm" src="<%= avatarUrl(user.id, user.avatar, 64) %>" alt="">
+    <div class="sidebar-user-meta">
+      <strong class="truncate"><%= user.globalName || user.username %></strong>
+      <small class="truncate">@<%= user.username %><%= isOwner ? ' · propriétaire' : '' %></small>
+    </div>
+    <form method="post" action="/auth/logout" class="inline-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="icon-btn" title="Se déconnecter" aria-label="Se déconnecter">⎋</button>
+    </form>
+  </div>
+</aside>

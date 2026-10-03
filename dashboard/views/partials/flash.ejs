@@ -1,0 +1,11 @@
+<% if (flash && flash.length) { %>
+<div class="flash-list" data-flash>
+  <% for (const f of flash) { %>
+    <div class="alert alert-<%= f.type %>" role="<%= f.type === 'error' ? 'alert' : 'status' %>">
+      <span class="alert-icon" aria-hidden="true"><%= f.type === 'success' ? '✓' : f.type === 'error' ? '!' : f.type === 'warning' ? '⚠' : 'i' %></span>
+      <span class="alert-text"><%= f.message %></span>
+      <button type="button" class="alert-close" data-dismiss aria-label="Fermer">✕</button>
+    </div>
+  <% } %>
+</div>
+<% } %>

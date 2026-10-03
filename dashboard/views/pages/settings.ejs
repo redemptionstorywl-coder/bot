@@ -1,0 +1,175 @@
+<section class="page-header">
+  <div><h2 class="page-title">Paramètres</h2><p class="muted">Configuration générale, modules et permissions des commandes.</p></div>
+</section>
+
+<div class="tabs" data-tabs data-active="<%= tab %>">
+  <div class="tab-list" role="tablist">
+    <button type="button" class="tab" role="tab" data-tab="general">Général</button>
+    <button type="button" class="tab" role="tab" data-tab="modules">Modules</button>
+    <button type="button" class="tab" role="tab" data-tab="commands">Commandes</button>
+  </div>
+
+  <!-- ─── Général ─── -->
+  <section class="tab-panel" data-tab-panel="general" role="tabpanel">
+    <form method="post" action="/guilds/<%= guild.id %>/settings" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="card-title">Identité</h3>
+          <div class="field">
+            <label for="kind">Type de serveur</label>
+            <select id="kind" name="kind" class="select">
+              <% for (const k of kinds) { %><option value="<%= k.value %>" <%= config.kind === k.value ? 'selected' : '' %>><%= k.label %></option><% } %>
+            </select>
+            <small class="hint">Active les modules par défaut du type (sans désactiver ceux déjà activés).</small>
+          </div>
+          <div class="field">
+            <label for="displayName">Nom affiché</label>
+            <input id="displayName" name="displayName" class="input" maxlength="100" value="<%= settings && settings.displayName ? settings.displayName : '' %>" placeholder="<%= guild.name %>">
+          </div>
+          <div class="field">
+            <label for="brandColor">Couleur de marque</label>
+            <div class="color-field">
+              <input type="color" id="brandColor" name="brandColor" value="<%= fmt.hex(config.brandColor) %>" data-color-input>
+              <input type="text" class="input input-mono" value="<%= fmt.hex(config.brandColor) %>" data-color-text aria-label="Couleur hexadécimale" pattern="^#?[0-9a-fA-F]{6}$">
+            </div>
+          </div>
+          <div class="field">
+            <label for="footerText">Texte du footer des embeds</label>
+            <input id="footerText" name="footerText" class="input" maxlength="200" value="<%= config.footerText || '' %>" placeholder="Redemption Story Studio">
+          </div>
+          <div class="field">
+            <label for="footerIconUrl">Icône du footer (URL)</label>
+            <input id="footerIconUrl" name="footerIconUrl" class="input" type="url" maxlength="500" value="<%= config.footerIconUrl || '' %>" placeholder="https://…">
+          </div>
+          <div class="field">
+            <label for="timezone">Fuseau horaire</label>
+            <input id="timezone" name="timezone" class="input" maxlength="64" value="<%= config.timezone %>" placeholder="Europe/Paris">
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Rôles</h3>
+          <div class="field">
+            <label for="adminRoleIds">Rôles administrateurs</label>
+            <select id="adminRoleIds" name="adminRoleIds" class="select" multiple size="6" data-multi>
+              <%- include('../partials/role-options', { roles: guild.roles, selected: config.adminRoleIds }) %>
+            </select>
+            <small class="hint">Accès complet aux commandes « admin ». Ctrl/Cmd + clic pour sélectionner plusieurs rôles.</small>
+          </div>
+          <div class="field">
+            <label for="staffRoleIds">Rôles staff</label>
+            <select id="staffRoleIds" name="staffRoleIds" class="select" multiple size="6" data-multi>
+              <%- include('../partials/role-options', { roles: guild.roles, selected: config.staffRoleIds }) %>
+            </select>
+            <small class="hint">Modération, tickets, whitelist.</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Langues</h3>
+        <div class="grid-2">
+          <div class="field">
+            <label for="defaultLanguage">Langue par défaut</label>
+            <select id="defaultLanguage" name="defaultLanguage" class="select">
+              <% for (const l of languages) { %><option value="<%= l.code %>" <%= config.defaultLanguage === l.code ? 'selected' : '' %>><%= l.flag %> <%= l.nativeLabel %></option><% } %>
+            </select>
+          </div>
+          <div class="field">
+            <label for="translationMode">Mode multilingue</label>
+            <select id="translationMode" name="translationMode" class="select" data-toggle-target="[data-language-channels]" data-toggle-value="CHANNELS">
+              <option value="CHANNELS" <%= config.translationMode === 'CHANNELS' ? 'selected' : '' %>>Salons par langue (un salon d'annonces par langue)</option>
+              <option value="PERMISSIONS" <%= config.translationMode === 'PERMISSIONS' ? 'selected' : '' %>>Permissions (rôles de langue, mêmes salons)</option>
+            </select>
+          </div>
+        </div>
+        <fieldset class="field">
+          <legend>Langues activées</legend>
+          <div class="check-grid">
+            <% for (const l of languages) { %>
+              <label class="check"><input type="checkbox" name="enabledLanguages" value="<%= l.code %>" <%= config.enabledLanguages.includes(l.code) ? 'checked' : '' %>><span><%= l.flag %> <%= l.nativeLabel %> <small class="muted">(<%= l.code %>)</small></span></label>
+            <% } %>
+          </div>
+        </fieldset>
+        <div class="field" data-language-channels <%= config.translationMode === 'CHANNELS' ? '' : 'hidden' %>>
+          <label>Salon par langue (mode « Salons »)</label>
+          <div class="kv-grid">
+            <% for (const l of languages) { %>
+              <label class="kv-row"><span class="kv-key"><%= l.flag %> <%= l.nativeLabel %></span>
+                <select name="languageChannels[<%= l.code %>]" class="select">
+                  <%- include('../partials/channel-options', { channels: guild.textChannels, selected: config.languageChannels[l.code] || '', allowEmpty: true }) %>
+                </select>
+              </label>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions sticky-actions">
+        <button type="submit" class="btn btn-primary">Enregistrer les paramètres</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ─── Modules ─── -->
+  <section class="tab-panel" data-tab-panel="modules" role="tabpanel">
+    <div class="card">
+      <div class="card-head"><h3 class="card-title">Modules</h3><span class="muted"><span data-stat="modules-active"><%= modules.filter((m) => m.enabled).length %></span> / <%= modules.length %> actifs</span></div>
+      <p class="muted">Un module désactivé refuse ses commandes et composants avec un message explicite. Les changements sont immédiats.</p>
+      <ul class="module-list">
+        <% for (const m of modules) { %>
+          <li class="module-row" data-module-row="<%= m.key %>">
+            <span class="module-state" data-module-state aria-hidden="true"><%= m.enabled ? '🟢' : '🔴' %></span>
+            <span class="module-label"><%= m.label %></span>
+            <label class="switch">
+              <input type="checkbox" data-module-toggle="<%= m.key %>" data-url="/guilds/<%= guild.id %>/modules/<%= m.key %>" <%= m.enabled ? 'checked' : '' %> aria-label="Activer <%= m.label %>">
+              <span class="switch-slider"></span>
+            </label>
+          </li>
+        <% } %>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─── Commandes ─── -->
+  <section class="tab-panel" data-tab-panel="commands" role="tabpanel">
+    <form method="post" action="/guilds/<%= guild.id %>/commands" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card">
+        <div class="card-head">
+          <h3 class="card-title">Permissions par commande</h3>
+          <input type="search" class="input input-sm" placeholder="Filtrer les commandes…" data-filter="#commands-table" aria-label="Filtrer les commandes">
+        </div>
+        <p class="muted">Sans rôle sélectionné, la commande suit ses permissions par défaut. Les administrateurs et propriétaires du bot ne sont jamais bloqués.</p>
+        <% if (!commands.length) { %><p class="muted">Aucune commande chargée.</p><% } else { %>
+        <div class="table-wrap">
+          <table class="table" id="commands-table">
+            <thead><tr><th>Commande</th><th>Module</th><th>Niveau</th><th>Rôles autorisés</th><th class="center">Activée</th></tr></thead>
+            <tbody>
+              <% let lastCat = null; %>
+              <% for (const c of commands) { %>
+                <% if (c.category !== lastCat) { lastCat = c.category; %><tr class="table-group" data-filter-skip><td colspan="5"><%= c.category %></td></tr><% } %>
+                <tr data-filter-item data-filter-text="<%= (c.name + ' ' + c.description + ' ' + (c.moduleLabel || '')).toLowerCase() %>" class="<%= c.enabled ? '' : 'row-disabled' %>">
+                  <td><code>/<%= c.name %></code><br><small class="muted"><%= c.description %></small></td>
+                  <td><%= c.moduleLabel || '—' %></td>
+                  <td><span class="badge badge-muted"><%= c.internal %></span></td>
+                  <td>
+                    <select name="perms[<%= c.name %>][roleIds]" class="select select-sm" multiple size="3" data-multi>
+                      <%- include('../partials/role-options', { roles: guild.roles, selected: c.roleIds }) %>
+                    </select>
+                  </td>
+                  <td class="center">
+                    <label class="switch"><input type="checkbox" name="perms[<%= c.name %>][enabled]" <%= c.enabled ? 'checked' : '' %> aria-label="Activer /<%= c.name %>"><span class="switch-slider"></span></label>
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer les permissions</button></div>
+        <% } %>
+      </div>
+    </form>
+  </section>
+</div>
