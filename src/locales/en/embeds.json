@@ -1,0 +1,138 @@
+{
+  "builder": {
+    "title": "🎨 Embed Builder",
+    "title_edit": "🎨 Editing an existing embed",
+    "footer": "Session {id} · expires",
+    "hint": "Use the buttons to edit, the Fields menu for fields, and the channel picker to send.",
+    "content": "Content",
+    "buttons": "Buttons",
+    "fields": "Fields",
+    "timestamp": "Timestamp",
+    "target": "Target message",
+    "empty_preview": "The embed is empty for now. Start with “Title & description”.",
+    "invalid_preview": "Unable to render the preview: check the URLs and values you entered.",
+    "btn_title": "Title & description",
+    "btn_color": "Color",
+    "btn_images": "Image & thumbnail",
+    "btn_footer": "Footer & author",
+    "btn_timestamp": "Timestamp",
+    "btn_buttons": "Buttons",
+    "btn_content": "Content / mentions",
+    "btn_template": "Save as template",
+    "btn_import": "Import JSON",
+    "btn_export": "Export JSON",
+    "btn_update": "Update message",
+    "fields_placeholder": "Fields ({count}/{max}) — add, remove, clear",
+    "field_add": "Add a field",
+    "field_add_desc": "Name, value and inline display",
+    "field_clear": "Clear all fields",
+    "field_added": "Field added.",
+    "send_placeholder": "📨 Send to a channel…",
+    "buttons_placeholder": "Buttons ({count}/{max}) — add a link, remove, clear",
+    "button_add_link": "Add a link button",
+    "button_add_role": "Add a role button (pick roles)",
+    "button_clear": "Remove all buttons",
+    "button_added": "Link button added.",
+    "role_buttons_added": "{count} role button(s) added.",
+    "sent": "Embed sent to {channel} → {url}",
+    "updated": "Message updated → {url}",
+    "template_saved": "Template **{name}** saved.",
+    "template_updated": "Template **{name}** updated.",
+    "imported": "JSON imported successfully.",
+    "export_file": "📤 JSON export (attached file).",
+    "cancelled": "Session cancelled. Nothing was sent."
+  },
+  "cmd": {
+    "sent": "Template sent to {channel} → {url}",
+    "template_deleted": "Template **{name}** deleted.",
+    "template_list_empty": "No template on this server. Create one with `/embed create` then “Save as template”.",
+    "template_list_title": "🗂️ Embed templates ({count})",
+    "variables_title": "🧩 Available variables",
+    "variables_desc": "These variables are replaced automatically in titles, descriptions, fields, footers and content."
+  },
+  "modal": {
+    "title": { "title": "Title & description", "field_title": "Title", "field_url": "Title URL (optional)", "field_description": "Description", "description_placeholder": "Main text. Variables: {server}, {date}, {user}…" },
+    "color": { "title": "Color", "field_hex": "Hex color or brand color name" },
+    "images": { "title": "Image & thumbnail", "field_image": "Image URL", "field_thumbnail": "Thumbnail URL" },
+    "footer": { "title": "Footer & author", "field_footer": "Footer text", "field_footer_icon": "Footer icon (URL)", "field_author": "Author name", "field_author_icon": "Author icon (URL)", "field_author_url": "Author link (URL)" },
+    "field": { "title": "Add a field", "field_name": "Name", "field_value": "Value", "field_inline": "Inline? (yes / no)", "inline_placeholder": "yes" },
+    "content": { "title": "Message content", "field_content": "Text above the embed", "placeholder": "Mentions, free text… e.g. @everyone New update!" },
+    "link": { "title": "Link button", "field_label": "Label", "field_url": "URL", "field_emoji": "Emoji (optional)" },
+    "template": { "title": "Save as template", "field_name": "Template name", "field_description": "Description (optional)" },
+    "import": { "title": "Import JSON", "field_json": "JSON (EmbedSpec or message)" }
+  },
+  "errors": {
+    "not_found": "Template not found: `{details}`",
+    "duplicate_name": "A template named `{details}` already exists.",
+    "invalid_channel": "Invalid or inaccessible channel (`{details}`).",
+    "message_not_found": "Message not found (`{details}`).",
+    "not_bot_message": "This message was not sent by the bot: it cannot be edited.",
+    "no_embed": "This message contains no embed.",
+    "no_client": "The bot is not ready yet. Try again in a few seconds.",
+    "invalid_spec": "Invalid embed:\n{details}",
+    "invalid_json": "Invalid JSON:\n{details}",
+    "invalid_reference": "Provide a valid message link or a message ID (with its channel).",
+    "session_expired": "This editing session has expired. Run the command again.",
+    "empty_embed": "The embed is empty: add at least a title, a description, an image or a field.",
+    "fields_limit": "Limit reached: {max} fields maximum.",
+    "buttons_limit": "Limit reached: {max} buttons maximum."
+  },
+  "defaults": {
+    "footer": "{server}",
+    "maintenance": {
+      "name": "Maintenance",
+      "description": "Scheduled maintenance notice",
+      "title": "Scheduled maintenance",
+      "body": "Maintenance is scheduled on **{server}**. Services will be temporarily unavailable.\n\nThank you for your patience.",
+      "fields": { "start": { "name": "Start", "value": "{date}" }, "duration": { "name": "Estimated duration", "value": "~1h" } }
+    },
+    "patch_note": {
+      "name": "Patch Note",
+      "description": "Update notes",
+      "title": "Patch Note — {date}",
+      "body": "A new update is available on **{server}**.",
+      "fields": { "new": { "name": "New", "value": "• …" }, "fixes": { "name": "Fixes", "value": "• …" } }
+    },
+    "new_season": {
+      "name": "New Season",
+      "description": "New season launch",
+      "title": "New season",
+      "body": "The new season of **{server}** begins! New challenges, new rewards.",
+      "fields": { "start": { "name": "Start", "value": "{date}" }, "rewards": { "name": "Rewards", "value": "• …" } }
+    },
+    "tournament": {
+      "name": "Tournament",
+      "description": "Tournament announcement",
+      "title": "Tournament",
+      "body": "A tournament is organized on **{server}**. Sign up and face the best!",
+      "fields": { "date": { "name": "Date", "value": "{date}" }, "registration": { "name": "Registration", "value": "Open" } }
+    },
+    "important": {
+      "name": "Important announcement",
+      "description": "Official communication",
+      "title": "Important announcement",
+      "body": "The **{server}** team has important information to share with you.\n\n…"
+    },
+    "giveaway": {
+      "name": "Giveaway",
+      "description": "Contest / prize draw",
+      "title": "Giveaway",
+      "body": "A giveaway is running on **{server}**! Enter for a chance to win.",
+      "fields": { "prize": { "name": "Prize", "value": "…" }, "end": { "name": "Ends", "value": "{date}" } }
+    },
+    "event": {
+      "name": "Event",
+      "description": "Event announcement",
+      "title": "Event",
+      "body": "An event is coming on **{server}**. Don't miss it!",
+      "fields": { "date": { "name": "Date", "value": "{date}" }, "location": { "name": "Location", "value": "…" } }
+    },
+    "recruitment": {
+      "name": "Recruitment",
+      "description": "Staff / team recruitment",
+      "title": "Recruitment",
+      "body": "**{server}** is recruiting! Join the team and be part of the adventure.",
+      "fields": { "positions": { "name": "Positions", "value": "• …" }, "apply": { "name": "Apply", "value": "Open a ticket" } }
+    }
+  }
+}
