@@ -13,7 +13,8 @@ const envSchema = z.object({
   DEV_GUILD_ID: z.string().optional().default(''),
   DATABASE_URL: z.string().startsWith('mysql://', 'DATABASE_URL doit commencer par mysql://'),
   DASHBOARD_URL: z.string().url().default('http://localhost:3000'),
-  DASHBOARD_PORT: z.coerce.number().int().positive().default(3000),
+  PORT: z.coerce.number().int().positive().optional(),
+  DASHBOARD_PORT: z.coerce.number().int().positive().optional(),
   SESSION_SECRET: z.string().min(16, 'SESSION_SECRET doit faire au moins 16 caractères').default('change-me-with-a-long-random-string'),
   FIVEM_API_KEY: z.string().min(8).default('change-me-fivem-api-key'),
   TEBEX_WEBHOOK_SECRET: z.string().optional().default(''),
@@ -22,7 +23,7 @@ const envSchema = z.object({
   TZ: z.string().default('Europe/Paris'),
 });
 
-export type Env = z.infer<typeof envSchema>;
+export type Env = Omit<z.infer<typeof envSchema>, 'DASHBOARD_PORT'> & { DASHBOARD_PORT: number };
 
 /**
  * Valide les variables d'environnement. Lance une erreur lisible si quelque chose manque.
@@ -34,7 +35,9 @@ export function loadEnv(raw: NodeJS.ProcessEnv = process.env): Env {
     const issues = parsed.error.issues.map((i) => `  • ${i.path.join('.')}: ${i.message}`).join('\n');
     throw new Error(`Configuration .env invalide :\n${issues}\n\nCopiez .env.example vers .env et complétez les valeurs.`);
   }
-  return parsed.data;
+  const data = parsed.data;
+  // Render / Heroku / Railway fournissent PORT : il a priorité sur DASHBOARD_PORT.
+  return { ...data, DASHBOARD_PORT: data.PORT ?? data.DASHBOARD_PORT ?? 3000 };
 }
 
 let cached: Env | null = null;

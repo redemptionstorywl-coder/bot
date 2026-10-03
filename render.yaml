@@ -1,0 +1,32 @@
+# Déploiement Render (https://render.com) — Blueprint
+# Le dashboard écoute sur le port fourni par Render (PORT) ; la base MySQL doit être externe
+# (Render ne propose pas MySQL managé) : PlanetScale, Aiven, Railway, OVH, votre VPS…
+services:
+  - type: web
+    name: redemption-story-bot
+    runtime: node
+    plan: starter
+    buildCommand: npm ci && npm run build && npx prisma migrate deploy
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 22.12.0
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: CLIENT_ID
+        sync: false
+      - key: DISCORD_CLIENT_SECRET
+        sync: false
+      - key: OWNER_IDS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DASHBOARD_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: FIVEM_API_KEY
+        generateValue: true

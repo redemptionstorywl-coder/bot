@@ -170,6 +170,17 @@ pm2 save
 
 ---
 
+### Déploiement sur Render / Railway / Heroku
+
+Le dépôt contient un `render.yaml`. Sur Render : **New → Blueprint**, choisissez le dépôt, puis renseignez les variables (`DISCORD_TOKEN`, `CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `OWNER_IDS`, `DATABASE_URL` vers une base MySQL externe, `DASHBOARD_URL` = l'URL publique Render). Si vous créez le service à la main, utilisez :
+
+- Build command : `npm ci && npm run build && npx prisma migrate deploy`
+- Start command : `npm start`
+
+Le dashboard écoute automatiquement sur le port `PORT` fourni par l'hébergeur. Ajoutez `https://VOTRE-APP.onrender.com/auth/callback` dans les redirections OAuth2 du Developer Portal.
+
+---
+
 ## Configuration du premier serveur
 
 1. `/guild-config type` → choisissez **Prison**, **Battle Royale**, **School** ou **Shop**. Les modules adaptés sont activés.
