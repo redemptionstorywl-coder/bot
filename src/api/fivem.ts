@@ -167,7 +167,8 @@ export function createFiveMRouter(client: RedemptionClient): Router {
     `${base}/whitelist/:identifier`,
     authenticate,
     wrap(async (req, res) => {
-      const identifier = decodeURIComponent(String(req.params.identifier ?? '')).slice(0, 128);
+      // Express a déjà décodé le paramètre : un second decodeURIComponent lançait une URIError (500) sur un `%` isolé.
+      const identifier = String(req.params.identifier ?? '').slice(0, 128);
       const r = await whitelistService.check(req.server.guildId, identifier);
       res.json({ ok: true, identifier, ...r });
     }),

@@ -3,11 +3,12 @@ import { defineButton } from '../structures';
 import { moderationService } from '../services/ModerationService';
 import { embedService } from '../services/EmbedService';
 import { buildCustomId } from '../utils/customId';
+import { lockdownReasonKey, pendingLockdownReasons } from '../commands/moderation/_shared';
 
 /**
  * Boutons du module modération (namespace `mod`) :
  *  - mod:cancel                       → ferme la confirmation
- *  - mod:lockdown:<on|off>:<reason>   → applique le lockdown (confirmation de /lockdown)
+ *  - mod:lockdown:<on|off>            → applique le lockdown (confirmation de /lockdown ; raison lue dans pendingLockdownReasons)
  *  - mod:clearwarns:<userId>          → demande confirmation
  *  - mod:clearwarns-confirm:<userId>  → retire tous les avertissements
  *  - mod:unwarn-open:<userId>         → ouvre le modal de retrait d'un avertissement
@@ -29,7 +30,9 @@ export default defineButton({
       }
       case 'lockdown': {
         const enable = a1 === 'on';
-        const reason = a2 && a2.length ? a2 : null;
+        const reasonKey = lockdownReasonKey(guildId, interaction.user.id);
+        const reason = (a2 && a2.length ? a2 : null) ?? pendingLockdownReasons.get(reasonKey) ?? null;
+        pendingLockdownReasons.delete(reasonKey);
         await interaction.update({ embeds: [embedService.info(t('moderation.lockdown.in_progress'))], components: [] });
         try {
           const result = await moderationService.setLockdown(guildId, enable, interaction.user.id, reason);

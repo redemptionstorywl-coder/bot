@@ -47,7 +47,11 @@ export default defineSelectMenu({
       case 'trsel': {
         if (!interaction.isStringSelectMenu()) return;
         const lang = interaction.values[0];
-        if (!lang || !config.enabledLanguages.includes(lang)) return;
+        if (!lang || !config.enabledLanguages.includes(lang)) {
+          session.notice = { type: 'error', text: t('core.invalid_input', { details: lang ?? '' }) };
+          await refresh(interaction, session, ctx);
+          return;
+        }
         await interaction.showModal(buildTranslationModal(session, lang, t));
         return;
       }

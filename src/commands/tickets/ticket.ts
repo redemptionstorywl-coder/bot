@@ -16,7 +16,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('ticket')
     .setDescription('Gérer le ticket courant')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .addSubcommand((s) => s.setName('close').setDescription('Fermer le ticket').addStringOption((o) => o.setName('reason').setDescription('Raison').setMaxLength(500)))
     .addSubcommand((s) => s.setName('add').setDescription('Ajouter un membre au ticket').addUserOption((o) => o.setName('user').setDescription('Membre').setRequired(true)))
     .addSubcommand((s) => s.setName('remove').setDescription('Retirer un membre du ticket').addUserOption((o) => o.setName('user').setDescription('Membre').setRequired(true)))

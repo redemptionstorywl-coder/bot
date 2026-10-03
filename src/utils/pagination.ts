@@ -39,7 +39,7 @@ export async function paginate(interaction: ChatInputCommandInteraction | Button
   const collector = message.createMessageComponentCollector({ componentType: ComponentType.Button, time: timeMs });
   collector.on('collect', async (i) => {
     if (i.user.id !== userId) {
-      await i.reply({ content: '⛔', ephemeral: true }).catch(() => null);
+      await i.reply({ content: '⛔', flags: MessageFlags.Ephemeral }).catch(() => null);
       return;
     }
     switch (i.customId) {

@@ -606,7 +606,12 @@ export class ModerationService {
     const duration = opts.duration ?? null;
     const expiresAt = duration ? new Date(Date.now() + duration * 1000) : null;
     this.markRecent(guild.id, 'roles', target.id);
-    await target.roles.add(role, auditReason(moderator, reason));
+    try {
+      await target.roles.add(role, auditReason(moderator, reason));
+    } catch (err) {
+      this.consumeRecent(guild.id, 'roles', target.id);
+      throw err;
+    }
     await prisma.mute.updateMany({ where: { guildId: guild.id, userId: target.id, active: true }, data: { active: false } });
     await prisma.mute.create({ data: { guildId: guild.id, userId: target.id, moderatorId: moderator.id, reason, expiresAt } });
     const sanction = await this.createSanction({ guildId: guild.id, type: 'MUTE', userId: target.id, moderatorId: moderator.id, reason, duration, metadata: { ...(opts.metadata ?? {}), roleId: role.id, expiresAt: expiresAt?.toISOString() ?? null } });
@@ -621,7 +626,12 @@ export class ModerationService {
     const reason = opts.reason ?? null;
     if (cfg.muteRoleId && target.roles.cache.has(cfg.muteRoleId)) {
       this.markRecent(guild.id, 'roles', target.id);
-      await target.roles.remove(cfg.muteRoleId, auditReason(moderator, reason));
+      try {
+        await target.roles.remove(cfg.muteRoleId, auditReason(moderator, reason));
+      } catch (err) {
+        this.consumeRecent(guild.id, 'roles', target.id);
+        throw err;
+      }
     }
     await prisma.mute.updateMany({ where: { guildId: guild.id, userId: target.id, active: true }, data: { active: false } });
     const sanction = await this.createSanction({ guildId: guild.id, type: 'UNMUTE', userId: target.id, moderatorId: moderator.id, reason, metadata: opts.metadata ?? null });

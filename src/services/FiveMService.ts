@@ -6,6 +6,7 @@ import { env } from '../config/env';
 import { BRAND } from '../config/constants';
 import { scheduler } from './SchedulerService';
 import { loggingService } from './LoggingService';
+import { moderationService } from './ModerationService';
 import { guildConfigService } from './GuildConfigService';
 import { translationService } from './TranslationService';
 import { TTLCache } from '../utils/cache';
@@ -347,20 +348,15 @@ export class FiveMService {
       userId = profile?.userId ?? (await prisma.whitelist.findFirst({ where: { guildId: server.guildId, identifier: sanction.identifier }, select: { userId: true } }))?.userId ?? null;
     }
     const type: SanctionType = sanction.type === 'BAN' && sanction.duration ? SanctionType.TEMPBAN : (sanction.type as SanctionType);
-    const created = await prisma.$transaction(async (tx) => {
-      const agg = await tx.sanction.aggregate({ where: { guildId: server.guildId }, _max: { caseNumber: true } });
-      return tx.sanction.create({
-        data: {
-          guildId: server.guildId,
-          caseNumber: (agg._max.caseNumber ?? 0) + 1,
-          type,
-          userId,
-          moderatorId: this.client?.user?.id ?? 'fivem',
-          reason: sanction.reason,
-          duration: sanction.duration ?? null,
-          metadata: { source: 'fivem', serverKey: server.key, identifier: sanction.identifier ?? null, staff: sanction.staff } as Prisma.InputJsonValue,
-        },
-      });
+    // Même numérotation (et même retry sur collision P2002) que les sanctions Discord.
+    const created = await moderationService.createSanction({
+      guildId: server.guildId,
+      type,
+      userId,
+      moderatorId: this.client?.user?.id ?? 'fivem',
+      reason: sanction.reason,
+      duration: sanction.duration ?? null,
+      metadata: { source: 'fivem', serverKey: server.key, identifier: sanction.identifier ?? null, staff: sanction.staff },
     });
     await loggingService.log({
       guildId: server.guildId,

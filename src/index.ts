@@ -8,6 +8,8 @@ import { loadAll } from './core/loaders';
 import { deployCommands } from './core/deploy';
 import { scheduler } from './services/SchedulerService';
 import { registerCoreTasks } from './core/tasks';
+import { ticketService } from './services/TicketService';
+import { activityService } from './services/ActivityService';
 import { startDashboard } from '../dashboard/server';
 
 async function main(): Promise<void> {
@@ -36,6 +38,9 @@ async function main(): Promise<void> {
     logger.info({ signal }, 'Arrêt en cours…');
     scheduler.stop();
     for (const mod of client.modules.values()) await Promise.resolve(mod.onShutdown?.(client)).catch(() => null);
+    // Buffers mémoire (messages de tickets, compteurs d'activité) : écrits en base avant la déconnexion.
+    await ticketService.flushMessages().catch((err) => logger.warn({ err }, 'Flush des messages de tickets à l’arrêt'));
+    await activityService.flush().catch((err) => logger.warn({ err }, 'Flush de l’activité à l’arrêt'));
     await dashboard.close().catch(() => null);
     client.destroy();
     await disconnectDatabase();

@@ -4,7 +4,7 @@ import { moderationService } from '../../services/ModerationService';
 import { embedService } from '../../services/EmbedService';
 import { buildCustomId } from '../../utils/customId';
 import { discordTimestamp } from '../../utils/time';
-import { EPHEMERAL, MOD_PERMS, readReason } from './_shared';
+import { EPHEMERAL, MOD_PERMS, lockdownReasonKey, pendingLockdownReasons, readReason } from './_shared';
 
 /**
  * /lockdown on|off|status — demande une confirmation par bouton (mod:lockdown:on|off),
@@ -42,8 +42,12 @@ export default defineCommand({
       return;
     }
     const reason = enable ? readReason(interaction) : null;
+    // La raison est conservée côté service (trop longue pour un customId) et relue par le bouton de confirmation.
+    const reasonKey = lockdownReasonKey(interaction.guild.id, interaction.user.id);
+    if (reason) pendingLockdownReasons.set(reasonKey, reason);
+    else pendingLockdownReasons.delete(reasonKey);
     const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder().setCustomId(buildCustomId('mod', 'lockdown', enable ? 'on' : 'off', reason ?? '')).setLabel(t('core.confirm')).setStyle(enable ? ButtonStyle.Danger : ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId(buildCustomId('mod', 'lockdown', enable ? 'on' : 'off')).setLabel(t('core.confirm')).setStyle(enable ? ButtonStyle.Danger : ButtonStyle.Primary),
       new ButtonBuilder().setCustomId(buildCustomId('mod', 'cancel')).setLabel(t('core.cancel')).setStyle(ButtonStyle.Secondary),
     );
     const embed = enable

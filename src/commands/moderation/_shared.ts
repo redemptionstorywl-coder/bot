@@ -6,8 +6,17 @@ import { ModerationError, moderationService, type SanctionResult, type WarnResul
 import { canModerate } from '../../utils/permissions';
 import { parseDuration, formatDuration } from '../../utils/time';
 import { BRAND } from '../../config/constants';
+import { TTLCache } from '../../utils/cache';
 
 export const EPHEMERAL = { flags: MessageFlags.Ephemeral } as const;
+
+/**
+ * Raisons de lockdown en attente de confirmation, clé `${guildId}:${userId}`.
+ * Une raison (jusqu'à 512 caractères, encodée) ne tient pas dans un customId (100 max) : elle est gardée ici
+ * le temps que l'admin clique sur le bouton de confirmation (`mod:lockdown:on`).
+ */
+export const pendingLockdownReasons = new TTLCache<string>(10 * 60_000, 1000);
+export const lockdownReasonKey = (guildId: string, userId: string): string => `${guildId}:${userId}`;
 
 /** Vérifie la hiérarchie actor → cible et bot → cible. Retourne une clé i18n d'erreur ou null. */
 export function hierarchyError(interaction: ChatInputCommandInteraction, target: GuildMember, requirement: 'bannable' | 'kickable' | 'moderatable' | 'manageable'): string | null {

@@ -73,7 +73,10 @@ export default defineModal({
     switch (kind) {
       case 'tr': {
         const lang = extra;
-        if (!ctx.config.enabledLanguages.includes(lang)) return;
+        if (!ctx.config.enabledLanguages.includes(lang)) {
+          session.notice = { type: 'error', text: t('core.invalid_input', { details: lang }) };
+          break;
+        }
         const candidate = { title: f('title'), description: f('description'), content: f('content') };
         if (!candidate.title && !candidate.description && !candidate.content) {
           delete ann.translations[lang];

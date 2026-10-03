@@ -7,7 +7,8 @@ import { embedService } from '../services/EmbedService';
 import { hasInternalPermission, missingDiscordPermissions } from '../utils/permissions';
 import { parseCustomId } from '../utils/customId';
 import { childLogger } from '../utils/logger';
-import { COOLDOWN_DEFAULT_SECONDS, MODULE_LABELS, type ModuleKey } from '../config/constants';
+import { COOLDOWN_DEFAULT_SECONDS, DEFAULT_LANGUAGE, MODULE_LABELS, fromDiscordLocale, type ModuleKey } from '../config/constants';
+import { translationService } from '../services/TranslationService';
 import { formatDuration } from '../utils/time';
 import { prisma } from '../database/client';
 import { TTLCache } from '../utils/cache';
@@ -17,7 +18,9 @@ const commandPermCache = new TTLCache<{ roleIds: string[]; enabled: boolean } | 
 
 async function reply(interaction: RepliableInteraction, content: { embeds: ReturnType<typeof embedService.error>[] }): Promise<void> {
   const payload = { ...content, flags: MessageFlags.Ephemeral } as const;
-  if (interaction.deferred || interaction.replied) await interaction.followUp(payload).catch(() => null);
+  // Interaction différée sans contenu : on remplace le « réfléchit… » (un followUp le laisserait bloqué).
+  if (interaction.deferred && !interaction.replied) await interaction.editReply({ embeds: content.embeds }).catch(() => null);
+  else if (interaction.deferred || interaction.replied) await interaction.followUp(payload).catch(() => null);
   else await interaction.reply(payload).catch(() => null);
 }
 
@@ -105,7 +108,7 @@ export default defineEvent({
       ctx = await resolveContext(client, interaction);
     } catch (err) {
       log.error({ err }, 'Impossible de résoudre le contexte');
-      if (interaction.isRepliable()) await reply(interaction, { embeds: [embedService.error('Erreur interne de configuration.')] });
+      if (interaction.isRepliable()) await reply(interaction, { embeds: [embedService.error(translationService.translate(fromDiscordLocale(interaction.locale) ?? DEFAULT_LANGUAGE, 'core.error'))] });
       return;
     }
     const { t } = ctx;

@@ -125,7 +125,14 @@ export default defineCommand({
           identifier = parsed.data;
         }
         const questions = whitelistService.resolveQuestions(settings, lang);
-        const modal = new ModalBuilder().setCustomId(buildCustomId('whitelist', 'apply', identifier)).setTitle(t('whitelist.apply.modal_title').slice(0, 45));
+        let customId: string;
+        try {
+          customId = buildCustomId('whitelist', 'apply', identifier);
+        } catch {
+          // identifiant trop long une fois encodé pour tenir dans un customId (100 caractères)
+          return interaction.reply({ embeds: [embedService.error(t('whitelist.errors.invalid_identifier'))], ...ephemeral });
+        }
+        const modal = new ModalBuilder().setCustomId(customId).setTitle(t('whitelist.apply.modal_title').slice(0, 45));
         for (const q of questions.slice(0, MAX_QUESTIONS)) {
           const input = new TextInputBuilder().setCustomId(q.id).setLabel(q.label.slice(0, 45)).setStyle(q.style === 'short' ? TextInputStyle.Short : TextInputStyle.Paragraph).setRequired(q.required).setMaxLength(q.style === 'short' ? 200 : 1000);
           if (q.placeholder) input.setPlaceholder(q.placeholder.slice(0, 100));
