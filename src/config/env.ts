@@ -16,6 +16,7 @@ const envSchema = z.object({
   DASHBOARD_PORT: z.coerce.number().int().positive().default(3000),
   SESSION_SECRET: z.string().min(16, 'SESSION_SECRET doit faire au moins 16 caractères').default('change-me-with-a-long-random-string'),
   FIVEM_API_KEY: z.string().min(8).default('change-me-fivem-api-key'),
+  TEBEX_WEBHOOK_SECRET: z.string().optional().default(''),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
   TZ: z.string().default('Europe/Paris'),

@@ -1,0 +1,59 @@
+{
+  "status": { "pending": "⏳ Pending", "paid": "💳 Paid", "delivered": "📦 Delivered", "cancelled": "✖️ Cancelled", "refunded": "↩️ Refunded" },
+  "catalog": {
+    "title": "🛒 Catalog",
+    "empty": "No product available.",
+    "order": "Order",
+    "unlimited": "Unlimited stock",
+    "in_stock": "{stock} in stock",
+    "sold_out": "Sold out"
+  },
+  "product": {
+    "price": "Price",
+    "stock": "Stock",
+    "category": "Category",
+    "added": "Product **#{id} {name}** added ({price}).",
+    "edited": "Product **#{id} {name}** updated.",
+    "removed": "Product **{name}** removed.",
+    "list_title": "🛒 Products ({count})"
+  },
+  "category": {
+    "added": "Category **{name}** added.",
+    "removed": "Category **{name}** removed.",
+    "empty": "No category.",
+    "list_title": "📂 Categories"
+  },
+  "order": {
+    "modal_title": "Order — {product}",
+    "quantity": "Quantity",
+    "note": "Note (optional)",
+    "product": "Product",
+    "total": "Total",
+    "status": "Status",
+    "summary_title": "🧾 Order #{id}",
+    "pay_hint": "Complete the payment with the button below. Your order will be validated automatically once the payment is confirmed.",
+    "support_hint": "A staff member will process your order. Open a ticket if you have any question.",
+    "pay_button": "Pay on Tebex",
+    "placed": "Order **#{id}** placed. A summary has been sent to you by DM.",
+    "created": "Order **#{id}** created for {user} — {total}.",
+    "status_updated": "Order **#{id}** → {status}.",
+    "status_dm_title": "🧾 Order #{id} updated",
+    "status_dm": "Your order ({product}) is now: **{status}**.",
+    "list_title": "🧾 Orders — {status}",
+    "all": "all",
+    "empty": "No order.",
+    "history_title": "🧾 History — {user}",
+    "history_empty": "No order for {user}."
+  },
+  "announce": { "done": "Product **{product}** announced in {channel}." },
+  "errors": {
+    "product_not_found": "Product not found.",
+    "product_disabled": "This product is not available.",
+    "out_of_stock": "This product is sold out.",
+    "order_not_found": "Order not found.",
+    "category_not_found": "Category not found.",
+    "invalid_price": "Invalid price (e.g. `9.99`).",
+    "invalid_quantity": "Invalid quantity (1 to 99).",
+    "invalid_transition": "Status change not allowed from the current state."
+  }
+}

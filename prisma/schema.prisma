@@ -1074,3 +1074,33 @@ model DashboardSession {
 
   @@index([expiresAt])
 }
+
+// ──────────────── Whitelist (configuration par serveur) ────────────────
+
+model WhitelistConfig {
+  guildId         String   @id @db.VarChar(32)
+  /// Questions de la candidature (max 5) : [{ id, label, placeholder?, required?, style: 'short' | 'paragraph' }]
+  questions       Json     @default("[]")
+  reviewChannelId String?  @db.VarChar(32)
+  acceptedRoleId  String?  @db.VarChar(32)
+  pendingRoleId   String?  @db.VarChar(32)
+  dmOnDecision    Boolean  @default(true)
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ──────────────── School RP (configuration par serveur) ────────────────
+
+model SchoolConfig {
+  guildId              String   @id @db.VarChar(32)
+  /// Salon où les candidatures (SchoolApplication) sont postées pour review
+  applicationChannelId String?  @db.VarChar(32)
+  /// Salon par défaut des annonces scolaires
+  announceChannelId    String?  @db.VarChar(32)
+  studentRoleId        String?  @db.VarChar(32)
+  teacherRoleId        String?  @db.VarChar(32)
+  staffRoleId          String?  @db.VarChar(32)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}

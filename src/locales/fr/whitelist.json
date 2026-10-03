@@ -1,0 +1,67 @@
+{
+  "status": { "pending": "⏳ En attente", "accepted": "✅ Acceptée", "rejected": "⛔ Refusée" },
+  "default_questions": {
+    "identity": "Prénom / Nom de votre personnage",
+    "experience": "Votre expérience RP",
+    "motivation": "Pourquoi rejoindre le serveur ?"
+  },
+  "apply": {
+    "modal_title": "📝 Candidature whitelist",
+    "done": "Votre candidature **#{id}** a été envoyée. Le staff vous répondra en message privé."
+  },
+  "status_cmd": {
+    "title": "📝 Candidature #{id}",
+    "none": "Vous n’avez aucune candidature. Utilisez `/whitelist apply`.",
+    "reviewed": "Traitée"
+  },
+  "review": {
+    "title": "📝 Candidature whitelist #{id}",
+    "applicant": "Candidat",
+    "status": "Statut",
+    "submitted": "Déposée",
+    "identifier": "Identifiant FiveM",
+    "reviewed_by": "Traitée par",
+    "accept": "Accepter",
+    "reject": "Refuser",
+    "reject_modal_title": "Refuser la candidature #{id}",
+    "note_label": "Note transmise au candidat (optionnel)",
+    "accepted": "Candidature **#{id}** de {user} acceptée.",
+    "rejected": "Candidature **#{id}** de {user} refusée.",
+    "need_target": "Indiquez un numéro de dossier (`id`) ou un candidat (`user`)."
+  },
+  "list": {
+    "title": "📝 Candidatures — {status}",
+    "all": "toutes",
+    "empty": "Aucune candidature."
+  },
+  "config": {
+    "title": "📝 Configuration whitelist",
+    "enabled": "Candidatures",
+    "review_channel": "Salon de review",
+    "dm": "DM à la décision",
+    "accepted_role": "Rôle accepté",
+    "pending_role": "Rôle en attente",
+    "questions": "Questions ({count})",
+    "default": "par défaut",
+    "questions_modal_title": "Questions de la candidature",
+    "question_n": "Question {n}",
+    "question_placeholder": "Laisser vide pour ne pas poser cette question",
+    "questions_saved": "{count} question(s) enregistrée(s).",
+    "updated": "Configuration whitelist mise à jour."
+  },
+  "dm": {
+    "accepted_title": "✅ Whitelist acceptée",
+    "rejected_title": "⛔ Whitelist refusée",
+    "accepted": "Félicitations, votre candidature whitelist sur **{server}** a été acceptée. Bienvenue !",
+    "rejected": "Votre candidature whitelist sur **{server}** a été refusée. Vous pourrez candidater à nouveau plus tard."
+  },
+  "errors": {
+    "disabled": "Les candidatures sont fermées pour le moment.",
+    "already_pending": "Vous avez déjà une candidature en attente.",
+    "already_accepted": "Vous êtes déjà whitelisté.",
+    "not_found": "Candidature introuvable ou déjà traitée.",
+    "already_reviewed": "Cette candidature a déjà été traitée.",
+    "no_questions": "Aucune question configurée.",
+    "invalid_identifier": "Identifiant FiveM invalide (format attendu : `license:…`)."
+  }
+}

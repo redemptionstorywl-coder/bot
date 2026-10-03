@@ -1,0 +1,105 @@
+{
+  "roles": { "student": "🎒 Élève", "teacher": "📖 Professeur", "staff": "🏛️ Personnel" },
+  "status": { "pending": "⏳ En attente", "accepted": "✅ Acceptée", "rejected": "⛔ Refusée" },
+  "register": {
+    "modal_title": "🎓 Inscription",
+    "first_name": "Prénom",
+    "last_name": "Nom",
+    "bio": "Présentation (optionnel)",
+    "done": "Votre profil a été créé. Consultez-le avec `/school profile`.",
+    "done_pick": "Votre profil a été créé. Choisissez votre classe et/ou votre maison ci-dessous.",
+    "pick_class": "Choisir une classe",
+    "pick_house": "Choisir une maison",
+    "class_set": "Vous êtes maintenant dans la classe **{name}**.",
+    "house_set": "Vous rejoignez la maison **{name}**."
+  },
+  "profile": {
+    "none": "{user} n’a pas de profil. Utilisez `/school register`.",
+    "role": "Rôle",
+    "class": "Classe",
+    "house": "Maison",
+    "points": "Points",
+    "clubs": "Clubs"
+  },
+  "class": {
+    "list_title": "📚 Classes",
+    "empty": "Aucune classe.",
+    "students": "élève(s)",
+    "created": "Classe **{name}** créée.",
+    "deleted": "Classe **{name}** supprimée.",
+    "assigned": "{user} assigné(e) à la classe **{name}**."
+  },
+  "house": {
+    "list_title": "🏠 Maisons",
+    "leaderboard_title": "🏆 Classement des maisons",
+    "empty": "Aucune maison.",
+    "points": "pts",
+    "members": "membre(s)",
+    "created": "Maison **{name}** créée.",
+    "deleted": "Maison **{name}** supprimée.",
+    "assigned": "{user} rejoint la maison **{name}**.",
+    "points_updated": "{name} : **{delta}** → **{points}** points."
+  },
+  "club": {
+    "list_title": "🎭 Clubs",
+    "empty": "Aucun club.",
+    "created": "Club **{name}** créé.",
+    "deleted": "Club **{name}** supprimé.",
+    "joined": "Vous avez rejoint le club **{name}**.",
+    "left": "Vous avez quitté le club **{name}**."
+  },
+  "apply": {
+    "modal_title": "Candidature — {role}",
+    "q_identity": "Prénom / Nom du personnage",
+    "q_motivation": "Motivation",
+    "q_experience": "Expérience RP (optionnel)",
+    "q_availability": "Disponibilités (optionnel)",
+    "done": "Votre candidature **#{id}** a été envoyée. Vous recevrez la réponse en message privé."
+  },
+  "application": {
+    "title": "🎓 Candidature #{id}",
+    "applicant": "Candidat",
+    "role": "Rôle visé",
+    "status": "Statut",
+    "submitted": "Déposée",
+    "reviewed_by": "Traitée par",
+    "accept": "Accepter",
+    "reject": "Refuser",
+    "reject_modal_title": "Refuser la candidature #{id}",
+    "note_label": "Note transmise au candidat (optionnel)",
+    "accepted": "Candidature **#{id}** de {user} acceptée.",
+    "rejected": "Candidature **#{id}** de {user} refusée."
+  },
+  "dm": {
+    "accepted_title": "✅ Candidature acceptée",
+    "rejected_title": "⛔ Candidature refusée",
+    "accepted": "Votre candidature au rôle **{role}** sur **{server}** a été acceptée. Bienvenue !",
+    "rejected": "Votre candidature au rôle **{role}** sur **{server}** a été refusée."
+  },
+  "announce": {
+    "done": "Annonce publiée dans {channel}.",
+    "no_channel": "Aucun salon indiqué et aucun salon d’annonces configuré (`/school config announce-channel`)."
+  },
+  "config": {
+    "title": "🎓 Configuration School RP",
+    "application_channel": "Salon des candidatures",
+    "announce_channel": "Salon d’annonces",
+    "roles": "Rôles Discord",
+    "updated": "Configuration School RP mise à jour."
+  },
+  "errors": {
+    "profile_exists": "Vous avez déjà un profil.",
+    "profile_not_found": "Profil introuvable. L’inscription se fait avec `/school register`.",
+    "class_not_found": "Classe introuvable.",
+    "class_full": "Cette classe est complète.",
+    "house_not_found": "Maison introuvable.",
+    "club_not_found": "Club introuvable.",
+    "club_full": "Ce club est complet.",
+    "already_member": "Vous êtes déjà membre de ce club.",
+    "not_member": "Vous n’êtes pas membre de ce club.",
+    "application_not_found": "Candidature introuvable.",
+    "application_pending": "Vous avez déjà une candidature en attente.",
+    "already_reviewed": "Cette candidature a déjà été traitée.",
+    "name_taken": "Ce nom est déjà utilisé."
+  }
+}

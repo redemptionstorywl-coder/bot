@@ -1,0 +1,67 @@
+{
+  "status": { "pending": "⏳ Pending", "accepted": "✅ Accepted", "rejected": "⛔ Rejected" },
+  "default_questions": {
+    "identity": "Your character's first / last name",
+    "experience": "Your RP experience",
+    "motivation": "Why do you want to join?"
+  },
+  "apply": {
+    "modal_title": "📝 Whitelist application",
+    "done": "Your application **#{id}** has been submitted. The staff will answer you by DM."
+  },
+  "status_cmd": {
+    "title": "📝 Application #{id}",
+    "none": "You have no application. Use `/whitelist apply`.",
+    "reviewed": "Reviewed"
+  },
+  "review": {
+    "title": "📝 Whitelist application #{id}",
+    "applicant": "Applicant",
+    "status": "Status",
+    "submitted": "Submitted",
+    "identifier": "FiveM identifier",
+    "reviewed_by": "Reviewed by",
+    "accept": "Accept",
+    "reject": "Reject",
+    "reject_modal_title": "Reject application #{id}",
+    "note_label": "Note sent to the applicant (optional)",
+    "accepted": "Application **#{id}** from {user} accepted.",
+    "rejected": "Application **#{id}** from {user} rejected.",
+    "need_target": "Provide an application number (`id`) or an applicant (`user`)."
+  },
+  "list": {
+    "title": "📝 Applications — {status}",
+    "all": "all",
+    "empty": "No application."
+  },
+  "config": {
+    "title": "📝 Whitelist configuration",
+    "enabled": "Applications",
+    "review_channel": "Review channel",
+    "dm": "DM on decision",
+    "accepted_role": "Accepted role",
+    "pending_role": "Pending role",
+    "questions": "Questions ({count})",
+    "default": "default",
+    "questions_modal_title": "Application questions",
+    "question_n": "Question {n}",
+    "question_placeholder": "Leave empty to skip this question",
+    "questions_saved": "{count} question(s) saved.",
+    "updated": "Whitelist configuration updated."
+  },
+  "dm": {
+    "accepted_title": "✅ Whitelist accepted",
+    "rejected_title": "⛔ Whitelist rejected",
+    "accepted": "Congratulations, your whitelist application on **{server}** has been accepted. Welcome!",
+    "rejected": "Your whitelist application on **{server}** has been rejected. You may apply again later."
+  },
+  "errors": {
+    "disabled": "Applications are closed for now.",
+    "already_pending": "You already have a pending application.",
+    "already_accepted": "You are already whitelisted.",
+    "not_found": "Application not found or already reviewed.",
+    "already_reviewed": "This application has already been reviewed.",
+    "no_questions": "No question configured.",
+    "invalid_identifier": "Invalid FiveM identifier (expected format: `license:…`)."
+  }
+}

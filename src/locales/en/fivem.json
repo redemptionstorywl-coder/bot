@@ -1,0 +1,46 @@
+{
+  "status": {
+    "state": "State",
+    "online": "🟢 Online",
+    "offline": "🔴 Offline",
+    "maintenance": "🟠 Maintenance",
+    "players": "Players",
+    "version": "Version",
+    "last_update": "Last update",
+    "uptime": "Online for",
+    "host": "Host"
+  },
+  "add": {
+    "done": "Server **{name}** added (key `{key}`, framework **{framework}**).",
+    "api_base": "API base URL",
+    "auth": "Authentication",
+    "auth_hint": "Header `{header}` = global API key (FIVEM_API_KEY) or this server's own key.",
+    "docs": "Full documentation: docs/FIVEM.md"
+  },
+  "remove": { "done": "Server **{name}** removed." },
+  "list": {
+    "title": "🎮 FiveM servers ({count})",
+    "empty": "No FiveM server configured. Use `/fivem add`."
+  },
+  "maintenance": {
+    "on": "🟠 Maintenance **enabled** on **{name}**.",
+    "off": "🟢 Maintenance **disabled** on **{name}**."
+  },
+  "status_channel": {
+    "set": "The status of **{name}** will be updated in {channel} (every 60 s).",
+    "removed": "Status message for **{name}** disabled."
+  },
+  "players": {
+    "title": "👥 {name} — {count} player(s)",
+    "empty": "No player connected on **{name}** (or server offline)."
+  },
+  "errors": {
+    "not_found": "Server not found. Check the key with `/fivem list`.",
+    "duplicate": "A server with this key already exists.",
+    "invalid_key": "Invalid key: 2 to 64 characters, lowercase letters, digits, `-` or `_`.",
+    "no_host": "No host configured for this server.",
+    "unreachable": "Server unreachable (timeout or HTTP error).",
+    "unauthorized": "Invalid API key.",
+    "disabled": "This server is disabled."
+  }
+}

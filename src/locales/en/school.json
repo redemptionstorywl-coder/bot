@@ -1,0 +1,105 @@
+{
+  "roles": { "student": "🎒 Student", "teacher": "📖 Teacher", "staff": "🏛️ Staff" },
+  "status": { "pending": "⏳ Pending", "accepted": "✅ Accepted", "rejected": "⛔ Rejected" },
+  "register": {
+    "modal_title": "🎓 Registration",
+    "first_name": "First name",
+    "last_name": "Last name",
+    "bio": "Introduction (optional)",
+    "done": "Your profile has been created. View it with `/school profile`.",
+    "done_pick": "Your profile has been created. Pick your class and/or house below.",
+    "pick_class": "Pick a class",
+    "pick_house": "Pick a house",
+    "class_set": "You are now in class **{name}**.",
+    "house_set": "You joined house **{name}**."
+  },
+  "profile": {
+    "none": "{user} has no profile. Use `/school register`.",
+    "role": "Role",
+    "class": "Class",
+    "house": "House",
+    "points": "Points",
+    "clubs": "Clubs"
+  },
+  "class": {
+    "list_title": "📚 Classes",
+    "empty": "No class.",
+    "students": "student(s)",
+    "created": "Class **{name}** created.",
+    "deleted": "Class **{name}** deleted.",
+    "assigned": "{user} assigned to class **{name}**."
+  },
+  "house": {
+    "list_title": "🏠 Houses",
+    "leaderboard_title": "🏆 House leaderboard",
+    "empty": "No house.",
+    "points": "pts",
+    "members": "member(s)",
+    "created": "House **{name}** created.",
+    "deleted": "House **{name}** deleted.",
+    "assigned": "{user} joined house **{name}**.",
+    "points_updated": "{name}: **{delta}** → **{points}** points."
+  },
+  "club": {
+    "list_title": "🎭 Clubs",
+    "empty": "No club.",
+    "created": "Club **{name}** created.",
+    "deleted": "Club **{name}** deleted.",
+    "joined": "You joined club **{name}**.",
+    "left": "You left club **{name}**."
+  },
+  "apply": {
+    "modal_title": "Application — {role}",
+    "q_identity": "Character first / last name",
+    "q_motivation": "Motivation",
+    "q_experience": "RP experience (optional)",
+    "q_availability": "Availability (optional)",
+    "done": "Your application **#{id}** has been submitted. You will get the answer by DM."
+  },
+  "application": {
+    "title": "🎓 Application #{id}",
+    "applicant": "Applicant",
+    "role": "Requested role",
+    "status": "Status",
+    "submitted": "Submitted",
+    "reviewed_by": "Reviewed by",
+    "accept": "Accept",
+    "reject": "Reject",
+    "reject_modal_title": "Reject application #{id}",
+    "note_label": "Note sent to the applicant (optional)",
+    "accepted": "Application **#{id}** from {user} accepted.",
+    "rejected": "Application **#{id}** from {user} rejected."
+  },
+  "dm": {
+    "accepted_title": "✅ Application accepted",
+    "rejected_title": "⛔ Application rejected",
+    "accepted": "Your application for the **{role}** role on **{server}** has been accepted. Welcome!",
+    "rejected": "Your application for the **{role}** role on **{server}** has been rejected."
+  },
+  "announce": {
+    "done": "Announcement published in {channel}.",
+    "no_channel": "No channel given and no default announcement channel configured (`/school config announce-channel`)."
+  },
+  "config": {
+    "title": "🎓 School RP configuration",
+    "application_channel": "Applications channel",
+    "announce_channel": "Announcements channel",
+    "roles": "Discord roles",
+    "updated": "School RP configuration updated."
+  },
+  "errors": {
+    "profile_exists": "You already have a profile.",
+    "profile_not_found": "Profile not found. Register with `/school register`.",
+    "class_not_found": "Class not found.",
+    "class_full": "This class is full.",
+    "house_not_found": "House not found.",
+    "club_not_found": "Club not found.",
+    "club_full": "This club is full.",
+    "already_member": "You are already a member of this club.",
+    "not_member": "You are not a member of this club.",
+    "application_not_found": "Application not found.",
+    "application_pending": "You already have a pending application.",
+    "already_reviewed": "This application has already been reviewed.",
+    "name_taken": "This name is already in use."
+  }
+}

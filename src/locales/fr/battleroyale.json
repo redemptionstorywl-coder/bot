@@ -1,0 +1,51 @@
+{
+  "profile": {
+    "title": "⚔️ Profil — {name}",
+    "none": "{user} n’a pas encore de profil Battle Royale.",
+    "level": "Niveau",
+    "wins": "🏆 Victoires",
+    "kills": "🔫 Kills",
+    "kd": "⚖️ K/D",
+    "matches": "🎮 Parties",
+    "top10": "🔟 Top 10",
+    "playtime": "⏱️ Temps de jeu",
+    "season": "📅 Saison",
+    "battlepass": "🎟️ Battle Pass",
+    "tier": "Palier",
+    "identifier": "🔗 Identifiant FiveM",
+    "not_linked": "Non lié — `/br-link`"
+  },
+  "leaderboard": {
+    "title": "🏆 Classement {metric} — Saison {season}",
+    "empty": "Aucune statistique pour la saison {season}.",
+    "metrics": { "wins": "Victoires", "kills": "Kills", "level": "Niveau", "kd": "K/D" }
+  },
+  "battlepass": {
+    "title": "🎟️ Battle Pass — Saison {season} · {name}",
+    "none": "Aucune saison active. Un administrateur peut en créer une avec `/br-admin season new`.",
+    "tiers": "Paliers",
+    "ends": "Fin de saison",
+    "maxed": "Tous les paliers débloqués !"
+  },
+  "link": {
+    "invalid": "Identifiant invalide. Format attendu : `license:0123abcd…` (visible dans la console F8 ou via le serveur).",
+    "done": "Identifiant `{identifier}` lié à votre profil. Vos statistiques en jeu seront désormais synchronisées.",
+    "verification": "Vérification",
+    "verified": "✅ Identifiant détecté en jeu actuellement.",
+    "not_online": "ℹ️ Identifiant non détecté en ligne pour le moment — la liaison est enregistrée, elle sera vérifiée à votre prochaine partie."
+  },
+  "admin": {
+    "season_set": "Saison active : **{season}** ({name}).",
+    "season_new": "Saison **{season}** « {name} » créée, fin le {ends}. Progression Battle Pass réinitialisée.",
+    "seasons_title": "📅 Saisons",
+    "stat_set": "{user} : `{field}` = **{value}**.",
+    "xp_added": "{user} : {amount} XP → **{xp} XP** (niveau {level})."
+  },
+  "errors": {
+    "identifier_taken": "Cet identifiant est déjà lié à un autre joueur.",
+    "profile_not_found": "Profil introuvable.",
+    "invalid_field": "Champ invalide.",
+    "season_exists": "Cette saison existe déjà.",
+    "no_season": "Aucune saison active."
+  }
+}
