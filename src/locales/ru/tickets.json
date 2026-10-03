@@ -1,0 +1,239 @@
+{
+  "defaults": {
+    "support": {
+      "label": "Поддержка",
+      "description": "Нужна помощь? Откройте тикет поддержки."
+    },
+    "bug": {
+      "label": "Баг",
+      "description": "Сообщить о баге или технической проблеме."
+    },
+    "shop": {
+      "label": "Shop",
+      "description": "Вопрос о магазине или заказе."
+    },
+    "payment": {
+      "label": "Оплата",
+      "description": "Проблема с оплатой или доставкой покупки."
+    },
+    "battle-royale": {
+      "label": "Battle Royale",
+      "description": "Вопросы по серверу Battle Royale."
+    },
+    "prison": {
+      "label": "Prison RP",
+      "description": "Вопросы по серверу Prison RP."
+    },
+    "school": {
+      "label": "School RP",
+      "description": "Вопросы по серверу School RP."
+    },
+    "whitelist": {
+      "label": "Whitelist",
+      "description": "Заявка или проблема с whitelist."
+    },
+    "staff": {
+      "label": "Персонал",
+      "description": "Связаться с командой персонала приватно."
+    },
+    "partnership": {
+      "label": "Партнёрство",
+      "description": "Предложить партнёрство."
+    },
+    "report": {
+      "label": "Жалоба",
+      "description": "Пожаловаться на игрока или поведение."
+    },
+    "panel_title": "🎫 Поддержка — {server}",
+    "panel_description": "Нужна помощь? Нажмите ниже, чтобы открыть тикет. Член команды ответит вам как можно скорее.",
+    "panel_footer": "Один тикет = одна тема. Пожалуйста, будьте вежливы.",
+    "question_label": "Опишите ваш запрос",
+    "question_placeholder": "Опишите вашу проблему или запрос как можно подробнее."
+  },
+  "panel": {
+    "open_button": "Открыть тикет",
+    "select_placeholder": "Какая тема?",
+    "pick_prompt": "Какова тема вашего тикета?",
+    "created": "Панель опубликована в {channel} (ID `{id}`, типов: {count}).",
+    "deleted": "Панель `{id}` удалена.",
+    "list_title": "Панели тикетов",
+    "list_empty": "Панели не настроены. Используйте `/ticket-panel create`.",
+    "list_line": "`#{id}` — {channel} • {style} • типов: {count}",
+    "unknown_types": "Неизвестные ключи типов: {keys}",
+    "seeded": "Создано типов тикетов по умолчанию: {count}."
+  },
+  "open": {
+    "title": "{emoji} Тикет #{number} — {type}",
+    "description": "Добро пожаловать, {user}! Опишите ваш запрос, команда ответит вам как можно скорее.",
+    "field_user": "Открыл(а)",
+    "field_type": "Тип",
+    "field_status": "Статус",
+    "field_claimed": "В работе у",
+    "field_created": "Открыт",
+    "field_closed": "Закрыт",
+    "field_closed_by": "Закрыл(а)",
+    "field_reason": "Причина",
+    "no_answer": "—",
+    "staff_ping": "{roles} — новый тикет от {user}.",
+    "created": "Ваш тикет создан: {channel}",
+    "creating": "Создание вашего тикета…",
+    "modal_title": "{emoji} {type}"
+  },
+  "status": {
+    "OPEN": "🟢 Открыт",
+    "CLAIMED": "👤 В работе",
+    "CLOSED": "🔒 Закрыт",
+    "ARCHIVED": "📦 В архиве",
+    "DELETED": "🗑️ Удалён"
+  },
+  "buttons": {
+    "close": "Закрыть",
+    "reopen": "Открыть заново",
+    "claim": "Взять в работу",
+    "claimed": "В работе",
+    "add": "Добавить",
+    "remove": "Удалить",
+    "transcript": "Транскрипт",
+    "transfer": "Перенести",
+    "delete": "Удалить тикет",
+    "confirm_delete": "Да, удалить",
+    "cancel": "Отмена"
+  },
+  "modal": {
+    "close_title": "Закрыть тикет #{number}",
+    "close_reason": "Причина (необязательно)",
+    "close_reason_placeholder": "Проблема решена, запрос обработан…",
+    "add_title": "Добавить участника в тикет",
+    "remove_title": "Удалить участника из тикета",
+    "user_field": "Участник (ID или упоминание)",
+    "user_placeholder": "123456789012345678 или @участник",
+    "questions_title": "Вопросы — {type}",
+    "question_slot": "Вопрос {index}",
+    "question_placeholder": "Label | placeholder | short/paragraph | required/optional | maxLength"
+  },
+  "actions": {
+    "closing": "Закрытие тикета…",
+    "closed": "🔒 Тикет закрыт: {user}.",
+    "closed_reason": "Причина: {reason}",
+    "closed_confirm": "Тикет #{number} закрыт.",
+    "reopened": "🔓 Тикет открыт заново: {user}.",
+    "reopened_confirm": "Тикет #{number} открыт заново.",
+    "claimed": "👤 {user} берёт этот тикет в работу.",
+    "claimed_confirm": "Вы взяли тикет #{number} в работу.",
+    "member_added": "👥 {target} добавлен(а) в тикет пользователем {user}.",
+    "member_added_confirm": "{target} добавлен(а) в тикет.",
+    "member_removed": "🚫 {target} удалён(а) из тикета пользователем {user}.",
+    "member_removed_confirm": "{target} удалён(а) из тикета.",
+    "transfer_prompt": "В какой тип перенести этот тикет?",
+    "transfer_select": "Выберите тип…",
+    "transferred": "🔄 Тикет перенесён в **{type}** пользователем {user}.",
+    "transferred_confirm": "Тикет перенесён в **{type}**.",
+    "delete_confirm": "Удалить тикет #{number} навсегда? Перед удалением будет создан транскрипт.",
+    "delete_cancelled": "Удаление отменено.",
+    "deleting": "🗑️ Этот тикет будет удалён через {seconds} сек.",
+    "deleted_confirm": "Тикет #{number} удалён.",
+    "renamed": "Канал переименован в `{name}`.",
+    "transcript_generating": "Создание транскрипта…",
+    "transcript_sent": "Транскрипт создан и отправлен.",
+    "transcript_dm": "Вот транскрипт вашего тикета **#{number}** на **{server}**."
+  },
+  "errors": {
+    "not_ticket_channel": "Этот канал не является тикетом.",
+    "not_found": "Тикет не найден.",
+    "max_per_user": "У вас уже открыто тикетов этого типа: {count} (максимум: {max}). Закройте один, прежде чем открывать другой.",
+    "type_not_found": "Тип тикета не найден.",
+    "type_disabled": "Этот тип тикета отключён.",
+    "no_types": "Нет доступных типов тикетов. Администратор должен настроить их через `/ticket-type create`.",
+    "already_closed": "Этот тикет уже закрыт.",
+    "not_closed": "Этот тикет не закрыт.",
+    "already_claimed": "Этот тикет уже в работе у {user}.",
+    "no_permission": "У вас нет прав для выполнения этого действия.",
+    "staff_only": "Это действие доступно только персоналу.",
+    "invalid_user": "Недопустимый пользователь. Укажите ID или упоминание.",
+    "cannot_add_bot": "Невозможно добавить бота в тикет.",
+    "member_not_found": "Участник не найден на этом сервере.",
+    "cannot_remove_creator": "Невозможно удалить создателя тикета.",
+    "channel_create_failed": "Не удалось создать канал тикета. Проверьте мои права и настроенную категорию.",
+    "channel_missing": "Канал этого тикета больше не существует.",
+    "key_exists": "Тип с ключом `{key}` уже существует.",
+    "invalid_key": "Недопустимый ключ: только строчные латинские буквы, цифры и дефисы (от 2 до 32 символов).",
+    "same_type": "Тикет уже имеет этот тип.",
+    "invalid_question": "Вопрос {index} недопустим: {details}",
+    "panel_not_found": "Панель не найдена.",
+    "transcript_failed": "Не удалось создать транскрипт.",
+    "invalid_embed": "Недопустимый embed: {details}",
+    "deleted": "Этот тикет был удалён.",
+    "unknown_types": "Неизвестные ключи типов: {keys}"
+  },
+  "type": {
+    "created": "Тип **{label}** (`{key}`) создан.",
+    "updated": "Тип **{label}** обновлён.",
+    "deleted": "Тип **{label}** удалён. Существующие тикеты сохранены.",
+    "list_title": "Типы тикетов",
+    "list_empty": "Нет типов тикетов. Используйте `/ticket-type create` или `/ticket-panel create` (типы по умолчанию).",
+    "list_line": "{emoji} **{label}** (`{key}`) {state}\n┗ Категория: {category} • Архив: {archive} • Персонал: {roles} • Макс./участник: {max} • Вопросы: {questions}",
+    "questions_updated": "Вопросы типа **{label}** обновлены ({count}).",
+    "questions_help": "Формат каждого поля: `Label | placeholder | short/paragraph | required/optional | maxLength`. Обязателен только label. Оставьте пустым, чтобы удалить вопрос.",
+    "enabled": "🟢",
+    "disabled": "🔴",
+    "nothing_to_update": "Изменения не указаны."
+  },
+  "info": {
+    "title": "Тикет #{number}",
+    "created_at": "Открыт",
+    "closed_at": "Закрыт",
+    "duration": "Длительность",
+    "messages": "Сообщения",
+    "participants": "Участники",
+    "channel": "Канал",
+    "answers": "Ответы на форму"
+  },
+  "list": {
+    "title": "Тикеты ({status}) — {total}",
+    "empty": "Нет подходящих тикетов.",
+    "line": "`#{number}` {channel} • {user} • {type} • {status} • {created}",
+    "all": "все"
+  },
+  "transcript": {
+    "title": "Транскрипт — Тикет #{number}",
+    "ticket": "Тикет",
+    "type": "Тип",
+    "opened_by": "Открыл(а)",
+    "claimed_by": "В работе у",
+    "closed_by": "Закрыл(а)",
+    "reason": "Причина",
+    "opened_at": "Открыт",
+    "closed_at": "Закрыт",
+    "duration": "Длительность",
+    "messages": "Сообщения",
+    "participants": "Участники",
+    "no_messages": "Сообщений не зарегистрировано.",
+    "attachments": "Вложения",
+    "embed": "Embed",
+    "generated": "Создано Redemption Story Studio {date}",
+    "log_title": "Транскрипт тикета #{number}",
+    "none": "—",
+    "unknown_user": "Неизвестный пользователь"
+  },
+  "log": {
+    "open": "🎫 Тикет #{number} открыт",
+    "close": "🔒 Тикет #{number} закрыт",
+    "reopen": "🔓 Тикет #{number} открыт заново",
+    "claim": "👤 Тикет #{number} взят в работу",
+    "delete": "🗑️ Тикет #{number} удалён",
+    "transfer": "🔄 Тикет #{number} перенесён",
+    "add": "👥 Участник добавлен в тикет #{number}",
+    "remove": "🚫 Участник удалён из тикета #{number}",
+    "channel_deleted": "Канал тикета был удалён вручную.",
+    "field_user": "Пользователь",
+    "field_type": "Тип",
+    "field_channel": "Канал",
+    "field_staff": "Персонал",
+    "field_reason": "Причина",
+    "field_from": "Из",
+    "field_to": "В",
+    "field_target": "Участник",
+    "field_duration": "Длительность",
+    "field_messages": "Сообщения"
+  }
+}

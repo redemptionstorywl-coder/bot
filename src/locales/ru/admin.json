@@ -1,0 +1,40 @@
+{
+  "guild_config": {
+    "title": "⚙️ Конфигурация — {server}",
+    "kind": "Тип сервера",
+    "default_language": "Язык по умолчанию",
+    "enabled_languages": "Включённые языки",
+    "admin_roles": "Роли администраторов",
+    "staff_roles": "Роли персонала",
+    "translation_mode": "Многоязычный режим",
+    "modules": "Модули",
+    "logs": "Каналы логов",
+    "language_stats": "Участники по языкам",
+    "dashboard": "Панель управления",
+    "kind_set": "Тип сервера установлен: **{kind}**",
+    "language_set": "Язык по умолчанию: **{language}**",
+    "languages_updated": "Включённые языки: {languages}",
+    "role_added": "Роль {role} добавлена.",
+    "role_removed": "Роль {role} удалена.",
+    "log_set": "Логи **{category}** → {channel}",
+    "log_removed": "Логи **{category}** отключены.",
+    "module_set": "Модуль {module}: {state}",
+    "color_set": "Цвет по умолчанию: `{color}`",
+    "translation_mode_set": "Многоязычный режим: **{mode}**",
+    "language_channel_set": "Канал для **{language}**: {channel}"
+  },
+  "help": {
+    "title": "📖 Справка — Redemption Story Studio",
+    "description": "Доступные команды. Полная настройка выполняется в панели управления: {dashboard}"
+  },
+  "status": {
+    "title": "📡 Состояние бота",
+    "uptime": "Время работы",
+    "ping": "Задержка",
+    "database": "База данных",
+    "guilds": "Серверы",
+    "users": "Участники",
+    "memory": "Память",
+    "tasks": "Запланированные задачи"
+  }
+}

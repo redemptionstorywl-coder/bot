@@ -1,0 +1,40 @@
+{
+  "guild_config": {
+    "title": "⚙️ الإعدادات — {server}",
+    "kind": "نوع السيرفر",
+    "default_language": "اللغة الافتراضية",
+    "enabled_languages": "اللغات المفعّلة",
+    "admin_roles": "رتب الإدارة",
+    "staff_roles": "رتب الطاقم",
+    "translation_mode": "وضع تعدد اللغات",
+    "modules": "الوحدات",
+    "logs": "قنوات السجلات",
+    "language_stats": "الأعضاء حسب اللغة",
+    "dashboard": "لوحة التحكم",
+    "kind_set": "تم تحديد نوع السيرفر: **{kind}**",
+    "language_set": "اللغة الافتراضية: **{language}**",
+    "languages_updated": "اللغات المفعّلة: {languages}",
+    "role_added": "تمت إضافة الرتبة {role}.",
+    "role_removed": "تمت إزالة الرتبة {role}.",
+    "log_set": "سجلات **{category}** → {channel}",
+    "log_removed": "تم تعطيل سجلات **{category}**.",
+    "module_set": "الوحدة {module}: {state}",
+    "color_set": "اللون الافتراضي: `{color}`",
+    "translation_mode_set": "وضع تعدد اللغات: **{mode}**",
+    "language_channel_set": "قناة **{language}**: {channel}"
+  },
+  "help": {
+    "title": "📖 المساعدة — Redemption Story Studio",
+    "description": "إليك الأوامر المتاحة. تتم الإعدادات الكاملة عبر لوحة التحكم: {dashboard}"
+  },
+  "status": {
+    "title": "📡 حالة البوت",
+    "uptime": "مدة التشغيل",
+    "ping": "زمن الاستجابة",
+    "database": "قاعدة البيانات",
+    "guilds": "السيرفرات",
+    "users": "الأعضاء",
+    "memory": "الذاكرة",
+    "tasks": "المهام المجدولة"
+  }
+}

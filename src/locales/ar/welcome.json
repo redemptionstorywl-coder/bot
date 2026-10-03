@@ -1,0 +1,62 @@
+{
+  "default_message": "👋 مرحبًا {user} في **{server}**!",
+  "buttons": {
+    "choose_language": "اختيار لغتي"
+  },
+  "config": {
+    "enabled_set": "رسالة الترحيب: {state}",
+    "channel_set": "قناة الترحيب: {channel}",
+    "image_set": "صورة الترحيب: {state}",
+    "dm_set": "رسالة الترحيب الخاصة: {state}",
+    "language_prompt_set": "زر « 🌍 اختيار لغتي »: {state}",
+    "buttons_set": "تم حفظ {count} زر.",
+    "buttons_cleared": "تم حذف الأزرار.",
+    "invalid_json": "JSON غير صالح:\n```\n{details}\n```",
+    "value_set": "تم حفظ {kind} ({what}) — {language}.",
+    "value_cleared": "تم مسح {kind} ({what}).",
+    "all_languages": "جميع اللغات",
+    "target_welcome": "الترحيب",
+    "target_dm": "الرسالة الخاصة",
+    "target_leave": "المغادرة",
+    "kind_message": "الرسالة",
+    "kind_embed": "الـ embed",
+    "modal_title_message": "الرسالة — {target}",
+    "modal_title_embed": "Embed JSON — {target}",
+    "modal_title_buttons": "الأزرار (JSON)",
+    "modal_label_message": "النص ({language})",
+    "modal_label_embed": "EmbedSpec JSON ({language})",
+    "modal_label_buttons": "ButtonSpec[] JSON",
+    "modal_help_message": "المتغيرات: {user} {username} {server} {memberCount}… فارغ = مسح.",
+    "modal_help_embed": "{\"title\":\"…\",\"description\":\"…\",\"color\":\"#7C3AED\"} — فارغ = مسح.",
+    "modal_help_buttons": "[{\"label\":\"Site\",\"style\":\"link\",\"url\":\"https://…\"}] — فارغ = مسح.",
+    "test_sent": "تم إرسال رسالة اختبار إلى {channel}.",
+    "not_configured": "لا توجد إعدادات: ابدأ بـ `/welcome-config channel`.",
+    "show_title": "👋 الترحيب — {server}",
+    "field_enabled": "الحالة",
+    "field_language_prompt": "زر اللغة",
+    "field_buttons": "الأزرار",
+    "field_image": "الصورة",
+    "field_dm": "الرسالة الخاصة",
+    "background": "خلفية مخصصة",
+    "variables": "المتغيرات المتاحة"
+  },
+  "leave": {
+    "default_message": "👋 غادر **{username}** السيرفر. أصبح عددنا الآن {memberCount}.",
+    "image_title": "إلى اللقاء",
+    "image_subtitle": "{username} · {memberCount} عضو",
+    "log_title": "👤 مغادرة عضو",
+    "log_description": "{user} (`{tag}`) غادر السيرفر — {memberCount} عضو",
+    "log_joined": "انضم في",
+    "log_roles": "الرتب",
+    "config": {
+      "enabled_set": "رسالة المغادرة: {state}",
+      "channel_set": "قناة المغادرة: {channel}",
+      "image_set": "صورة المغادرة: {state}",
+      "logs_set": "سجلات المغادرة: {state}",
+      "test_sent": "تم إرسال رسالة اختبار إلى {channel}.",
+      "not_configured": "لا توجد إعدادات: ابدأ بـ `/leave-config channel`.",
+      "show_title": "👋 المغادرة — {server}",
+      "field_logs": "السجلات"
+    }
+  }
+}

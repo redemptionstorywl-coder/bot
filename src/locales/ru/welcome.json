@@ -1,0 +1,62 @@
+{
+  "default_message": "👋 Добро пожаловать, {user}, на **{server}**!",
+  "buttons": {
+    "choose_language": "Выбрать язык"
+  },
+  "config": {
+    "enabled_set": "Приветственное сообщение: {state}",
+    "channel_set": "Канал приветствия: {channel}",
+    "image_set": "Приветственное изображение: {state}",
+    "dm_set": "Приветственное ЛС: {state}",
+    "language_prompt_set": "Кнопка «🌍 Выбрать язык»: {state}",
+    "buttons_set": "Сохранено кнопок: {count}.",
+    "buttons_cleared": "Кнопки удалены.",
+    "invalid_json": "Недопустимый JSON:\n```\n{details}\n```",
+    "value_set": "{kind} ({what}) сохранён — {language}.",
+    "value_cleared": "{kind} ({what}) очищен.",
+    "all_languages": "все языки",
+    "target_welcome": "приветствие",
+    "target_dm": "ЛС",
+    "target_leave": "выход",
+    "kind_message": "Сообщение",
+    "kind_embed": "Embed",
+    "modal_title_message": "Сообщение — {target}",
+    "modal_title_embed": "Embed JSON — {target}",
+    "modal_title_buttons": "Кнопки (JSON)",
+    "modal_label_message": "Текст ({language})",
+    "modal_label_embed": "EmbedSpec JSON ({language})",
+    "modal_label_buttons": "ButtonSpec[] JSON",
+    "modal_help_message": "Переменные: {user} {username} {server} {memberCount}… Пусто = очистить.",
+    "modal_help_embed": "{\"title\":\"…\",\"description\":\"…\",\"color\":\"#7C3AED\"} — пусто = очистить.",
+    "modal_help_buttons": "[{\"label\":\"Site\",\"style\":\"link\",\"url\":\"https://…\"}] — пусто = очистить.",
+    "test_sent": "Тестовое сообщение отправлено в {channel}.",
+    "not_configured": "Настройки отсутствуют: начните с `/welcome-config channel`.",
+    "show_title": "👋 Приветствие — {server}",
+    "field_enabled": "Состояние",
+    "field_language_prompt": "Кнопка языка",
+    "field_buttons": "Кнопки",
+    "field_image": "Изображение",
+    "field_dm": "ЛС",
+    "background": "пользовательский фон",
+    "variables": "Доступные переменные"
+  },
+  "leave": {
+    "default_message": "👋 **{username}** покинул(а) сервер. Теперь нас {memberCount}.",
+    "image_title": "ДО СВИДАНИЯ",
+    "image_subtitle": "{username} · участников: {memberCount}",
+    "log_title": "👤 Участник вышел",
+    "log_description": "{user} (`{tag}`) покинул(а) сервер — участников: {memberCount}",
+    "log_joined": "Присоединился",
+    "log_roles": "Роли",
+    "config": {
+      "enabled_set": "Сообщение о выходе: {state}",
+      "channel_set": "Канал выходов: {channel}",
+      "image_set": "Изображение при выходе: {state}",
+      "logs_set": "Логи выходов: {state}",
+      "test_sent": "Тестовое сообщение отправлено в {channel}.",
+      "not_configured": "Настройки отсутствуют: начните с `/leave-config channel`.",
+      "show_title": "👋 Выход — {server}",
+      "field_logs": "Логи"
+    }
+  }
+}

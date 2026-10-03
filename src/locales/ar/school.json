@@ -1,0 +1,105 @@
+{
+  "roles": { "student": "🎒 طالب", "teacher": "📖 معلّم", "staff": "🏛️ موظف" },
+  "status": { "pending": "⏳ قيد الانتظار", "accepted": "✅ مقبول", "rejected": "⛔ مرفوض" },
+  "register": {
+    "modal_title": "🎓 التسجيل",
+    "first_name": "الاسم الأول",
+    "last_name": "اسم العائلة",
+    "bio": "نبذة تعريفية (اختياري)",
+    "done": "تم إنشاء ملفك الشخصي. اطّلع عليه عبر `/school profile`.",
+    "done_pick": "تم إنشاء ملفك الشخصي. اختر صفك و/أو منزلك أدناه.",
+    "pick_class": "اختيار صف",
+    "pick_house": "اختيار منزل",
+    "class_set": "أنت الآن في الصف **{name}**.",
+    "house_set": "لقد انضممت إلى منزل **{name}**."
+  },
+  "profile": {
+    "none": "{user} لا يملك ملفًا شخصيًا. استخدم `/school register`.",
+    "role": "الدور",
+    "class": "الصف",
+    "house": "المنزل",
+    "points": "النقاط",
+    "clubs": "النوادي"
+  },
+  "class": {
+    "list_title": "📚 الصفوف",
+    "empty": "لا توجد صفوف.",
+    "students": "طالب",
+    "created": "تم إنشاء الصف **{name}**.",
+    "deleted": "تم حذف الصف **{name}**.",
+    "assigned": "تم إلحاق {user} بالصف **{name}**."
+  },
+  "house": {
+    "list_title": "🏠 المنازل",
+    "leaderboard_title": "🏆 تصنيف المنازل",
+    "empty": "لا توجد منازل.",
+    "points": "نقطة",
+    "members": "عضو",
+    "created": "تم إنشاء المنزل **{name}**.",
+    "deleted": "تم حذف المنزل **{name}**.",
+    "assigned": "انضم {user} إلى منزل **{name}**.",
+    "points_updated": "{name}: **{delta}** → **{points}** نقطة."
+  },
+  "club": {
+    "list_title": "🎭 النوادي",
+    "empty": "لا توجد نوادٍ.",
+    "created": "تم إنشاء النادي **{name}**.",
+    "deleted": "تم حذف النادي **{name}**.",
+    "joined": "لقد انضممت إلى النادي **{name}**.",
+    "left": "لقد غادرت النادي **{name}**."
+  },
+  "apply": {
+    "modal_title": "طلب انضمام — {role}",
+    "q_identity": "الاسم الأول / اسم العائلة للشخصية",
+    "q_motivation": "الدافع",
+    "q_experience": "الخبرة في RP (اختياري)",
+    "q_availability": "أوقات التوفر (اختياري)",
+    "done": "تم إرسال طلبك **#{id}**. ستتلقى الرد في رسالة خاصة."
+  },
+  "application": {
+    "title": "🎓 الطلب #{id}",
+    "applicant": "المتقدم",
+    "role": "الدور المطلوب",
+    "status": "الحالة",
+    "submitted": "تاريخ التقديم",
+    "reviewed_by": "تمت معالجته بواسطة",
+    "accept": "قبول",
+    "reject": "رفض",
+    "reject_modal_title": "رفض الطلب #{id}",
+    "note_label": "ملاحظة تُرسل إلى المتقدم (اختياري)",
+    "accepted": "تم قبول الطلب **#{id}** المقدم من {user}.",
+    "rejected": "تم رفض الطلب **#{id}** المقدم من {user}."
+  },
+  "dm": {
+    "accepted_title": "✅ تم قبول الطلب",
+    "rejected_title": "⛔ تم رفض الطلب",
+    "accepted": "تم قبول طلبك لدور **{role}** في **{server}**. مرحبًا بك!",
+    "rejected": "تم رفض طلبك لدور **{role}** في **{server}**."
+  },
+  "announce": {
+    "done": "تم نشر الإعلان في {channel}.",
+    "no_channel": "لم تُحدَّد قناة ولا توجد قناة إعلانات مُعدّة (`/school config announce-channel`)."
+  },
+  "config": {
+    "title": "🎓 إعدادات School RP",
+    "application_channel": "قناة الطلبات",
+    "announce_channel": "قناة الإعلانات",
+    "roles": "رتب Discord",
+    "updated": "تم تحديث إعدادات School RP."
+  },
+  "errors": {
+    "profile_exists": "لديك ملف شخصي بالفعل.",
+    "profile_not_found": "الملف الشخصي غير موجود. يتم التسجيل عبر `/school register`.",
+    "class_not_found": "الصف غير موجود.",
+    "class_full": "هذا الصف مكتمل.",
+    "house_not_found": "المنزل غير موجود.",
+    "club_not_found": "النادي غير موجود.",
+    "club_full": "هذا النادي مكتمل.",
+    "already_member": "أنت عضو في هذا النادي بالفعل.",
+    "not_member": "أنت لست عضوًا في هذا النادي.",
+    "application_not_found": "الطلب غير موجود.",
+    "application_pending": "لديك طلب قيد الانتظار بالفعل.",
+    "already_reviewed": "تمت معالجة هذا الطلب بالفعل.",
+    "name_taken": "هذا الاسم مستخدم بالفعل."
+  }
+}

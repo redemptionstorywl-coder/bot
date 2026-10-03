@@ -1,0 +1,36 @@
+{
+  "panel": {
+    "title": "🌍 CHOOSE YOUR LANGUAGE",
+    "description": "Выберите язык, чтобы получать переведённые сообщения и объявления.\nSelect your language to receive translated messages and announcements.",
+    "published": "Панель выбора языка опубликована в {channel} — [открыть]({url})",
+    "refreshed": "Панель выбора языка обновлена.",
+    "not_published": "Панель не опубликована. Используйте `/language-panel publish`.",
+    "preview_note": "Предпросмотр панели (кнопки работают):"
+  },
+  "select": {
+    "placeholder": "Выберите язык…",
+    "prompt": "🌍 Выберите язык:"
+  },
+  "changed": "✅ Язык установлен: {flag} **{language}**",
+  "not_enabled": "⛔ Язык {flag} **{language}** не включён на этом сервере.",
+  "no_role": "ℹ️ С этим языком не связана роль: ваш выбор сохранён.",
+  "blocked_roles": "⚠️ Не удалось изменить: {roles} (иерархия ролей).",
+  "guild_unavailable": "Сервер не найден: выполните это действие на сервере.",
+  "module_disabled": "Многоязычный модуль отключён на этом сервере.",
+  "roles": {
+    "set": "{flag} **{language}** → {role}",
+    "removed": "Привязка для {flag} **{language}** удалена.",
+    "reset_title": "🌍 Языковые роли сброшены",
+    "none_default": "На этом сервере нет ролей по умолчанию. Используйте `/language-roles set`.",
+    "missing": "Роли по умолчанию не найдены",
+    "list_title": "🌍 Языковые роли",
+    "using_defaults": "Роли по умолчанию (Battle Royale) — без пользовательской настройки"
+  },
+  "log": {
+    "title": "🌍 Смена языка",
+    "description": "{user} выбрал(а) {flag} **{language}**",
+    "role_added": "Роль добавлена",
+    "roles_removed": "Роли удалены",
+    "blocked": "Не изменены (иерархия)"
+  }
+}

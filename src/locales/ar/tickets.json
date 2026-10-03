@@ -1,0 +1,239 @@
+{
+  "defaults": {
+    "support": {
+      "label": "الدعم",
+      "description": "هل تحتاج إلى مساعدة؟ افتح تذكرة دعم."
+    },
+    "bug": {
+      "label": "خلل",
+      "description": "الإبلاغ عن خلل أو مشكلة تقنية."
+    },
+    "shop": {
+      "label": "Shop",
+      "description": "سؤال حول المتجر أو طلب."
+    },
+    "payment": {
+      "label": "الدفع",
+      "description": "مشكلة في الدفع أو في تسليم عملية شراء."
+    },
+    "battle-royale": {
+      "label": "Battle Royale",
+      "description": "أسئلة متعلقة بسيرفر Battle Royale."
+    },
+    "prison": {
+      "label": "Prison RP",
+      "description": "أسئلة متعلقة بسيرفر Prison RP."
+    },
+    "school": {
+      "label": "School RP",
+      "description": "أسئلة متعلقة بسيرفر School RP."
+    },
+    "whitelist": {
+      "label": "القائمة البيضاء",
+      "description": "طلب أو مشكلة في القائمة البيضاء."
+    },
+    "staff": {
+      "label": "الطاقم",
+      "description": "التواصل مع فريق الطاقم بشكل خاص."
+    },
+    "partnership": {
+      "label": "شراكة",
+      "description": "اقتراح شراكة."
+    },
+    "report": {
+      "label": "بلاغ",
+      "description": "الإبلاغ عن لاعب أو سلوك."
+    },
+    "panel_title": "🎫 الدعم — {server}",
+    "panel_description": "هل تحتاج إلى مساعدة؟ اضغط أدناه لفتح تذكرة. سيرد عليك أحد أعضاء الفريق في أقرب وقت ممكن.",
+    "panel_footer": "تذكرة واحدة = موضوع واحد. يرجى الحفاظ على اللباقة.",
+    "question_label": "صف طلبك",
+    "question_placeholder": "اشرح مشكلتك أو طلبك بأكبر قدر ممكن من التفاصيل."
+  },
+  "panel": {
+    "open_button": "فتح تذكرة",
+    "select_placeholder": "ما هو الموضوع؟",
+    "pick_prompt": "ما هو موضوع تذكرتك؟",
+    "created": "تم نشر اللوحة في {channel} (المعرّف `{id}`، {count} نوع).",
+    "deleted": "تم حذف اللوحة `{id}`.",
+    "list_title": "لوحات التذاكر",
+    "list_empty": "لم يتم إعداد أي لوحة. استخدم `/ticket-panel create`.",
+    "list_line": "`#{id}` — {channel} • {style} • {count} نوع",
+    "unknown_types": "مفاتيح أنواع غير معروفة: {keys}",
+    "seeded": "تم إنشاء {count} أنواع تذاكر افتراضية."
+  },
+  "open": {
+    "title": "{emoji} التذكرة #{number} — {type}",
+    "description": "مرحبًا {user}! صف طلبك، وسيرد عليك الفريق في أقرب وقت ممكن.",
+    "field_user": "فتحها",
+    "field_type": "النوع",
+    "field_status": "الحالة",
+    "field_claimed": "يتولاها",
+    "field_created": "فُتحت في",
+    "field_closed": "أُغلقت في",
+    "field_closed_by": "أغلقها",
+    "field_reason": "السبب",
+    "no_answer": "—",
+    "staff_ping": "{roles} — تذكرة جديدة من {user}.",
+    "created": "تم إنشاء تذكرتك: {channel}",
+    "creating": "جارٍ إنشاء تذكرتك…",
+    "modal_title": "{emoji} {type}"
+  },
+  "status": {
+    "OPEN": "🟢 مفتوحة",
+    "CLAIMED": "👤 قيد المعالجة",
+    "CLOSED": "🔒 مغلقة",
+    "ARCHIVED": "📦 مؤرشفة",
+    "DELETED": "🗑️ محذوفة"
+  },
+  "buttons": {
+    "close": "إغلاق",
+    "reopen": "إعادة فتح",
+    "claim": "تولّي",
+    "claimed": "قيد المعالجة",
+    "add": "إضافة",
+    "remove": "إزالة",
+    "transcript": "النسخة",
+    "transfer": "نقل",
+    "delete": "حذف",
+    "confirm_delete": "نعم، احذف",
+    "cancel": "إلغاء"
+  },
+  "modal": {
+    "close_title": "إغلاق التذكرة #{number}",
+    "close_reason": "السبب (اختياري)",
+    "close_reason_placeholder": "تم حل المشكلة، تمت معالجة الطلب…",
+    "add_title": "إضافة عضو إلى التذكرة",
+    "remove_title": "إزالة عضو من التذكرة",
+    "user_field": "العضو (معرّف أو إشارة)",
+    "user_placeholder": "123456789012345678 أو @عضو",
+    "questions_title": "الأسئلة — {type}",
+    "question_slot": "السؤال {index}",
+    "question_placeholder": "Label | placeholder | short/paragraph | required/optional | maxLength"
+  },
+  "actions": {
+    "closing": "جارٍ إغلاق التذكرة…",
+    "closed": "🔒 أغلق {user} التذكرة.",
+    "closed_reason": "السبب: {reason}",
+    "closed_confirm": "تم إغلاق التذكرة #{number}.",
+    "reopened": "🔓 أعاد {user} فتح التذكرة.",
+    "reopened_confirm": "تمت إعادة فتح التذكرة #{number}.",
+    "claimed": "👤 {user} يتولى هذه التذكرة.",
+    "claimed_confirm": "أنت تتولى التذكرة #{number}.",
+    "member_added": "👥 تمت إضافة {target} إلى التذكرة بواسطة {user}.",
+    "member_added_confirm": "تمت إضافة {target} إلى التذكرة.",
+    "member_removed": "🚫 تمت إزالة {target} من التذكرة بواسطة {user}.",
+    "member_removed_confirm": "تمت إزالة {target} من التذكرة.",
+    "transfer_prompt": "إلى أي نوع تريد نقل هذه التذكرة؟",
+    "transfer_select": "اختر نوعًا…",
+    "transferred": "🔄 نقل {user} التذكرة إلى **{type}**.",
+    "transferred_confirm": "تم نقل التذكرة إلى **{type}**.",
+    "delete_confirm": "حذف التذكرة #{number} نهائيًا؟ سيتم إنشاء نسخة قبل الحذف.",
+    "delete_cancelled": "تم إلغاء الحذف.",
+    "deleting": "🗑️ سيتم حذف هذه التذكرة خلال {seconds} ثانية.",
+    "deleted_confirm": "تم حذف التذكرة #{number}.",
+    "renamed": "تمت إعادة تسمية القناة إلى `{name}`.",
+    "transcript_generating": "جارٍ إنشاء النسخة…",
+    "transcript_sent": "تم إنشاء النسخة وإرسالها.",
+    "transcript_dm": "إليك نسخة تذكرتك **#{number}** في **{server}**."
+  },
+  "errors": {
+    "not_ticket_channel": "هذه القناة ليست تذكرة.",
+    "not_found": "التذكرة غير موجودة.",
+    "max_per_user": "لديك بالفعل {count} تذكرة مفتوحة من هذا النوع (الحد الأقصى: {max}). أغلق واحدة قبل فتح أخرى.",
+    "type_not_found": "نوع التذكرة غير موجود.",
+    "type_disabled": "هذا النوع من التذاكر معطّل.",
+    "no_types": "لا يوجد نوع تذاكر متاح. يجب على مسؤول إعداده عبر `/ticket-type create`.",
+    "already_closed": "هذه التذكرة مغلقة بالفعل.",
+    "not_closed": "هذه التذكرة ليست مغلقة.",
+    "already_claimed": "هذه التذكرة يتولاها {user} بالفعل.",
+    "no_permission": "ليست لديك صلاحية تنفيذ هذا الإجراء.",
+    "staff_only": "هذا الإجراء مخصص للطاقم فقط.",
+    "invalid_user": "مستخدم غير صالح. أدخل معرّفًا أو إشارة.",
+    "cannot_add_bot": "لا يمكن إضافة بوت إلى التذكرة.",
+    "member_not_found": "العضو غير موجود في هذا السيرفر.",
+    "cannot_remove_creator": "لا يمكن إزالة منشئ التذكرة.",
+    "channel_create_failed": "تعذّر إنشاء قناة التذكرة. تحقق من صلاحياتي ومن الفئة المُعدّة.",
+    "channel_missing": "قناة هذه التذكرة لم تعد موجودة.",
+    "key_exists": "يوجد نوع بالمفتاح `{key}` بالفعل.",
+    "invalid_key": "مفتاح غير صالح: أحرف لاتينية صغيرة وأرقام وشرطات فقط (من 2 إلى 32 حرفًا).",
+    "same_type": "التذكرة من هذا النوع بالفعل.",
+    "invalid_question": "السؤال {index} غير صالح: {details}",
+    "panel_not_found": "اللوحة غير موجودة.",
+    "transcript_failed": "فشل إنشاء النسخة.",
+    "invalid_embed": "embed غير صالح: {details}",
+    "deleted": "تم حذف هذه التذكرة.",
+    "unknown_types": "مفاتيح أنواع غير معروفة: {keys}"
+  },
+  "type": {
+    "created": "تم إنشاء النوع **{label}** (`{key}`).",
+    "updated": "تم تحديث النوع **{label}**.",
+    "deleted": "تم حذف النوع **{label}**. تم الاحتفاظ بالتذاكر الموجودة.",
+    "list_title": "أنواع التذاكر",
+    "list_empty": "لا توجد أنواع تذاكر. استخدم `/ticket-type create` أو `/ticket-panel create` (الأنواع الافتراضية).",
+    "list_line": "{emoji} **{label}** (`{key}`) {state}\n┗ الفئة: {category} • الأرشيف: {archive} • الطاقم: {roles} • الحد لكل عضو: {max} • الأسئلة: {questions}",
+    "questions_updated": "تم تحديث أسئلة النوع **{label}** ({count}).",
+    "questions_help": "صيغة كل حقل: `Label | placeholder | short/paragraph | required/optional | maxLength`. التسمية وحدها إلزامية. اترك الحقل فارغًا لحذف سؤال.",
+    "enabled": "🟢",
+    "disabled": "🔴",
+    "nothing_to_update": "لم يتم تقديم أي تعديل."
+  },
+  "info": {
+    "title": "التذكرة #{number}",
+    "created_at": "فُتحت في",
+    "closed_at": "أُغلقت في",
+    "duration": "المدة",
+    "messages": "الرسائل",
+    "participants": "المشاركون",
+    "channel": "القناة",
+    "answers": "إجابات النموذج"
+  },
+  "list": {
+    "title": "التذاكر ({status}) — {total}",
+    "empty": "لا توجد تذاكر مطابقة.",
+    "line": "`#{number}` {channel} • {user} • {type} • {status} • {created}",
+    "all": "الكل"
+  },
+  "transcript": {
+    "title": "النسخة — التذكرة #{number}",
+    "ticket": "التذكرة",
+    "type": "النوع",
+    "opened_by": "فتحها",
+    "claimed_by": "تولاها",
+    "closed_by": "أغلقها",
+    "reason": "السبب",
+    "opened_at": "فُتحت في",
+    "closed_at": "أُغلقت في",
+    "duration": "المدة",
+    "messages": "الرسائل",
+    "participants": "المشاركون",
+    "no_messages": "لا توجد رسائل مسجّلة.",
+    "attachments": "المرفقات",
+    "embed": "Embed",
+    "generated": "أُنشئت بواسطة Redemption Story Studio في {date}",
+    "log_title": "نسخة التذكرة #{number}",
+    "none": "—",
+    "unknown_user": "مستخدم غير معروف"
+  },
+  "log": {
+    "open": "🎫 فُتحت التذكرة #{number}",
+    "close": "🔒 أُغلقت التذكرة #{number}",
+    "reopen": "🔓 أُعيد فتح التذكرة #{number}",
+    "claim": "👤 تم تولّي التذكرة #{number}",
+    "delete": "🗑️ حُذفت التذكرة #{number}",
+    "transfer": "🔄 نُقلت التذكرة #{number}",
+    "add": "👥 أُضيف عضو إلى التذكرة #{number}",
+    "remove": "🚫 أُزيل عضو من التذكرة #{number}",
+    "channel_deleted": "تم حذف قناة التذكرة يدويًا.",
+    "field_user": "المستخدم",
+    "field_type": "النوع",
+    "field_channel": "القناة",
+    "field_staff": "الطاقم",
+    "field_reason": "السبب",
+    "field_from": "من",
+    "field_to": "إلى",
+    "field_target": "العضو",
+    "field_duration": "المدة",
+    "field_messages": "الرسائل"
+  }
+}

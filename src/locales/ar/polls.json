@@ -1,0 +1,69 @@
+{
+  "yes": "نعم",
+  "no": "لا",
+  "embed": {
+    "votes": "{count} صوت",
+    "voters": "{count} مصوّت",
+    "anonymous": "🔒 مجهول",
+    "multi_select": "☑️ خيارات متعددة",
+    "ends": "⏳ النهاية",
+    "status": "الحالة",
+    "ended": "🏁 منتهٍ",
+    "footer": "الاستطلاع #{id}"
+  },
+  "select": {
+    "placeholder": "اختر خيارًا…",
+    "placeholder_multi": "اختر خيارًا واحدًا أو أكثر…"
+  },
+  "vote": {
+    "recorded": "🗳️ تم تسجيل الصوت: {options}",
+    "removed": "تم سحب صوتك.",
+    "ended": "هذا الاستطلاع منتهٍ.",
+    "invalid_option": "خيار غير صالح.",
+    "single_choice": "هذا الاستطلاع يقبل خيارًا واحدًا فقط."
+  },
+  "create": {
+    "success": "تم إنشاء الاستطلاع في <#{channel}> (المعرّف `{id}`).",
+    "invalid_options": "خيارات غير صالحة: أدخل من 2 إلى 10 خيارات مفصولة بـ `|` (مثال: `أحمر | أخضر | أزرق`).",
+    "options_required": "أدخل الخيارات (`A | B | C`) أو اختر نوع نعم / لا.",
+    "invalid_duration": "مدة غير صالحة: `{value}`. أمثلة: `30m`، `1h`، `2d`.",
+    "channel_invalid": "يجب أن تكون القناة المختارة قناة نصية."
+  },
+  "end": {
+    "success": "انتهى الاستطلاع `#{id}` ({count} مصوّت).",
+    "already_ended": "هذا الاستطلاع منتهٍ بالفعل."
+  },
+  "results": {
+    "title": "📊 النتائج — {question}",
+    "summary": "{voters} مصوّت · {total} صوت",
+    "anonymous_notice": "🔒 استطلاع مجهول: تفاصيل المصوّتين غير متاحة.",
+    "option_votes": "{percent}% · {count} صوت",
+    "voters_for": "المصوّتون — {option}",
+    "no_voters": "لا يوجد مصوّتون"
+  },
+  "list": {
+    "title": "📊 الاستطلاعات — {server}",
+    "empty": "لا توجد استطلاعات.",
+    "line_active": "🟣 `#{id}` **{question}** — {count} مصوّت{ends}",
+    "line_ended": "⚫ `#{id}` **{question}** — منتهٍ — {count} مصوّت",
+    "ends_suffix": " — ينتهي {when}"
+  },
+  "not_found": "الاستطلاع غير موجود (المعرّف `{id}`).",
+  "commands": {
+    "description": "إدارة الاستطلاعات",
+    "create": "إنشاء استطلاع",
+    "question": "السؤال المطروح",
+    "options": "خيارات مفصولة بـ | (من 2 إلى 10)",
+    "type": "نوع الاستطلاع",
+    "type_yes_no": "نعم / لا",
+    "type_multiple": "خيارات متعددة",
+    "anonymous": "استطلاع مجهول (إخفاء المصوّتين)",
+    "multi_select": "السماح بعدة خيارات لكل شخص",
+    "duration": "المدة (مثال: 1h، 2d) — فارغ = بدون نهاية تلقائية",
+    "channel": "قناة النشر (الافتراضي: القناة الحالية)",
+    "end": "إنهاء استطلاع",
+    "results": "عرض النتائج المفصّلة",
+    "list": "عرض الاستطلاعات",
+    "id": "معرّف الاستطلاع"
+  }
+}

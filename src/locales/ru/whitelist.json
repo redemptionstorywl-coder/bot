@@ -1,0 +1,67 @@
+{
+  "status": { "pending": "⏳ В ожидании", "accepted": "✅ Принята", "rejected": "⛔ Отклонена" },
+  "default_questions": {
+    "identity": "Имя / Фамилия вашего персонажа",
+    "experience": "Ваш опыт RP",
+    "motivation": "Почему вы хотите присоединиться к серверу?"
+  },
+  "apply": {
+    "modal_title": "📝 Заявка на whitelist",
+    "done": "Ваша заявка **#{id}** отправлена. Персонал ответит вам в личные сообщения."
+  },
+  "status_cmd": {
+    "title": "📝 Заявка #{id}",
+    "none": "У вас нет заявок. Используйте `/whitelist apply`.",
+    "reviewed": "Рассмотрена"
+  },
+  "review": {
+    "title": "📝 Заявка на whitelist #{id}",
+    "applicant": "Кандидат",
+    "status": "Статус",
+    "submitted": "Подана",
+    "identifier": "Идентификатор FiveM",
+    "reviewed_by": "Рассмотрел(а)",
+    "accept": "Принять",
+    "reject": "Отклонить",
+    "reject_modal_title": "Отклонить заявку #{id}",
+    "note_label": "Примечание для кандидата (необязательно)",
+    "accepted": "Заявка **#{id}** от {user} принята.",
+    "rejected": "Заявка **#{id}** от {user} отклонена.",
+    "need_target": "Укажите номер заявки (`id`) или кандидата (`user`)."
+  },
+  "list": {
+    "title": "📝 Заявки — {status}",
+    "all": "все",
+    "empty": "Нет заявок."
+  },
+  "config": {
+    "title": "📝 Конфигурация whitelist",
+    "enabled": "Приём заявок",
+    "review_channel": "Канал рассмотрения",
+    "dm": "ЛС при решении",
+    "accepted_role": "Роль принятых",
+    "pending_role": "Роль ожидающих",
+    "questions": "Вопросы ({count})",
+    "default": "по умолчанию",
+    "questions_modal_title": "Вопросы заявки",
+    "question_n": "Вопрос {n}",
+    "question_placeholder": "Оставьте пустым, чтобы не задавать этот вопрос",
+    "questions_saved": "Сохранено вопросов: {count}.",
+    "updated": "Конфигурация whitelist обновлена."
+  },
+  "dm": {
+    "accepted_title": "✅ Whitelist одобрен",
+    "rejected_title": "⛔ Whitelist отклонён",
+    "accepted": "Поздравляем, ваша заявка на whitelist на **{server}** принята. Добро пожаловать!",
+    "rejected": "Ваша заявка на whitelist на **{server}** отклонена. Вы сможете подать заявку снова позже."
+  },
+  "errors": {
+    "disabled": "Приём заявок в данный момент закрыт.",
+    "already_pending": "У вас уже есть заявка в ожидании.",
+    "already_accepted": "Вы уже в whitelist.",
+    "not_found": "Заявка не найдена или уже рассмотрена.",
+    "already_reviewed": "Эта заявка уже рассмотрена.",
+    "no_questions": "Вопросы не настроены.",
+    "invalid_identifier": "Недопустимый идентификатор FiveM (ожидаемый формат: `license:…`)."
+  }
+}

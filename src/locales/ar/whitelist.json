@@ -1,0 +1,67 @@
+{
+  "status": { "pending": "⏳ قيد الانتظار", "accepted": "✅ مقبول", "rejected": "⛔ مرفوض" },
+  "default_questions": {
+    "identity": "الاسم الأول / اسم العائلة لشخصيتك",
+    "experience": "خبرتك في RP",
+    "motivation": "لماذا تريد الانضمام إلى السيرفر؟"
+  },
+  "apply": {
+    "modal_title": "📝 طلب القائمة البيضاء",
+    "done": "تم إرسال طلبك **#{id}**. سيرد عليك الطاقم في رسالة خاصة."
+  },
+  "status_cmd": {
+    "title": "📝 الطلب #{id}",
+    "none": "ليس لديك أي طلب. استخدم `/whitelist apply`.",
+    "reviewed": "تمت المعالجة"
+  },
+  "review": {
+    "title": "📝 طلب القائمة البيضاء #{id}",
+    "applicant": "المتقدم",
+    "status": "الحالة",
+    "submitted": "تاريخ التقديم",
+    "identifier": "معرّف FiveM",
+    "reviewed_by": "تمت معالجته بواسطة",
+    "accept": "قبول",
+    "reject": "رفض",
+    "reject_modal_title": "رفض الطلب #{id}",
+    "note_label": "ملاحظة تُرسل إلى المتقدم (اختياري)",
+    "accepted": "تم قبول الطلب **#{id}** المقدم من {user}.",
+    "rejected": "تم رفض الطلب **#{id}** المقدم من {user}.",
+    "need_target": "حدد رقم الملف (`id`) أو متقدمًا (`user`)."
+  },
+  "list": {
+    "title": "📝 الطلبات — {status}",
+    "all": "الكل",
+    "empty": "لا توجد طلبات."
+  },
+  "config": {
+    "title": "📝 إعدادات القائمة البيضاء",
+    "enabled": "الطلبات",
+    "review_channel": "قناة المراجعة",
+    "dm": "رسالة خاصة عند القرار",
+    "accepted_role": "رتبة المقبولين",
+    "pending_role": "رتبة قيد الانتظار",
+    "questions": "الأسئلة ({count})",
+    "default": "افتراضي",
+    "questions_modal_title": "أسئلة الطلب",
+    "question_n": "السؤال {n}",
+    "question_placeholder": "اتركه فارغًا لعدم طرح هذا السؤال",
+    "questions_saved": "تم حفظ {count} سؤال.",
+    "updated": "تم تحديث إعدادات القائمة البيضاء."
+  },
+  "dm": {
+    "accepted_title": "✅ تم قبولك في القائمة البيضاء",
+    "rejected_title": "⛔ تم رفض طلب القائمة البيضاء",
+    "accepted": "تهانينا، تم قبول طلب القائمة البيضاء الخاص بك في **{server}**. مرحبًا بك!",
+    "rejected": "تم رفض طلب القائمة البيضاء الخاص بك في **{server}**. يمكنك التقديم مجددًا لاحقًا."
+  },
+  "errors": {
+    "disabled": "الطلبات مغلقة حاليًا.",
+    "already_pending": "لديك طلب قيد الانتظار بالفعل.",
+    "already_accepted": "أنت مدرج في القائمة البيضاء بالفعل.",
+    "not_found": "الطلب غير موجود أو تمت معالجته بالفعل.",
+    "already_reviewed": "تمت معالجة هذا الطلب بالفعل.",
+    "no_questions": "لم يتم إعداد أي أسئلة.",
+    "invalid_identifier": "معرّف FiveM غير صالح (الصيغة المتوقعة: `license:…`)."
+  }
+}

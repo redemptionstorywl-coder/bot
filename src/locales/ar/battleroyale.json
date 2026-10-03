@@ -1,0 +1,51 @@
+{
+  "profile": {
+    "title": "⚔️ الملف الشخصي — {name}",
+    "none": "{user} لا يملك ملفًا شخصيًا في Battle Royale بعد.",
+    "level": "المستوى",
+    "wins": "🏆 الانتصارات",
+    "kills": "🔫 القتلات",
+    "kd": "⚖️ K/D",
+    "matches": "🎮 المباريات",
+    "top10": "🔟 أفضل 10",
+    "playtime": "⏱️ وقت اللعب",
+    "season": "📅 الموسم",
+    "battlepass": "🎟️ Battle Pass",
+    "tier": "المرحلة",
+    "identifier": "🔗 معرّف FiveM",
+    "not_linked": "غير مرتبط — `/br-link`"
+  },
+  "leaderboard": {
+    "title": "🏆 تصنيف {metric} — الموسم {season}",
+    "empty": "لا توجد إحصائيات للموسم {season}.",
+    "metrics": { "wins": "الانتصارات", "kills": "القتلات", "level": "المستوى", "kd": "K/D" }
+  },
+  "battlepass": {
+    "title": "🎟️ Battle Pass — الموسم {season} · {name}",
+    "none": "لا يوجد موسم نشط. يمكن للمسؤول إنشاء موسم عبر `/br-admin season new`.",
+    "tiers": "المراحل",
+    "ends": "نهاية الموسم",
+    "maxed": "تم فتح جميع المراحل!"
+  },
+  "link": {
+    "invalid": "معرّف غير صالح. الصيغة المتوقعة: `license:0123abcd…` (تظهر في وحدة التحكم F8 أو عبر السيرفر).",
+    "done": "تم ربط المعرّف `{identifier}` بملفك الشخصي. ستتم مزامنة إحصائياتك داخل اللعبة من الآن فصاعدًا.",
+    "verification": "التحقق",
+    "verified": "✅ تم رصد المعرّف داخل اللعبة حاليًا.",
+    "not_online": "ℹ️ لم يُرصد المعرّف متصلًا حاليًا — تم حفظ الربط وسيتم التحقق منه في مباراتك القادمة."
+  },
+  "admin": {
+    "season_set": "الموسم النشط: **{season}** ({name}).",
+    "season_new": "تم إنشاء الموسم **{season}** « {name} »، ينتهي في {ends}. تمت إعادة تعيين تقدم Battle Pass.",
+    "seasons_title": "📅 المواسم",
+    "stat_set": "{user}: `{field}` = **{value}**.",
+    "xp_added": "{user}: {amount} XP → **{xp} XP** (المستوى {level})."
+  },
+  "errors": {
+    "identifier_taken": "هذا المعرّف مرتبط بلاعب آخر بالفعل.",
+    "profile_not_found": "الملف الشخصي غير موجود.",
+    "invalid_field": "حقل غير صالح.",
+    "season_exists": "هذا الموسم موجود بالفعل.",
+    "no_season": "لا يوجد موسم نشط."
+  }
+}
