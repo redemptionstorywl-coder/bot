@@ -36,5 +36,23 @@
     "users": "Membres",
     "memory": "Mémoire",
     "tasks": "Tâches planifiées"
+  },
+  "info": {
+    "title": "ℹ️ {server}",
+    "id": "ID du serveur",
+    "owner": "Propriétaire",
+    "created": "Créé le",
+    "members": "Membres",
+    "boosts": "Boosts",
+    "tier": "niveau {tier}",
+    "kind": "Type (bot)",
+    "channels": "Salons",
+    "channels_value": "{text} textuels · {voice} vocaux · {forums} forums · {categories} catégories",
+    "roles": "Rôles",
+    "emojis": "Emojis",
+    "no_category": "Sans catégorie",
+    "channels_title": "📁 Catégories et salons",
+    "roles_title": "🎭 Rôles ({from}–{to} / {total})",
+    "role_members": "membre(s)"
   }
 }

@@ -36,5 +36,23 @@
     "users": "Miembros",
     "memory": "Memoria",
     "tasks": "Tareas programadas"
+  },
+  "info": {
+    "title": "ℹ️ {server}",
+    "id": "ID del servidor",
+    "owner": "Propietario",
+    "created": "Creado el",
+    "members": "Miembros",
+    "boosts": "Mejoras",
+    "tier": "nivel {tier}",
+    "kind": "Tipo (bot)",
+    "channels": "Canales",
+    "channels_value": "{text} de texto · {voice} de voz · {forums} foros · {categories} categorías",
+    "roles": "Roles",
+    "emojis": "Emojis",
+    "no_category": "Sin categoría",
+    "channels_title": "📁 Categorías y canales",
+    "roles_title": "🎭 Roles ({from}–{to} / {total})",
+    "role_members": "miembro(s)"
   }
 }

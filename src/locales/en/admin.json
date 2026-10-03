@@ -36,5 +36,23 @@
     "users": "Members",
     "memory": "Memory",
     "tasks": "Scheduled tasks"
+  },
+  "info": {
+    "title": "ℹ️ {server}",
+    "id": "Server ID",
+    "owner": "Owner",
+    "created": "Created on",
+    "members": "Members",
+    "boosts": "Boosts",
+    "tier": "tier {tier}",
+    "kind": "Type (bot)",
+    "channels": "Channels",
+    "channels_value": "{text} text · {voice} voice · {forums} forums · {categories} categories",
+    "roles": "Roles",
+    "emojis": "Emojis",
+    "no_category": "No category",
+    "channels_title": "📁 Categories and channels",
+    "roles_title": "🎭 Roles ({from}–{to} / {total})",
+    "role_members": "member(s)"
   }
 }

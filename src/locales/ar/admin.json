@@ -36,5 +36,23 @@
     "users": "الأعضاء",
     "memory": "الذاكرة",
     "tasks": "المهام المجدولة"
+  },
+  "info": {
+    "title": "ℹ️ {server}",
+    "id": "معرّف الخادم",
+    "owner": "المالك",
+    "created": "تم الإنشاء في",
+    "members": "الأعضاء",
+    "boosts": "التعزيزات",
+    "tier": "المستوى {tier}",
+    "kind": "النوع (البوت)",
+    "channels": "القنوات",
+    "channels_value": "{text} نصية · {voice} صوتية · {forums} منتديات · {categories} فئات",
+    "roles": "الأدوار",
+    "emojis": "الإيموجي",
+    "no_category": "بدون فئة",
+    "channels_title": "📁 الفئات والقنوات",
+    "roles_title": "🎭 الأدوار ({from}–{to} / {total})",
+    "role_members": "عضو"
   }
 }

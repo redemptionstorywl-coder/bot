@@ -36,5 +36,23 @@
     "users": "Участники",
     "memory": "Память",
     "tasks": "Запланированные задачи"
+  },
+  "info": {
+    "title": "ℹ️ {server}",
+    "id": "ID сервера",
+    "owner": "Владелец",
+    "created": "Создан",
+    "members": "Участники",
+    "boosts": "Бусты",
+    "tier": "уровень {tier}",
+    "kind": "Тип (бот)",
+    "channels": "Каналы",
+    "channels_value": "{text} текстовых · {voice} голосовых · {forums} форумов · {categories} категорий",
+    "roles": "Роли",
+    "emojis": "Эмодзи",
+    "no_category": "Без категории",
+    "channels_title": "📁 Категории и каналы",
+    "roles_title": "🎭 Роли ({from}–{to} / {total})",
+    "role_members": "участн."
   }
 }

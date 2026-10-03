@@ -36,5 +36,23 @@
     "users": "Üyeler",
     "memory": "Bellek",
     "tasks": "Zamanlanmış görevler"
+  },
+  "info": {
+    "title": "ℹ️ {server}",
+    "id": "Sunucu kimliği",
+    "owner": "Sahip",
+    "created": "Oluşturulma",
+    "members": "Üyeler",
+    "boosts": "Takviyeler",
+    "tier": "seviye {tier}",
+    "kind": "Tür (bot)",
+    "channels": "Kanallar",
+    "channels_value": "{text} metin · {voice} ses · {forums} forum · {categories} kategori",
+    "roles": "Roller",
+    "emojis": "Emojiler",
+    "no_category": "Kategorisiz",
+    "channels_title": "📁 Kategoriler ve kanallar",
+    "roles_title": "🎭 Roller ({from}–{to} / {total})",
+    "role_members": "üye"
   }
 }
