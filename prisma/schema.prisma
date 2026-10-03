@@ -1104,3 +1104,18 @@ model SchoolConfig {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 }
+
+// ──────────────── Modération : sourdine programmée d'un salon (/mute-salon) ────────────────
+
+model ChannelMute {
+  id          Int      @id @default(autoincrement())
+  guildId     String   @db.VarChar(32)
+  channelId   String   @unique @db.VarChar(32)
+  moderatorId String   @db.VarChar(32)
+  reason      String?  @db.Text
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([guildId])
+}

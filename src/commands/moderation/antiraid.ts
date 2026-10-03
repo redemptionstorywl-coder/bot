@@ -1,6 +1,7 @@
 import { ChannelType, SlashCommandBuilder } from 'discord.js';
 import { defineCommand } from '../../structures';
 import { antiRaidService, type AntiRaidConfig, type AntiRaidConfigInput } from '../../services/AntiRaidService';
+import { antiNukeService, ANTI_NUKE_ACTIONS, ANTI_NUKE_PUNISHMENTS, type AntiNukeAction, type AntiNukeConfig, type AntiNukePunishment } from '../../services/AntiNukeService';
 import { embedService } from '../../services/EmbedService';
 import { formatDuration, parseDuration } from '../../utils/time';
 import { EPHEMERAL, MOD_PERMS, replyError } from './_shared';
@@ -30,6 +31,26 @@ function statusEmbed(ctx: InteractionContext, server: string, cfg: AntiRaidConfi
     { name: t('moderation.antiraid.names.exempt'), value: t('moderation.antiraid.desc.exempt', { roles: cfg.exemptRoleIds.map((r) => `<@&${r}>`).join(' ') || t('core.none'), channels: cfg.exemptChannelIds.map((c) => `<#${c}>`).join(' ') || t('core.none') }), inline: false },
   );
 }
+
+function nukeStatusEmbed(ctx: InteractionContext, server: string, cfg: AntiNukeConfig) {
+  const { t } = ctx;
+  const thresholds = ANTI_NUKE_ACTIONS.map((a) => `• ${t(`moderation.antinuke.actions.${a}`)} : **${cfg.thresholds[a].max}** / ${cfg.thresholds[a].intervalSeconds}s`).join('\n');
+  return embedService
+    .brand(t('moderation.antinuke.status_title', { server }))
+    .setDescription(`${state(t, cfg.enabled)} • ${t('moderation.antinuke.summary')}`)
+    .addFields(
+      { name: t('moderation.antinuke.names.thresholds'), value: thresholds, inline: false },
+      { name: t('moderation.antinuke.names.punishment'), value: t(`moderation.antinuke.punishments.${cfg.punishment}`), inline: true },
+      { name: t('moderation.antinuke.names.bot_add'), value: cfg.botAddProtection ? t('core.yes') : t('core.no'), inline: true },
+      { name: t('moderation.antinuke.names.lockdown'), value: cfg.lockdownOnTrigger ? t('core.yes') : t('core.no'), inline: true },
+      { name: t('moderation.antinuke.names.restore_bans'), value: cfg.restoreBans ? t('core.yes') : t('core.no'), inline: true },
+      { name: t('moderation.antinuke.names.dm'), value: cfg.dmExecutor ? t('core.yes') : t('core.no'), inline: true },
+      { name: t('moderation.antinuke.names.exempt_team'), value: cfg.exemptTeamRoles ? t('core.yes') : t('core.no'), inline: true },
+      { name: t('moderation.antinuke.names.whitelist'), value: t('moderation.antinuke.desc.whitelist', { users: cfg.whitelistUserIds.map((id) => `<@${id}>`).join(' ') || t('core.none') }), inline: false },
+    );
+}
+
+const NUKE_ACTION_CHOICES = ANTI_NUKE_ACTIONS.map((a) => ({ name: a, value: a }));
 
 export default defineCommand({
   data: new SlashCommandBuilder()
@@ -103,6 +124,45 @@ export default defineCommand({
         .addStringOption((o) => o.setName('mode').setDescription('Ajouter ou retirer').setRequired(true).addChoices({ name: 'Ajouter', value: 'add' }, { name: 'Retirer', value: 'remove' }))
         .addRoleOption((o) => o.setName('role').setDescription('Rôle'))
         .addChannelOption((o) => o.setName('channel').setDescription('Salon').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement, ChannelType.GuildForum, ChannelType.GuildVoice)),
+    )
+    .addSubcommandGroup((g) =>
+      g
+        .setName('nuke')
+        .setDescription('Anti-nuke : protection contre les comptes compromis / applications malveillantes')
+        .addSubcommand((s) => s.setName('status').setDescription('Voir la configuration anti-nuke'))
+        .addSubcommand((s) => s.setName('enable').setDescription('Activer l’anti-nuke'))
+        .addSubcommand((s) => s.setName('disable').setDescription('Désactiver l’anti-nuke'))
+        .addSubcommand((s) =>
+          s
+            .setName('threshold')
+            .setDescription('Seuil d’une action : N actions en X secondes')
+            .addStringOption((o) => o.setName('action').setDescription('Action surveillée').setRequired(true).addChoices(...NUKE_ACTION_CHOICES))
+            .addIntegerOption((o) => o.setName('max').setDescription('Actions max dans la fenêtre (1-100)').setRequired(true).setMinValue(1).setMaxValue(100))
+            .addIntegerOption((o) => o.setName('seconds').setDescription('Fenêtre en secondes (1-600)').setRequired(true).setMinValue(1).setMaxValue(600)),
+        )
+        .addSubcommand((s) =>
+          s
+            .setName('punishment')
+            .setDescription('Punition appliquée à l’exécuteur (un bot est toujours banni)')
+            .addStringOption((o) => o.setName('mode').setDescription('Mode').setRequired(true).addChoices({ name: 'Retirer les rôles dangereux', value: 'STRIP_ROLES' }, { name: 'Expulser', value: 'KICK' }, { name: 'Bannir', value: 'BAN' })),
+        )
+        .addSubcommand((s) =>
+          s
+            .setName('whitelist')
+            .setDescription('Utilisateurs de confiance jamais sanctionnés par l’anti-nuke')
+            .addStringOption((o) => o.setName('mode').setDescription('Ajouter ou retirer').setRequired(true).addChoices({ name: 'Ajouter', value: 'add' }, { name: 'Retirer', value: 'remove' }))
+            .addUserOption((o) => o.setName('user').setDescription('Utilisateur').setRequired(true)),
+        )
+        .addSubcommand((s) => s.setName('lockdown').setDescription('Lockdown automatique au déclenchement').addBooleanOption((o) => o.setName('enabled').setDescription('Activer ?').setRequired(true)))
+        .addSubcommand((s) => s.setName('bot-add').setDescription('Expulser tout bot ajouté par un non-exempté et sanctionner l’ajouteur').addBooleanOption((o) => o.setName('enabled').setDescription('Activer ?').setRequired(true)))
+        .addSubcommand((s) =>
+          s
+            .setName('options')
+            .setDescription('Options : rétablir les bans, DM à l’exécuteur, exempter les rôles équipe')
+            .addBooleanOption((o) => o.setName('restore_bans').setDescription('Dé-bannir les membres bannis par l’exécuteur'))
+            .addBooleanOption((o) => o.setName('dm').setDescription('Envoyer un DM à l’exécuteur humain'))
+            .addBooleanOption((o) => o.setName('exempt_team').setDescription('Exempter les rôles équipe / admin configurés (déconseillé)')),
+        ),
     ),
   module: 'antiraid',
   permissions: MOD_PERMS.admin,
@@ -114,6 +174,58 @@ export default defineCommand({
     const sub = interaction.options.getSubcommand();
     const cfg = await antiRaidService.getConfig(guildId);
     const opt = interaction.options;
+
+    if (interaction.options.getSubcommandGroup(false) === 'nuke') {
+      const nuke = cfg.antiNuke;
+      let next: AntiNukeConfig | null = null;
+      switch (sub) {
+        case 'status':
+          await interaction.reply({ embeds: [nukeStatusEmbed(ctx, interaction.guild.name, nuke)], ...EPHEMERAL });
+          return;
+        case 'enable':
+          next = { ...nuke, enabled: true };
+          break;
+        case 'disable':
+          next = { ...nuke, enabled: false };
+          break;
+        case 'threshold': {
+          const action = opt.getString('action', true) as AntiNukeAction;
+          if (!ANTI_NUKE_ACTIONS.includes(action)) return replyError(interaction, ctx, 'core.invalid_input', { details: action });
+          next = { ...nuke, thresholds: { ...nuke.thresholds, [action]: { max: opt.getInteger('max', true), intervalSeconds: opt.getInteger('seconds', true) } } };
+          break;
+        }
+        case 'punishment': {
+          const mode = opt.getString('mode', true) as AntiNukePunishment;
+          if (!ANTI_NUKE_PUNISHMENTS.includes(mode)) return replyError(interaction, ctx, 'core.invalid_input', { details: mode });
+          next = { ...nuke, punishment: mode };
+          break;
+        }
+        case 'whitelist': {
+          const mode = opt.getString('mode', true);
+          const user = opt.getUser('user', true);
+          const list = mode === 'add' ? [...new Set([...nuke.whitelistUserIds, user.id])] : nuke.whitelistUserIds.filter((id) => id !== user.id);
+          next = { ...nuke, whitelistUserIds: list };
+          break;
+        }
+        case 'lockdown':
+          next = { ...nuke, lockdownOnTrigger: opt.getBoolean('enabled', true) };
+          break;
+        case 'bot-add':
+          next = { ...nuke, botAddProtection: opt.getBoolean('enabled', true) };
+          break;
+        case 'options':
+          next = { ...nuke, restoreBans: opt.getBoolean('restore_bans') ?? nuke.restoreBans, dmExecutor: opt.getBoolean('dm') ?? nuke.dmExecutor, exemptTeamRoles: opt.getBoolean('exempt_team') ?? nuke.exemptTeamRoles };
+          break;
+      }
+      if (!next) return;
+      try {
+        const updated = await antiNukeService.updateConfig(guildId, next);
+        await interaction.reply({ embeds: [nukeStatusEmbed(ctx, interaction.guild.name, updated).setDescription(`${state(t, updated.enabled)} • ${t('moderation.antinuke.updated')}`)], ...EPHEMERAL });
+      } catch (err) {
+        await replyError(interaction, ctx, 'core.invalid_input', { details: err instanceof Error ? err.message.slice(0, 200) : '?' });
+      }
+      return;
+    }
 
     const readTimeout = (): number | undefined | 'invalid' => {
       const raw = opt.getString('timeout');

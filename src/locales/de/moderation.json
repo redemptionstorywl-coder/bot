@@ -59,7 +59,8 @@
   },
   "expire": {
     "tempban": "Ende des temporären Banns",
-    "mute": "Ende des temporären Mutes"
+    "mute": "Ende des temporären Mutes",
+    "channel_mute": "Geplante Kanal-Stummschaltung beendet"
   },
   "errors": {
     "self": "Du kannst dich nicht selbst sanktionieren.",
@@ -222,5 +223,81 @@
     "in_progress": "🧨 Kanal wird neu erstellt…",
     "done": "Kanal geleert: {channel} (Fall #{number}).",
     "notice": "🧹 Dieser Kanal wurde von {moderator} geleert."
+  },
+  "antinuke": {
+    "status_title": "Anti-Nuke — {server}",
+    "summary": "Schutz vor kompromittierten Konten und bösartigen Anwendungen",
+    "updated": "✅ Anti-Nuke-Konfiguration aktualisiert.",
+    "names": {
+      "thresholds": "Schwellen (max. Aktionen / Fenster)",
+      "punishment": "Strafe",
+      "bot_add": "Schutz beim Hinzufügen von Bots",
+      "lockdown": "Automatischer Lockdown",
+      "restore_bans": "Banns wiederherstellen",
+      "dm": "DM an den Ausführenden",
+      "exempt_team": "Team-Rollen ausgenommen",
+      "whitelist": "Whitelist"
+    },
+    "desc": {
+      "whitelist": "Immer ausgenommen: Serverinhaber, Bot-Owner, der Bot selbst.\nNutzer: {users}"
+    },
+    "actions": {
+      "ban": "Banns",
+      "kick": "Kicks",
+      "channelDelete": "Kanal-Löschungen",
+      "channelCreate": "Kanal-Erstellungen",
+      "roleDelete": "Rollen-Löschungen",
+      "roleCreate": "Rollen-Erstellungen",
+      "webhookCreate": "Webhook-Erstellungen",
+      "memberRoleUpdate": "Vergabe gefährlicher Rollen",
+      "pruneMembers": "Mitglieder-Prunes",
+      "botAdd": "Bot hinzugefügt"
+    },
+    "punishments": {
+      "STRIP_ROLES": "Gefährliche Rollen entfernen",
+      "KICK": "Kick",
+      "BAN": "Bann"
+    },
+    "log_title": "🛑 Anti-Nuke: {action}",
+    "log_description": "{executor} hat **{count}** × {action} in {seconds}s ausgeführt (Schwelle: {max}).",
+    "log_bot_add": "{executor} hat den Bot {bot} ohne Erlaubnis hinzugefügt. Bot gekickt: {kicked}",
+    "ping": "{roles} — Eingreifen erforderlich: Server und Ausführenden prüfen.",
+    "fields": {
+      "executor": "Ausführender",
+      "punishment": "Angewendete Strafe",
+      "dm": "DM gesendet",
+      "stripped_roles": "Entfernte Rollen",
+      "restored_bans": "Wiederhergestellte Banns",
+      "lockdown": "Lockdown"
+    },
+    "results": {
+      "stripped": "{count} gefährliche Rolle(n) entfernt",
+      "kicked": "Gekickt",
+      "banned": "Gebannt",
+      "bot_banned": "Bot gebannt",
+      "hierarchy": "Keine Strafe: unzureichende Hierarchie",
+      "missing_permissions": "Keine Strafe: fehlende Berechtigungen",
+      "not_found": "Keine Strafe: Ausführender nicht gefunden",
+      "no_dangerous_roles": "Keine gefährliche Rolle zu entfernen",
+      "failed": "Strafe fehlgeschlagen (Discord-Fehler)"
+    },
+    "dm": {
+      "title": "⚠️ Anti-Nuke — {server}",
+      "description": "Dein Konto hat **{count}** × {action} in {seconds}s auf **{server}** ausgeführt.\nMaßnahme: {punishment}\nFalls dein Konto kompromittiert ist, ändere dein Passwort und kontaktiere das Team."
+    },
+    "reasons": {
+      "trigger": "Anti-Nuke: {count} × {action} in {seconds}s",
+      "bot_add": "Anti-Nuke: Bot ohne Erlaubnis hinzugefügt",
+      "restore": "Anti-Nuke: Wiederherstellung eines Banns von {executor}"
+    }
+  },
+  "mute_channel": {
+    "muted": "🔇 {channel} ist bis {until} stummgeschaltet (Fall #{number}).",
+    "muted_indefinite": "🔇 {channel} ist bis auf Weiteres stummgeschaltet (Fall #{number}).",
+    "notice_title": "🔇 Kanal stummgeschaltet",
+    "notice": "Kanal bis {until} stummgeschaltet.\nGrund: {reason}",
+    "notice_indefinite": "Kanal bis auf Weiteres stummgeschaltet.\nGrund: {reason}",
+    "reopened_title": "🔊 Kanal wieder geöffnet",
+    "reopened": "Die Stummschaltung ist abgelaufen: du kannst hier wieder schreiben."
   }
 }

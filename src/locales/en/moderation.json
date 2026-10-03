@@ -59,7 +59,8 @@
   },
   "expire": {
     "tempban": "Temporary ban expired",
-    "mute": "Temporary mute expired"
+    "mute": "Temporary mute expired",
+    "channel_mute": "Scheduled channel mute ended"
   },
   "errors": {
     "self": "You cannot sanction yourself.",
@@ -222,5 +223,81 @@
     "in_progress": "🧨 Recreating channel…",
     "done": "Channel cleared: {channel} (case #{number}).",
     "notice": "🧹 This channel was cleared by {moderator}."
+  },
+  "antinuke": {
+    "status_title": "Anti-nuke — {server}",
+    "summary": "Protection against compromised accounts and malicious applications",
+    "updated": "✅ Anti-nuke configuration updated.",
+    "names": {
+      "thresholds": "Thresholds (max actions / window)",
+      "punishment": "Punishment",
+      "bot_add": "Bot-add protection",
+      "lockdown": "Automatic lockdown",
+      "restore_bans": "Restore bans",
+      "dm": "DM the executor",
+      "exempt_team": "Team roles exempt",
+      "whitelist": "Whitelist"
+    },
+    "desc": {
+      "whitelist": "Always exempt: server owner, bot owners, the bot itself.\nUsers: {users}"
+    },
+    "actions": {
+      "ban": "Bans",
+      "kick": "Kicks",
+      "channelDelete": "Channel deletions",
+      "channelCreate": "Channel creations",
+      "roleDelete": "Role deletions",
+      "roleCreate": "Role creations",
+      "webhookCreate": "Webhook creations",
+      "memberRoleUpdate": "Dangerous role grants",
+      "pruneMembers": "Member prunes",
+      "botAdd": "Bot added"
+    },
+    "punishments": {
+      "STRIP_ROLES": "Strip dangerous roles",
+      "KICK": "Kick",
+      "BAN": "Ban"
+    },
+    "log_title": "🛑 Anti-nuke: {action}",
+    "log_description": "{executor} performed **{count}** × {action} within {seconds}s (threshold: {max}).",
+    "log_bot_add": "{executor} added the bot {bot} without authorization. Bot kicked: {kicked}",
+    "ping": "{roles} — action required: check the server and the executor.",
+    "fields": {
+      "executor": "Executor",
+      "punishment": "Punishment applied",
+      "dm": "DM sent",
+      "stripped_roles": "Roles removed",
+      "restored_bans": "Bans restored",
+      "lockdown": "Lockdown"
+    },
+    "results": {
+      "stripped": "{count} dangerous role(s) removed",
+      "kicked": "Kicked",
+      "banned": "Banned",
+      "bot_banned": "Bot banned",
+      "hierarchy": "No punishment: insufficient hierarchy",
+      "missing_permissions": "No punishment: missing permissions",
+      "not_found": "No punishment: executor not found",
+      "no_dangerous_roles": "No dangerous role to remove",
+      "failed": "Punishment failed (Discord error)"
+    },
+    "dm": {
+      "title": "⚠️ Anti-nuke — {server}",
+      "description": "Your account performed **{count}** × {action} within {seconds}s on **{server}**.\nAction taken: {punishment}\nIf your account is compromised, change your password and contact the team."
+    },
+    "reasons": {
+      "trigger": "Anti-nuke: {count} × {action} within {seconds}s",
+      "bot_add": "Anti-nuke: bot added without authorization",
+      "restore": "Anti-nuke: restoring a ban made by {executor}"
+    }
+  },
+  "mute_channel": {
+    "muted": "🔇 {channel} is muted until {until} (case #{number}).",
+    "muted_indefinite": "🔇 {channel} is muted until further notice (case #{number}).",
+    "notice_title": "🔇 Channel muted",
+    "notice": "Channel muted until {until}.\nReason: {reason}",
+    "notice_indefinite": "Channel muted until further notice.\nReason: {reason}",
+    "reopened_title": "🔊 Channel reopened",
+    "reopened": "The mute has expired: you can write here again."
   }
 }

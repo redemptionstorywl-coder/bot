@@ -59,6 +59,57 @@ const domain = z
   .max(253)
   .transform((d) => d.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, ''));
 
+/** Actions surveillées par l'anti-nuke (clé = type d'action dans l'audit log). */
+export const ANTI_NUKE_ACTIONS = ['ban', 'kick', 'channelDelete', 'channelCreate', 'roleDelete', 'roleCreate', 'webhookCreate', 'memberRoleUpdate', 'pruneMembers'] as const;
+export type AntiNukeAction = (typeof ANTI_NUKE_ACTIONS)[number];
+export const ANTI_NUKE_PUNISHMENTS = ['STRIP_ROLES', 'KICK', 'BAN'] as const;
+export type AntiNukePunishment = (typeof ANTI_NUKE_PUNISHMENTS)[number];
+
+const nukeThreshold = (max: number, intervalSeconds: number) =>
+  z
+    .object({
+      max: z.number().int().min(1).max(100).default(max),
+      intervalSeconds: z.number().int().min(1).max(600).default(intervalSeconds),
+    })
+    .default({});
+
+/**
+ * Configuration anti-nuke (ModerationConfig.antiRaid.antiNuke) : seuils par action en fenêtre glissante
+ * (exécuteur lu dans l'audit log), punition de l'exécuteur, protection contre l'ajout de bots.
+ * Exemptés d'office : propriétaire du serveur, OWNER_IDS, le bot lui-même, `whitelistUserIds`.
+ * Les rôles équipe / admin ne sont PAS exemptés sauf `exemptTeamRoles` (un compte compromis en porte souvent un).
+ */
+export const antiNukeConfigSchema = z.object({
+  enabled: z.boolean().default(true),
+  thresholds: z
+    .object({
+      ban: nukeThreshold(3, 10),
+      kick: nukeThreshold(3, 10),
+      channelDelete: nukeThreshold(2, 10),
+      channelCreate: nukeThreshold(5, 10),
+      roleDelete: nukeThreshold(2, 10),
+      roleCreate: nukeThreshold(5, 10),
+      webhookCreate: nukeThreshold(2, 10),
+      /** Ajout d'un rôle à permissions dangereuses à un membre */
+      memberRoleUpdate: nukeThreshold(3, 10),
+      pruneMembers: nukeThreshold(1, 60),
+    })
+    .default({}),
+  /** Tout bot ajouté par un non-exempté est expulsé et l'ajouteur sanctionné */
+  botAddProtection: z.boolean().default(true),
+  /** STRIP_ROLES : retire les rôles à permissions dangereuses ; un bot exécuteur est toujours banni */
+  punishment: z.enum(ANTI_NUKE_PUNISHMENTS).default('STRIP_ROLES'),
+  lockdownOnTrigger: z.boolean().default(false),
+  whitelistUserIds: z.array(snowflake).max(50).default([]),
+  exemptTeamRoles: z.boolean().default(false),
+  dmExecutor: z.boolean().default(true),
+  /** Dé-bannir les membres bannis par l'exécuteur dans la fenêtre */
+  restoreBans: z.boolean().default(true),
+});
+export type AntiNukeConfig = z.infer<typeof antiNukeConfigSchema>;
+export type AntiNukeConfigInput = z.input<typeof antiNukeConfigSchema>;
+export const DEFAULT_ANTI_NUKE: AntiNukeConfig = antiNukeConfigSchema.parse({});
+
 /**
  * Configuration anti-raid (ModerationConfig.antiRaid). Chaque protection a `enabled` + ses paramètres.
  * `antiRaidConfigSchema.parse({})` renvoie la configuration par défaut complète.
@@ -118,6 +169,7 @@ export const antiRaidConfigSchema = z.object({
       lockdown: z.boolean().default(true),
     })
     .default({}),
+  antiNuke: antiNukeConfigSchema.default({}),
 });
 export type AntiRaidConfig = z.infer<typeof antiRaidConfigSchema>;
 export type AntiRaidConfigInput = z.input<typeof antiRaidConfigSchema>;
@@ -259,6 +311,15 @@ export class ModerationService {
         intervalMs: 30_000,
         run: async () => {
           await this.expireTick();
+        },
+      });
+    }
+    if (!scheduler.registered.includes('moderation:channel-unmute')) {
+      scheduler.register({
+        name: 'moderation:channel-unmute',
+        intervalMs: 15_000,
+        run: async () => {
+          await this.channelUnmuteTick();
         },
       });
     }
@@ -759,9 +820,65 @@ export class ModerationService {
     const meta = (last?.metadata ?? null) as { previous?: LockdownChannelState } | null;
     const previous: LockdownChannelState = meta?.previous && meta.previous !== 'deny' ? meta.previous : 'neutral';
     await this.restoreEveryoneSend(channel, previous, auditReason(moderator, opts.reason));
+    // Lève aussi une éventuelle sourdine programmée (/mute-salon).
+    await prisma.channelMute.deleteMany({ where: { channelId: channel.id } });
     const sanction = await this.createSanction({ guildId: guild.id, type: 'UNLOCK', moderatorId: moderator.id, reason: opts.reason ?? null, channelId: channel.id, metadata: { restored: previous } });
     await this.logSanction(guild.id, sanction, { moderator, target: null, extraFields: [{ key: 'channel', value: `<#${channel.id}>`, inline: true }] });
     return sanction;
+  }
+
+  // ─────────────────────────── Sourdine de salon (/mute-salon) ───────────────────────────
+
+  /**
+   * Verrouille le salon (lockChannel) et, si `duration` (secondes) est fournie, programme le déverrouillage
+   * automatique (ChannelMute, traité par `channelUnmuteTick`). Sans durée : équivalent à /lock.
+   */
+  async muteChannel(opts: { channel: GuildTextBasedChannel; moderator: User; reason?: string | null; duration?: number | null }): Promise<{ sanction: Sanction; expiresAt: Date | null }> {
+    const { channel, moderator } = opts;
+    const expiresAt = opts.duration ? new Date(Date.now() + opts.duration * 1000) : null;
+    const sanction = await this.lockChannel({ channel, moderator, reason: opts.reason });
+    if (expiresAt) {
+      await prisma.channelMute.upsert({
+        where: { channelId: channel.id },
+        create: { guildId: channel.guild.id, channelId: channel.id, moderatorId: moderator.id, reason: opts.reason ?? null, expiresAt },
+        update: { moderatorId: moderator.id, reason: opts.reason ?? null, expiresAt },
+      });
+      await prisma.sanction.update({ where: { id: sanction.id }, data: { duration: opts.duration ?? null, metadata: toJson({ ...((sanction.metadata as Record<string, unknown> | null) ?? {}), channelMute: true, expiresAt: expiresAt.toISOString() }) } }).catch(() => null);
+    } else {
+      await prisma.channelMute.deleteMany({ where: { channelId: channel.id } });
+    }
+    return { sanction, expiresAt };
+  }
+
+  /** Sourdine programmée active d'un salon, ou null. */
+  async getChannelMute(channelId: string): Promise<{ expiresAt: Date; moderatorId: string; reason: string | null } | null> {
+    const row = await prisma.channelMute.findUnique({ where: { channelId } });
+    return row ? { expiresAt: row.expiresAt, moderatorId: row.moderatorId, reason: row.reason } : null;
+  }
+
+  /** Déverrouille les salons dont la sourdine a expiré (+ message « salon rouvert »). Toutes les 15 s. */
+  async channelUnmuteTick(now = new Date()): Promise<number> {
+    const client = this.client;
+    if (!client?.user) return 0;
+    const bot = client.user;
+    const expired = await prisma.channelMute.findMany({ where: { expiresAt: { lte: now } }, take: 50 });
+    let count = 0;
+    for (const row of expired) {
+      await prisma.channelMute.delete({ where: { id: row.id } }).catch(() => null);
+      const guild = client.guilds.cache.get(row.guildId);
+      const channel = guild?.channels.cache.get(row.channelId);
+      if (!guild || !channel || !channel.isTextBased() || channel.isThread()) continue;
+      try {
+        const { t } = await this.guildTranslator(guild.id);
+        await this.unlockChannel({ channel, moderator: bot, reason: t('moderation.expire.channel_mute') });
+        const embed = new EmbedBuilder().setColor(BRAND.colors.primary).setTitle(t('moderation.mute_channel.reopened_title')).setDescription(t('moderation.mute_channel.reopened')).setFooter({ text: BRAND.footer });
+        await channel.send({ embeds: [embed] }).catch(() => null);
+        count++;
+      } catch (err) {
+        log.warn({ err, guild: row.guildId, channel: row.channelId }, 'Sourdine expirée : déverrouillage impossible');
+      }
+    }
+    return count;
   }
 
   // ─────────────────────────── Lockdown ───────────────────────────

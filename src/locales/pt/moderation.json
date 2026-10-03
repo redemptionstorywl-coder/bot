@@ -59,7 +59,8 @@
   },
   "expire": {
     "tempban": "Fim do banimento temporário",
-    "mute": "Fim do mute temporário"
+    "mute": "Fim do mute temporário",
+    "channel_mute": "Fim do silêncio programado do canal"
   },
   "errors": {
     "self": "Você não pode punir a si mesmo.",
@@ -222,5 +223,81 @@
     "in_progress": "🧨 Recriando o canal…",
     "done": "Canal limpo: {channel} (caso #{number}).",
     "notice": "🧹 Este canal foi limpo por {moderator}."
+  },
+  "antinuke": {
+    "status_title": "Anti-nuke — {server}",
+    "summary": "Proteção contra contas comprometidas e aplicações maliciosas",
+    "updated": "✅ Configuração anti-nuke atualizada.",
+    "names": {
+      "thresholds": "Limites (ações máx. / janela)",
+      "punishment": "Punição",
+      "bot_add": "Proteção ao adicionar bots",
+      "lockdown": "Lockdown automático",
+      "restore_bans": "Restaurar banimentos",
+      "dm": "DM ao executor",
+      "exempt_team": "Cargos da equipe isentos",
+      "whitelist": "Lista branca"
+    },
+    "desc": {
+      "whitelist": "Sempre isentos: dono do servidor, owners do bot, o próprio bot.\nUsuários: {users}"
+    },
+    "actions": {
+      "ban": "Banimentos",
+      "kick": "Expulsões",
+      "channelDelete": "Exclusões de canais",
+      "channelCreate": "Criações de canais",
+      "roleDelete": "Exclusões de cargos",
+      "roleCreate": "Criações de cargos",
+      "webhookCreate": "Criações de webhooks",
+      "memberRoleUpdate": "Atribuições de cargos perigosos",
+      "pruneMembers": "Prunes de membros",
+      "botAdd": "Bot adicionado"
+    },
+    "punishments": {
+      "STRIP_ROLES": "Remover cargos perigosos",
+      "KICK": "Expulsão",
+      "BAN": "Banimento"
+    },
+    "log_title": "🛑 Anti-nuke: {action}",
+    "log_description": "{executor} executou **{count}** × {action} em {seconds}s (limite: {max}).",
+    "log_bot_add": "{executor} adicionou o bot {bot} sem autorização. Bot expulso: {kicked}",
+    "ping": "{roles} — intervenção necessária: verifique o servidor e o executor.",
+    "fields": {
+      "executor": "Executor",
+      "punishment": "Punição aplicada",
+      "dm": "DM enviada",
+      "stripped_roles": "Cargos removidos",
+      "restored_bans": "Banimentos restaurados",
+      "lockdown": "Lockdown"
+    },
+    "results": {
+      "stripped": "{count} cargo(s) perigoso(s) removido(s)",
+      "kicked": "Expulso",
+      "banned": "Banido",
+      "bot_banned": "Bot banido",
+      "hierarchy": "Sem punição: hierarquia insuficiente",
+      "missing_permissions": "Sem punição: permissões ausentes",
+      "not_found": "Sem punição: executor não encontrado",
+      "no_dangerous_roles": "Nenhum cargo perigoso a remover",
+      "failed": "Punição impossível (erro do Discord)"
+    },
+    "dm": {
+      "title": "⚠️ Anti-nuke — {server}",
+      "description": "Sua conta executou **{count}** × {action} em {seconds}s em **{server}**.\nAção aplicada: {punishment}\nSe sua conta foi comprometida, altere sua senha e contate a equipe."
+    },
+    "reasons": {
+      "trigger": "Anti-nuke: {count} × {action} em {seconds}s",
+      "bot_add": "Anti-nuke: bot adicionado sem autorização",
+      "restore": "Anti-nuke: restauração de um banimento feito por {executor}"
+    }
+  },
+  "mute_channel": {
+    "muted": "🔇 {channel} está silenciado até {until} (caso #{number}).",
+    "muted_indefinite": "🔇 {channel} está silenciado até segunda ordem (caso #{number}).",
+    "notice_title": "🔇 Canal silenciado",
+    "notice": "Canal silenciado até {until}.\nMotivo: {reason}",
+    "notice_indefinite": "Canal silenciado até segunda ordem.\nMotivo: {reason}",
+    "reopened_title": "🔊 Canal reaberto",
+    "reopened": "O silêncio expirou: você pode escrever aqui novamente."
   }
 }

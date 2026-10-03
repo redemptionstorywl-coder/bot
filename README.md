@@ -38,8 +38,8 @@ Node.js 22 · TypeScript · discord.js v14 · Prisma · MySQL · Express · Sock
 | 👋 Bienvenue / Départ | Message, embed, image générée, DM, boutons, rôle automatique, choix de langue, variables documentées |
 | 🎭 Rôles | Auto-roles (arrivée, bot, vérifié, membre, spécial), role menus (boutons / select), reaction roles, rôles de notifications |
 | 🎫 Tickets | 11 types configurables, formulaire, numérotation, claim, ajout/retrait, transfert, transcripts HTML/TXT/PDF |
-| 🛡️ Modération | ban, tempban, unban, kick, warn (seuils automatiques), timeout, purge, slowmode, lock/unlock, lockdown, historique des sanctions |
-| 🚨 Anti-raid | anti-spam, anti-mass-mention, anti-link/invite/pub, anti-compte-récent, anti-bot, anti-mass-join → lockdown automatique |
+| 🛡️ Modération | ban, tempban, unban, kick, warn (seuils automatiques), timeout, purge, slowmode, lock/unlock, mute-salon (sourdine programmée), lockdown, historique des sanctions |
+| 🚨 Anti-raid | anti-spam, anti-mass-mention, anti-link/invite/pub, anti-compte-récent, anti-bot, anti-mass-join → lockdown automatique, anti-nuke (audit log : bans/kicks/salons/rôles/webhooks en masse, bots ajoutés → strip des rôles dangereux / kick / ban) |
 | 📜 Logs | 14 catégories, un salon par catégorie, historique consultable dans le dashboard |
 | 📅 Événements | inscriptions, participants max, rappels automatiques (24h, 1h, 30, 10, 5 min) |
 | 🎁 Giveaways | rôle requis, nombre minimal de messages, tirage automatique, reroll |
@@ -217,7 +217,7 @@ La liste à jour est disponible avec `/help` (48 commandes). Principales command
 | Bienvenue / départ | `/welcome-config` — panneau interactif éphémère (onglets Bienvenue / Départ : activation, salon, message, embed, image, DM, bouton langue, boutons liens, logs des départs, test) |
 | Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |
 | Tickets | `/ticket-panel create|list|delete`, `/ticket-type create|edit|delete|list|questions`, `/ticket close|add|remove|claim|transcript|rename|info|list` |
-| Modération | `/ban`, `/tempban`, `/unban`, `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/clear` (N messages), `/clear-salon` (tout le salon), `/slowmode`, `/lock`, `/unlock`, `/lockdown on|off|status`, `/case`, `/history`, `/mod-config thresholds|mute-role|dm|show`, `/antiraid status|spam|mentions|links|whitelist|new-account|bots|mass-join|exempt` |
+| Modération | `/ban`, `/tempban`, `/unban`, `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/clear` (N messages), `/clear-salon` (tout le salon), `/slowmode`, `/lock`, `/unlock`, `/mute-salon [duration] [channel] [reason]` (sourdine programmée, déverrouillage automatique), `/lockdown on|off|status`, `/case`, `/history`, `/mod-config thresholds|mute-role|dm|show`, `/antiraid status|spam|mentions|links|whitelist|new-account|bots|mass-join|exempt`, `/antiraid nuke status|enable|disable|threshold|punishment|whitelist|lockdown|bot-add|options` |
 | Communauté | `/event create|edit|cancel|list|participants|remind`, `/giveaway create|end|reroll|cancel|list`, `/poll create|end|results|list` |
 | Whitelist (Prison / School) | `/whitelist apply|status|review|list|config` |
 | Battle Royale | `/profile`, `/leaderboard`, `/battlepass`, `/br-link`, `/br-admin season|stats|xp` |

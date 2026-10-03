@@ -97,6 +97,35 @@
           </div>
         </div>
       </div>
+      <% const an = ar.antiNuke; %>
+      <div class="card">
+        <h3 class="card-title">Anti-nuke</h3>
+        <p class="muted">Protection contre les comptes compromis et les applications malveillantes : l'exécuteur (lu dans l'audit log) qui dépasse un seuil est puni. Toujours exemptés : propriétaire du serveur, owners du bot, le bot lui-même. Les rôles équipe / admin ne sont <strong>pas</strong> exemptés par défaut.</p>
+        <div class="check-grid">
+          <label class="check"><input type="checkbox" name="antiNukeEnabled" <%= an.enabled ? 'checked' : '' %>><span>Activer l'anti-nuke</span></label>
+          <label class="check"><input type="checkbox" name="antiNukeBotAdd" <%= an.botAddProtection ? 'checked' : '' %>><span>Expulser tout bot ajouté par un non-exempté et sanctionner l'ajouteur</span></label>
+          <label class="check"><input type="checkbox" name="antiNukeLockdown" <%= an.lockdownOnTrigger ? 'checked' : '' %>><span>Lockdown automatique au déclenchement</span></label>
+          <label class="check"><input type="checkbox" name="antiNukeRestoreBans" <%= an.restoreBans ? 'checked' : '' %>><span>Rétablir les bans effectués par l'exécuteur dans la fenêtre</span></label>
+          <label class="check"><input type="checkbox" name="antiNukeDm" <%= an.dmExecutor ? 'checked' : '' %>><span>Envoyer un DM à l'exécuteur humain</span></label>
+          <label class="check"><input type="checkbox" name="antiNukeExemptTeam" <%= an.exemptTeamRoles ? 'checked' : '' %>><span>Exempter les rôles équipe / admin configurés (déconseillé)</span></label>
+        </div>
+        <div class="grid-2 grid-tight">
+          <div class="field"><label for="nk-punish">Punition de l'exécuteur (un bot est toujours banni)</label><select id="nk-punish" name="antiNukePunishment" class="select"><option value="STRIP_ROLES" <%= an.punishment === 'STRIP_ROLES' ? 'selected' : '' %>>Retirer les rôles dangereux</option><option value="KICK" <%= an.punishment === 'KICK' ? 'selected' : '' %>>Expulser</option><option value="BAN" <%= an.punishment === 'BAN' ? 'selected' : '' %>>Bannir</option></select></div>
+          <div class="field"><label for="nk-wl">IDs d'utilisateurs de confiance (séparés par des espaces ou virgules)</label><textarea id="nk-wl" name="antiNukeWhitelist" class="textarea textarea-sm input-mono" rows="2"><%= an.whitelistUserIds.join(' ') %></textarea></div>
+        </div>
+        <h4 class="card-subtitle">Seuils par action (actions max / fenêtre en secondes)</h4>
+        <div class="grid-3 grid-tight">
+          <% for (const a of antiNukeActions) { const th = an.thresholds[a.key]; %>
+          <div class="field">
+            <label for="nk-<%= a.key %>-max"><%= a.label %></label>
+            <div class="grid-2 grid-tight">
+              <input id="nk-<%= a.key %>-max" name="antiNuke_<%= a.key %>_max" type="number" class="input" min="1" max="100" value="<%= th.max %>" title="Actions max">
+              <input id="nk-<%= a.key %>-sec" name="antiNuke_<%= a.key %>_seconds" type="number" class="input" min="1" max="600" value="<%= th.intervalSeconds %>" title="Fenêtre (s)">
+            </div>
+          </div>
+          <% } %>
+        </div>
+      </div>
       <div class="form-actions sticky-actions"><button type="submit" class="btn btn-primary">Enregistrer les protections</button></div>
     </form>
   </section>

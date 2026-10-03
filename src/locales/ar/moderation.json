@@ -59,7 +59,8 @@
   },
   "expire": {
     "tempban": "انتهاء الحظر المؤقت",
-    "mute": "انتهاء الكتم المؤقت"
+    "mute": "انتهاء الكتم المؤقت",
+    "channel_mute": "انتهاء الكتم المجدول للقناة"
   },
   "errors": {
     "self": "لا يمكنك معاقبة نفسك.",
@@ -222,5 +223,81 @@
     "in_progress": "🧨 جارٍ إعادة إنشاء القناة…",
     "done": "تم تفريغ القناة: {channel} (الحالة #{number}).",
     "notice": "🧹 تم تفريغ هذه القناة بواسطة {moderator}."
+  },
+  "antinuke": {
+    "status_title": "مكافحة التخريب — {server}",
+    "summary": "حماية من الحسابات المخترقة والتطبيقات الخبيثة",
+    "updated": "✅ تم تحديث إعدادات مكافحة التخريب.",
+    "names": {
+      "thresholds": "الحدود (أقصى إجراءات / نافذة)",
+      "punishment": "العقوبة",
+      "bot_add": "حماية إضافة البوتات",
+      "lockdown": "إغلاق تلقائي",
+      "restore_bans": "استعادة الحظر",
+      "dm": "رسالة خاصة للمنفّذ",
+      "exempt_team": "إعفاء أدوار الفريق",
+      "whitelist": "القائمة البيضاء"
+    },
+    "desc": {
+      "whitelist": "معفون دائمًا: مالك السيرفر، مالكو البوت، البوت نفسه.\nالمستخدمون: {users}"
+    },
+    "actions": {
+      "ban": "عمليات حظر",
+      "kick": "عمليات طرد",
+      "channelDelete": "حذف قنوات",
+      "channelCreate": "إنشاء قنوات",
+      "roleDelete": "حذف أدوار",
+      "roleCreate": "إنشاء أدوار",
+      "webhookCreate": "إنشاء ويبهوك",
+      "memberRoleUpdate": "منح أدوار خطرة",
+      "pruneMembers": "تنظيف الأعضاء",
+      "botAdd": "إضافة بوت"
+    },
+    "punishments": {
+      "STRIP_ROLES": "إزالة الأدوار الخطرة",
+      "KICK": "طرد",
+      "BAN": "حظر"
+    },
+    "log_title": "🛑 مكافحة التخريب: {action}",
+    "log_description": "{executor} نفّذ **{count}** × {action} خلال {seconds} ثانية (الحد: {max}).",
+    "log_bot_add": "{executor} أضاف البوت {bot} دون إذن. تم طرد البوت: {kicked}",
+    "ping": "{roles} — تدخل مطلوب: تحقق من السيرفر والمنفّذ.",
+    "fields": {
+      "executor": "المنفّذ",
+      "punishment": "العقوبة المطبقة",
+      "dm": "تم إرسال رسالة خاصة",
+      "stripped_roles": "الأدوار المزالة",
+      "restored_bans": "الحظر المستعاد",
+      "lockdown": "إغلاق"
+    },
+    "results": {
+      "stripped": "تمت إزالة {count} دور(أدوار) خطرة",
+      "kicked": "تم الطرد",
+      "banned": "تم الحظر",
+      "bot_banned": "تم حظر البوت",
+      "hierarchy": "لا عقوبة: تسلسل هرمي غير كافٍ",
+      "missing_permissions": "لا عقوبة: صلاحيات ناقصة",
+      "not_found": "لا عقوبة: المنفّذ غير موجود",
+      "no_dangerous_roles": "لا يوجد دور خطر لإزالته",
+      "failed": "تعذر تطبيق العقوبة (خطأ Discord)"
+    },
+    "dm": {
+      "title": "⚠️ مكافحة التخريب — {server}",
+      "description": "نفّذ حسابك **{count}** × {action} خلال {seconds} ثانية في **{server}**.\nالإجراء المطبق: {punishment}\nإذا كان حسابك مخترقًا، غيّر كلمة المرور وتواصل مع الفريق."
+    },
+    "reasons": {
+      "trigger": "مكافحة التخريب: {count} × {action} خلال {seconds} ثانية",
+      "bot_add": "مكافحة التخريب: بوت أُضيف دون إذن",
+      "restore": "مكافحة التخريب: استعادة حظر نفّذه {executor}"
+    }
+  },
+  "mute_channel": {
+    "muted": "🔇 تم كتم {channel} حتى {until} (الحالة #{number}).",
+    "muted_indefinite": "🔇 تم كتم {channel} حتى إشعار آخر (الحالة #{number}).",
+    "notice_title": "🔇 قناة مكتومة",
+    "notice": "تم كتم القناة حتى {until}.\nالسبب: {reason}",
+    "notice_indefinite": "تم كتم القناة حتى إشعار آخر.\nالسبب: {reason}",
+    "reopened_title": "🔊 أُعيد فتح القناة",
+    "reopened": "انتهى الكتم: يمكنك الكتابة هنا مجددًا."
   }
 }

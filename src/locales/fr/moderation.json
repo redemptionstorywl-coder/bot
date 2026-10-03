@@ -59,7 +59,8 @@
   },
   "expire": {
     "tempban": "Fin du bannissement temporaire",
-    "mute": "Fin du mute temporaire"
+    "mute": "Fin du mute temporaire",
+    "channel_mute": "Fin de la sourdine programmée"
   },
   "errors": {
     "self": "Vous ne pouvez pas vous sanctionner vous-même.",
@@ -222,5 +223,81 @@
     "in_progress": "🧨 Salon en cours de recréation…",
     "done": "Salon vidé : {channel} (case #{number}).",
     "notice": "🧹 Ce salon a été vidé par {moderator}."
+  },
+  "antinuke": {
+    "status_title": "Anti-nuke — {server}",
+    "summary": "Protection contre les comptes compromis et les applications malveillantes",
+    "updated": "✅ Configuration anti-nuke mise à jour.",
+    "names": {
+      "thresholds": "Seuils (actions max / fenêtre)",
+      "punishment": "Punition",
+      "bot_add": "Protection ajout de bots",
+      "lockdown": "Lockdown automatique",
+      "restore_bans": "Rétablir les bans",
+      "dm": "DM à l'exécuteur",
+      "exempt_team": "Rôles équipe exemptés",
+      "whitelist": "Liste blanche"
+    },
+    "desc": {
+      "whitelist": "Toujours exemptés : propriétaire du serveur, owners du bot, le bot lui-même.\nUtilisateurs : {users}"
+    },
+    "actions": {
+      "ban": "Bannissements",
+      "kick": "Expulsions",
+      "channelDelete": "Suppressions de salons",
+      "channelCreate": "Créations de salons",
+      "roleDelete": "Suppressions de rôles",
+      "roleCreate": "Créations de rôles",
+      "webhookCreate": "Créations de webhooks",
+      "memberRoleUpdate": "Attributions de rôles dangereux",
+      "pruneMembers": "Prunes de membres",
+      "botAdd": "Ajout d'un bot"
+    },
+    "punishments": {
+      "STRIP_ROLES": "Retrait des rôles dangereux",
+      "KICK": "Expulsion",
+      "BAN": "Bannissement"
+    },
+    "log_title": "🛑 Anti-nuke : {action}",
+    "log_description": "{executor} a effectué **{count}** × {action} en {seconds}s (seuil : {max}).",
+    "log_bot_add": "{executor} a ajouté le bot {bot} sans autorisation. Bot expulsé : {kicked}",
+    "ping": "{roles} — intervention requise : vérifiez le serveur et l'exécuteur.",
+    "fields": {
+      "executor": "Exécuteur",
+      "punishment": "Punition appliquée",
+      "dm": "DM envoyé",
+      "stripped_roles": "Rôles retirés",
+      "restored_bans": "Bans rétablis",
+      "lockdown": "Lockdown"
+    },
+    "results": {
+      "stripped": "{count} rôle(s) dangereux retiré(s)",
+      "kicked": "Expulsé",
+      "banned": "Banni",
+      "bot_banned": "Bot banni",
+      "hierarchy": "Aucune punition : hiérarchie insuffisante",
+      "missing_permissions": "Aucune punition : permissions manquantes",
+      "not_found": "Aucune punition : exécuteur introuvable",
+      "no_dangerous_roles": "Aucun rôle dangereux à retirer",
+      "failed": "Punition impossible (erreur Discord)"
+    },
+    "dm": {
+      "title": "⚠️ Anti-nuke — {server}",
+      "description": "Votre compte a effectué **{count}** × {action} en {seconds}s sur **{server}**.\nAction appliquée : {punishment}\nSi votre compte est compromis, changez votre mot de passe et contactez l'équipe."
+    },
+    "reasons": {
+      "trigger": "Anti-nuke : {count} × {action} en {seconds}s",
+      "bot_add": "Anti-nuke : bot ajouté sans autorisation",
+      "restore": "Anti-nuke : rétablissement d'un ban effectué par {executor}"
+    }
+  },
+  "mute_channel": {
+    "muted": "🔇 {channel} est mis en sourdine jusqu'à {until} (case #{number}).",
+    "muted_indefinite": "🔇 {channel} est mis en sourdine jusqu'à nouvel ordre (case #{number}).",
+    "notice_title": "🔇 Salon en sourdine",
+    "notice": "Salon mis en sourdine jusqu'à {until}.\nRaison : {reason}",
+    "notice_indefinite": "Salon mis en sourdine jusqu'à nouvel ordre.\nRaison : {reason}",
+    "reopened_title": "🔊 Salon rouvert",
+    "reopened": "La sourdine a expiré : vous pouvez de nouveau écrire ici."
   }
 }

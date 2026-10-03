@@ -4,6 +4,7 @@ import { SanctionType } from '@prisma/client';
 import type { RedemptionClient } from '../../../src/core/Client';
 import { moderationService, warnThresholdSchema, type AntiRaidConfigInput } from '../../../src/services/ModerationService';
 import { antiRaidService } from '../../../src/services/AntiRaidService';
+import { antiNukeService, ANTI_NUKE_ACTIONS, ANTI_NUKE_PUNISHMENTS, type AntiNukeAction } from '../../../src/services/AntiNukeService';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
 import { flash } from '../../lib/flash';
@@ -65,7 +66,19 @@ const configBody = z.object({
 const num = (min: number, max: number, def: number) => z.preprocess((v) => (v === '' || v === undefined ? def : Number(v)), z.number().int().min(min).max(max));
 const domainList = z.preprocess((v) => (typeof v === 'string' ? v.split(/[\s,;]+/).map((d) => d.trim()).filter(Boolean) : Array.isArray(v) ? v : []), z.array(z.string().max(253)).max(100));
 
+/** Champs `antiNuke_<action>_max` / `antiNuke_<action>_seconds` du formulaire (un par action surveillée). */
+const antiNukeThresholdFields = Object.fromEntries(ANTI_NUKE_ACTIONS.flatMap((a) => [[`antiNuke_${a}_max`, num(1, 100, 1)], [`antiNuke_${a}_seconds`, num(1, 600, 10)]])) as Record<`antiNuke_${AntiNukeAction}_max` | `antiNuke_${AntiNukeAction}_seconds`, ReturnType<typeof num>>;
+
 const antiRaidBody = z.object({
+  antiNukeEnabled: checkbox,
+  antiNukeBotAdd: checkbox,
+  antiNukePunishment: z.enum(ANTI_NUKE_PUNISHMENTS).default('STRIP_ROLES'),
+  antiNukeLockdown: checkbox,
+  antiNukeRestoreBans: checkbox,
+  antiNukeDm: checkbox,
+  antiNukeExemptTeam: checkbox,
+  antiNukeWhitelist: z.preprocess((v) => (typeof v === 'string' ? v.split(/[\s,;]+/).filter(Boolean) : v), discordIdArray),
+  ...antiNukeThresholdFields,
   exemptRoleIds: discordIdArray,
   exemptChannelIds: discordIdArray,
   antiSpamEnabled: checkbox,
@@ -92,6 +105,18 @@ const antiRaidBody = z.object({
   antiMassJoinIntervalSeconds: num(1, 600, 10),
   antiMassJoinLockdown: checkbox,
 });
+
+const ANTI_NUKE_ACTION_LABELS: { key: AntiNukeAction; label: string }[] = [
+  { key: 'ban', label: 'Bannissements' },
+  { key: 'kick', label: 'Expulsions' },
+  { key: 'channelDelete', label: 'Suppressions de salons' },
+  { key: 'channelCreate', label: 'Créations de salons' },
+  { key: 'roleDelete', label: 'Suppressions de rôles' },
+  { key: 'roleCreate', label: 'Créations de rôles' },
+  { key: 'webhookCreate', label: 'Créations de webhooks' },
+  { key: 'memberRoleUpdate', label: 'Attributions de rôles dangereux' },
+  { key: 'pruneMembers', label: 'Prunes de membres' },
+];
 
 const lockdownBody = z.object({ enabled: checkbox, reason: optionalText(300) });
 const warningParams = z.object({ warningId: z.coerce.number().int().positive() });
@@ -128,6 +153,7 @@ export function createModerationRouter(client: RedemptionClient): Router {
         filters: query,
         modConfig,
         antiRaid: modConfig.antiRaid,
+        antiNukeActions: ANTI_NUKE_ACTION_LABELS,
         sanctions: sanctions.items,
         pagination: { page: sanctions.page, pages: sanctions.pages, total: sanctions.total, pageSize: PAGE_SIZE },
         baseQuery,
@@ -177,10 +203,22 @@ export function createModerationRouter(client: RedemptionClient): Router {
           antiNewAccount: { enabled: b.antiNewAccountEnabled, minAgeDays: b.antiNewAccountMinAgeDays, action: b.antiNewAccountAction, quarantineRoleId: b.antiNewAccountQuarantineRoleId },
           antiBot: { enabled: b.antiBotEnabled, allowedBotIds: [...new Set(b.antiBotAllowedIds)] },
           antiMassJoin: { enabled: b.antiMassJoinEnabled, maxJoins: b.antiMassJoinMax, intervalSeconds: b.antiMassJoinIntervalSeconds, lockdown: b.antiMassJoinLockdown },
+          antiNuke: {
+            enabled: b.antiNukeEnabled,
+            botAddProtection: b.antiNukeBotAdd,
+            punishment: b.antiNukePunishment,
+            lockdownOnTrigger: b.antiNukeLockdown,
+            restoreBans: b.antiNukeRestoreBans,
+            dmExecutor: b.antiNukeDm,
+            exemptTeamRoles: b.antiNukeExemptTeam,
+            whitelistUserIds: [...new Set(b.antiNukeWhitelist)],
+            thresholds: Object.fromEntries(ANTI_NUKE_ACTIONS.map((a) => [a, { max: b[`antiNuke_${a}_max`], intervalSeconds: b[`antiNuke_${a}_seconds`] }])),
+          },
         };
         if (input.antiNewAccount!.action === 'QUARANTINE' && !input.antiNewAccount!.quarantineRoleId) throw new HttpError(400, 'Choisissez un rôle de quarantaine pour l’action « Quarantaine ».');
         await moderationService.updateAntiRaidConfig(guild.id, input);
         antiRaidService.invalidate(guild.id);
+        antiNukeService.invalidate(guild.id);
         broadcastToGuild(guild.id, 'moderation:update', { guildId: guild.id, kind: 'antiraid' });
         flash(req, 'success', 'Protections anti-raid enregistrées.');
       },

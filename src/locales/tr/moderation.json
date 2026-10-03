@@ -59,7 +59,8 @@
   },
   "expire": {
     "tempban": "Geçici yasaklama sona erdi",
-    "mute": "Geçici mute sona erdi"
+    "mute": "Geçici mute sona erdi",
+    "channel_mute": "Planlanmış kanal susturması sona erdi"
   },
   "errors": {
     "self": "Kendine yaptırım uygulayamazsın.",
@@ -222,5 +223,81 @@
     "in_progress": "🧨 Kanal yeniden oluşturuluyor…",
     "done": "Kanal temizlendi: {channel} (vaka #{number}).",
     "notice": "🧹 Bu kanal {moderator} tarafından temizlendi."
+  },
+  "antinuke": {
+    "status_title": "Anti-nuke — {server}",
+    "summary": "Ele geçirilmiş hesaplara ve kötü amaçlı uygulamalara karşı koruma",
+    "updated": "✅ Anti-nuke yapılandırması güncellendi.",
+    "names": {
+      "thresholds": "Eşikler (maks. işlem / pencere)",
+      "punishment": "Ceza",
+      "bot_add": "Bot ekleme koruması",
+      "lockdown": "Otomatik kilitleme",
+      "restore_bans": "Yasakları geri al",
+      "dm": "Uygulayana DM",
+      "exempt_team": "Ekip rolleri muaf",
+      "whitelist": "Beyaz liste"
+    },
+    "desc": {
+      "whitelist": "Her zaman muaf: sunucu sahibi, bot sahipleri, botun kendisi.\nKullanıcılar: {users}"
+    },
+    "actions": {
+      "ban": "Yasaklamalar",
+      "kick": "Atmalar",
+      "channelDelete": "Kanal silmeleri",
+      "channelCreate": "Kanal oluşturmaları",
+      "roleDelete": "Rol silmeleri",
+      "roleCreate": "Rol oluşturmaları",
+      "webhookCreate": "Webhook oluşturmaları",
+      "memberRoleUpdate": "Tehlikeli rol vermeleri",
+      "pruneMembers": "Üye temizlemeleri",
+      "botAdd": "Bot eklendi"
+    },
+    "punishments": {
+      "STRIP_ROLES": "Tehlikeli rolleri kaldır",
+      "KICK": "Atma",
+      "BAN": "Yasaklama"
+    },
+    "log_title": "🛑 Anti-nuke: {action}",
+    "log_description": "{executor}, {seconds}s içinde **{count}** × {action} gerçekleştirdi (eşik: {max}).",
+    "log_bot_add": "{executor}, {bot} botunu izinsiz ekledi. Bot atıldı: {kicked}",
+    "ping": "{roles} — müdahale gerekli: sunucuyu ve uygulayanı kontrol edin.",
+    "fields": {
+      "executor": "Uygulayan",
+      "punishment": "Uygulanan ceza",
+      "dm": "DM gönderildi",
+      "stripped_roles": "Kaldırılan roller",
+      "restored_bans": "Geri alınan yasaklar",
+      "lockdown": "Kilitleme"
+    },
+    "results": {
+      "stripped": "{count} tehlikeli rol kaldırıldı",
+      "kicked": "Atıldı",
+      "banned": "Yasaklandı",
+      "bot_banned": "Bot yasaklandı",
+      "hierarchy": "Ceza yok: hiyerarşi yetersiz",
+      "missing_permissions": "Ceza yok: izinler eksik",
+      "not_found": "Ceza yok: uygulayan bulunamadı",
+      "no_dangerous_roles": "Kaldırılacak tehlikeli rol yok",
+      "failed": "Ceza uygulanamadı (Discord hatası)"
+    },
+    "dm": {
+      "title": "⚠️ Anti-nuke — {server}",
+      "description": "Hesabınız **{server}** sunucusunda {seconds}s içinde **{count}** × {action} gerçekleştirdi.\nUygulanan işlem: {punishment}\nHesabınız ele geçirildiyse şifrenizi değiştirin ve ekiple iletişime geçin."
+    },
+    "reasons": {
+      "trigger": "Anti-nuke: {seconds}s içinde {count} × {action}",
+      "bot_add": "Anti-nuke: bot izinsiz eklendi",
+      "restore": "Anti-nuke: {executor} tarafından verilen yasağın geri alınması"
+    }
+  },
+  "mute_channel": {
+    "muted": "🔇 {channel}, {until} tarihine kadar susturuldu (vaka #{number}).",
+    "muted_indefinite": "🔇 {channel} süresiz susturuldu (vaka #{number}).",
+    "notice_title": "🔇 Kanal susturuldu",
+    "notice": "Kanal {until} tarihine kadar susturuldu.\nSebep: {reason}",
+    "notice_indefinite": "Kanal süresiz susturuldu.\nSebep: {reason}",
+    "reopened_title": "🔊 Kanal yeniden açıldı",
+    "reopened": "Susturma sona erdi: burada tekrar yazabilirsiniz."
   }
 }
