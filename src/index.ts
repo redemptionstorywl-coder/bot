@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { Events } from 'discord.js';
 import { env, maskSecret } from './config/env';
 import { logger } from './utils/logger';
 import { connectDatabase, disconnectDatabase } from './database/client';
@@ -19,7 +20,7 @@ async function main(): Promise<void> {
   loadAll(client, path.resolve(__dirname));
   registerCoreTasks(client);
 
-  client.once('ready', async () => {
+  client.once(Events.ClientReady, async () => {
     try {
       await deployCommands(client, { token: config.DISCORD_TOKEN, clientId: config.CLIENT_ID, devGuildId: config.DEV_GUILD_ID || undefined });
     } catch (err) {

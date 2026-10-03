@@ -2,7 +2,7 @@
   "name": "redemption-story-bot",
   "version": "1.0.0",
   "description": "Redemption Story Studio - Discord bot central multi-serveur (Prison RP, Battle Royale, School RP, Shop) avec dashboard web.",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "private": true,
   "engines": {
     "node": ">=22.0.0"
@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "prisma generate && tsc -p tsconfig.json && node scripts/copy-assets.js",
-    "start": "node dist/index.js",
+    "start": "node dist/src/index.js",
     "setup": "tsx scripts/setup.ts",
     "deploy": "tsx scripts/deploy-commands.ts",
     "test": "vitest run",

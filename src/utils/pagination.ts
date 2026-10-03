@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, EmbedBuilder, type ChatInputCommandInteraction, type ButtonInteraction, type InteractionResponse, type Message } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, EmbedBuilder, MessageFlags, type ChatInputCommandInteraction, type ButtonInteraction, type Message } from 'discord.js';
 
 export interface PaginateOptions {
   pages: EmbedBuilder[];
@@ -27,9 +27,12 @@ export async function paginate(interaction: ChatInputCommandInteraction | Button
 
   const payload = () => ({ embeds: [pages[index]!], components: pages.length > 1 ? [row()] : [] });
 
-  let message: Message | InteractionResponse;
+  let message: Message;
   if (interaction.deferred || interaction.replied) message = await interaction.editReply(payload());
-  else message = await interaction.reply({ ...payload(), ephemeral, fetchReply: true });
+  else {
+    const response = await interaction.reply({ ...payload(), flags: ephemeral ? MessageFlags.Ephemeral : undefined, withResponse: true });
+    message = response.resource?.message ?? (await interaction.fetchReply());
+  }
 
   if (pages.length <= 1) return;
 

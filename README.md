@@ -163,7 +163,7 @@ En production, utilisez un gestionnaire de processus :
 
 ```bash
 npm i -g pm2
-pm2 start dist/index.js --name redemption-story-bot
+pm2 start dist/src/index.js --name redemption-story-bot
 pm2 save
 ```
 
