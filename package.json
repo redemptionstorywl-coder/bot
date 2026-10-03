@@ -21,7 +21,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:push": "prisma db push",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "postinstall": "prisma generate && tsc -p tsconfig.json && node scripts/copy-assets.js"
   },
   "keywords": [
     "discord",
@@ -32,6 +33,11 @@
   "license": "UNLICENSED",
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "@types/ejs": "^3.1.5",
+    "@types/express": "^4.17.21",
+    "@types/express-session": "^1.18.1",
+    "@types/node": "^22.13.4",
+    "@types/pdfkit": "^0.13.9",
     "discord.js": "^14.27.0",
     "dotenv": "^16.4.7",
     "ejs": "^3.1.10",
@@ -40,19 +46,14 @@
     "pdfkit": "^0.15.2",
     "pino": "^9.6.0",
     "pino-pretty": "^13.0.0",
+    "prisma": "^6.19.3",
     "sharp": "^0.33.5",
     "socket.io": "^4.8.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.7.3",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@types/ejs": "^3.1.5",
-    "@types/express": "^4.17.21",
-    "@types/express-session": "^1.18.1",
-    "@types/node": "^22.13.4",
-    "@types/pdfkit": "^0.13.9",
-    "prisma": "^6.19.3",
-    "tsx": "^4.19.3",
-    "typescript": "^5.7.3",
     "vitest": "^3.0.7"
   }
 }
