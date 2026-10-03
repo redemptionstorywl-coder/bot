@@ -37,7 +37,7 @@ export async function startDashboard(client: RedemptionClient): Promise<Dashboar
     server.listen(config.DASHBOARD_PORT, () => {
       server.off('error', onError);
       server.on('error', (err) => log.error({ err }, 'Erreur serveur HTTP dashboard'));
-      log.info({ port: config.DASHBOARD_PORT, url: config.DASHBOARD_URL }, 'Dashboard démarré');
+      log.info({ port: config.DASHBOARD_PORT, url: config.DASHBOARD_URL, oauthRedirectUri: `${config.DASHBOARD_URL.replace(/\/$/, '')}/auth/callback` }, 'Dashboard démarré — ajoutez oauthRedirectUri dans Developer Portal > OAuth2 > Redirects');
       resolve(true);
     });
   });
