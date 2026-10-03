@@ -1,38 +1,186 @@
-import { MessageFlags } from 'discord.js';
+import { MessageFlags, type ButtonInteraction } from 'discord.js';
 import { defineButton } from '../structures';
+import type { InteractionContext } from '../structures/types';
 import { languageService } from '../services/LanguageService';
 import { guildConfigService } from '../services/GuildConfigService';
 import { embedService } from '../services/EmbedService';
+import { welcomeService, type Localized } from '../services/WelcomeService';
+import {
+  buildButtonsModal,
+  buildDmModal,
+  buildEmbedModal,
+  buildImageModal,
+  buildMessageModal,
+  checkPanelAccess,
+  isWelcomeTab,
+  onOff,
+  renderPanel,
+  variablesEmbed,
+  type PanelNotice,
+  type WelcomeTab,
+} from '../commands/roles/_welcomeShared';
 
 /**
- * Boutons du message de bienvenue :
- *  - `welcome:lang:<guildId>` → « 🌍 Choisir ma langue » : ouvre le select de langue en éphémère (fonctionne aussi en DM).
+ * Boutons du namespace `welcome` :
+ *  - `welcome:lang:<guildId>`          → « 🌍 Choisir ma langue » (tout le monde, fonctionne aussi en DM).
+ *  - `welcome:cfg:<action>:<tab>`      → panneau de configuration `/welcome-config` (admin, vérifié ici).
+ *      tab ∈ welcome | leave ; actions : tab, toggle, test, message, embed, image, imgtoggle, dm, dmmsg, langprompt, buttons, logs, vars.
  * Les autres boutons configurés par le staff utilisent leur propre namespace (ex. `rolemenu:toggle:<roleId>`) ou sont des liens.
  */
 export default defineButton({
   id: 'welcome',
   module: 'welcome',
-  cooldown: 2,
+  cooldown: 1,
   async execute(interaction, args, ctx) {
-    const [action, guildIdHint] = args;
+    const [action, second, third] = args;
     if (action === 'lang') {
-      const guild = interaction.guild ?? languageService.resolveGuild(guildIdHint);
-      const config = guild ? await guildConfigService.get(guild.id) : null;
-      if (!guild || !config) {
-        await interaction.reply({ embeds: [embedService.error(ctx.t('language.guild_unavailable'))], flags: MessageFlags.Ephemeral });
-        return;
-      }
-      if (!config.modules.language) {
-        await interaction.reply({ embeds: [embedService.error(ctx.t('language.module_disabled'))], flags: MessageFlags.Ephemeral });
-        return;
-      }
-      await interaction.reply({
-        content: ctx.t('language.select.prompt'),
-        components: [languageService.buildSelectRow(config, ctx.t, interaction.guild ? undefined : guild.id)],
-        flags: MessageFlags.Ephemeral,
-      });
+      await chooseLanguage(interaction, second, ctx);
+      return;
+    }
+    if (action === 'cfg') {
+      await panelAction(interaction, second ?? '', third, ctx);
       return;
     }
     await interaction.reply({ embeds: [embedService.error(ctx.t('core.invalid_input', { details: action ?? '' }))], flags: MessageFlags.Ephemeral });
   },
 });
+
+async function chooseLanguage(interaction: ButtonInteraction, guildIdHint: string | undefined, ctx: InteractionContext): Promise<void> {
+  const guild = interaction.guild ?? languageService.resolveGuild(guildIdHint);
+  const config = guild ? await guildConfigService.get(guild.id) : null;
+  if (!guild || !config) {
+    await interaction.reply({ embeds: [embedService.error(ctx.t('language.guild_unavailable'))], flags: MessageFlags.Ephemeral });
+    return;
+  }
+  if (!config.modules.language) {
+    await interaction.reply({ embeds: [embedService.error(ctx.t('language.module_disabled'))], flags: MessageFlags.Ephemeral });
+    return;
+  }
+  await interaction.reply({
+    content: ctx.t('language.select.prompt'),
+    components: [languageService.buildSelectRow(config, ctx.t, interaction.guild ? undefined : guild.id)],
+    flags: MessageFlags.Ephemeral,
+  });
+}
+
+async function refresh(interaction: ButtonInteraction, tab: WelcomeTab, ctx: InteractionContext, notice?: PanelNotice): Promise<void> {
+  const payload = await renderPanel({ guild: interaction.guild!, tab, t: ctx.t, lang: ctx.lang, fallbackLang: ctx.config!.defaultLanguage, notice });
+  if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
+  else await interaction.update(payload);
+}
+
+async function panelAction(interaction: ButtonInteraction, action: string, tabArg: string | undefined, ctx: InteractionContext): Promise<void> {
+  const { t, config } = ctx;
+  const tab: WelcomeTab = isWelcomeTab(tabArg) ? tabArg : 'welcome';
+  const denied = checkPanelAccess(interaction, ctx, tab);
+  if (denied) {
+    await interaction.reply({ embeds: [embedService.error(t(denied.key, denied.vars))], flags: MessageFlags.Ephemeral });
+    return;
+  }
+  const guild = interaction.guild!;
+  const guildId = guild.id;
+  const fallbackLang = config!.defaultLanguage;
+  const ok = (text: string): PanelNotice => ({ type: 'success', text });
+
+  // ── Modals ──
+  if (action === 'message' || action === 'embed' || action === 'image' || action === 'dmmsg' || action === 'buttons') {
+    const current = tab === 'welcome' ? await welcomeService.getConfig(guildId) : await welcomeService.getLeaveConfig(guildId);
+    switch (action) {
+      case 'message':
+        await interaction.showModal(buildMessageModal(tab, current?.message as Localized<string> | null, t, fallbackLang));
+        return;
+      case 'embed':
+        await interaction.showModal(buildEmbedModal(tab, current?.embed, t, fallbackLang));
+        return;
+      case 'image':
+        await interaction.showModal(buildImageModal(tab, current, t));
+        return;
+      case 'dmmsg':
+        await interaction.showModal(buildDmModal(tab === 'welcome' ? (current as Awaited<ReturnType<typeof welcomeService.getConfig>>) : null, t, fallbackLang));
+        return;
+      case 'buttons':
+        await interaction.showModal(buildButtonsModal(tab === 'welcome' ? (current as Awaited<ReturnType<typeof welcomeService.getConfig>>)?.buttons : [], t));
+        return;
+    }
+  }
+
+  switch (action) {
+    case 'tab':
+      await refresh(interaction, tab, ctx);
+      return;
+    case 'vars':
+      await interaction.reply({ embeds: [variablesEmbed(t)], flags: MessageFlags.Ephemeral });
+      return;
+    case 'toggle': {
+      if (tab === 'welcome') {
+        const c = await welcomeService.getConfig(guildId);
+        const enabled = !(c?.enabled ?? false);
+        await welcomeService.updateConfig(guildId, { enabled });
+        await refresh(interaction, tab, ctx, ok(t('welcome.config.enabled_set', { state: onOff(enabled, t) })));
+      } else {
+        const c = await welcomeService.getLeaveConfig(guildId);
+        const enabled = !(c?.enabled ?? false);
+        await welcomeService.updateLeaveConfig(guildId, { enabled });
+        await refresh(interaction, tab, ctx, ok(t('welcome.leave.config.enabled_set', { state: onOff(enabled, t) })));
+      }
+      return;
+    }
+    case 'imgtoggle': {
+      if (tab === 'welcome') {
+        const c = await welcomeService.getConfig(guildId);
+        const imageEnabled = !(c?.imageEnabled ?? false);
+        await welcomeService.updateConfig(guildId, { imageEnabled });
+        await refresh(interaction, tab, ctx, ok(t('welcome.config.image_set', { state: onOff(imageEnabled, t) })));
+      } else {
+        const c = await welcomeService.getLeaveConfig(guildId);
+        const imageEnabled = !(c?.imageEnabled ?? false);
+        await welcomeService.updateLeaveConfig(guildId, { imageEnabled });
+        await refresh(interaction, tab, ctx, ok(t('welcome.leave.config.image_set', { state: onOff(imageEnabled, t) })));
+      }
+      return;
+    }
+    case 'dm': {
+      const c = await welcomeService.getConfig(guildId);
+      const dmEnabled = !(c?.dmEnabled ?? false);
+      await welcomeService.updateConfig(guildId, { dmEnabled });
+      await refresh(interaction, 'welcome', ctx, ok(t('welcome.config.dm_set', { state: onOff(dmEnabled, t) })));
+      return;
+    }
+    case 'langprompt': {
+      const c = await welcomeService.getConfig(guildId);
+      const languagePromptEnabled = !(c?.languagePromptEnabled ?? false);
+      await welcomeService.updateConfig(guildId, { languagePromptEnabled });
+      await refresh(interaction, 'welcome', ctx, ok(t('welcome.config.language_prompt_set', { state: onOff(languagePromptEnabled, t) })));
+      return;
+    }
+    case 'logs': {
+      const c = await welcomeService.getLeaveConfig(guildId);
+      const logEnabled = !(c?.logEnabled ?? true);
+      await welcomeService.updateLeaveConfig(guildId, { logEnabled });
+      await refresh(interaction, 'leave', ctx, ok(t('welcome.leave.config.logs_set', { state: onOff(logEnabled, t) })));
+      return;
+    }
+    case 'test': {
+      await interaction.deferUpdate();
+      const member = await guild.members.fetch(interaction.user.id);
+      const payload = tab === 'welcome' ? await welcomeService.preview(guild, member) : await welcomeService.previewLeave(guild, member);
+      const prefix = tab === 'welcome' ? 'welcome.config' : 'welcome.leave.config';
+      if (!payload) {
+        await refresh(interaction, tab, ctx, { type: 'warning', text: t(`${prefix}.not_configured`) });
+        return;
+      }
+      const current = tab === 'welcome' ? await welcomeService.getConfig(guildId) : await welcomeService.getLeaveConfig(guildId);
+      const channel = current?.channelId ? await guild.channels.fetch(current.channelId).catch(() => null) : null;
+      if (channel?.isTextBased() && 'send' in channel) {
+        await channel.send({ content: payload.content, embeds: payload.embeds, files: payload.files, components: payload.components });
+        await refresh(interaction, tab, ctx, ok(t(`${prefix}.test_sent`, { channel: `<#${channel.id}>` })));
+      } else {
+        await refresh(interaction, tab, ctx, { type: 'info', text: t('welcome.panel.test_preview_here') });
+        await interaction.followUp({ content: payload.content, embeds: payload.embeds, files: payload.files, components: payload.components, flags: MessageFlags.Ephemeral });
+      }
+      return;
+    }
+    default:
+      await interaction.reply({ embeds: [embedService.error(t('core.invalid_input', { details: action }))], flags: MessageFlags.Ephemeral });
+  }
+}
