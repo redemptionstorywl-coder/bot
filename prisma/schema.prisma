@@ -1,0 +1,1076 @@
+// ─────────────────────────────────────────────────────────────
+//  Redemption Story Studio — Schéma de base de données
+//  Provider : MySQL  |  ORM : Prisma
+// ─────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ──────────────── Enums ────────────────
+
+enum GuildKind {
+  GENERIC
+  PRISON
+  BATTLE_ROYALE
+  SCHOOL
+  SHOP
+}
+
+enum TranslationMode {
+  CHANNELS
+  PERMISSIONS
+}
+
+enum LogCategory {
+  MESSAGE
+  MEMBER
+  ROLE
+  CHANNEL
+  VOICE
+  MODERATION
+  TICKET
+  WHITELIST
+  ANNOUNCEMENT
+  SHOP
+  BATTLE_ROYALE
+  SCHOOL
+  SECURITY
+  SYSTEM
+}
+
+enum TicketStatus {
+  OPEN
+  CLAIMED
+  CLOSED
+  ARCHIVED
+  DELETED
+}
+
+enum PanelStyle {
+  BUTTONS
+  SELECT
+}
+
+enum SanctionType {
+  BAN
+  TEMPBAN
+  UNBAN
+  KICK
+  WARN
+  UNWARN
+  TIMEOUT
+  UNTIMEOUT
+  MUTE
+  UNMUTE
+  PURGE
+  LOCK
+  UNLOCK
+  SLOWMODE
+  LOCKDOWN
+  LOCKDOWN_END
+}
+
+enum AutoRoleType {
+  JOIN
+  BOT
+  VERIFIED
+  MEMBER
+  LANGUAGE
+  SPECIAL
+}
+
+enum AnnouncementStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ScheduleStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum EventStatus {
+  SCHEDULED
+  ONGOING
+  ENDED
+  CANCELLED
+}
+
+enum PollType {
+  YES_NO
+  MULTIPLE
+}
+
+enum FiveMFramework {
+  ESX
+  QBCORE
+  CUSTOM
+}
+
+enum ReviewStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum SchoolRole {
+  STUDENT
+  TEACHER
+  STAFF
+}
+
+// ──────────────── Core ────────────────
+
+model Guild {
+  id        String    @id @db.VarChar(32)
+  name      String
+  icon      String?
+  kind      GuildKind @default(GENERIC)
+  ownerId   String?   @db.VarChar(32)
+  joinedAt  DateTime  @default(now())
+  leftAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  settings            GuildSettings?
+  logChannels         LogChannel[]
+  userLanguages       UserLanguage[]
+  languageRoles       LanguageRole[]
+  tickets             Ticket[]
+  ticketTypes         TicketType[]
+  ticketPanels        TicketPanel[]
+  ticketCounter       TicketCounter?
+  warnings            Warning[]
+  bans                Ban[]
+  mutes               Mute[]
+  sanctions           Sanction[]
+  moderationConfig    ModerationConfig?
+  roleMenus           RoleMenu[]
+  reactionRoles       ReactionRole[]
+  autoRoles           AutoRole[]
+  notificationRoles   NotificationRole[]
+  welcomeConfig       WelcomeConfig?
+  leaveConfig         LeaveConfig?
+  embedTemplates      EmbedTemplate[]
+  announcements       Announcement[]
+  events              Event[]
+  giveaways           Giveaway[]
+  polls               Poll[]
+  logs                Log[]
+  messageActivities   MessageActivity[]
+  brProfiles          BattleRoyaleProfile[]
+  battlePasses        BattlePass[]
+  fivemServers        FiveMServer[]
+  whitelists          Whitelist[]
+  shopCategories      ShopCategory[]
+  shopProducts        ShopProduct[]
+  shopOrders          ShopOrder[]
+  schoolProfiles      SchoolProfile[]
+  schoolClasses       SchoolClass[]
+  schoolHouses        SchoolHouse[]
+  schoolClubs         SchoolClub[]
+  schoolApplications  SchoolApplication[]
+  translations        Translation[]
+  commandPermissions  CommandPermission[]
+}
+
+model GuildSettings {
+  guildId         String          @id @db.VarChar(32)
+  defaultLanguage String          @default("fr") @db.VarChar(8)
+  timezone        String          @default("Europe/Paris")
+  brandColor      String          @default("#7C3AED") @db.VarChar(9)
+  /// Rôles considérés comme administrateurs du bot
+  adminRoleIds    Json            @default("[]")
+  /// Rôles considérés comme staff (modération, tickets)
+  staffRoleIds    Json            @default("[]")
+  /// Map { moduleKey: boolean }
+  modules         Json            @default("{}")
+  translationMode TranslationMode @default(CHANNELS)
+  /// Map { language: channelId } pour le mode CHANNELS
+  languageChannels Json           @default("{}")
+  /// Langues activées sur ce serveur
+  enabledLanguages Json           @default("[\"fr\",\"en\"]")
+  /// Salon où le menu de langue est publié
+  languagePanelChannelId String?  @db.VarChar(32)
+  languagePanelMessageId String?  @db.VarChar(32)
+  /// Préfixe d'identification de la boutique / nom affiché
+  displayName     String?
+  footerText      String?
+  footerIconUrl   String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model LogChannel {
+  id        Int         @id @default(autoincrement())
+  guildId   String      @db.VarChar(32)
+  category  LogCategory
+  channelId String      @db.VarChar(32)
+  enabled   Boolean     @default(true)
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, category])
+}
+
+model CommandPermission {
+  id          Int     @id @default(autoincrement())
+  guildId     String  @db.VarChar(32)
+  commandName String  @db.VarChar(64)
+  roleIds     Json    @default("[]")
+  enabled     Boolean @default(true)
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, commandName])
+}
+
+model User {
+  id         String   @id @db.VarChar(32)
+  username   String
+  globalName String?
+  avatar     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  languages UserLanguage[]
+}
+
+model UserLanguage {
+  id        Int      @id @default(autoincrement())
+  userId    String   @db.VarChar(32)
+  guildId   String   @db.VarChar(32)
+  language  String   @db.VarChar(8)
+  updatedAt DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, guildId])
+  @@index([guildId, language])
+}
+
+model LanguageRole {
+  id       Int     @id @default(autoincrement())
+  guildId  String  @db.VarChar(32)
+  language String  @db.VarChar(8)
+  roleId   String  @db.VarChar(32)
+  emoji    String?
+  label    String?
+  enabled  Boolean @default(true)
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, language])
+}
+
+model Translation {
+  id       Int     @id @default(autoincrement())
+  /// null = override global
+  guildId  String? @db.VarChar(32)
+  language String  @db.VarChar(8)
+  key      String  @db.VarChar(191)
+  value    String  @db.Text
+  updatedAt DateTime @updatedAt
+
+  guild Guild? @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, language, key])
+}
+
+// ──────────────── Tickets ────────────────
+
+model TicketCounter {
+  guildId String @id @db.VarChar(32)
+  value   Int    @default(0)
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model TicketType {
+  id             Int     @id @default(autoincrement())
+  guildId        String  @db.VarChar(32)
+  key            String  @db.VarChar(64)
+  label          String
+  emoji          String?
+  description    String?
+  categoryId     String? @db.VarChar(32)
+  archiveCategoryId String? @db.VarChar(32)
+  staffRoleIds   Json    @default("[]")
+  /// [{ id, label, placeholder, style: 'short'|'paragraph', required, maxLength }]
+  questions      Json    @default("[]")
+  /// EmbedSpec affiché à l'ouverture
+  embed          Json?
+  welcomeMessage String? @db.Text
+  language       String? @db.VarChar(8)
+  nameFormat     String  @default("ticket-{number}")
+  maxPerUser     Int     @default(1)
+  enabled        Boolean @default(true)
+  order          Int     @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  guild   Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
+
+  @@unique([guildId, key])
+}
+
+model TicketPanel {
+  id        Int        @id @default(autoincrement())
+  guildId   String     @db.VarChar(32)
+  channelId String     @db.VarChar(32)
+  messageId String?    @db.VarChar(32)
+  embed     Json
+  typeIds   Json       @default("[]")
+  style     PanelStyle @default(BUTTONS)
+  createdAt DateTime   @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model Ticket {
+  id           Int          @id @default(autoincrement())
+  guildId      String       @db.VarChar(32)
+  number       Int
+  channelId    String       @db.VarChar(32)
+  typeId       Int?
+  userId       String       @db.VarChar(32)
+  status       TicketStatus @default(OPEN)
+  claimedById  String?      @db.VarChar(32)
+  closedById   String?      @db.VarChar(32)
+  closeReason  String?      @db.Text
+  closedAt     DateTime?
+  /// [{ question, answer }]
+  formAnswers  Json         @default("[]")
+  /// IDs des membres ajoutés
+  participants Json         @default("[]")
+  language     String?      @db.VarChar(8)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  guild      Guild             @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  type       TicketType?       @relation(fields: [typeId], references: [id], onDelete: SetNull)
+  messages   TicketMessage[]
+  transcript TicketTranscript?
+
+  @@unique([guildId, number])
+  @@index([guildId, userId, status])
+  @@index([channelId])
+}
+
+model TicketMessage {
+  id          Int      @id @default(autoincrement())
+  ticketId    Int
+  messageId   String   @db.VarChar(32)
+  authorId    String   @db.VarChar(32)
+  authorTag   String
+  authorAvatar String?
+  content     String   @db.Text
+  attachments Json     @default("[]")
+  embeds      Json     @default("[]")
+  createdAt   DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}
+
+model TicketTranscript {
+  id              Int      @id @default(autoincrement())
+  ticketId        Int      @unique
+  htmlPath        String?
+  txtPath         String?
+  pdfPath         String?
+  messageCount    Int      @default(0)
+  durationSeconds Int      @default(0)
+  staffIds        Json     @default("[]")
+  closeReason     String?  @db.Text
+  createdAt       DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+}
+
+// ──────────────── Modération ────────────────
+
+model ModerationConfig {
+  guildId         String  @id @db.VarChar(32)
+  /// [{ count: 3, action: 'TIMEOUT', duration: 3600 }, ...]
+  warnThresholds  Json    @default("[{\"count\":3,\"action\":\"TIMEOUT\",\"duration\":3600},{\"count\":5,\"action\":\"KICK\"},{\"count\":7,\"action\":\"BAN\"}]")
+  muteRoleId      String? @db.VarChar(32)
+  dmOnSanction    Boolean @default(true)
+  /// AntiRaidConfig (voir src/services/AntiRaidService)
+  antiRaid        Json    @default("{}")
+  lockdownActive  Boolean @default(false)
+  /// État sauvegardé des permissions avant lockdown
+  lockdownState   Json?
+  updatedAt       DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model Sanction {
+  id          Int          @id @default(autoincrement())
+  guildId     String       @db.VarChar(32)
+  caseNumber  Int
+  type        SanctionType
+  userId      String?      @db.VarChar(32)
+  moderatorId String       @db.VarChar(32)
+  reason      String?      @db.Text
+  /// Durée en secondes si applicable
+  duration    Int?
+  channelId   String?      @db.VarChar(32)
+  metadata    Json?
+  createdAt   DateTime     @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, caseNumber])
+  @@index([guildId, userId])
+}
+
+model Warning {
+  id          Int      @id @default(autoincrement())
+  guildId     String   @db.VarChar(32)
+  userId      String   @db.VarChar(32)
+  moderatorId String   @db.VarChar(32)
+  reason      String   @db.Text
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, userId, active])
+}
+
+model Ban {
+  id          Int       @id @default(autoincrement())
+  guildId     String    @db.VarChar(32)
+  userId      String    @db.VarChar(32)
+  moderatorId String    @db.VarChar(32)
+  reason      String?   @db.Text
+  expiresAt   DateTime?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, userId, active])
+  @@index([active, expiresAt])
+}
+
+model Mute {
+  id          Int       @id @default(autoincrement())
+  guildId     String    @db.VarChar(32)
+  userId      String    @db.VarChar(32)
+  moderatorId String    @db.VarChar(32)
+  reason      String?   @db.Text
+  expiresAt   DateTime?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, userId, active])
+  @@index([active, expiresAt])
+}
+
+// ──────────────── Rôles ────────────────
+
+model AutoRole {
+  id           Int          @id @default(autoincrement())
+  guildId      String       @db.VarChar(32)
+  roleId       String       @db.VarChar(32)
+  type         AutoRoleType @default(JOIN)
+  delaySeconds Int          @default(0)
+  enabled      Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, roleId, type])
+}
+
+model RoleMenu {
+  id          Int        @id @default(autoincrement())
+  guildId     String     @db.VarChar(32)
+  name        String
+  channelId   String?    @db.VarChar(32)
+  messageId   String?    @db.VarChar(32)
+  style       PanelStyle @default(BUTTONS)
+  embed       Json
+  /// [{ roleId, label, emoji, description, style }]
+  options     Json       @default("[]")
+  minValues   Int        @default(0)
+  maxValues   Int        @default(25)
+  /// Si vrai, un seul rôle à la fois (exclusif)
+  exclusive   Boolean    @default(false)
+  placeholder String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model ReactionRole {
+  id        Int    @id @default(autoincrement())
+  guildId   String @db.VarChar(32)
+  channelId String @db.VarChar(32)
+  messageId String @db.VarChar(32)
+  emoji     String @db.VarChar(128)
+  roleId    String @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, emoji])
+  @@index([guildId])
+}
+
+model NotificationRole {
+  id      Int     @id @default(autoincrement())
+  guildId String  @db.VarChar(32)
+  key     String  @db.VarChar(64)
+  roleId  String  @db.VarChar(32)
+  label   String
+  emoji   String?
+  description String?
+  enabled Boolean @default(true)
+  order   Int     @default(0)
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, key])
+}
+
+// ──────────────── Bienvenue / Départ ────────────────
+
+model WelcomeConfig {
+  guildId               String  @id @db.VarChar(32)
+  enabled               Boolean @default(false)
+  channelId             String? @db.VarChar(32)
+  /// Message texte (variables {user} {server} ...). Peut être un objet { lang: message }
+  message               Json?
+  /// EmbedSpec, peut être { lang: EmbedSpec }
+  embed                 Json?
+  imageEnabled          Boolean @default(false)
+  imageBackgroundUrl    String?
+  imageTitle            String  @default("BIENVENUE")
+  imageSubtitle         String  @default("{username} · membre #{memberCount}")
+  dmEnabled             Boolean @default(false)
+  dmMessage             Json?
+  dmEmbed               Json?
+  /// [{ label, style, url?, customId?, emoji? }]
+  buttons               Json    @default("[]")
+  languagePromptEnabled Boolean @default(false)
+  updatedAt             DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+model LeaveConfig {
+  guildId            String  @id @db.VarChar(32)
+  enabled            Boolean @default(false)
+  channelId          String? @db.VarChar(32)
+  message            Json?
+  embed              Json?
+  imageEnabled       Boolean @default(false)
+  imageBackgroundUrl String?
+  logEnabled         Boolean @default(true)
+  updatedAt          DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+}
+
+// ──────────────── Embeds & Annonces ────────────────
+
+model EmbedTemplate {
+  id          Int      @id @default(autoincrement())
+  guildId     String   @db.VarChar(32)
+  name        String   @db.VarChar(100)
+  description String?
+  /// EmbedSpec validé par Zod
+  spec        Json
+  /// [{ label, style, url?, customId?, emoji? }]
+  buttons     Json     @default("[]")
+  createdById String   @db.VarChar(32)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, name])
+}
+
+model Announcement {
+  id             Int                @id @default(autoincrement())
+  guildId        String             @db.VarChar(32)
+  title          String
+  content        String?            @db.Text
+  /// EmbedSpec principal (langue source)
+  spec           Json
+  /// { lang: EmbedSpec } versions traduites
+  translations   Json               @default("{}")
+  sourceLanguage String             @default("fr") @db.VarChar(8)
+  /// Langues cibles de publication ("*" = toutes activées)
+  targetLanguages Json              @default("[]")
+  channelId      String?            @db.VarChar(32)
+  mentionRoleIds Json               @default("[]")
+  mentionEveryone Boolean           @default(false)
+  buttons        Json               @default("[]")
+  status         AnnouncementStatus @default(DRAFT)
+  /// [{ channelId, messageId, language }]
+  messages       Json               @default("[]")
+  createdById    String             @db.VarChar(32)
+  publishedAt    DateTime?
+  archivedAt     DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  guild     Guild                    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  schedules ScheduledAnnouncement[]
+
+  @@index([guildId, status])
+}
+
+model ScheduledAnnouncement {
+  id             Int            @id @default(autoincrement())
+  announcementId Int
+  scheduledAt    DateTime
+  status         ScheduleStatus @default(PENDING)
+  error          String?        @db.Text
+  sentAt         DateTime?
+  createdAt      DateTime       @default(now())
+
+  announcement Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@index([status, scheduledAt])
+}
+
+// ──────────────── Événements / Giveaways / Sondages ────────────────
+
+model Event {
+  id              Int         @id @default(autoincrement())
+  guildId         String      @db.VarChar(32)
+  name            String
+  description     String      @db.Text
+  startsAt        DateTime
+  endsAt          DateTime?
+  location        String?
+  imageUrl        String?
+  mentionRoleId   String?     @db.VarChar(32)
+  maxParticipants Int?
+  channelId       String      @db.VarChar(32)
+  messageId       String?     @db.VarChar(32)
+  language        String?     @db.VarChar(8)
+  status          EventStatus @default(SCHEDULED)
+  /// Rappels déjà envoyés (minutes avant) : [1440, 60, 30, 10, 5]
+  remindersSent   Json        @default("[]")
+  /// Minutes avant l'événement pour rappeler
+  reminderOffsets Json        @default("[1440,60,30,10,5]")
+  createdById     String      @db.VarChar(32)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  guild        Guild              @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  participants EventParticipant[]
+
+  @@index([status, startsAt])
+}
+
+model EventParticipant {
+  id       Int      @id @default(autoincrement())
+  eventId  Int
+  userId   String   @db.VarChar(32)
+  joinedAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+}
+
+model Giveaway {
+  id             Int       @id @default(autoincrement())
+  guildId        String    @db.VarChar(32)
+  channelId      String    @db.VarChar(32)
+  messageId      String?   @db.VarChar(32)
+  prize          String
+  description    String?   @db.Text
+  winnersCount   Int       @default(1)
+  endsAt         DateTime
+  requiredRoleId String?   @db.VarChar(32)
+  minMessages    Int       @default(0)
+  language       String?   @db.VarChar(8)
+  hostId         String    @db.VarChar(32)
+  ended          Boolean   @default(false)
+  winners        Json      @default("[]")
+  createdAt      DateTime  @default(now())
+
+  guild   Guild           @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  entries GiveawayEntry[]
+
+  @@index([ended, endsAt])
+}
+
+model GiveawayEntry {
+  id         Int      @id @default(autoincrement())
+  giveawayId Int
+  userId     String   @db.VarChar(32)
+  createdAt  DateTime @default(now())
+
+  giveaway Giveaway @relation(fields: [giveawayId], references: [id], onDelete: Cascade)
+
+  @@unique([giveawayId, userId])
+}
+
+model Poll {
+  id          Int      @id @default(autoincrement())
+  guildId     String   @db.VarChar(32)
+  channelId   String   @db.VarChar(32)
+  messageId   String?  @db.VarChar(32)
+  question    String   @db.Text
+  /// [{ label, emoji }]
+  options     Json
+  type        PollType @default(MULTIPLE)
+  anonymous   Boolean  @default(false)
+  multiSelect Boolean  @default(false)
+  endsAt      DateTime?
+  ended       Boolean  @default(false)
+  results     Json?
+  createdById String   @db.VarChar(32)
+  createdAt   DateTime @default(now())
+
+  guild Guild      @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  votes PollVote[]
+
+  @@index([ended, endsAt])
+}
+
+model PollVote {
+  id          Int      @id @default(autoincrement())
+  pollId      Int
+  userId      String   @db.VarChar(32)
+  optionIndex Int
+  createdAt   DateTime @default(now())
+
+  poll Poll @relation(fields: [pollId], references: [id], onDelete: Cascade)
+
+  @@unique([pollId, userId, optionIndex])
+}
+
+// ──────────────── Logs & activité ────────────────
+
+model Log {
+  id        Int         @id @default(autoincrement())
+  guildId   String      @db.VarChar(32)
+  category  LogCategory
+  action    String      @db.VarChar(64)
+  actorId   String?     @db.VarChar(32)
+  targetId  String?     @db.VarChar(32)
+  data      Json?
+  createdAt DateTime    @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, category, createdAt])
+}
+
+model MessageActivity {
+  id      Int      @id @default(autoincrement())
+  guildId String   @db.VarChar(32)
+  userId  String   @db.VarChar(32)
+  count   Int      @default(0)
+  lastAt  DateTime @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, userId])
+}
+
+// ──────────────── Battle Royale ────────────────
+
+model BattleRoyaleProfile {
+  id             Int      @id @default(autoincrement())
+  guildId        String   @db.VarChar(32)
+  userId         String   @db.VarChar(32)
+  nickname       String?
+  /// Identifiant FiveM (license:xxxx)
+  identifier     String?  @db.VarChar(128)
+  level          Int      @default(1)
+  xp             Int      @default(0)
+  playtimeMinutes Int     @default(0)
+  battlePassTier Int      @default(0)
+  battlePassXp   Int      @default(0)
+  battlePassPremium Boolean @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  guild Guild                @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  stats BattleRoyaleStats[]
+
+  @@unique([guildId, userId])
+  @@index([guildId, identifier])
+}
+
+model BattleRoyaleStats {
+  id        Int      @id @default(autoincrement())
+  profileId Int
+  season    Int      @default(1)
+  wins      Int      @default(0)
+  kills     Int      @default(0)
+  deaths    Int      @default(0)
+  matches   Int      @default(0)
+  damage    Int      @default(0)
+  top10     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  profile BattleRoyaleProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, season])
+  @@index([season, wins])
+  @@index([season, kills])
+}
+
+model BattlePass {
+  id        Int      @id @default(autoincrement())
+  guildId   String   @db.VarChar(32)
+  season    Int
+  name      String
+  startsAt  DateTime
+  endsAt    DateTime
+  /// [{ tier, xpRequired, freeReward, premiumReward }]
+  tiers     Json     @default("[]")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, season])
+}
+
+// ──────────────── FiveM ────────────────
+
+model FiveMServer {
+  id              Int            @id @default(autoincrement())
+  guildId         String         @db.VarChar(32)
+  key             String         @db.VarChar(64)
+  name            String
+  framework       FiveMFramework @default(CUSTOM)
+  /// URL de base de l'API du serveur (ex: http://1.2.3.4:30120)
+  host            String?
+  /// Clé spécifique à ce serveur (en plus de FIVEM_API_KEY globale)
+  apiKey          String?
+  statusChannelId String?        @db.VarChar(32)
+  statusMessageId String?        @db.VarChar(32)
+  /// Dernier statut reçu : { online, players, maxPlayers, version, maintenance, playerList }
+  lastStatus      Json?
+  lastSeenAt      DateTime?
+  maintenance     Boolean        @default(false)
+  enabled         Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@unique([guildId, key])
+}
+
+model Whitelist {
+  id           Int          @id @default(autoincrement())
+  guildId      String       @db.VarChar(32)
+  userId       String       @db.VarChar(32)
+  identifier   String?      @db.VarChar(128)
+  status       ReviewStatus @default(PENDING)
+  answers      Json         @default("[]")
+  reviewedById String?      @db.VarChar(32)
+  reviewedAt   DateTime?
+  note         String?      @db.Text
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, userId])
+  @@index([guildId, status])
+}
+
+// ──────────────── Shop ────────────────
+
+model ShopCategory {
+  id          Int    @id @default(autoincrement())
+  guildId     String @db.VarChar(32)
+  name        String
+  description String?
+  emoji       String?
+  order       Int    @default(0)
+
+  guild    Guild         @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  products ShopProduct[]
+}
+
+model ShopProduct {
+  id             Int      @id @default(autoincrement())
+  guildId        String   @db.VarChar(32)
+  categoryId     Int?
+  name           String
+  description    String?  @db.Text
+  price          Decimal  @db.Decimal(10, 2)
+  currency       String   @default("EUR") @db.VarChar(8)
+  imageUrl       String?
+  tebexPackageId String?
+  tebexUrl       String?
+  stock          Int?
+  enabled        Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  guild    Guild         @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  category ShopCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  orders   ShopOrder[]
+}
+
+model ShopOrder {
+  id                 Int         @id @default(autoincrement())
+  guildId            String      @db.VarChar(32)
+  userId             String      @db.VarChar(32)
+  productId          Int?
+  quantity           Int         @default(1)
+  total              Decimal     @db.Decimal(10, 2)
+  currency           String      @default("EUR") @db.VarChar(8)
+  status             OrderStatus @default(PENDING)
+  tebexTransactionId String?
+  ticketId           Int?
+  note               String?     @db.Text
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  guild   Guild        @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  product ShopProduct? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([guildId, userId])
+  @@index([guildId, status])
+}
+
+// ──────────────── School RP ────────────────
+
+model SchoolProfile {
+  id        Int        @id @default(autoincrement())
+  guildId   String     @db.VarChar(32)
+  userId    String     @db.VarChar(32)
+  role      SchoolRole @default(STUDENT)
+  firstName String
+  lastName  String
+  classId   Int?
+  houseId   Int?
+  points    Int        @default(0)
+  bio       String?    @db.Text
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  guild Guild        @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  class SchoolClass? @relation(fields: [classId], references: [id], onDelete: SetNull)
+  house SchoolHouse? @relation(fields: [houseId], references: [id], onDelete: SetNull)
+  clubs SchoolClubMember[]
+
+  @@unique([guildId, userId])
+}
+
+model SchoolClass {
+  id        Int     @id @default(autoincrement())
+  guildId   String  @db.VarChar(32)
+  name      String
+  teacherId String? @db.VarChar(32)
+  roleId    String? @db.VarChar(32)
+  channelId String? @db.VarChar(32)
+  capacity  Int?
+
+  guild    Guild           @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  students SchoolProfile[]
+}
+
+model SchoolHouse {
+  id      Int     @id @default(autoincrement())
+  guildId String  @db.VarChar(32)
+  name    String
+  emoji   String?
+  color   String? @db.VarChar(9)
+  roleId  String? @db.VarChar(32)
+  points  Int     @default(0)
+
+  guild   Guild           @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  members SchoolProfile[]
+}
+
+model SchoolClub {
+  id          Int     @id @default(autoincrement())
+  guildId     String  @db.VarChar(32)
+  name        String
+  description String? @db.Text
+  leaderId    String? @db.VarChar(32)
+  roleId      String? @db.VarChar(32)
+  maxMembers  Int?
+
+  guild   Guild              @relation(fields: [guildId], references: [id], onDelete: Cascade)
+  members SchoolClubMember[]
+}
+
+model SchoolClubMember {
+  id        Int      @id @default(autoincrement())
+  clubId    Int
+  profileId Int
+  joinedAt  DateTime @default(now())
+
+  club    SchoolClub    @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  profile SchoolProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, profileId])
+}
+
+model SchoolApplication {
+  id           Int          @id @default(autoincrement())
+  guildId      String       @db.VarChar(32)
+  userId       String       @db.VarChar(32)
+  role         SchoolRole   @default(STUDENT)
+  answers      Json         @default("[]")
+  status       ReviewStatus @default(PENDING)
+  reviewedById String?      @db.VarChar(32)
+  reviewedAt   DateTime?
+  note         String?      @db.Text
+  createdAt    DateTime     @default(now())
+
+  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  @@index([guildId, status])
+}
+
+// ──────────────── Dashboard ────────────────
+
+model DashboardSession {
+  sid       String   @id @db.VarChar(128)
+  data      Json
+  expiresAt DateTime
+
+  @@index([expiresAt])
+}

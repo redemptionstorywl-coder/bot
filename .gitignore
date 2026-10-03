@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+logs/*.log
+uploads/transcripts/*
+uploads/welcome/*
+!uploads/transcripts/.gitkeep
+!uploads/welcome/.gitkeep
+*.tsbuildinfo
+.DS_Store
+coverage/

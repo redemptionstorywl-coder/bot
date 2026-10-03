@@ -1,0 +1,40 @@
+{
+  "guild_config": {
+    "title": "⚙️ Configuration — {server}",
+    "kind": "Server type",
+    "default_language": "Default language",
+    "enabled_languages": "Enabled languages",
+    "admin_roles": "Admin roles",
+    "staff_roles": "Staff roles",
+    "translation_mode": "Multilingual mode",
+    "modules": "Modules",
+    "logs": "Log channels",
+    "language_stats": "Members per language",
+    "dashboard": "Dashboard",
+    "kind_set": "Server type set: **{kind}**",
+    "language_set": "Default language: **{language}**",
+    "languages_updated": "Enabled languages: {languages}",
+    "role_added": "Role {role} added.",
+    "role_removed": "Role {role} removed.",
+    "log_set": "**{category}** logs → {channel}",
+    "log_removed": "**{category}** logs disabled.",
+    "module_set": "Module {module}: {state}",
+    "color_set": "Default color: `{color}`",
+    "translation_mode_set": "Multilingual mode: **{mode}**",
+    "language_channel_set": "Channel for **{language}**: {channel}"
+  },
+  "help": {
+    "title": "📖 Help — Redemption Story Studio",
+    "description": "Here are the available commands. Full configuration is done on the dashboard: {dashboard}"
+  },
+  "status": {
+    "title": "📡 Bot status",
+    "uptime": "Uptime",
+    "ping": "Latency",
+    "database": "Database",
+    "guilds": "Servers",
+    "users": "Members",
+    "memory": "Memory",
+    "tasks": "Scheduled tasks"
+  }
+}
