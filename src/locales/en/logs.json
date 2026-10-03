@@ -1,0 +1,89 @@
+{
+  "unknown": "Unknown",
+  "fields": {
+    "author": "Author",
+    "authors": "Authors",
+    "content": "Content",
+    "attachments": "Attachments ({count})",
+    "embeds": "Embeds",
+    "before": "Before",
+    "after": "After",
+    "count": "Count",
+    "preview": "Preview",
+    "roles": "Roles",
+    "role": "Role",
+    "name": "Name",
+    "color": "Color",
+    "permissions": "Permissions",
+    "members": "Members",
+    "changed_by": "By",
+    "type": "Type",
+    "category": "Category"
+  },
+  "message": {
+    "deleted_title": "🗑️ Message deleted",
+    "edited_title": "✏️ Message edited",
+    "bulk_title": "🧹 {count} messages bulk deleted",
+    "deleted_by": "Deleted by",
+    "unknown_author": "Unknown author (message not cached)",
+    "content_unavailable": "Content unavailable (message not cached)",
+    "no_content": "*(no text)*",
+    "jump": "Jump to message"
+  },
+  "member": {
+    "join_title": "📥 Member joined",
+    "join_bot_title": "🤖 Bot added",
+    "leave_title": "📤 Member left",
+    "kicked_title": "👢 Member kicked",
+    "account_created": "Account created",
+    "recent_account": "recent account",
+    "member_count": "Members",
+    "joined_at": "Joined",
+    "nickname_title": "🏷️ Nickname changed",
+    "roles_title": "🎭 Roles changed",
+    "roles_added": "Roles added",
+    "roles_removed": "Roles removed",
+    "timeout_title": "⏳ Member timed out",
+    "untimeout_title": "⏳ Timeout removed"
+  },
+  "ban": {
+    "added_title": "🔨 Member banned",
+    "removed_title": "🔓 Member unbanned"
+  },
+  "role": {
+    "created_title": "🎭 Role created",
+    "deleted_title": "🎭 Role deleted",
+    "updated_title": "🎭 Role updated",
+    "hoist": "Displayed separately",
+    "mentionable": "Mentionable",
+    "permissions_added": "Permissions added",
+    "permissions_removed": "Permissions removed"
+  },
+  "channel": {
+    "created_title": "📁 Channel created",
+    "deleted_title": "📁 Channel deleted",
+    "updated_title": "📁 Channel updated",
+    "topic": "Topic",
+    "slowmode": "Slowmode",
+    "bitrate": "Bitrate",
+    "user_limit": "User limit",
+    "overwrites": "Permissions",
+    "overwrite_added": "➕ {target}: permissions added",
+    "overwrite_removed": "➖ {target}: permissions removed",
+    "overwrite_changed": "✏️ {target}: {changes}"
+  },
+  "voice": {
+    "join_title": "🔊 Voice join",
+    "leave_title": "🔇 Voice leave",
+    "move_title": "↪️ Voice channel move"
+  },
+  "invite": {
+    "created_title": "🔗 Invite created",
+    "code": "Code",
+    "inviter": "Created by",
+    "max_uses": "Max uses",
+    "expires": "Expires",
+    "never": "Never",
+    "temporary": "Temporary"
+  }
+}

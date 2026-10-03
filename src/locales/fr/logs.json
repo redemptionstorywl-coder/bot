@@ -1,0 +1,89 @@
+{
+  "unknown": "Inconnu",
+  "fields": {
+    "author": "Auteur",
+    "authors": "Auteurs",
+    "content": "Contenu",
+    "attachments": "Pièces jointes ({count})",
+    "embeds": "Embeds",
+    "before": "Avant",
+    "after": "Après",
+    "count": "Nombre",
+    "preview": "Aperçu",
+    "roles": "Rôles",
+    "role": "Rôle",
+    "name": "Nom",
+    "color": "Couleur",
+    "permissions": "Permissions",
+    "members": "Membres",
+    "changed_by": "Par",
+    "type": "Type",
+    "category": "Catégorie"
+  },
+  "message": {
+    "deleted_title": "🗑️ Message supprimé",
+    "edited_title": "✏️ Message modifié",
+    "bulk_title": "🧹 {count} messages supprimés en masse",
+    "deleted_by": "Supprimé par",
+    "unknown_author": "Auteur inconnu (message non mis en cache)",
+    "content_unavailable": "Contenu indisponible (message non mis en cache)",
+    "no_content": "*(aucun texte)*",
+    "jump": "Aller au message"
+  },
+  "member": {
+    "join_title": "📥 Membre arrivé",
+    "join_bot_title": "🤖 Bot ajouté",
+    "leave_title": "📤 Membre parti",
+    "kicked_title": "👢 Membre expulsé",
+    "account_created": "Compte créé",
+    "recent_account": "compte récent",
+    "member_count": "Membres",
+    "joined_at": "Arrivé le",
+    "nickname_title": "🏷️ Pseudo modifié",
+    "roles_title": "🎭 Rôles modifiés",
+    "roles_added": "Rôles ajoutés",
+    "roles_removed": "Rôles retirés",
+    "timeout_title": "⏳ Membre exclu temporairement",
+    "untimeout_title": "⏳ Exclusion levée"
+  },
+  "ban": {
+    "added_title": "🔨 Membre banni",
+    "removed_title": "🔓 Membre débanni"
+  },
+  "role": {
+    "created_title": "🎭 Rôle créé",
+    "deleted_title": "🎭 Rôle supprimé",
+    "updated_title": "🎭 Rôle modifié",
+    "hoist": "Affiché séparément",
+    "mentionable": "Mentionnable",
+    "permissions_added": "Permissions ajoutées",
+    "permissions_removed": "Permissions retirées"
+  },
+  "channel": {
+    "created_title": "📁 Salon créé",
+    "deleted_title": "📁 Salon supprimé",
+    "updated_title": "📁 Salon modifié",
+    "topic": "Sujet",
+    "slowmode": "Mode lent",
+    "bitrate": "Bitrate",
+    "user_limit": "Limite d'utilisateurs",
+    "overwrites": "Permissions",
+    "overwrite_added": "➕ {target} : permissions ajoutées",
+    "overwrite_removed": "➖ {target} : permissions retirées",
+    "overwrite_changed": "✏️ {target} : {changes}"
+  },
+  "voice": {
+    "join_title": "🔊 Connexion vocale",
+    "leave_title": "🔇 Déconnexion vocale",
+    "move_title": "↪️ Changement de salon vocal"
+  },
+  "invite": {
+    "created_title": "🔗 Invitation créée",
+    "code": "Code",
+    "inviter": "Créée par",
+    "max_uses": "Utilisations max",
+    "expires": "Expire",
+    "never": "Jamais",
+    "temporary": "Temporaire"
+  }
+}

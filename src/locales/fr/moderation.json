@@ -1,0 +1,211 @@
+{
+  "case": "Case #{number}",
+  "case_title": "Case #{number} • {type}",
+  "case_not_found": "Aucune sanction n'a le numéro **#{number}**.",
+  "expires": "Expire",
+  "warn_count": "Avertissements actifs",
+  "types": {
+    "BAN": "Bannissement",
+    "TEMPBAN": "Bannissement temporaire",
+    "UNBAN": "Débannissement",
+    "KICK": "Expulsion",
+    "WARN": "Avertissement",
+    "UNWARN": "Retrait d'avertissement",
+    "TIMEOUT": "Exclusion temporaire",
+    "UNTIMEOUT": "Fin d'exclusion",
+    "MUTE": "Mute",
+    "UNMUTE": "Unmute",
+    "PURGE": "Purge",
+    "LOCK": "Verrouillage de salon",
+    "UNLOCK": "Déverrouillage de salon",
+    "SLOWMODE": "Mode lent",
+    "LOCKDOWN": "Lockdown",
+    "LOCKDOWN_END": "Fin du lockdown"
+  },
+  "actions": {
+    "TIMEOUT": "Exclusion temporaire",
+    "KICK": "Expulsion",
+    "BAN": "Bannissement",
+    "TEMPBAN": "Bannissement temporaire"
+  },
+  "fields": {
+    "warn_count": "Avertissements actifs",
+    "warning_id": "Avertissement",
+    "cleared": "Avertissements retirés",
+    "channel": "Salon",
+    "deleted": "Messages supprimés",
+    "filter": "Filtre",
+    "slowmode": "Mode lent",
+    "content": "Contenu",
+    "added_by": "Ajouté par",
+    "account_age": "Âge du compte"
+  },
+  "dm": {
+    "title": "Sanction sur {server}",
+    "description": "Vous avez reçu la sanction suivante sur **{server}** : **{sanction}**."
+  },
+  "reply": {
+    "done": "**{type}** appliqué à {user} — {number}",
+    "duration": "Durée : **{duration}**",
+    "reason": "Raison : {reason}",
+    "dm_sent": "📨 L'utilisateur a été prévenu en message privé.",
+    "dm_failed": "📪 Impossible d'envoyer le message privé (DM fermés).",
+    "warn_count": "Avertissements actifs : **{count}**",
+    "escalated": "⚠️ Seuil de **{count}** avertissements atteint → **{action}** {duration} appliqué automatiquement (case #{number}).",
+    "escalation_failed": "⚠️ Seuil atteint mais l'action automatique **{action}** a échoué : {error}"
+  },
+  "escalation": {
+    "reason": "Escalade automatique : {count} avertissements actifs"
+  },
+  "expire": {
+    "tempban": "Fin du bannissement temporaire",
+    "mute": "Fin du mute temporaire"
+  },
+  "errors": {
+    "self": "Vous ne pouvez pas vous sanctionner vous-même.",
+    "bot_target": "Cette action n'est pas applicable à ce compte (bot).",
+    "owner": "Le propriétaire du serveur ne peut pas être sanctionné.",
+    "hierarchy": "Vous ne pouvez pas sanctionner ce membre : son rôle le plus élevé est supérieur ou égal au vôtre.",
+    "bot_hierarchy": "Je ne peux pas agir sur ce membre : son rôle le plus élevé est supérieur ou égal au mien.",
+    "member_only": "Cette commande doit être utilisée par un membre du serveur.",
+    "invalid_duration": "Durée invalide. Exemples : `30m`, `1h30m`, `2d`, `1w`.",
+    "invalid_timeout_duration": "Durée invalide : un timeout dure entre 1 minute et 28 jours (`10m`, `1h`, `7d`).",
+    "not_timed_out": "Ce membre n'est pas exclu temporairement.",
+    "not_banned": "Cet utilisateur n'est pas banni.",
+    "no_mute_role": "Aucun rôle mute n'est configuré. Utilisez `/mod-config mute-role`.",
+    "mute_role_missing": "Le rôle mute configuré n'existe plus. Reconfigurez-le avec `/mod-config mute-role`.",
+    "channel_unsupported": "Ce type de salon ne supporte pas cette action.",
+    "missing_permissions": "Je n'ai pas les permissions nécessaires pour effectuer cette action.",
+    "escalation_failed": "l'action automatique a échoué (permissions ou hiérarchie)."
+  },
+  "warnings": {
+    "title": "Avertissements de {user} ({count})",
+    "empty": "Aucun avertissement actif.",
+    "more": "… et {count} autre(s)",
+    "remove_button": "Retirer un avertissement",
+    "clear_button": "Tout retirer",
+    "clear_confirm": "Retirer **tous** les avertissements actifs de {user} ?",
+    "remove_modal_title": "Retirer un avertissement",
+    "modal_id_label": "ID de l'avertissement (ex: 42)",
+    "removed": "Avertissement **#{id}** retiré pour {user} (case #{number}).",
+    "cleared": "**{count}** avertissement(s) retiré(s) pour {user} (case #{number}).",
+    "not_found": "Aucun avertissement actif avec l'ID **#{id}** sur ce serveur."
+  },
+  "history": {
+    "title": "Historique de {user}",
+    "active_warnings": "Avertissements actifs : **{count}**",
+    "empty": "Aucune sanction enregistrée.",
+    "footer": "{total} sanction(s) • Page {page}/{pages}"
+  },
+  "purge": {
+    "done": "**{count}** message(s) supprimé(s) dans {channel} (case #{number})."
+  },
+  "slowmode": {
+    "set": "Mode lent de {channel} défini sur **{duration}** (case #{number}).",
+    "disabled": "Mode lent désactivé dans {channel} (case #{number})."
+  },
+  "lock": {
+    "locked": "🔒 {channel} est verrouillé (case #{number}).",
+    "unlocked": "🔓 {channel} est déverrouillé (case #{number}).",
+    "notice_title": "🔒 Salon verrouillé",
+    "notice": "Ce salon a été verrouillé par la modération.\nRaison : {reason}",
+    "unlock_notice_title": "🔓 Salon déverrouillé",
+    "unlock_notice": "Vous pouvez de nouveau écrire dans ce salon."
+  },
+  "lockdown": {
+    "status_title": "Lockdown",
+    "active": "🔴 Actif",
+    "inactive": "🟢 Inactif",
+    "status_on": "🔴 **Lockdown actif** depuis {since} par {actor}.\nSalons verrouillés : **{channels}**\nRaison : {reason}",
+    "status_off": "🟢 Aucun lockdown en cours.",
+    "already_on": "Le lockdown est déjà actif.",
+    "already_off": "Aucun lockdown n'est actif.",
+    "confirm_title": "Confirmation du lockdown",
+    "confirm_on": "Vous allez **verrouiller tout le serveur** : l'écriture sera refusée à @everyone dans tous les salons texte. L'état actuel sera sauvegardé pour être restauré avec `/lockdown off`.\nRaison : {reason}",
+    "confirm_off": "Désactiver le lockdown et restaurer exactement les permissions sauvegardées ?",
+    "in_progress": "⏳ Application en cours…",
+    "enabled": "Lockdown activé : **{channels}** salon(s) verrouillé(s), {failed} échec(s).",
+    "disabled": "Lockdown désactivé : **{channels}** salon(s) restauré(s), {failed} échec(s).",
+    "alert_title": "🔴 LOCKDOWN ACTIVÉ",
+    "alert_description": "Le serveur **{server}** est en lockdown : l'écriture a été refusée à @everyone dans **{channels}** salon(s). Utilisez `/lockdown off` pour restaurer.",
+    "alert_end_title": "🟢 Lockdown terminé",
+    "alert_end_description": "Le lockdown de **{server}** est levé : **{channels}** salon(s) restauré(s) à leur état précédent."
+  },
+  "buttons": {
+    "cancelled": "Action annulée."
+  },
+  "config": {
+    "title": "Modération — {server}",
+    "mute_role": "Rôle mute",
+    "mute_role_set": "Rôle mute défini : {role}",
+    "mute_role_removed": "Rôle mute retiré.",
+    "dm": "DM aux sanctionnés",
+    "dm_set": "Envoi d'un DM lors des sanctions : **{state}**.",
+    "thresholds_title": "Seuils d'escalade des avertissements",
+    "no_thresholds": "Aucun seuil : les avertissements n'entraînent aucune action automatique.",
+    "threshold_added": "Seuil enregistré : **{count}** avertissements → **{action}**.",
+    "threshold_removed": "Seuil de **{count}** avertissements retiré.",
+    "threshold_not_found": "Aucun seuil pour **{count}** avertissements.",
+    "stats_title": "Statistiques (30 jours)",
+    "stats": "**{total}** sanction(s) • {warnings} avertissement(s) actif(s) • {bans} ban(s) actif(s) • {mutes} mute(s) actif(s)"
+  },
+  "antiraid": {
+    "status_title": "Anti-raid — {server}",
+    "updated": "✅ Configuration anti-raid mise à jour.",
+    "log_title": "🚨 Anti-raid : {trigger}",
+    "action_taken": "Action",
+    "days": "{days} jour(s)",
+    "names": {
+      "spam": "Anti-spam",
+      "mentions": "Anti-mass-mention",
+      "links": "Anti-lien / anti-pub",
+      "new_account": "Anti-compte récent",
+      "bots": "Anti-bot",
+      "mass_join": "Anti-mass-join",
+      "exempt": "Exemptions"
+    },
+    "desc": {
+      "spam": "{max} messages en {seconds}s → suppression + timeout {timeout}",
+      "mentions": "{max} mentions dans un message → suppression + timeout {timeout}",
+      "links": "Invitations : {invites} • Tous liens : {links} • Action : {action}\nListe blanche : {whitelist}",
+      "new_account": "Compte de moins de {days} jour(s) → {action} {role}",
+      "bots": "Bots non autorisés expulsés (sauf ajoutés par un admin)\nAutorisés : {allowed}",
+      "mass_join": "{max} arrivées en {seconds}s → lockdown automatique : {lockdown}",
+      "exempt": "Rôles : {roles}\nSalons : {channels}"
+    },
+    "link_actions": { "DELETE": "Suppression", "TIMEOUT": "Suppression + timeout" },
+    "account_actions": { "KICK": "Expulsion", "QUARANTINE": "Rôle quarantaine" },
+    "triggers": {
+      "spam": "Spam",
+      "mass_mention": "Mentions en masse",
+      "invite": "Invitation Discord",
+      "link": "Lien non autorisé",
+      "new_account": "Compte récent",
+      "bot": "Bot non autorisé",
+      "mass_join": "Arrivées en masse"
+    },
+    "reasons": {
+      "spam": "Anti-raid : spam détecté",
+      "mass_mention": "Anti-raid : mentions en masse",
+      "invite": "Anti-raid : invitation Discord non autorisée",
+      "link": "Anti-raid : lien non autorisé",
+      "new_account": "Anti-raid : compte créé il y a moins de {days} jour(s)",
+      "bot": "Anti-raid : bot non autorisé",
+      "mass_join": "Anti-raid : {count} arrivées en {seconds}s (raid probable)"
+    },
+    "actions": {
+      "deleted": "Message(s) supprimé(s)",
+      "timeout_case": "Timeout (case #{number})",
+      "timeout_failed": "Timeout impossible",
+      "quarantined": "Rôle quarantaine {role} attribué",
+      "quarantine_failed": "Attribution du rôle quarantaine impossible",
+      "kicked_case": "Expulsé (case #{number})",
+      "kick_failed": "Expulsion impossible"
+    },
+    "errors": {
+      "quarantine_role_required": "Un rôle quarantaine est requis pour l'action « Rôle quarantaine ».",
+      "not_a_bot": "L'utilisateur indiqué n'est pas un bot.",
+      "role_or_channel": "Indiquez un rôle ou un salon."
+    }
+  }
+}
