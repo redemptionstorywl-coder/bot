@@ -83,6 +83,9 @@
               <option value="PERMISSIONS" <%= config.translationMode === 'PERMISSIONS' ? 'selected' : '' %>>Permissions (rôles de langue, mêmes salons)</option>
             </select>
           </div>
+          <div class="field">
+            <label class="check check-tall"><input type="checkbox" name="autoTranslate" value="1" <%= config.autoTranslate ? 'checked' : '' %>><span>🤖 Traduction automatique des annonces <small class="muted">(les langues sans traduction manuelle sont traduites à la publication)</small></span></label>
+          </div>
         </div>
         <fieldset class="field">
           <legend>Langues activées</legend>

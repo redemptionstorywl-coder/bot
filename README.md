@@ -251,6 +251,24 @@ Exemple : `Bienvenue {user} sur {server} ! Nous sommes maintenant {memberCount} 
 
 ---
 
+## Traduction automatique
+
+Le staff écrit une annonce dans une seule langue ; le bot génère les autres versions automatiquement à la publication (ou avant, avec le bouton « 🤖 Traduire automatiquement » du créateur d'annonces, pour relecture). Une traduction saisie à la main n'est jamais écrasée.
+
+Comme Discord ne peut pas afficher un même message différemment selon le lecteur, `/language-setup` crée un **salon d'annonces par langue** (catégorie 📢 Annonces), visible uniquement par le rôle de cette langue : un membre 🇫🇷 ne voit que `📢・annonces-fr`, un membre 🇺🇸 que `📢・announcements-en`, chacun dans sa langue.
+
+Fournisseurs (dans l'ordre, bascule automatique) :
+
+| Variable | Fournisseur | Remarque |
+| --- | --- | --- |
+| `DEEPL_API_KEY` | DeepL (recommandé) | 500 000 caractères/mois gratuits avec une clé `:fx` |
+| *(aucune)* | Google Translate (point d'accès gratuit non officiel) | Peut être limité ou indisponible ponctuellement |
+| `MYMEMORY_EMAIL` | MyMemory | Secours, 50 000 caractères/jour avec un e-mail |
+
+Les traductions sont mises en cache en base (`MachineTranslation`). Les variables `{user}`, mentions, liens, emojis et blocs de code sont protégés et jamais traduits. Désactivable par serveur dans Paramètres (« Traduction automatique des annonces »).
+
+---
+
 ## Intégration FiveM
 
 Le bot expose une API REST (`/api/fivem/...`) et un namespace Socket.IO (`/fivem`) protégés par `FIVEM_API_KEY`. Les serveurs FiveM envoient : statut, joueurs, version, maintenance, statistiques Battle Royale, sanctions ; et interrogent la whitelist.

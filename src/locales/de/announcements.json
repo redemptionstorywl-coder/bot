@@ -48,7 +48,13 @@
     "messages_updated": "Ankündigung #{id}: {count} Nachricht(en) aktualisiert.",
     "scheduled": "Ankündigung #{id} geplant für {date} ({relative}).",
     "cancelled": "Editor geschlossen. Keine Ankündigung gespeichert.",
-    "cancelled_saved": "Editor geschlossen. Die Ankündigung #{id} bleibt über `/announce edit` verfügbar."
+    "cancelled_saved": "Editor geschlossen. Die Ankündigung #{id} bleibt über `/announce edit` verfügbar.",
+    "btn_auto_translate": "Automatisch übersetzen",
+    "translation_auto": "🤖 automatische Übersetzung",
+    "translation_missing_auto": "⬜ wird beim Veröffentlichen automatisch übersetzt",
+    "auto_translated": "🤖 Übersetzungen erstellt: {languages}. Bitte vor der Veröffentlichung prüfen.",
+    "auto_translate_unavailable": "Automatische Übersetzung nicht verfügbar für: {languages} (Ausgangssprache wird verwendet).",
+    "auto_translate_nothing": "Alle Zielsprachen haben bereits eine Übersetzung."
   },
   "cmd": {
     "delete_confirm": "Ankündigung **#{id} — {title}** löschen?\n{count} Discord-Nachricht(en) werden ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
@@ -62,8 +68,17 @@
     "list_title": "📢 Ankündigungen ({count})"
   },
   "modal": {
-    "translation": { "title": "Übersetzung {language}", "field_title": "Übersetzter Titel", "field_description": "Übersetzte Beschreibung", "field_content": "Übersetzter Inhalt (über dem Embed)" },
-    "date": { "title": "Veröffentlichungsdatum", "field_date": "Datum", "placeholder": "31/01/2025 20:00  ·  in 2h  ·  2025-01-31 20:00" }
+    "translation": {
+      "title": "Übersetzung {language}",
+      "field_title": "Übersetzter Titel",
+      "field_description": "Übersetzte Beschreibung",
+      "field_content": "Übersetzter Inhalt (über dem Embed)"
+    },
+    "date": {
+      "title": "Veröffentlichungsdatum",
+      "field_date": "Datum",
+      "placeholder": "31/01/2025 20:00  ·  in 2h  ·  2025-01-31 20:00"
+    }
   },
   "errors": {
     "not_found": "Ankündigung nicht gefunden (`{details}`).",

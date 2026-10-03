@@ -48,7 +48,13 @@
     "messages_updated": "Объявление #{id}: обновлено сообщений: {count}.",
     "scheduled": "Объявление #{id} запланировано на {date} ({relative}).",
     "cancelled": "Редактор закрыт. Объявление не сохранено.",
-    "cancelled_saved": "Редактор закрыт. Объявление #{id} остаётся доступным через `/announce edit`."
+    "cancelled_saved": "Редактор закрыт. Объявление #{id} остаётся доступным через `/announce edit`.",
+    "btn_auto_translate": "Перевести автоматически",
+    "translation_auto": "🤖 автоматический перевод",
+    "translation_missing_auto": "⬜ будет переведено автоматически при публикации",
+    "auto_translated": "🤖 Переводы созданы: {languages}. Проверьте их перед публикацией.",
+    "auto_translate_unavailable": "Автоматический перевод недоступен для: {languages} (будет использован исходный язык).",
+    "auto_translate_nothing": "Для всех целевых языков перевод уже есть."
   },
   "cmd": {
     "delete_confirm": "Удалить объявление **#{id} — {title}**?\nТакже будут удалены сообщения Discord ({count}). Это действие необратимо.",
@@ -62,8 +68,17 @@
     "list_title": "📢 Объявления ({count})"
   },
   "modal": {
-    "translation": { "title": "Перевод: {language}", "field_title": "Переведённый заголовок", "field_description": "Переведённое описание", "field_content": "Переведённый текст (над embed)" },
-    "date": { "title": "Дата публикации", "field_date": "Дата", "placeholder": "31/01/2025 20:00  ·  in 2h  ·  2025-01-31 20:00" }
+    "translation": {
+      "title": "Перевод: {language}",
+      "field_title": "Переведённый заголовок",
+      "field_description": "Переведённое описание",
+      "field_content": "Переведённый текст (над embed)"
+    },
+    "date": {
+      "title": "Дата публикации",
+      "field_date": "Дата",
+      "placeholder": "31/01/2025 20:00  ·  in 2h  ·  2025-01-31 20:00"
+    }
   },
   "errors": {
     "not_found": "Объявление не найдено (`{details}`).",

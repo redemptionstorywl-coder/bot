@@ -18,7 +18,10 @@ import {
 } from 'discord.js';
 import { AutoRoleType, LogCategory, PanelStyle, type LanguageRole } from '@prisma/client';
 import { prisma } from '../database/client';
-import { BRAND, LANGUAGES, getLanguage, type LanguageDefinition } from '../config/constants';
+import { BRAND, DEFAULT_TEAM_ROLE_NAMES, LANGUAGES, getLanguage, type LanguageDefinition } from '../config/constants';
+
+/** Noms localisés des salons d'annonces créés par /language-setup. */
+export const ANNOUNCEMENT_CHANNEL_NAMES: Record<string, string> = { fr: '📢・annonces', en: '📢・announcements', es: '📢・anuncios', de: '📢・ankündigungen', it: '📢・annunci', ar: '📢・إعلانات', ru: '📢・объявления', pt: '📢・anúncios', tr: '📢・duyurular', pl: '📢・ogłoszenia' };
 import { TTLCache } from '../utils/cache';
 import { childLogger } from '../utils/logger';
 import { buildCustomId } from '../utils/customId';
@@ -318,6 +321,50 @@ export class LanguageService {
     }
   }
 
+
+  /**
+   * Crée une catégorie « 📢 Annonces » et un salon d'annonces par langue, visible uniquement par le rôle de
+   * cette langue (+ staff/admin/🛡️ RS Team), en lecture seule. Enregistre `languageChannels` et passe le
+   * serveur en mode CHANNELS : chaque membre ne voit les annonces que dans sa langue.
+   */
+  async ensureAnnouncementChannels(guild: Guild, languages: string[]): Promise<{ created: string[]; reused: string[] }> {
+    const config = await guildConfigService.getOrCreate(guild);
+    const roleMap = await this.getEffectiveRoleMap(guild);
+    const normalize = (n: string) => n.replace(/[\s・·|•-]+/g, ' ').trim().toLowerCase();
+    const teamNames = DEFAULT_TEAM_ROLE_NAMES.map(normalize);
+    await guild.channels.fetch();
+    let category = guild.channels.cache.find((c) => c.type === ChannelType.GuildCategory && ['annonces', 'announcements', '📢 annonces', '📢 announcements'].includes(normalize(c.name)));
+    if (!category) category = await guild.channels.create({ name: '📢 Annonces', type: ChannelType.GuildCategory, reason: 'Redemption Story — annonces par langue' });
+    const staffRoleIds = new Set<string>([...config.staffRoleIds, ...config.adminRoleIds]);
+    for (const r of guild.roles.cache.values()) if (teamNames.includes(normalize(r.name))) staffRoleIds.add(r.id);
+    const created: string[] = [];
+    const reused: string[] = [];
+    const channels: Record<string, string> = { ...config.languageChannels };
+    for (const code of languages) {
+      const roleId = roleMap[code];
+      if (!roleId) continue;
+      const name = `${ANNOUNCEMENT_CHANNEL_NAMES[code] ?? '📢・annonces'}-${code}`;
+      let channel = channels[code] ? guild.channels.cache.get(channels[code]!) : undefined;
+      if (!channel || channel.type !== ChannelType.GuildText) channel = guild.channels.cache.find((c) => c.type === ChannelType.GuildText && normalize(c.name) === normalize(name));
+      const overwrites = [
+        { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
+        { id: roleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory], deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions] },
+        ...[...staffRoleIds].filter((id) => guild.roles.cache.has(id)).map((id) => ({ id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory] })),
+        { id: guild.members.me?.id ?? guild.client.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.ManageMessages, PermissionFlagsBits.MentionEveryone] },
+      ];
+      if (channel) {
+        reused.push(code);
+        if ('permissionOverwrites' in channel) await channel.permissionOverwrites.set(overwrites, 'Redemption Story — annonces par langue').catch(() => null);
+      } else {
+        channel = await guild.channels.create({ name, type: ChannelType.GuildText, parent: category.id, permissionOverwrites: overwrites, reason: 'Redemption Story — annonces par langue' });
+        created.push(code);
+      }
+      channels[code] = channel.id;
+    }
+    await guildConfigService.updateSettings(guild.id, { languageChannels: channels, translationMode: 'CHANNELS' });
+    return { created, reused };
+  }
+
   /**
    * Installation complète du système de langue sur un serveur :
    *  1. crée les rôles de langue manquants (nom `🇫🇷・Français`), ou réutilise un rôle existant (ID par défaut ou même nom) ;
@@ -325,7 +372,7 @@ export class LanguageService {
    *  3. publie (ou met à jour) le panneau « CHOOSE YOUR LANGUAGE » ;
    *  4. désactive le choix de langue sous le message de bienvenue.
    */
-  async setup(guild: Guild, opts: { channelId?: string; style?: PanelStyle; channelName?: string; languages?: string[] } = {}): Promise<{ createdRoles: string[]; reusedRoles: string[]; channelId: string; channelCreated: boolean; message: Message }> {
+  async setup(guild: Guild, opts: { channelId?: string; style?: PanelStyle; channelName?: string; languages?: string[]; announcements?: boolean } = {}): Promise<{ createdRoles: string[]; reusedRoles: string[]; channelId: string; channelCreated: boolean; message: Message; announcementChannels: { created: string[]; reused: string[] } }> {
     const config = await guildConfigService.getOrCreate(guild);
     const languages = (opts.languages?.length ? opts.languages : config.enabledLanguages).filter((c) => getLanguage(c));
     const configured = await this.getLanguageRoleMap(guild.id);
@@ -354,10 +401,11 @@ export class LanguageService {
     }
 
     const message = await this.publishPanel(guild, channelId, opts.style ?? PanelStyle.BUTTONS);
+    const announcementChannels = opts.announcements === false ? { created: [], reused: [] } : await this.ensureAnnouncementChannels(guild, languages);
     await prisma.welcomeConfig.upsert({ where: { guildId: guild.id }, create: { guildId: guild.id, languagePromptEnabled: false }, update: { languagePromptEnabled: false } });
     this.invalidate(guild.id);
     await loggingService.log({ guildId: guild.id, category: LogCategory.SYSTEM, action: 'language.setup', title: '🌍 Système de langue installé', fields: [{ name: 'Rôles créés', value: createdRoles.join(', ') || '—', inline: true }, { name: 'Salon', value: `<#${channelId}>`, inline: true }] });
-    return { createdRoles, reusedRoles, channelId, channelCreated, message };
+    return { createdRoles, reusedRoles, channelId, channelCreated, message, announcementChannels };
   }
 
   async publishPanel(guild: Guild, channelId: string, style: PanelStyle = PanelStyle.BUTTONS): Promise<Message> {

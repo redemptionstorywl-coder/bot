@@ -41,6 +41,8 @@
     "channel": "Kanal",
     "channel_created": "{channel} oluşturuldu (salt okunur, üyeler bayraklarına tıklar).",
     "channel_reused": "{channel} yeniden kullanıldı.",
-    "footer": "Yeni bir dil etkinleştirdikten sonra /language-setup komutunu tekrar çalıştır (/guild-config languages)."
+    "footer": "Yeni bir dil etkinleştirdikten sonra /language-setup komutunu tekrar çalıştır (/guild-config languages).",
+    "announcements": "Dil başına duyuru kanalları",
+    "announcements_value": "Oluşturulan: {created}\nYeniden kullanılan: {reused}\nHer üye yalnızca kendi dilinin kanalını görür; duyurular orada otomatik çevrilir."
   }
 }

@@ -10,7 +10,7 @@ import { LANGUAGE_CODES, MODULE_KEYS, MODULE_LABELS, GUILD_KIND_LABELS, LANGUAGE
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
 import { flash } from '../../lib/flash';
-import { validate, valid, stringArray, discordIdArray, hexColorSchema, optionalText } from '../../lib/validate';
+import { validate, valid, stringArray, discordIdArray, hexColorSchema, optionalText, checkbox } from '../../lib/validate';
 import { toggleModuleHandler } from './modules';
 
 const languageCode = z.enum(LANGUAGE_CODES as [string, ...string[]]);
@@ -24,6 +24,7 @@ const settingsBody = z.object({
   adminRoleIds: discordIdArray,
   staffRoleIds: discordIdArray,
   translationMode: z.nativeEnum(TranslationMode),
+  autoTranslate: checkbox,
   languageChannels: z.preprocess((v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {}), z.record(z.string(), z.string())).transform((map) => {
     const out: Record<string, string> = {};
     for (const [lang, channelId] of Object.entries(map)) if (LANGUAGE_CODES.includes(lang) && /^\d{15,22}$/.test(channelId)) out[lang] = channelId;
@@ -99,6 +100,7 @@ export function createSettingsRouter(client: RedemptionClient): Router {
         adminRoleIds: body.adminRoleIds,
         staffRoleIds: body.staffRoleIds,
         translationMode: body.translationMode,
+        autoTranslate: body.autoTranslate,
         languageChannels: body.languageChannels,
         footerText: body.footerText ?? null,
         footerIconUrl: body.footerIconUrl ?? null,

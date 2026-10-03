@@ -21,6 +21,8 @@ export interface ResolvedGuildConfig {
   modules: Record<ModuleKey, boolean>;
   translationMode: TranslationMode;
   languageChannels: Record<string, string>;
+  /** Traduction automatique des annonces pour les langues sans traduction manuelle */
+  autoTranslate: boolean;
   logChannels: Partial<Record<string, string>>;
   footerText: string | null;
   footerIconUrl: string | null;
@@ -112,6 +114,7 @@ export class GuildConfigService extends EventEmitter {
       modules,
       translationMode: s?.translationMode ?? 'CHANNELS',
       languageChannels: asRecord(s?.languageChannels),
+      autoTranslate: s?.autoTranslate ?? true,
       logChannels,
       footerText: s?.footerText ?? null,
       footerIconUrl: s?.footerIconUrl ?? null,

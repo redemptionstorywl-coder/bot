@@ -7,6 +7,7 @@ import { AnnouncementError, announcementService, planPublication, type Announcem
 import { embedBuilderSessions, isEmbedEmpty, parentView, renderBuilder, renderContextFromInteraction, type BuilderSession } from '../services/EmbedBuilderSession';
 import { buildDateModal } from '../modals/announce';
 import { discordTimestamp } from '../utils/time';
+import { getLanguage } from '../config/constants';
 
 async function refresh(interaction: ButtonInteraction, session: BuilderSession, ctx: InteractionContext): Promise<void> {
   embedBuilderSessions.save(session);
@@ -119,6 +120,25 @@ export default defineButton({
         embedBuilderSessions.delete(session);
         await interaction.update({ embeds: [embedService.info(ann.id ? t('announcements.builder.cancelled_saved', { id: ann.id }) : t('announcements.builder.cancelled'))], components: [] });
         return;
+      case 'autotr': {
+        await interaction.deferUpdate();
+        try {
+          const r = await announcementService.buildAutoTranslations(
+            { spec: session.spec, content: session.content, translations: ann.translations, sourceLanguage: ann.sourceLanguage, targetLanguages: ann.targetLanguages },
+            config.enabledLanguages,
+            { force: true },
+          );
+          ann.translations = r.translations;
+          const fmt = (codes: string[]) => codes.map((c) => getLanguage(c)?.flag ?? c).join(' ');
+          if (r.failed.length) session.notice = { type: 'warning', text: t('announcements.builder.auto_translate_unavailable', { languages: fmt(r.failed) }) };
+          else if (r.generated.length) session.notice = { type: 'success', text: t('announcements.builder.auto_translated', { languages: fmt(r.generated) }) };
+          else session.notice = { type: 'info', text: t('announcements.builder.auto_translate_nothing') };
+        } catch (err) {
+          session.notice = { type: 'error', text: errorText(err, t) };
+        }
+        await refresh(interaction, session, ctx);
+        return;
+      }
       case 'draft': {
         await interaction.deferUpdate();
         try {
@@ -145,16 +165,21 @@ export default defineButton({
         await interaction.deferUpdate();
         try {
           const id = await persistDraft(session, ctx, interaction.user.id);
+          // Traductions automatiques générées avant l'envoi : le builder reflète ce qui est publié
+          // et avertit si un fournisseur est indisponible (la langue source est alors utilisée).
+          const auto = config.autoTranslate ? await announcementService.autoTranslate(id) : null;
+          if (auto) ann.translations = auto.ann.translations;
+          const warning = auto?.failed.length ? `\n⚠️ ${t('announcements.builder.auto_translate_unavailable', { languages: auto.failed.map((c) => getLanguage(c)?.flag ?? c).join(' ') })}` : '';
           if (ann.status === AnnouncementStatus.PUBLISHED) {
             const current = await announcementService.get(id);
-            if (current) await announcementService.syncMessages(current, interaction.user.id);
-            session.notice = { type: 'success', text: t('announcements.builder.messages_updated', { id, count: current?.messages.length ?? 0 }) };
+            if (current) await announcementService.syncMessages(current, interaction.user.id, { autoTranslate: false });
+            session.notice = { type: 'success', text: t('announcements.builder.messages_updated', { id, count: current?.messages.length ?? 0 }) + warning };
           } else {
-            const published = await announcementService.publish(id, { actorId: interaction.user.id });
+            const published = await announcementService.publish(id, { actorId: interaction.user.id, autoTranslate: false });
             ann.status = published.status;
             ann.scheduledAt = undefined;
             const links = published.messages.map((m) => `${m.language} → https://discord.com/channels/${session.guildId}/${m.channelId}/${m.messageId}`).join('\n');
-            session.notice = { type: 'success', text: t('announcements.builder.published', { id, count: published.messages.length, links }) };
+            session.notice = { type: 'success', text: t('announcements.builder.published', { id, count: published.messages.length, links }) + warning };
           }
         } catch (err) {
           session.notice = { type: 'error', text: errorText(err, t) };

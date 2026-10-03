@@ -6,6 +6,7 @@ import { buttonSpecSchema, colorToHex, embedService, embedSpecSchema, type Butto
 import { guildConfigService, type ResolvedGuildConfig } from './GuildConfigService';
 import { loggingService } from './LoggingService';
 import { translationService } from './TranslationService';
+import { machineTranslationService, sha256, TranslationUnavailableError } from './MachineTranslationService';
 import { LANGUAGE_CODES, getLanguage } from '../config/constants';
 import type { TemplateContext } from '../utils/variables';
 import { discordTimestamp } from '../utils/time';
@@ -18,8 +19,14 @@ const log = childLogger('AnnouncementService');
 /**
  * Traduction d'une annonce : un EmbedSpec partiel (seules les clés définies remplacent la langue source)
  * + un `content` optionnel (texte au-dessus de l'embed).
+ * `auto: true` marque une traduction générée automatiquement (régénérée quand `sourceHash` ne correspond
+ * plus au texte source) ; une traduction saisie à la main n'a pas ce marqueur et n'est jamais écrasée.
  */
-export const announcementTranslationSchema = embedSpecSchema.extend({ content: z.string().max(2000).optional() });
+export const announcementTranslationSchema = embedSpecSchema.extend({
+  content: z.string().max(2000).optional(),
+  auto: z.boolean().optional(),
+  sourceHash: z.string().max(64).optional(),
+});
 export type AnnouncementTranslation = z.infer<typeof announcementTranslationSchema>;
 /** { lang: AnnouncementTranslation } */
 export const announcementTranslationsSchema = z.record(z.string().min(2).max(8), announcementTranslationSchema);
@@ -169,10 +176,57 @@ export function resolveTranslation(ann: { spec: EmbedSpec; content?: string | nu
   if (lang === ann.sourceLanguage) return base;
   const tr = ann.translations[lang];
   if (!tr || !hasTranslation(ann, lang)) return base;
-  const { content, ...specPatch } = tr;
+  const { content, auto: _auto, sourceHash: _hash, ...specPatch } = tr;
   const merged: EmbedSpec = { ...ann.spec };
   for (const [k, v] of Object.entries(specPatch)) if (v !== undefined) (merged as Record<string, unknown>)[k] = v;
   return { spec: merged, content: content ?? ann.content ?? undefined, translated: true };
+}
+
+export type TranslationKind = 'manual' | 'auto' | 'missing';
+
+/** État d'une traduction : saisie à la main, générée automatiquement, ou absente. */
+export function translationKind(ann: { translations: AnnouncementTranslations }, lang: string): TranslationKind {
+  if (!hasTranslation(ann, lang)) return 'missing';
+  return ann.translations[lang]?.auto ? 'auto' : 'manual';
+}
+
+/** Empreinte des textes traduisibles de la langue source (titre, description, contenu, champs, footer, auteur). */
+export function sourceContentHash(ann: { spec: EmbedSpec; content?: string | null }): string {
+  const s = ann.spec;
+  return sha256(JSON.stringify([s.title ?? '', s.description ?? '', ann.content ?? '', s.footer?.text ?? '', s.author?.name ?? '', (s.fields ?? []).map((f) => [f.name, f.value])]));
+}
+
+/**
+ * Une traduction automatique doit être (re)générée si la langue n'a aucune traduction, ou si sa traduction
+ * est automatique et que la source a changé depuis (`sourceHash` différent). Une traduction manuelle
+ * n'est jamais régénérée.
+ */
+export function needsAutoTranslation(ann: { translations: AnnouncementTranslations }, lang: string, hash: string): boolean {
+  const kind = translationKind(ann, lang);
+  if (kind === 'missing') return true;
+  if (kind === 'manual') return false;
+  return ann.translations[lang]?.sourceHash !== hash;
+}
+
+/**
+ * Insère une traduction générée dans la map sans jamais écraser une traduction manuelle.
+ * Retourne une nouvelle map (fonction pure).
+ */
+export function applyAutoTranslation(translations: AnnouncementTranslations, lang: string, generated: Omit<AnnouncementTranslation, 'auto' | 'sourceHash'>, hash: string): AnnouncementTranslations {
+  if (translationKind({ translations }, lang) === 'manual') return translations;
+  return { ...translations, [lang]: { ...generated, auto: true, sourceHash: hash } };
+}
+
+/** Patch de traduction (titre, description, champs, footer, auteur, contenu) extrait d'un spec traduit. */
+export function translationPatch(translated: EmbedSpec, source: EmbedSpec, content: string | undefined): Omit<AnnouncementTranslation, 'auto' | 'sourceHash'> {
+  const patch: Omit<AnnouncementTranslation, 'auto' | 'sourceHash'> = {};
+  if (source.title !== undefined && translated.title) patch.title = translated.title;
+  if (source.description !== undefined && translated.description) patch.description = translated.description;
+  if (source.fields?.length && translated.fields?.length) patch.fields = translated.fields;
+  if (source.footer && translated.footer) patch.footer = translated.footer;
+  if (source.author && translated.author) patch.author = translated.author;
+  if (content) patch.content = content;
+  return patch;
 }
 
 /**
@@ -376,9 +430,10 @@ export class AnnouncementService {
   }
 
   /** Ré-édite tous les messages publiés d'une annonce avec son contenu actuel. */
-  async syncMessages(ann: AnnouncementData, actorId?: string): Promise<AnnouncementData> {
+  async syncMessages(ann: AnnouncementData, actorId?: string, opts: { autoTranslate?: boolean } = {}): Promise<AnnouncementData> {
     const client = this.requireClient();
     const config = await guildConfigService.get(ann.guildId);
+    if (config && (opts.autoTranslate ?? true)) ann = (await this.ensureAutoTranslations(ann, config)).ann;
     const guild = client.guilds.cache.get(ann.guildId) ?? null;
     const multi = ann.messages.length > 1 && config?.translationMode === 'PERMISSIONS';
     let edited = 0;
@@ -540,6 +595,59 @@ export class AnnouncementService {
     return { sent, failed };
   }
 
+  // ───── Traduction automatique ─────
+
+  /**
+   * Génère (sans I/O base) les traductions automatiques manquantes ou périmées pour les langues cibles.
+   * Les traductions manuelles sont conservées. `failed` liste les langues dont la traduction a échoué
+   * (fournisseurs indisponibles) : la langue source sera utilisée pour celles-ci.
+   */
+  async buildAutoTranslations(
+    ann: { spec: EmbedSpec; content?: string | null; translations: AnnouncementTranslations; sourceLanguage: string; targetLanguages: TargetLanguages },
+    enabledLanguages: string[],
+    opts: { force?: boolean } = {},
+  ): Promise<{ translations: AnnouncementTranslations; generated: string[]; failed: string[] }> {
+    const hash = sourceContentHash(ann);
+    const targets = resolveTargetLanguages(ann, enabledLanguages).filter((l) => l !== ann.sourceLanguage);
+    let translations = ann.translations;
+    const generated: string[] = [];
+    const failed: string[] = [];
+    for (const lang of targets) {
+      const kind = translationKind({ translations }, lang);
+      if (kind === 'manual') continue;
+      if (!opts.force && !needsAutoTranslation({ translations }, lang, hash)) continue;
+      try {
+        const spec = await machineTranslationService.translateEmbedSpec(ann.spec, ann.sourceLanguage, lang);
+        const content = ann.content ? await machineTranslationService.translate(ann.content, ann.sourceLanguage, lang) : undefined;
+        const patch = translationPatch(spec, ann.spec, content);
+        if (!Object.keys(patch).length) continue;
+        translations = applyAutoTranslation(translations, lang, patch, hash);
+        generated.push(lang);
+      } catch (err) {
+        failed.push(lang);
+        if (err instanceof TranslationUnavailableError) log.warn({ lang, err: err.message }, 'Traduction automatique indisponible');
+        else log.error({ err, lang }, 'Traduction automatique en échec');
+      }
+    }
+    return { translations, generated, failed };
+  }
+
+  /** Génère et enregistre les traductions automatiques d'une annonce (bouton « Traduire automatiquement »). */
+  async autoTranslate(id: number, opts: { force?: boolean } = {}): Promise<{ ann: AnnouncementData; generated: string[]; failed: string[] }> {
+    const ann = await this.require(id);
+    const config = await guildConfigService.get(ann.guildId);
+    return this.ensureAutoTranslations(ann, { enabledLanguages: config?.enabledLanguages ?? [], autoTranslate: true }, opts);
+  }
+
+  /** Applique buildAutoTranslations puis persiste les traductions générées (si le réglage serveur l'autorise). */
+  private async ensureAutoTranslations(ann: AnnouncementData, config: Pick<ResolvedGuildConfig, 'enabledLanguages' | 'autoTranslate'>, opts: { force?: boolean } = {}): Promise<{ ann: AnnouncementData; generated: string[]; failed: string[] }> {
+    if (!config.autoTranslate || !machineTranslationService.isAvailable()) return { ann, generated: [], failed: [] };
+    const r = await this.buildAutoTranslations(ann, config.enabledLanguages, opts);
+    if (!r.generated.length) return { ann, generated: [], failed: r.failed };
+    const row = await prisma.announcement.update({ where: { id: ann.id }, data: { translations: r.translations as Prisma.InputJsonValue } });
+    return { ann: parseAnnouncement(row), generated: r.generated, failed: r.failed };
+  }
+
   // ───── Publication ─────
 
   private templateContext(guild: TemplateContext['guild'], language: string): TemplateContext {
@@ -561,18 +669,23 @@ export class AnnouncementService {
    * Publie l'annonce : un message par élément du plan (voir planPublication), enregistre les
    * références de messages, passe le statut à PUBLISHED et journalise (catégorie ANNOUNCEMENT).
    */
-  async publish(id: number, opts: { actorId?: string; scheduled?: boolean } = {}): Promise<AnnouncementData> {
+  async publish(id: number, opts: { actorId?: string; scheduled?: boolean; autoTranslate?: boolean } = {}): Promise<AnnouncementData> {
     const client = this.requireClient();
-    const ann = await this.require(id);
+    let ann = await this.require(id);
     if (ann.status === AnnouncementStatus.PUBLISHED) throw new AnnouncementError('already_published', String(id));
     const config = await guildConfigService.get(ann.guildId);
     if (!config) throw new AnnouncementError('not_found', ann.guildId);
+    const errors: string[] = [];
+    if (opts.autoTranslate ?? true) {
+      const auto = await this.ensureAutoTranslations(ann, config);
+      ann = auto.ann;
+      if (auto.failed.length) errors.push(`auto-translation unavailable: ${auto.failed.join(', ')}`);
+    }
     const plan = planPublication(ann, config);
     if (!plan.length) throw new AnnouncementError('no_channel');
     const guild = client.guilds.cache.get(ann.guildId) ?? null;
 
     const sentRefs: AnnouncementMessageRef[] = [];
-    const errors: string[] = [];
     for (const item of plan) {
       const channel = await client.channels.fetch(item.channelId).catch(() => null);
       if (!channel || !channel.isTextBased() || channel.isDMBased() || !('send' in channel)) {
@@ -620,8 +733,9 @@ export class AnnouncementService {
 
   /** MessageSpec rendu (variables remplacées) d'une annonce dans une langue — pour /announce preview et le dashboard. */
   async preview(id: number, lang: string): Promise<MessageSpec> {
-    const ann = await this.require(id);
+    let ann = await this.require(id);
     const config = await guildConfigService.get(ann.guildId);
+    if (config && lang !== ann.sourceLanguage) ann = (await this.ensureAutoTranslations(ann, config)).ann;
     const guild = this.client?.guilds.cache.get(ann.guildId) ?? null;
     const spec = renderAnnouncement(ann, lang, { languageHeader: config?.translationMode === 'PERMISSIONS', includeMentions: true });
     const built = buildMessageWithBrand(spec, this.templateContext(guild, lang), config?.brandColor);

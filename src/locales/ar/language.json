@@ -41,6 +41,8 @@
     "channel": "القناة",
     "channel_created": "تم إنشاء {channel} (للقراءة فقط، يضغط الأعضاء على علمهم).",
     "channel_reused": "تمت إعادة استخدام {channel}.",
-    "footer": "أعد تشغيل /language-setup بعد تفعيل لغة جديدة (/guild-config languages)."
+    "footer": "أعد تشغيل /language-setup بعد تفعيل لغة جديدة (/guild-config languages).",
+    "announcements": "قنوات الإعلانات لكل لغة",
+    "announcements_value": "المنشأة: {created}\nالمعاد استخدامها: {reused}\nكل عضو يرى قناة لغته فقط، وتُترجم الإعلانات فيها تلقائيًا."
   }
 }

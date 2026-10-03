@@ -87,7 +87,9 @@ export default defineModal({
             session.notice = { type: 'error', text: t('embeds.errors.invalid_spec', { details: r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('\n') }) };
             break;
           }
-          ann.translations[lang] = { ...(ann.translations[lang] ?? {}), ...r.data };
+          // Saisie manuelle : le marqueur « auto » est retiré pour que la traduction ne soit plus régénérée.
+          const { auto: _auto, sourceHash: _hash, ...existingPatch } = ann.translations[lang] ?? {};
+          ann.translations[lang] = { ...existingPatch, ...r.data };
           session.notice = { type: 'success', text: t('announcements.builder.translation_saved', { language: lang }) };
         }
         break;

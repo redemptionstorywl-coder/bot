@@ -48,7 +48,13 @@
     "messages_updated": "Anuncio #{id}: {count} mensaje(s) actualizado(s).",
     "scheduled": "Anuncio #{id} programado para {date} ({relative}).",
     "cancelled": "Editor cerrado. No se ha guardado ningún anuncio.",
-    "cancelled_saved": "Editor cerrado. El anuncio #{id} sigue disponible con `/announce edit`."
+    "cancelled_saved": "Editor cerrado. El anuncio #{id} sigue disponible con `/announce edit`.",
+    "btn_auto_translate": "Traducir automáticamente",
+    "translation_auto": "🤖 traducción automática",
+    "translation_missing_auto": "⬜ se traducirá automáticamente al publicar",
+    "auto_translated": "🤖 Traducciones generadas: {languages}. Revísalas antes de publicar.",
+    "auto_translate_unavailable": "Traducción automática no disponible para: {languages} (se usará el idioma de origen).",
+    "auto_translate_nothing": "Todos los idiomas de destino ya tienen traducción."
   },
   "cmd": {
     "delete_confirm": "¿Eliminar el anuncio **#{id} — {title}**?\n{count} mensaje(s) de Discord también se eliminarán. Esta acción es irreversible.",
@@ -62,8 +68,17 @@
     "list_title": "📢 Anuncios ({count})"
   },
   "modal": {
-    "translation": { "title": "Traducción {language}", "field_title": "Título traducido", "field_description": "Descripción traducida", "field_content": "Contenido traducido (encima del embed)" },
-    "date": { "title": "Fecha de publicación", "field_date": "Fecha", "placeholder": "31/01/2025 20:00  ·  in 2h  ·  2025-01-31 20:00" }
+    "translation": {
+      "title": "Traducción {language}",
+      "field_title": "Título traducido",
+      "field_description": "Descripción traducida",
+      "field_content": "Contenido traducido (encima del embed)"
+    },
+    "date": {
+      "title": "Fecha de publicación",
+      "field_date": "Fecha",
+      "placeholder": "31/01/2025 20:00  ·  in 2h  ·  2025-01-31 20:00"
+    }
   },
   "errors": {
     "not_found": "Anuncio no encontrado (`{details}`).",

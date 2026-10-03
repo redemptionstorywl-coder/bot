@@ -48,7 +48,13 @@
     "messages_updated": "Announcement #{id}: {count} message(s) updated.",
     "scheduled": "Announcement #{id} scheduled for {date} ({relative}).",
     "cancelled": "Editor closed. No announcement saved.",
-    "cancelled_saved": "Editor closed. Announcement #{id} remains available via `/announce edit`."
+    "cancelled_saved": "Editor closed. Announcement #{id} remains available via `/announce edit`.",
+    "btn_auto_translate": "Auto-translate",
+    "translation_auto": "🤖 automatic translation",
+    "translation_missing_auto": "⬜ will be translated automatically on publish",
+    "auto_translated": "🤖 Translations generated: {languages}. Review them before publishing.",
+    "auto_translate_unavailable": "Automatic translation unavailable for: {languages} (source language will be used).",
+    "auto_translate_nothing": "Every target language already has a translation."
   },
   "cmd": {
     "delete_confirm": "Delete announcement **#{id} — {title}**?\n{count} Discord message(s) will also be deleted. This cannot be undone.",
@@ -62,8 +68,17 @@
     "list_title": "📢 Announcements ({count})"
   },
   "modal": {
-    "translation": { "title": "{language} translation", "field_title": "Translated title", "field_description": "Translated description", "field_content": "Translated content (above the embed)" },
-    "date": { "title": "Publication date", "field_date": "Date", "placeholder": "31/01/2025 20:00  ·  in 2h  ·  2025-01-31 20:00" }
+    "translation": {
+      "title": "{language} translation",
+      "field_title": "Translated title",
+      "field_description": "Translated description",
+      "field_content": "Translated content (above the embed)"
+    },
+    "date": {
+      "title": "Publication date",
+      "field_date": "Date",
+      "placeholder": "31/01/2025 20:00  ·  in 2h  ·  2025-01-31 20:00"
+    }
   },
   "errors": {
     "not_found": "Announcement not found (`{details}`).",

@@ -48,7 +48,13 @@
     "messages_updated": "Duyuru #{id}: {count} mesaj güncellendi.",
     "scheduled": "Duyuru #{id}, {date} için zamanlandı ({relative}).",
     "cancelled": "Editör kapatıldı. Hiçbir duyuru kaydedilmedi.",
-    "cancelled_saved": "Editör kapatıldı. Duyuru #{id} `/announce edit` ile erişilebilir durumda."
+    "cancelled_saved": "Editör kapatıldı. Duyuru #{id} `/announce edit` ile erişilebilir durumda.",
+    "btn_auto_translate": "Otomatik çevir",
+    "translation_auto": "🤖 otomatik çeviri",
+    "translation_missing_auto": "⬜ yayınlanırken otomatik çevrilecek",
+    "auto_translated": "🤖 Çeviriler oluşturuldu: {languages}. Yayınlamadan önce kontrol et.",
+    "auto_translate_unavailable": "Otomatik çeviri şu diller için kullanılamıyor: {languages} (kaynak dil kullanılacak).",
+    "auto_translate_nothing": "Tüm hedef dillerin zaten bir çevirisi var."
   },
   "cmd": {
     "delete_confirm": "**#{id} — {title}** duyurusu silinsin mi?\n{count} Discord mesajı da silinecek. Bu işlem geri alınamaz.",
@@ -62,8 +68,17 @@
     "list_title": "📢 Duyurular ({count})"
   },
   "modal": {
-    "translation": { "title": "{language} çevirisi", "field_title": "Çevrilmiş başlık", "field_description": "Çevrilmiş açıklama", "field_content": "Çevrilmiş içerik (embed'in üstünde)" },
-    "date": { "title": "Yayın tarihi", "field_date": "Tarih", "placeholder": "31/01/2025 20:00  ·  in 2h  ·  2025-01-31 20:00" }
+    "translation": {
+      "title": "{language} çevirisi",
+      "field_title": "Çevrilmiş başlık",
+      "field_description": "Çevrilmiş açıklama",
+      "field_content": "Çevrilmiş içerik (embed'in üstünde)"
+    },
+    "date": {
+      "title": "Yayın tarihi",
+      "field_date": "Tarih",
+      "placeholder": "31/01/2025 20:00  ·  in 2h  ·  2025-01-31 20:00"
+    }
   },
   "errors": {
     "not_found": "Duyuru bulunamadı (`{details}`).",

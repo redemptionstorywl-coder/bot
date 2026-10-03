@@ -16,6 +16,7 @@ export default defineCommand({
     .setDescription('Installer le système de langue : rôles, salon de choix et panneau')
     .addChannelOption((o) => o.setName('channel').setDescription('Salon existant à utiliser (sinon un salon 🌍・langues est créé)').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement))
     .addStringOption((o) => o.setName('style').setDescription('Style du panneau').addChoices({ name: 'Boutons drapeaux', value: 'BUTTONS' }, { name: 'Menu déroulant', value: 'SELECT' }))
+    .addBooleanOption((o) => o.setName('announcements').setDescription('Créer un salon d’annonces par langue, visible seulement par son rôle (défaut : oui)'))
     .addStringOption((o) => o.setName('channel_name').setDescription('Nom du salon à créer (défaut : 🌍・langues)').setMaxLength(100)),
   module: 'language',
   permissions: { internal: 'admin' },
@@ -34,6 +35,7 @@ export default defineCommand({
         channelId: interaction.options.getChannel('channel')?.id,
         channelName: interaction.options.getString('channel_name') ?? undefined,
         style,
+        announcements: interaction.options.getBoolean('announcements') ?? true,
       });
       welcomeService.invalidate(interaction.guild.id);
       const fmt = (codes: string[]) => codes.map((c) => `${getLanguage(c)?.flag ?? ''} ${getLanguage(c)?.nativeLabel ?? c}`).join(', ') || t('core.none');
@@ -43,6 +45,7 @@ export default defineCommand({
           { name: t('language.setup.created_roles'), value: fmt(result.createdRoles) },
           { name: t('language.setup.reused_roles'), value: fmt(result.reusedRoles) },
           { name: t('language.setup.channel'), value: result.channelCreated ? t('language.setup.channel_created', { channel: `<#${result.channelId}>` }) : t('language.setup.channel_reused', { channel: `<#${result.channelId}>` }) },
+          { name: t('language.setup.announcements'), value: interaction.options.getBoolean('announcements') === false ? t('core.disabled') : t('language.setup.announcements_value', { created: fmt(result.announcementChannels.created), reused: fmt(result.announcementChannels.reused) }) },
         )
         .setFooter({ text: t('language.setup.footer') });
       await interaction.editReply({ embeds: [embed] });

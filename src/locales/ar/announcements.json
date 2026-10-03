@@ -48,7 +48,13 @@
     "messages_updated": "الإعلان #{id}: تم تحديث {count} رسالة.",
     "scheduled": "تمت جدولة الإعلان #{id} في {date} ({relative}).",
     "cancelled": "تم إغلاق المحرر. لم يُحفظ أي إعلان.",
-    "cancelled_saved": "تم إغلاق المحرر. يبقى الإعلان #{id} متاحًا عبر `/announce edit`."
+    "cancelled_saved": "تم إغلاق المحرر. يبقى الإعلان #{id} متاحًا عبر `/announce edit`.",
+    "btn_auto_translate": "ترجمة تلقائية",
+    "translation_auto": "🤖 ترجمة تلقائية",
+    "translation_missing_auto": "⬜ سيُترجم تلقائيًا عند النشر",
+    "auto_translated": "🤖 تم إنشاء الترجمات: {languages}. راجعها قبل النشر.",
+    "auto_translate_unavailable": "الترجمة التلقائية غير متاحة لـ: {languages} (ستُستخدم لغة المصدر).",
+    "auto_translate_nothing": "جميع اللغات المستهدفة لديها ترجمة بالفعل."
   },
   "cmd": {
     "delete_confirm": "حذف الإعلان **#{id} — {title}**؟\nسيتم أيضًا حذف {count} رسالة في Discord. هذا الإجراء لا رجعة فيه.",
@@ -62,8 +68,17 @@
     "list_title": "📢 الإعلانات ({count})"
   },
   "modal": {
-    "translation": { "title": "ترجمة {language}", "field_title": "العنوان المترجم", "field_description": "الوصف المترجم", "field_content": "المحتوى المترجم (فوق الـ embed)" },
-    "date": { "title": "تاريخ النشر", "field_date": "التاريخ", "placeholder": "31/01/2025 20:00  ·  in 2h  ·  2025-01-31 20:00" }
+    "translation": {
+      "title": "ترجمة {language}",
+      "field_title": "العنوان المترجم",
+      "field_description": "الوصف المترجم",
+      "field_content": "المحتوى المترجم (فوق الـ embed)"
+    },
+    "date": {
+      "title": "تاريخ النشر",
+      "field_date": "التاريخ",
+      "placeholder": "31/01/2025 20:00  ·  in 2h  ·  2025-01-31 20:00"
+    }
   },
   "errors": {
     "not_found": "الإعلان غير موجود (`{details}`).",

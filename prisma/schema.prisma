@@ -208,6 +208,8 @@ model GuildSettings {
   languageChannels Json           @default("{}")
   /// Langues activées sur ce serveur
   enabledLanguages Json           @default("[\"fr\",\"en\"]")
+  /// Traduction automatique des annonces (langues cibles sans traduction manuelle)
+  autoTranslate   Boolean         @default(true)
   /// Salon où le menu de langue est publié
   languagePanelChannelId String?  @db.VarChar(32)
   languagePanelMessageId String?  @db.VarChar(32)
@@ -1118,4 +1120,20 @@ model ChannelMute {
 
   @@index([expiresAt])
   @@index([guildId])
+}
+
+// ──────────────── Traduction automatique : cache des segments traduits ────────────────
+
+model MachineTranslation {
+  id             Int      @id @default(autoincrement())
+  /// sha256 du texte source
+  hash           String   @db.VarChar(64)
+  sourceLang     String   @db.VarChar(8)
+  targetLang     String   @db.VarChar(8)
+  sourceText     String   @db.Text
+  translatedText String   @db.Text
+  provider       String   @db.VarChar(32)
+  createdAt      DateTime @default(now())
+
+  @@unique([hash, sourceLang, targetLang])
 }

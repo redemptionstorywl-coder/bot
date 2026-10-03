@@ -41,6 +41,8 @@
     "channel": "Canal",
     "channel_created": "{channel} criado (somente leitura, os membros clicam na bandeira).",
     "channel_reused": "{channel} reutilizado.",
-    "footer": "Execute /language-setup novamente após ativar um novo idioma (/guild-config languages)."
+    "footer": "Execute /language-setup novamente após ativar um novo idioma (/guild-config languages).",
+    "announcements": "Canais de anúncios por idioma",
+    "announcements_value": "Criados: {created}\nReutilizados: {reused}\nCada membro vê apenas o canal do seu idioma; os anúncios são traduzidos automaticamente."
   }
 }

@@ -41,6 +41,8 @@
     "channel": "Salon",
     "channel_created": "{channel} créé (lecture seule, les membres cliquent sur leur drapeau).",
     "channel_reused": "{channel} réutilisé.",
-    "footer": "Relancez /language-setup après avoir activé une nouvelle langue (/guild-config languages)."
+    "footer": "Relancez /language-setup après avoir activé une nouvelle langue (/guild-config languages).",
+    "announcements": "Salons d'annonces par langue",
+    "announcements_value": "Créés : {created}\nRéutilisés : {reused}\nChaque membre ne voit que le salon de sa langue ; les annonces y sont traduites automatiquement."
   }
 }

@@ -41,6 +41,8 @@
     "channel": "Kanal",
     "channel_created": "{channel} erstellt (nur Lesen, Mitglieder klicken auf ihre Flagge).",
     "channel_reused": "{channel} wiederverwendet.",
-    "footer": "Führe /language-setup erneut aus, nachdem du eine neue Sprache aktiviert hast (/guild-config languages)."
+    "footer": "Führe /language-setup erneut aus, nachdem du eine neue Sprache aktiviert hast (/guild-config languages).",
+    "announcements": "Ankündigungskanäle pro Sprache",
+    "announcements_value": "Erstellt: {created}\nWiederverwendet: {reused}\nJedes Mitglied sieht nur den Kanal seiner Sprache; Ankündigungen werden dort automatisch übersetzt."
   }
 }

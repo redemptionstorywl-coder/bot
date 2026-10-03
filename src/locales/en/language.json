@@ -41,6 +41,8 @@
     "channel": "Channel",
     "channel_created": "{channel} created (read-only, members click their flag).",
     "channel_reused": "{channel} reused.",
-    "footer": "Run /language-setup again after enabling a new language (/guild-config languages)."
+    "footer": "Run /language-setup again after enabling a new language (/guild-config languages).",
+    "announcements": "Announcement channels per language",
+    "announcements_value": "Created: {created}\nReused: {reused}\nEach member only sees the channel of their language; announcements are translated automatically there."
   }
 }

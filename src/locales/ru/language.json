@@ -41,6 +41,8 @@
     "channel": "Канал",
     "channel_created": "{channel} создан (только чтение, участники нажимают на свой флаг).",
     "channel_reused": "{channel} использован повторно.",
-    "footer": "Запустите /language-setup снова после включения нового языка (/guild-config languages)."
+    "footer": "Запустите /language-setup снова после включения нового языка (/guild-config languages).",
+    "announcements": "Каналы объявлений по языкам",
+    "announcements_value": "Создано: {created}\nИспользовано повторно: {reused}\nКаждый участник видит только канал своего языка; объявления там переводятся автоматически."
   }
 }

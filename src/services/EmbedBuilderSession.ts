@@ -17,7 +17,7 @@ import {
 import type { AnnouncementStatus } from '@prisma/client';
 import { embedService, type ButtonSpec, type EmbedSpec } from './EmbedService';
 import type { AnnouncementTranslations } from './AnnouncementService';
-import { hasTranslation, resolveTargetLanguages, withDefaultColor } from './AnnouncementService';
+import { resolveTargetLanguages, translationKind, withDefaultColor } from './AnnouncementService';
 import { EMBED_COLOR_PALETTE } from '../config/constants';
 import { colorToHex } from './EmbedService';
 import type { Translator } from './TranslationService';
@@ -56,7 +56,7 @@ export interface AnnouncementDraft {
 }
 
 export interface BuilderNotice {
-  type: 'success' | 'error' | 'info';
+  type: 'success' | 'error' | 'info' | 'warning';
   text: string;
 }
 
@@ -213,7 +213,7 @@ function noticeLine(session: BuilderSession): string {
   const n = session.notice;
   if (!n) return '';
   session.notice = undefined;
-  const icon = n.type === 'success' ? '✅' : n.type === 'error' ? '⛔' : 'ℹ️';
+  const icon = n.type === 'success' ? '✅' : n.type === 'error' ? '⛔' : n.type === 'warning' ? '⚠️' : 'ℹ️';
   return `${icon} ${n.text}\n\n`;
 }
 
@@ -240,6 +240,11 @@ function languageLabel(code: string): string {
   return def ? `${def.flag} ${def.nativeLabel}` : code;
 }
 
+/** Icône d'état d'une traduction : ✅ manuelle · 🤖 automatique · ⬜ manquante. */
+export function translationIcon(kind: ReturnType<typeof translationKind>): string {
+  return kind === 'manual' ? '✅' : kind === 'auto' ? '🤖' : '⬜';
+}
+
 function announceStatusEmbed(session: BuilderSession, rc: BuilderRenderContext): EmbedBuilder {
   const { t, config } = rc;
   const ann = session.announcement!;
@@ -247,7 +252,7 @@ function announceStatusEmbed(session: BuilderSession, rc: BuilderRenderContext):
   const langLines = targets
     .map((code) => {
       if (code === ann.sourceLanguage) return `🏠 ${languageLabel(code)} — ${t('announcements.builder.source_language')}`;
-      return `${hasTranslation({ translations: ann.translations }, code) ? '✅' : '⬜'} ${languageLabel(code)}`;
+      return `${translationIcon(translationKind({ translations: ann.translations }, code))} ${languageLabel(code)}`;
     })
     .join('\n');
   const mentions = [ann.mentionEveryone ? '@everyone' : null, ...ann.mentionRoleIds.map((r) => `<@&${r}>`)].filter(Boolean).join(' ') || '—';
@@ -407,15 +412,19 @@ function announceTranslationsRows(session: BuilderSession, rc: BuilderRenderCont
   const rows: Row[] = [];
   if (targets.length) {
     const options = targets.map((code) => {
-      const done = hasTranslation({ translations: ann.translations }, code);
-      return new StringSelectMenuOptionBuilder()
-        .setLabel(truncate(`${done ? '✅' : '⬜'} ${languageLabel(code)}`, 100))
-        .setValue(code)
-        .setDescription(truncate(done ? t('announcements.builder.translation_done') : t('announcements.builder.translation_missing'), 100));
+      const kind = translationKind({ translations: ann.translations }, code);
+      const desc = kind === 'manual' ? t('announcements.builder.translation_done') : kind === 'auto' ? t('announcements.builder.translation_auto') : config.autoTranslate ? t('announcements.builder.translation_missing_auto') : t('announcements.builder.translation_missing');
+      return new StringSelectMenuOptionBuilder().setLabel(truncate(`${translationIcon(kind)} ${languageLabel(code)}`, 100)).setValue(code).setDescription(truncate(desc, 100));
     });
     rows.push(row(new StringSelectMenuBuilder().setCustomId(buildCustomId('announce', 'trsel', session.id)).setPlaceholder(t('announcements.builder.translations_placeholder')).addOptions(options)));
   }
-  rows.push(row(button('announce', 'back', session.id, t('core.back'), ButtonStyle.Secondary, '↩️')));
+  const pending = targets.some((code) => translationKind({ translations: ann.translations }, code) !== 'manual');
+  rows.push(
+    row(
+      button('announce', 'autotr', session.id, t('announcements.builder.btn_auto_translate'), ButtonStyle.Primary, '🤖').setDisabled(!targets.length || !pending),
+      button('announce', 'back', session.id, t('core.back'), ButtonStyle.Secondary, '↩️'),
+    ),
+  );
   return rows;
 }
 
