@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "prisma generate && tsc -p tsconfig.json && node scripts/copy-assets.js",
-    "start": "node dist/src/index.js",
+    "start": "node scripts/start.js",
     "setup": "tsx scripts/setup.ts",
     "deploy": "tsx scripts/deploy-commands.ts",
     "test": "vitest run",
