@@ -1,0 +1,36 @@
+{
+  "panel": {
+    "title": "🌍 CHOOSE YOUR LANGUAGE",
+    "description": "Selecciona tu idioma para recibir los mensajes y anuncios traducidos.\nSelect your language to receive translated messages and announcements.",
+    "published": "Panel de idioma publicado en {channel} — [abrir]({url})",
+    "refreshed": "Panel de idioma actualizado.",
+    "not_published": "Ningún panel publicado. Usa `/language-panel publish`.",
+    "preview_note": "Vista previa del panel (los botones son funcionales):"
+  },
+  "select": {
+    "placeholder": "Elige tu idioma…",
+    "prompt": "🌍 Elige tu idioma:"
+  },
+  "changed": "✅ Idioma definido: {flag} **{language}**",
+  "not_enabled": "⛔ El idioma {flag} **{language}** no está activado en este servidor.",
+  "no_role": "ℹ️ Ningún rol está asociado a este idioma: tu preferencia ha sido guardada.",
+  "blocked_roles": "⚠️ No he podido gestionar: {roles} (jerarquía de roles).",
+  "guild_unavailable": "Servidor no encontrado: usa esta acción desde el servidor.",
+  "module_disabled": "El módulo multilingüe está desactivado en este servidor.",
+  "roles": {
+    "set": "{flag} **{language}** → {role}",
+    "removed": "Asociación eliminada para {flag} **{language}**.",
+    "reset_title": "🌍 Roles de idioma reiniciados",
+    "none_default": "No existe ningún rol por defecto en este servidor. Usa `/language-roles set`.",
+    "missing": "Roles por defecto no encontrados",
+    "list_title": "🌍 Roles de idioma",
+    "using_defaults": "Roles por defecto (Battle Royale) — sin configuración personalizada"
+  },
+  "log": {
+    "title": "🌍 Cambio de idioma",
+    "description": "{user} ha elegido {flag} **{language}**",
+    "role_added": "Rol añadido",
+    "roles_removed": "Roles eliminados",
+    "blocked": "No gestionados (jerarquía)"
+  }
+}

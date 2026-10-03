@@ -1,0 +1,51 @@
+{
+  "profile": {
+    "title": "⚔️ Perfil — {name}",
+    "none": "{user} aún no tiene perfil de Battle Royale.",
+    "level": "Nivel",
+    "wins": "🏆 Victorias",
+    "kills": "🔫 Kills",
+    "kd": "⚖️ K/D",
+    "matches": "🎮 Partidas",
+    "top10": "🔟 Top 10",
+    "playtime": "⏱️ Tiempo de juego",
+    "season": "📅 Temporada",
+    "battlepass": "🎟️ Battle Pass",
+    "tier": "Nivel del pase",
+    "identifier": "🔗 Identificador FiveM",
+    "not_linked": "No vinculado — `/br-link`"
+  },
+  "leaderboard": {
+    "title": "🏆 Clasificación {metric} — Temporada {season}",
+    "empty": "Ninguna estadística para la temporada {season}.",
+    "metrics": { "wins": "Victorias", "kills": "Kills", "level": "Nivel", "kd": "K/D" }
+  },
+  "battlepass": {
+    "title": "🎟️ Battle Pass — Temporada {season} · {name}",
+    "none": "Ninguna temporada activa. Un administrador puede crear una con `/br-admin season new`.",
+    "tiers": "Niveles",
+    "ends": "Fin de temporada",
+    "maxed": "¡Todos los niveles desbloqueados!"
+  },
+  "link": {
+    "invalid": "Identificador inválido. Formato esperado: `license:0123abcd…` (visible en la consola F8 o a través del servidor).",
+    "done": "Identificador `{identifier}` vinculado a tu perfil. Tus estadísticas en el juego se sincronizarán a partir de ahora.",
+    "verification": "Verificación",
+    "verified": "✅ Identificador detectado en el juego actualmente.",
+    "not_online": "ℹ️ Identificador no detectado en línea por el momento — la vinculación está guardada y se verificará en tu próxima partida."
+  },
+  "admin": {
+    "season_set": "Temporada activa: **{season}** ({name}).",
+    "season_new": "Temporada **{season}** «{name}» creada, termina el {ends}. Progreso del Battle Pass reiniciado.",
+    "seasons_title": "📅 Temporadas",
+    "stat_set": "{user}: `{field}` = **{value}**.",
+    "xp_added": "{user}: {amount} XP → **{xp} XP** (nivel {level})."
+  },
+  "errors": {
+    "identifier_taken": "Este identificador ya está vinculado a otro jugador.",
+    "profile_not_found": "Perfil no encontrado.",
+    "invalid_field": "Campo inválido.",
+    "season_exists": "Esta temporada ya existe.",
+    "no_season": "Ninguna temporada activa."
+  }
+}

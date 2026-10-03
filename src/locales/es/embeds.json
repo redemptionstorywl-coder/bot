@@ -1,0 +1,138 @@
+{
+  "builder": {
+    "title": "🎨 Creador de embeds",
+    "title_edit": "🎨 Edición de un embed existente",
+    "footer": "Sesión {id} · expira",
+    "hint": "Usa los botones para editar, el menú Campos para los campos y el selector de canal para enviar.",
+    "content": "Contenido",
+    "buttons": "Botones",
+    "fields": "Campos",
+    "timestamp": "Marca de tiempo",
+    "target": "Mensaje de destino",
+    "empty_preview": "El embed está vacío por ahora. Empieza por «Título y descripción».",
+    "invalid_preview": "No se puede mostrar la vista previa: comprueba las URL y los valores introducidos.",
+    "btn_title": "Título y descripción",
+    "btn_color": "Color",
+    "btn_images": "Imagen y miniatura",
+    "btn_footer": "Footer y autor",
+    "btn_timestamp": "Timestamp",
+    "btn_buttons": "Botones",
+    "btn_content": "Contenido / menciones",
+    "btn_template": "Guardar como plantilla",
+    "btn_import": "Importar JSON",
+    "btn_export": "Exportar JSON",
+    "btn_update": "Actualizar el mensaje",
+    "fields_placeholder": "Campos ({count}/{max}) — añadir, eliminar, vaciar",
+    "field_add": "Añadir un campo",
+    "field_add_desc": "Nombre, valor y visualización en línea",
+    "field_clear": "Vaciar todos los campos",
+    "field_added": "Campo añadido.",
+    "send_placeholder": "📨 Enviar a un canal…",
+    "buttons_placeholder": "Botones ({count}/{max}) — añadir un enlace, eliminar, vaciar",
+    "button_add_link": "Añadir un botón de enlace",
+    "button_add_role": "Añadir un botón de rol (elegir roles)",
+    "button_clear": "Eliminar todos los botones",
+    "button_added": "Botón de enlace añadido.",
+    "role_buttons_added": "{count} botón(es) de rol añadido(s).",
+    "sent": "Embed enviado a {channel} → {url}",
+    "updated": "Mensaje actualizado → {url}",
+    "template_saved": "Plantilla **{name}** guardada.",
+    "template_updated": "Plantilla **{name}** actualizada.",
+    "imported": "JSON importado correctamente.",
+    "export_file": "📤 Exportación JSON (archivo adjunto).",
+    "cancelled": "Sesión cancelada. No se ha enviado nada."
+  },
+  "cmd": {
+    "sent": "Plantilla enviada a {channel} → {url}",
+    "template_deleted": "Plantilla **{name}** eliminada.",
+    "template_list_empty": "Ninguna plantilla en este servidor. Crea una con `/embed create` y luego «Guardar como plantilla».",
+    "template_list_title": "🗂️ Plantillas de embeds ({count})",
+    "variables_title": "🧩 Variables disponibles",
+    "variables_desc": "Estas variables se reemplazan automáticamente en títulos, descripciones, campos, footers y contenidos."
+  },
+  "modal": {
+    "title": { "title": "Título y descripción", "field_title": "Título", "field_url": "URL del título (opcional)", "field_description": "Descripción", "description_placeholder": "Texto principal. Variables: {server}, {date}, {user}…" },
+    "color": { "title": "Color", "field_hex": "Color hex o nombre de color de marca" },
+    "images": { "title": "Imagen y miniatura", "field_image": "URL de la imagen", "field_thumbnail": "URL de la miniatura" },
+    "footer": { "title": "Footer y autor", "field_footer": "Texto del footer", "field_footer_icon": "Icono del footer (URL)", "field_author": "Nombre del autor", "field_author_icon": "Icono del autor (URL)", "field_author_url": "Enlace del autor (URL)" },
+    "field": { "title": "Añadir un campo", "field_name": "Nombre", "field_value": "Valor", "field_inline": "¿En línea? (sí / no)", "inline_placeholder": "sí" },
+    "content": { "title": "Contenido del mensaje", "field_content": "Texto encima del embed", "placeholder": "Menciones, texto libre… p. ej.: @everyone ¡Nueva actualización!" },
+    "link": { "title": "Botón de enlace", "field_label": "Etiqueta", "field_url": "URL", "field_emoji": "Emoji (opcional)" },
+    "template": { "title": "Guardar como plantilla", "field_name": "Nombre de la plantilla", "field_description": "Descripción (opcional)" },
+    "import": { "title": "Importar un JSON", "field_json": "JSON (EmbedSpec o mensaje)" }
+  },
+  "errors": {
+    "not_found": "Plantilla no encontrada: `{details}`",
+    "duplicate_name": "Ya existe una plantilla llamada `{details}`.",
+    "invalid_channel": "Canal inválido o inaccesible (`{details}`).",
+    "message_not_found": "Mensaje no encontrado (`{details}`).",
+    "not_bot_message": "Este mensaje no fue enviado por el bot: no se puede editar.",
+    "no_embed": "Este mensaje no contiene ningún embed.",
+    "no_client": "El bot no está listo. Vuelve a intentarlo en unos segundos.",
+    "invalid_spec": "Embed inválido:\n{details}",
+    "invalid_json": "JSON inválido:\n{details}",
+    "invalid_reference": "Indica un enlace de mensaje válido o un ID de mensaje (con el canal).",
+    "session_expired": "Esta sesión de edición ha expirado. Vuelve a ejecutar el comando.",
+    "empty_embed": "El embed está vacío: añade al menos un título, una descripción, una imagen o un campo.",
+    "fields_limit": "Límite alcanzado: {max} campos como máximo.",
+    "buttons_limit": "Límite alcanzado: {max} botones como máximo."
+  },
+  "defaults": {
+    "footer": "{server}",
+    "maintenance": {
+      "name": "Mantenimiento",
+      "description": "Aviso de mantenimiento programado",
+      "title": "Mantenimiento programado",
+      "body": "Hay un mantenimiento previsto en **{server}**. Los servicios no estarán disponibles temporalmente.\n\nGracias por tu paciencia.",
+      "fields": { "start": { "name": "Inicio", "value": "{date}" }, "duration": { "name": "Duración estimada", "value": "~1h" } }
+    },
+    "patch_note": {
+      "name": "Patch Note",
+      "description": "Notas de actualización",
+      "title": "Patch Note — {date}",
+      "body": "Hay una nueva actualización disponible en **{server}**.",
+      "fields": { "new": { "name": "Novedades", "value": "• …" }, "fixes": { "name": "Correcciones", "value": "• …" } }
+    },
+    "new_season": {
+      "name": "Nueva Temporada",
+      "description": "Lanzamiento de una nueva temporada",
+      "title": "Nueva temporada",
+      "body": "¡Comienza la nueva temporada de **{server}**! Nuevos desafíos, nuevas recompensas.",
+      "fields": { "start": { "name": "Inicio", "value": "{date}" }, "rewards": { "name": "Recompensas", "value": "• …" } }
+    },
+    "tournament": {
+      "name": "Torneo",
+      "description": "Anuncio de torneo",
+      "title": "Torneo",
+      "body": "Se organiza un torneo en **{server}**. ¡Inscríbete y enfréntate a los mejores!",
+      "fields": { "date": { "name": "Fecha", "value": "{date}" }, "registration": { "name": "Inscripciones", "value": "Abiertas" } }
+    },
+    "important": {
+      "name": "Anuncio importante",
+      "description": "Comunicación oficial",
+      "title": "Anuncio importante",
+      "body": "El equipo de **{server}** tiene una información importante que comunicarte.\n\n…"
+    },
+    "giveaway": {
+      "name": "Giveaway",
+      "description": "Concurso / sorteo",
+      "title": "Giveaway",
+      "body": "¡Hay un giveaway en curso en **{server}**! Participa para intentar ganar.",
+      "fields": { "prize": { "name": "Premio", "value": "…" }, "end": { "name": "Fin", "value": "{date}" } }
+    },
+    "event": {
+      "name": "Evento",
+      "description": "Anuncio de evento",
+      "title": "Evento",
+      "body": "Se prepara un evento en **{server}**. ¡No faltes!",
+      "fields": { "date": { "name": "Fecha", "value": "{date}" }, "location": { "name": "Lugar", "value": "…" } }
+    },
+    "recruitment": {
+      "name": "Reclutamiento",
+      "description": "Reclutamiento de staff / equipo",
+      "title": "Reclutamiento",
+      "body": "¡**{server}** recluta! Únete al equipo y forma parte de la aventura.",
+      "fields": { "positions": { "name": "Puestos", "value": "• …" }, "apply": { "name": "Postularse", "value": "Abre un ticket" } }
+    }
+  }
+}

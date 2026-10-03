@@ -1,0 +1,89 @@
+{
+  "unknown": "Desconocido",
+  "fields": {
+    "author": "Autor",
+    "authors": "Autores",
+    "content": "Contenido",
+    "attachments": "Archivos adjuntos ({count})",
+    "embeds": "Embeds",
+    "before": "Antes",
+    "after": "Después",
+    "count": "Cantidad",
+    "preview": "Vista previa",
+    "roles": "Roles",
+    "role": "Rol",
+    "name": "Nombre",
+    "color": "Color",
+    "permissions": "Permisos",
+    "members": "Miembros",
+    "changed_by": "Por",
+    "type": "Tipo",
+    "category": "Categoría"
+  },
+  "message": {
+    "deleted_title": "🗑️ Mensaje eliminado",
+    "edited_title": "✏️ Mensaje editado",
+    "bulk_title": "🧹 {count} mensajes eliminados en masa",
+    "deleted_by": "Eliminado por",
+    "unknown_author": "Autor desconocido (mensaje no almacenado en caché)",
+    "content_unavailable": "Contenido no disponible (mensaje no almacenado en caché)",
+    "no_content": "*(sin texto)*",
+    "jump": "Ir al mensaje"
+  },
+  "member": {
+    "join_title": "📥 Miembro llegado",
+    "join_bot_title": "🤖 Bot añadido",
+    "leave_title": "📤 Miembro salido",
+    "kicked_title": "👢 Miembro expulsado",
+    "account_created": "Cuenta creada",
+    "recent_account": "cuenta reciente",
+    "member_count": "Miembros",
+    "joined_at": "Llegó el",
+    "nickname_title": "🏷️ Apodo modificado",
+    "roles_title": "🎭 Roles modificados",
+    "roles_added": "Roles añadidos",
+    "roles_removed": "Roles eliminados",
+    "timeout_title": "⏳ Miembro aislado temporalmente",
+    "untimeout_title": "⏳ Aislamiento levantado"
+  },
+  "ban": {
+    "added_title": "🔨 Miembro baneado",
+    "removed_title": "🔓 Miembro desbaneado"
+  },
+  "role": {
+    "created_title": "🎭 Rol creado",
+    "deleted_title": "🎭 Rol eliminado",
+    "updated_title": "🎭 Rol modificado",
+    "hoist": "Mostrado por separado",
+    "mentionable": "Mencionable",
+    "permissions_added": "Permisos añadidos",
+    "permissions_removed": "Permisos eliminados"
+  },
+  "channel": {
+    "created_title": "📁 Canal creado",
+    "deleted_title": "📁 Canal eliminado",
+    "updated_title": "📁 Canal modificado",
+    "topic": "Tema",
+    "slowmode": "Modo lento",
+    "bitrate": "Bitrate",
+    "user_limit": "Límite de usuarios",
+    "overwrites": "Permisos",
+    "overwrite_added": "➕ {target}: permisos añadidos",
+    "overwrite_removed": "➖ {target}: permisos eliminados",
+    "overwrite_changed": "✏️ {target}: {changes}"
+  },
+  "voice": {
+    "join_title": "🔊 Conexión de voz",
+    "leave_title": "🔇 Desconexión de voz",
+    "move_title": "↪️ Cambio de canal de voz"
+  },
+  "invite": {
+    "created_title": "🔗 Invitación creada",
+    "code": "Código",
+    "inviter": "Creada por",
+    "max_uses": "Usos máx.",
+    "expires": "Expira",
+    "never": "Nunca",
+    "temporary": "Temporal"
+  }
+}

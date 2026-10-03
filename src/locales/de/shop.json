@@ -1,0 +1,59 @@
+{
+  "status": { "pending": "⏳ Ausstehend", "paid": "💳 Bezahlt", "delivered": "📦 Geliefert", "cancelled": "✖️ Storniert", "refunded": "↩️ Erstattet" },
+  "catalog": {
+    "title": "🛒 Katalog",
+    "empty": "Kein Produkt verfügbar.",
+    "order": "Bestellen",
+    "unlimited": "Unbegrenzter Bestand",
+    "in_stock": "{stock} auf Lager",
+    "sold_out": "Ausverkauft"
+  },
+  "product": {
+    "price": "Preis",
+    "stock": "Bestand",
+    "category": "Kategorie",
+    "added": "Produkt **#{id} {name}** hinzugefügt ({price}).",
+    "edited": "Produkt **#{id} {name}** geändert.",
+    "removed": "Produkt **{name}** entfernt.",
+    "list_title": "🛒 Produkte ({count})"
+  },
+  "category": {
+    "added": "Kategorie **{name}** hinzugefügt.",
+    "removed": "Kategorie **{name}** entfernt.",
+    "empty": "Keine Kategorie.",
+    "list_title": "📂 Kategorien"
+  },
+  "order": {
+    "modal_title": "Bestellen — {product}",
+    "quantity": "Menge",
+    "note": "Notiz (optional)",
+    "product": "Produkt",
+    "total": "Gesamt",
+    "status": "Status",
+    "summary_title": "🧾 Bestellung #{id}",
+    "pay_hint": "Schließe die Zahlung über den Button unten ab. Deine Bestellung wird automatisch bestätigt, sobald die Zahlung eingegangen ist.",
+    "support_hint": "Ein Mitglied des Staff-Teams wird deine Bestellung bearbeiten. Öffne bei Fragen ein Ticket.",
+    "pay_button": "Auf Tebex bezahlen",
+    "placed": "Bestellung **#{id}** gespeichert. Eine Zusammenfassung wurde dir per Direktnachricht gesendet.",
+    "created": "Bestellung **#{id}** für {user} erstellt — {total}.",
+    "status_updated": "Bestellung **#{id}** → {status}.",
+    "status_dm_title": "🧾 Bestellung #{id} aktualisiert",
+    "status_dm": "Deine Bestellung ({product}) ist jetzt: **{status}**.",
+    "list_title": "🧾 Bestellungen — {status}",
+    "all": "alle",
+    "empty": "Keine Bestellung.",
+    "history_title": "🧾 Verlauf — {user}",
+    "history_empty": "Keine Bestellung für {user}."
+  },
+  "announce": { "done": "Produkt **{product}** in {channel} angekündigt." },
+  "errors": {
+    "product_not_found": "Produkt nicht gefunden.",
+    "product_disabled": "Dieses Produkt ist nicht verfügbar.",
+    "out_of_stock": "Dieses Produkt ist ausverkauft.",
+    "order_not_found": "Bestellung nicht gefunden.",
+    "category_not_found": "Kategorie nicht gefunden.",
+    "invalid_price": "Ungültiger Preis (z. B. `9.99`).",
+    "invalid_quantity": "Ungültige Menge (1 bis 99).",
+    "invalid_transition": "Statuswechsel vom aktuellen Zustand aus nicht möglich."
+  }
+}

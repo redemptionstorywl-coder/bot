@@ -1,0 +1,89 @@
+{
+  "unknown": "Unbekannt",
+  "fields": {
+    "author": "Autor",
+    "authors": "Autoren",
+    "content": "Inhalt",
+    "attachments": "Anhänge ({count})",
+    "embeds": "Embeds",
+    "before": "Vorher",
+    "after": "Nachher",
+    "count": "Anzahl",
+    "preview": "Vorschau",
+    "roles": "Rollen",
+    "role": "Rolle",
+    "name": "Name",
+    "color": "Farbe",
+    "permissions": "Berechtigungen",
+    "members": "Mitglieder",
+    "changed_by": "Von",
+    "type": "Typ",
+    "category": "Kategorie"
+  },
+  "message": {
+    "deleted_title": "🗑️ Nachricht gelöscht",
+    "edited_title": "✏️ Nachricht bearbeitet",
+    "bulk_title": "🧹 {count} Nachrichten massenhaft gelöscht",
+    "deleted_by": "Gelöscht von",
+    "unknown_author": "Unbekannter Autor (Nachricht nicht im Cache)",
+    "content_unavailable": "Inhalt nicht verfügbar (Nachricht nicht im Cache)",
+    "no_content": "*(kein Text)*",
+    "jump": "Zur Nachricht"
+  },
+  "member": {
+    "join_title": "📥 Mitglied beigetreten",
+    "join_bot_title": "🤖 Bot hinzugefügt",
+    "leave_title": "📤 Mitglied gegangen",
+    "kicked_title": "👢 Mitglied gekickt",
+    "account_created": "Konto erstellt",
+    "recent_account": "neues Konto",
+    "member_count": "Mitglieder",
+    "joined_at": "Beigetreten am",
+    "nickname_title": "🏷️ Nickname geändert",
+    "roles_title": "🎭 Rollen geändert",
+    "roles_added": "Rollen hinzugefügt",
+    "roles_removed": "Rollen entfernt",
+    "timeout_title": "⏳ Mitglied vorübergehend stummgeschaltet",
+    "untimeout_title": "⏳ Timeout aufgehoben"
+  },
+  "ban": {
+    "added_title": "🔨 Mitglied gebannt",
+    "removed_title": "🔓 Mitglied entbannt"
+  },
+  "role": {
+    "created_title": "🎭 Rolle erstellt",
+    "deleted_title": "🎭 Rolle gelöscht",
+    "updated_title": "🎭 Rolle geändert",
+    "hoist": "Separat angezeigt",
+    "mentionable": "Erwähnbar",
+    "permissions_added": "Berechtigungen hinzugefügt",
+    "permissions_removed": "Berechtigungen entfernt"
+  },
+  "channel": {
+    "created_title": "📁 Kanal erstellt",
+    "deleted_title": "📁 Kanal gelöscht",
+    "updated_title": "📁 Kanal geändert",
+    "topic": "Thema",
+    "slowmode": "Langsamer Modus",
+    "bitrate": "Bitrate",
+    "user_limit": "Benutzerlimit",
+    "overwrites": "Berechtigungen",
+    "overwrite_added": "➕ {target}: Berechtigungen hinzugefügt",
+    "overwrite_removed": "➖ {target}: Berechtigungen entfernt",
+    "overwrite_changed": "✏️ {target}: {changes}"
+  },
+  "voice": {
+    "join_title": "🔊 Sprachkanal betreten",
+    "leave_title": "🔇 Sprachkanal verlassen",
+    "move_title": "↪️ Sprachkanal gewechselt"
+  },
+  "invite": {
+    "created_title": "🔗 Einladung erstellt",
+    "code": "Code",
+    "inviter": "Erstellt von",
+    "max_uses": "Max. Verwendungen",
+    "expires": "Läuft ab",
+    "never": "Nie",
+    "temporary": "Temporär"
+  }
+}

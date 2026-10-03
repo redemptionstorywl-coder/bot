@@ -1,0 +1,239 @@
+{
+  "defaults": {
+    "support": {
+      "label": "Soporte",
+      "description": "¿Necesitas ayuda? Abre un ticket de soporte."
+    },
+    "bug": {
+      "label": "Bug",
+      "description": "Reportar un bug o un problema técnico."
+    },
+    "shop": {
+      "label": "Shop",
+      "description": "Pregunta sobre la tienda o un pedido."
+    },
+    "payment": {
+      "label": "Pago",
+      "description": "Problema de pago o de entrega de una compra."
+    },
+    "battle-royale": {
+      "label": "Battle Royale",
+      "description": "Preguntas relacionadas con el servidor Battle Royale."
+    },
+    "prison": {
+      "label": "Prison RP",
+      "description": "Preguntas relacionadas con el servidor Prison RP."
+    },
+    "school": {
+      "label": "School RP",
+      "description": "Preguntas relacionadas con el servidor School RP."
+    },
+    "whitelist": {
+      "label": "Whitelist",
+      "description": "Solicitud o problema de whitelist."
+    },
+    "staff": {
+      "label": "Staff",
+      "description": "Contactar con el equipo staff en privado."
+    },
+    "partnership": {
+      "label": "Colaboración",
+      "description": "Proponer una colaboración."
+    },
+    "report": {
+      "label": "Reporte",
+      "description": "Reportar a un jugador o un comportamiento."
+    },
+    "panel_title": "🎫 Soporte — {server}",
+    "panel_description": "¿Necesitas ayuda? Haz clic abajo para abrir un ticket. Un miembro del equipo te responderá lo antes posible.",
+    "panel_footer": "Un ticket = un tema. Por favor, sé respetuoso.",
+    "question_label": "Describe tu solicitud",
+    "question_placeholder": "Explica tu problema o tu solicitud con el máximo de detalles."
+  },
+  "panel": {
+    "open_button": "Abrir un ticket",
+    "select_placeholder": "¿Cuál es el tema?",
+    "pick_prompt": "¿Cuál es el tema de tu ticket?",
+    "created": "Panel publicado en {channel} (ID `{id}`, {count} tipo(s)).",
+    "deleted": "Panel `{id}` eliminado.",
+    "list_title": "Paneles de tickets",
+    "list_empty": "Ningún panel configurado. Usa `/ticket-panel create`.",
+    "list_line": "`#{id}` — {channel} • {style} • {count} tipo(s)",
+    "unknown_types": "Claves de tipos desconocidas: {keys}",
+    "seeded": "Se han creado {count} tipos de tickets por defecto."
+  },
+  "open": {
+    "title": "{emoji} Ticket #{number} — {type}",
+    "description": "¡Bienvenido {user}! Describe tu solicitud, el equipo te responderá lo antes posible.",
+    "field_user": "Abierto por",
+    "field_type": "Tipo",
+    "field_status": "Estado",
+    "field_claimed": "Atendido por",
+    "field_created": "Abierto el",
+    "field_closed": "Cerrado el",
+    "field_closed_by": "Cerrado por",
+    "field_reason": "Motivo",
+    "no_answer": "—",
+    "staff_ping": "{roles} — nuevo ticket de {user}.",
+    "created": "Tu ticket ha sido creado: {channel}",
+    "creating": "Creando tu ticket…",
+    "modal_title": "{emoji} {type}"
+  },
+  "status": {
+    "OPEN": "🟢 Abierto",
+    "CLAIMED": "👤 Atendido",
+    "CLOSED": "🔒 Cerrado",
+    "ARCHIVED": "📦 Archivado",
+    "DELETED": "🗑️ Eliminado"
+  },
+  "buttons": {
+    "close": "Cerrar",
+    "reopen": "Reabrir",
+    "claim": "Claim",
+    "claimed": "Atendido",
+    "add": "Añadir",
+    "remove": "Quitar",
+    "transcript": "Transcript",
+    "transfer": "Transferir",
+    "delete": "Eliminar",
+    "confirm_delete": "Sí, eliminar",
+    "cancel": "Cancelar"
+  },
+  "modal": {
+    "close_title": "Cerrar el ticket #{number}",
+    "close_reason": "Motivo (opcional)",
+    "close_reason_placeholder": "Problema resuelto, solicitud tramitada…",
+    "add_title": "Añadir un miembro al ticket",
+    "remove_title": "Quitar un miembro del ticket",
+    "user_field": "Miembro (ID o mención)",
+    "user_placeholder": "123456789012345678 o @miembro",
+    "questions_title": "Preguntas — {type}",
+    "question_slot": "Pregunta {index}",
+    "question_placeholder": "Label | placeholder | short/paragraph | required/optional | maxLength"
+  },
+  "actions": {
+    "closing": "Cerrando el ticket…",
+    "closed": "🔒 Ticket cerrado por {user}.",
+    "closed_reason": "Motivo: {reason}",
+    "closed_confirm": "Ticket #{number} cerrado.",
+    "reopened": "🔓 Ticket reabierto por {user}.",
+    "reopened_confirm": "Ticket #{number} reabierto.",
+    "claimed": "👤 {user} se encarga de este ticket.",
+    "claimed_confirm": "Te encargas del ticket #{number}.",
+    "member_added": "👥 {target} ha sido añadido al ticket por {user}.",
+    "member_added_confirm": "{target} añadido al ticket.",
+    "member_removed": "🚫 {target} ha sido quitado del ticket por {user}.",
+    "member_removed_confirm": "{target} quitado del ticket.",
+    "transfer_prompt": "¿A qué tipo transferir este ticket?",
+    "transfer_select": "Elegir un tipo…",
+    "transferred": "🔄 Ticket transferido a **{type}** por {user}.",
+    "transferred_confirm": "Ticket transferido a **{type}**.",
+    "delete_confirm": "¿Eliminar definitivamente el ticket #{number}? Se generará un transcript antes de la eliminación.",
+    "delete_cancelled": "Eliminación cancelada.",
+    "deleting": "🗑️ Este ticket se eliminará en {seconds} segundos.",
+    "deleted_confirm": "Ticket #{number} eliminado.",
+    "renamed": "Canal renombrado a `{name}`.",
+    "transcript_generating": "Generando el transcript…",
+    "transcript_sent": "Transcript generado y enviado.",
+    "transcript_dm": "Aquí tienes el transcript de tu ticket **#{number}** en **{server}**."
+  },
+  "errors": {
+    "not_ticket_channel": "Este canal no es un ticket.",
+    "not_found": "Ticket no encontrado.",
+    "max_per_user": "Ya tienes {count} ticket(s) abierto(s) de este tipo (máximo: {max}). Cierra uno antes de abrir otro.",
+    "type_not_found": "Tipo de ticket no encontrado.",
+    "type_disabled": "Este tipo de ticket está desactivado.",
+    "no_types": "Ningún tipo de ticket disponible. Un administrador debe configurar uno con `/ticket-type create`.",
+    "already_closed": "Este ticket ya está cerrado.",
+    "not_closed": "Este ticket no está cerrado.",
+    "already_claimed": "Este ticket ya está atendido por {user}.",
+    "no_permission": "No tienes permiso para realizar esta acción.",
+    "staff_only": "Esta acción está reservada al staff.",
+    "invalid_user": "Usuario inválido. Indica un ID o una mención.",
+    "cannot_add_bot": "No se puede añadir un bot al ticket.",
+    "member_not_found": "Miembro no encontrado en este servidor.",
+    "cannot_remove_creator": "No se puede quitar al creador del ticket.",
+    "channel_create_failed": "No se pudo crear el canal del ticket. Comprueba mis permisos y la categoría configurada.",
+    "channel_missing": "El canal de este ticket ya no existe.",
+    "key_exists": "Ya existe un tipo con la clave `{key}`.",
+    "invalid_key": "Clave inválida: solo letras minúsculas, cifras y guiones (de 2 a 32 caracteres).",
+    "same_type": "El ticket ya es de este tipo.",
+    "invalid_question": "Pregunta {index} inválida: {details}",
+    "panel_not_found": "Panel no encontrado.",
+    "transcript_failed": "La generación del transcript ha fallado.",
+    "invalid_embed": "Embed inválido: {details}",
+    "deleted": "Este ticket ha sido eliminado.",
+    "unknown_types": "Claves de tipos desconocidas: {keys}"
+  },
+  "type": {
+    "created": "Tipo **{label}** (`{key}`) creado.",
+    "updated": "Tipo **{label}** actualizado.",
+    "deleted": "Tipo **{label}** eliminado. Los tickets existentes se conservan.",
+    "list_title": "Tipos de tickets",
+    "list_empty": "Ningún tipo de ticket. Usa `/ticket-type create` o `/ticket-panel create` (tipos por defecto).",
+    "list_line": "{emoji} **{label}** (`{key}`) {state}\n┗ Categoría: {category} • Archivo: {archive} • Staff: {roles} • Máx./miembro: {max} • Preguntas: {questions}",
+    "questions_updated": "Preguntas del tipo **{label}** actualizadas ({count}).",
+    "questions_help": "Formato por campo: `Label | placeholder | short/paragraph | required/optional | maxLength`. Solo la etiqueta es obligatoria. Deja vacío para eliminar una pregunta.",
+    "enabled": "🟢",
+    "disabled": "🔴",
+    "nothing_to_update": "Ninguna modificación indicada."
+  },
+  "info": {
+    "title": "Ticket #{number}",
+    "created_at": "Abierto el",
+    "closed_at": "Cerrado el",
+    "duration": "Duración",
+    "messages": "Mensajes",
+    "participants": "Participantes",
+    "channel": "Canal",
+    "answers": "Respuestas al formulario"
+  },
+  "list": {
+    "title": "Tickets ({status}) — {total}",
+    "empty": "Ningún ticket coincide.",
+    "line": "`#{number}` {channel} • {user} • {type} • {status} • {created}",
+    "all": "todos"
+  },
+  "transcript": {
+    "title": "Transcript — Ticket #{number}",
+    "ticket": "Ticket",
+    "type": "Tipo",
+    "opened_by": "Abierto por",
+    "claimed_by": "Atendido por",
+    "closed_by": "Cerrado por",
+    "reason": "Motivo",
+    "opened_at": "Abierto el",
+    "closed_at": "Cerrado el",
+    "duration": "Duración",
+    "messages": "Mensajes",
+    "participants": "Participantes",
+    "no_messages": "Ningún mensaje registrado.",
+    "attachments": "Archivos adjuntos",
+    "embed": "Embed",
+    "generated": "Generado por Redemption Story Studio el {date}",
+    "log_title": "Transcript del ticket #{number}",
+    "none": "—",
+    "unknown_user": "Usuario desconocido"
+  },
+  "log": {
+    "open": "🎫 Ticket #{number} abierto",
+    "close": "🔒 Ticket #{number} cerrado",
+    "reopen": "🔓 Ticket #{number} reabierto",
+    "claim": "👤 Ticket #{number} atendido",
+    "delete": "🗑️ Ticket #{number} eliminado",
+    "transfer": "🔄 Ticket #{number} transferido",
+    "add": "👥 Miembro añadido al ticket #{number}",
+    "remove": "🚫 Miembro quitado del ticket #{number}",
+    "channel_deleted": "El canal del ticket ha sido eliminado manualmente.",
+    "field_user": "Usuario",
+    "field_type": "Tipo",
+    "field_channel": "Canal",
+    "field_staff": "Staff",
+    "field_reason": "Motivo",
+    "field_from": "Desde",
+    "field_to": "Hacia",
+    "field_target": "Miembro",
+    "field_duration": "Duración",
+    "field_messages": "Mensajes"
+  }
+}

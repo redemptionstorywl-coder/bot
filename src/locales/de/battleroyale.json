@@ -1,0 +1,51 @@
+{
+  "profile": {
+    "title": "⚔️ Profil — {name}",
+    "none": "{user} hat noch kein Battle Royale-Profil.",
+    "level": "Level",
+    "wins": "🏆 Siege",
+    "kills": "🔫 Kills",
+    "kd": "⚖️ K/D",
+    "matches": "🎮 Partien",
+    "top10": "🔟 Top 10",
+    "playtime": "⏱️ Spielzeit",
+    "season": "📅 Season",
+    "battlepass": "🎟️ Battle Pass",
+    "tier": "Stufe",
+    "identifier": "🔗 FiveM-Kennung",
+    "not_linked": "Nicht verknüpft — `/br-link`"
+  },
+  "leaderboard": {
+    "title": "🏆 Rangliste {metric} — Season {season}",
+    "empty": "Keine Statistiken für Season {season}.",
+    "metrics": { "wins": "Siege", "kills": "Kills", "level": "Level", "kd": "K/D" }
+  },
+  "battlepass": {
+    "title": "🎟️ Battle Pass — Season {season} · {name}",
+    "none": "Keine aktive Season. Ein Administrator kann mit `/br-admin season new` eine erstellen.",
+    "tiers": "Stufen",
+    "ends": "Season-Ende",
+    "maxed": "Alle Stufen freigeschaltet!"
+  },
+  "link": {
+    "invalid": "Ungültige Kennung. Erwartetes Format: `license:0123abcd…` (sichtbar in der F8-Konsole oder über den Server).",
+    "done": "Kennung `{identifier}` mit deinem Profil verknüpft. Deine Ingame-Statistiken werden ab jetzt synchronisiert.",
+    "verification": "Verifizierung",
+    "verified": "✅ Kennung derzeit im Spiel erkannt.",
+    "not_online": "ℹ️ Kennung derzeit nicht online erkannt — die Verknüpfung ist gespeichert und wird bei deiner nächsten Partie überprüft."
+  },
+  "admin": {
+    "season_set": "Aktive Season: **{season}** ({name}).",
+    "season_new": "Season **{season}** „{name}“ erstellt, endet am {ends}. Battle Pass-Fortschritt zurückgesetzt.",
+    "seasons_title": "📅 Seasons",
+    "stat_set": "{user}: `{field}` = **{value}**.",
+    "xp_added": "{user}: {amount} XP → **{xp} XP** (Level {level})."
+  },
+  "errors": {
+    "identifier_taken": "Diese Kennung ist bereits mit einem anderen Spieler verknüpft.",
+    "profile_not_found": "Profil nicht gefunden.",
+    "invalid_field": "Ungültiges Feld.",
+    "season_exists": "Diese Season existiert bereits.",
+    "no_season": "Keine aktive Season."
+  }
+}

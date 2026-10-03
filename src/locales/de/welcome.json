@@ -1,0 +1,62 @@
+{
+  "default_message": "👋 Willkommen {user} auf **{server}**!",
+  "buttons": {
+    "choose_language": "Meine Sprache wählen"
+  },
+  "config": {
+    "enabled_set": "Willkommensnachricht: {state}",
+    "channel_set": "Willkommenskanal: {channel}",
+    "image_set": "Willkommensbild: {state}",
+    "dm_set": "Willkommens-DM: {state}",
+    "language_prompt_set": "Button „🌍 Meine Sprache wählen“: {state}",
+    "buttons_set": "{count} Button(s) gespeichert.",
+    "buttons_cleared": "Buttons entfernt.",
+    "invalid_json": "Ungültiges JSON:\n```\n{details}\n```",
+    "value_set": "{kind} ({what}) gespeichert — {language}.",
+    "value_cleared": "{kind} ({what}) gelöscht.",
+    "all_languages": "alle Sprachen",
+    "target_welcome": "Willkommen",
+    "target_dm": "DM",
+    "target_leave": "Abschied",
+    "kind_message": "Nachricht",
+    "kind_embed": "Embed",
+    "modal_title_message": "Nachricht — {target}",
+    "modal_title_embed": "Embed-JSON — {target}",
+    "modal_title_buttons": "Buttons (JSON)",
+    "modal_label_message": "Text ({language})",
+    "modal_label_embed": "EmbedSpec-JSON ({language})",
+    "modal_label_buttons": "ButtonSpec[]-JSON",
+    "modal_help_message": "Variablen: {user} {username} {server} {memberCount}… Leer = löschen.",
+    "modal_help_embed": "{\"title\":\"…\",\"description\":\"…\",\"color\":\"#7C3AED\"} — leer = löschen.",
+    "modal_help_buttons": "[{\"label\":\"Website\",\"style\":\"link\",\"url\":\"https://…\"}] — leer = löschen.",
+    "test_sent": "Testnachricht in {channel} gesendet.",
+    "not_configured": "Keine Konfiguration: beginne mit `/welcome-config channel`.",
+    "show_title": "👋 Willkommen — {server}",
+    "field_enabled": "Status",
+    "field_language_prompt": "Sprach-Button",
+    "field_buttons": "Buttons",
+    "field_image": "Bild",
+    "field_dm": "DM",
+    "background": "eigener Hintergrund",
+    "variables": "Verfügbare Variablen"
+  },
+  "leave": {
+    "default_message": "👋 **{username}** hat den Server verlassen. Wir sind jetzt {memberCount}.",
+    "image_title": "AUF WIEDERSEHEN",
+    "image_subtitle": "{username} · {memberCount} Mitglieder",
+    "log_title": "👤 Mitglied gegangen",
+    "log_description": "{user} (`{tag}`) hat den Server verlassen — {memberCount} Mitglieder",
+    "log_joined": "Beigetreten",
+    "log_roles": "Rollen",
+    "config": {
+      "enabled_set": "Abschiedsnachricht: {state}",
+      "channel_set": "Abschiedskanal: {channel}",
+      "image_set": "Abschiedsbild: {state}",
+      "logs_set": "Abschieds-Logs: {state}",
+      "test_sent": "Testnachricht in {channel} gesendet.",
+      "not_configured": "Keine Konfiguration: beginne mit `/leave-config channel`.",
+      "show_title": "👋 Abschied — {server}",
+      "field_logs": "Logs"
+    }
+  }
+}

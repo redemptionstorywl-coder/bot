@@ -1,0 +1,46 @@
+{
+  "status": {
+    "state": "Status",
+    "online": "🟢 Online",
+    "offline": "🔴 Offline",
+    "maintenance": "🟠 Wartung",
+    "players": "Spieler",
+    "version": "Version",
+    "last_update": "Letzte Aktualisierung",
+    "uptime": "Online seit",
+    "host": "Host"
+  },
+  "add": {
+    "done": "Server **{name}** hinzugefügt (Schlüssel `{key}`, Framework **{framework}**).",
+    "api_base": "Basis-URL der API",
+    "auth": "Authentifizierung",
+    "auth_hint": "Header `{header}` = globaler API-Schlüssel (FIVEM_API_KEY) oder der eigene Schlüssel dieses Servers.",
+    "docs": "Vollständige Dokumentation: docs/FIVEM.md"
+  },
+  "remove": { "done": "Server **{name}** entfernt." },
+  "list": {
+    "title": "🎮 FiveM-Server ({count})",
+    "empty": "Kein FiveM-Server konfiguriert. Nutze `/fivem add`."
+  },
+  "maintenance": {
+    "on": "🟠 Wartung auf **{name}** **aktiviert**.",
+    "off": "🟢 Wartung auf **{name}** **deaktiviert**."
+  },
+  "status_channel": {
+    "set": "Der Status von **{name}** wird in {channel} aktualisiert (alle 60 s).",
+    "removed": "Statusnachricht für **{name}** deaktiviert."
+  },
+  "players": {
+    "title": "👥 {name} — {count} Spieler",
+    "empty": "Kein Spieler auf **{name}** verbunden (oder Server offline)."
+  },
+  "errors": {
+    "not_found": "Server nicht gefunden. Überprüfe den Schlüssel mit `/fivem list`.",
+    "duplicate": "Ein Server mit diesem Schlüssel existiert bereits.",
+    "invalid_key": "Ungültiger Schlüssel: 2 bis 64 Zeichen, Kleinbuchstaben, Ziffern, `-` oder `_`.",
+    "no_host": "Kein Host für diesen Server konfiguriert.",
+    "unreachable": "Server nicht erreichbar (Timeout oder HTTP-Fehler).",
+    "unauthorized": "Ungültiger API-Schlüssel.",
+    "disabled": "Dieser Server ist deaktiviert."
+  }
+}

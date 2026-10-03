@@ -1,0 +1,69 @@
+{
+  "yes": "Ja",
+  "no": "Nein",
+  "embed": {
+    "votes": "{count} Stimme(n)",
+    "voters": "{count} Abstimmende",
+    "anonymous": "🔒 Anonym",
+    "multi_select": "☑️ Mehrfachauswahl",
+    "ends": "⏳ Ende",
+    "status": "Status",
+    "ended": "🏁 Beendet",
+    "footer": "Umfrage #{id}"
+  },
+  "select": {
+    "placeholder": "Wähle eine Option…",
+    "placeholder_multi": "Wähle eine oder mehrere Optionen…"
+  },
+  "vote": {
+    "recorded": "🗳️ Stimme gespeichert: {options}",
+    "removed": "Deine Stimme wurde zurückgezogen.",
+    "ended": "Diese Umfrage ist beendet.",
+    "invalid_option": "Ungültige Option.",
+    "single_choice": "Diese Umfrage erlaubt nur eine einzige Auswahl."
+  },
+  "create": {
+    "success": "Umfrage in <#{channel}> erstellt (ID `{id}`).",
+    "invalid_options": "Ungültige Optionen: gib 2 bis 10 Optionen getrennt durch `|` an (z. B. `Rot | Grün | Blau`).",
+    "options_required": "Gib die Optionen an (`A | B | C`) oder wähle den Typ Ja / Nein.",
+    "invalid_duration": "Ungültige Dauer: `{value}`. Beispiele: `30m`, `1h`, `2d`.",
+    "channel_invalid": "Der gewählte Kanal muss ein Textkanal sein."
+  },
+  "end": {
+    "success": "Umfrage `#{id}` beendet ({count} Abstimmende).",
+    "already_ended": "Diese Umfrage ist bereits beendet."
+  },
+  "results": {
+    "title": "📊 Ergebnisse — {question}",
+    "summary": "{voters} Abstimmende · {total} Stimmen",
+    "anonymous_notice": "🔒 Anonyme Umfrage: die Details der Abstimmenden sind nicht verfügbar.",
+    "option_votes": "{percent}% · {count} Stimme(n)",
+    "voters_for": "Abstimmende — {option}",
+    "no_voters": "Keine Abstimmenden"
+  },
+  "list": {
+    "title": "📊 Umfragen — {server}",
+    "empty": "Keine Umfragen.",
+    "line_active": "🟣 `#{id}` **{question}** — {count} Abstimmende{ends}",
+    "line_ended": "⚫ `#{id}` **{question}** — beendet — {count} Abstimmende",
+    "ends_suffix": " — endet {when}"
+  },
+  "not_found": "Umfrage nicht gefunden (ID `{id}`).",
+  "commands": {
+    "description": "Umfragen verwalten",
+    "create": "Eine Umfrage erstellen",
+    "question": "Gestellte Frage",
+    "options": "Optionen getrennt durch | (2 bis 10)",
+    "type": "Umfragetyp",
+    "type_yes_no": "Ja / Nein",
+    "type_multiple": "Mehrfachauswahl",
+    "anonymous": "Anonyme Umfrage (Abstimmende verborgen)",
+    "multi_select": "Mehrere Optionen pro Person erlauben",
+    "duration": "Dauer (z. B. 1h, 2d) — leer = kein automatisches Ende",
+    "channel": "Veröffentlichungskanal (Standard: aktueller Kanal)",
+    "end": "Eine Umfrage beenden",
+    "results": "Detaillierte Ergebnisse anzeigen",
+    "list": "Umfragen auflisten",
+    "id": "Umfrage-ID"
+  }
+}

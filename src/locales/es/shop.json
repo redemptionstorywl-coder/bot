@@ -1,0 +1,59 @@
+{
+  "status": { "pending": "⏳ Pendiente", "paid": "💳 Pagado", "delivered": "📦 Entregado", "cancelled": "✖️ Cancelado", "refunded": "↩️ Reembolsado" },
+  "catalog": {
+    "title": "🛒 Catálogo",
+    "empty": "Ningún producto disponible.",
+    "order": "Pedir",
+    "unlimited": "Stock ilimitado",
+    "in_stock": "{stock} en stock",
+    "sold_out": "Agotado"
+  },
+  "product": {
+    "price": "Precio",
+    "stock": "Stock",
+    "category": "Categoría",
+    "added": "Producto **#{id} {name}** añadido ({price}).",
+    "edited": "Producto **#{id} {name}** modificado.",
+    "removed": "Producto **{name}** eliminado.",
+    "list_title": "🛒 Productos ({count})"
+  },
+  "category": {
+    "added": "Categoría **{name}** añadida.",
+    "removed": "Categoría **{name}** eliminada.",
+    "empty": "Ninguna categoría.",
+    "list_title": "📂 Categorías"
+  },
+  "order": {
+    "modal_title": "Pedir — {product}",
+    "quantity": "Cantidad",
+    "note": "Nota (opcional)",
+    "product": "Producto",
+    "total": "Total",
+    "status": "Estado",
+    "summary_title": "🧾 Pedido #{id}",
+    "pay_hint": "Finaliza el pago con el botón de abajo. Tu pedido se validará automáticamente una vez confirmado el pago.",
+    "support_hint": "Un miembro del staff tramitará tu pedido. Abre un ticket si tienes alguna pregunta.",
+    "pay_button": "Pagar en Tebex",
+    "placed": "Pedido **#{id}** registrado. Se te ha enviado un resumen por mensaje privado.",
+    "created": "Pedido **#{id}** creado para {user} — {total}.",
+    "status_updated": "Pedido **#{id}** → {status}.",
+    "status_dm_title": "🧾 Pedido #{id} actualizado",
+    "status_dm": "Tu pedido ({product}) ahora está: **{status}**.",
+    "list_title": "🧾 Pedidos — {status}",
+    "all": "todos",
+    "empty": "Ningún pedido.",
+    "history_title": "🧾 Historial — {user}",
+    "history_empty": "Ningún pedido para {user}."
+  },
+  "announce": { "done": "Producto **{product}** anunciado en {channel}." },
+  "errors": {
+    "product_not_found": "Producto no encontrado.",
+    "product_disabled": "Este producto no está disponible.",
+    "out_of_stock": "Este producto está agotado.",
+    "order_not_found": "Pedido no encontrado.",
+    "category_not_found": "Categoría no encontrada.",
+    "invalid_price": "Precio inválido (ej.: `9.99`).",
+    "invalid_quantity": "Cantidad inválida (de 1 a 99).",
+    "invalid_transition": "Cambio de estado imposible desde el estado actual."
+  }
+}

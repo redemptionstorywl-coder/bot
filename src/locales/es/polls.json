@@ -1,0 +1,69 @@
+{
+  "yes": "Sí",
+  "no": "No",
+  "embed": {
+    "votes": "{count} voto(s)",
+    "voters": "{count} votante(s)",
+    "anonymous": "🔒 Anónima",
+    "multi_select": "☑️ Opción múltiple",
+    "ends": "⏳ Fin",
+    "status": "Estado",
+    "ended": "🏁 Terminada",
+    "footer": "Encuesta #{id}"
+  },
+  "select": {
+    "placeholder": "Elige una opción…",
+    "placeholder_multi": "Elige una o varias opciones…"
+  },
+  "vote": {
+    "recorded": "🗳️ Voto registrado: {options}",
+    "removed": "Tu voto ha sido retirado.",
+    "ended": "Esta encuesta ha terminado.",
+    "invalid_option": "Opción inválida.",
+    "single_choice": "Esta encuesta solo acepta una única opción."
+  },
+  "create": {
+    "success": "Encuesta creada en <#{channel}> (ID `{id}`).",
+    "invalid_options": "Opciones inválidas: indica entre 2 y 10 opciones separadas por `|` (ej.: `Rojo | Verde | Azul`).",
+    "options_required": "Indica las opciones (`A | B | C`) o elige el tipo Sí / No.",
+    "invalid_duration": "Duración inválida: `{value}`. Ejemplos: `30m`, `1h`, `2d`.",
+    "channel_invalid": "El canal elegido debe ser un canal de texto."
+  },
+  "end": {
+    "success": "Encuesta `#{id}` terminada ({count} votante(s)).",
+    "already_ended": "Esta encuesta ya ha terminado."
+  },
+  "results": {
+    "title": "📊 Resultados — {question}",
+    "summary": "{voters} votante(s) · {total} votos",
+    "anonymous_notice": "🔒 Encuesta anónima: el detalle de los votantes no está disponible.",
+    "option_votes": "{percent}% · {count} voto(s)",
+    "voters_for": "Votantes — {option}",
+    "no_voters": "Ningún votante"
+  },
+  "list": {
+    "title": "📊 Encuestas — {server}",
+    "empty": "Ninguna encuesta.",
+    "line_active": "🟣 `#{id}` **{question}** — {count} votante(s){ends}",
+    "line_ended": "⚫ `#{id}` **{question}** — terminada — {count} votante(s)",
+    "ends_suffix": " — termina {when}"
+  },
+  "not_found": "Encuesta no encontrada (ID `{id}`).",
+  "commands": {
+    "description": "Gestionar las encuestas",
+    "create": "Crear una encuesta",
+    "question": "Pregunta planteada",
+    "options": "Opciones separadas por | (de 2 a 10)",
+    "type": "Tipo de encuesta",
+    "type_yes_no": "Sí / No",
+    "type_multiple": "Opción múltiple",
+    "anonymous": "Encuesta anónima (votantes ocultos)",
+    "multi_select": "Permitir varias opciones por persona",
+    "duration": "Duración (ej.: 1h, 2d) — vacío = sin fin automático",
+    "channel": "Canal de publicación (por defecto: canal actual)",
+    "end": "Terminar una encuesta",
+    "results": "Ver los resultados detallados",
+    "list": "Listar las encuestas",
+    "id": "ID de la encuesta"
+  }
+}
