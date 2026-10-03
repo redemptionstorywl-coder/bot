@@ -1,0 +1,40 @@
+{
+  "guild_config": {
+    "title": "⚙️ Yapılandırma — {server}",
+    "kind": "Sunucu türü",
+    "default_language": "Varsayılan dil",
+    "enabled_languages": "Etkin diller",
+    "admin_roles": "Yönetici rolleri",
+    "staff_roles": "Yetkili rolleri",
+    "translation_mode": "Çok dilli mod",
+    "modules": "Modüller",
+    "logs": "Log kanalları",
+    "language_stats": "Dile göre üyeler",
+    "dashboard": "Dashboard",
+    "kind_set": "Sunucu türü ayarlandı: **{kind}**",
+    "language_set": "Varsayılan dil: **{language}**",
+    "languages_updated": "Etkin diller: {languages}",
+    "role_added": "{role} rolü eklendi.",
+    "role_removed": "{role} rolü kaldırıldı.",
+    "log_set": "**{category}** logları → {channel}",
+    "log_removed": "**{category}** logları devre dışı bırakıldı.",
+    "module_set": "{module} modülü: {state}",
+    "color_set": "Varsayılan renk: `{color}`",
+    "translation_mode_set": "Çok dilli mod: **{mode}**",
+    "language_channel_set": "**{language}** için kanal: {channel}"
+  },
+  "help": {
+    "title": "📖 Yardım — Redemption Story Studio",
+    "description": "Kullanılabilir komutlar aşağıda. Tam yapılandırma dashboard üzerinden yapılır: {dashboard}"
+  },
+  "status": {
+    "title": "📡 Bot durumu",
+    "uptime": "Çalışma süresi",
+    "ping": "Gecikme",
+    "database": "Veritabanı",
+    "guilds": "Sunucular",
+    "users": "Üyeler",
+    "memory": "Bellek",
+    "tasks": "Zamanlanmış görevler"
+  }
+}

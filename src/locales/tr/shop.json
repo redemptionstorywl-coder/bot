@@ -1,0 +1,59 @@
+{
+  "status": { "pending": "⏳ Beklemede", "paid": "💳 Ödendi", "delivered": "📦 Teslim edildi", "cancelled": "✖️ İptal edildi", "refunded": "↩️ İade edildi" },
+  "catalog": {
+    "title": "🛒 Katalog",
+    "empty": "Mevcut ürün yok.",
+    "order": "Sipariş ver",
+    "unlimited": "Sınırsız stok",
+    "in_stock": "{stock} stokta",
+    "sold_out": "Tükendi"
+  },
+  "product": {
+    "price": "Fiyat",
+    "stock": "Stok",
+    "category": "Kategori",
+    "added": "**#{id} {name}** ürünü eklendi ({price}).",
+    "edited": "**#{id} {name}** ürünü güncellendi.",
+    "removed": "**{name}** ürünü silindi.",
+    "list_title": "🛒 Ürünler ({count})"
+  },
+  "category": {
+    "added": "**{name}** kategorisi eklendi.",
+    "removed": "**{name}** kategorisi silindi.",
+    "empty": "Kategori yok.",
+    "list_title": "📂 Kategoriler"
+  },
+  "order": {
+    "modal_title": "Sipariş — {product}",
+    "quantity": "Adet",
+    "note": "Not (isteğe bağlı)",
+    "product": "Ürün",
+    "total": "Toplam",
+    "status": "Durum",
+    "summary_title": "🧾 Sipariş #{id}",
+    "pay_hint": "Ödemeyi aşağıdaki butonla tamamla. Ödeme onaylandığında siparişin otomatik olarak doğrulanacak.",
+    "support_hint": "Bir yetkili siparişini işleme alacak. Sorun olursa bir ticket aç.",
+    "pay_button": "Tebex ile öde",
+    "placed": "**#{id}** numaralı sipariş kaydedildi. Özet özel mesajla gönderildi.",
+    "created": "{user} için **#{id}** numaralı sipariş oluşturuldu — {total}.",
+    "status_updated": "Sipariş **#{id}** → {status}.",
+    "status_dm_title": "🧾 Sipariş #{id} güncellendi",
+    "status_dm": "Siparişin ({product}) şu anda: **{status}**.",
+    "list_title": "🧾 Siparişler — {status}",
+    "all": "tümü",
+    "empty": "Sipariş yok.",
+    "history_title": "🧾 Geçmiş — {user}",
+    "history_empty": "{user} için sipariş yok."
+  },
+  "announce": { "done": "**{product}** ürünü {channel} kanalında duyuruldu." },
+  "errors": {
+    "product_not_found": "Ürün bulunamadı.",
+    "product_disabled": "Bu ürün mevcut değil.",
+    "out_of_stock": "Bu ürün tükendi.",
+    "order_not_found": "Sipariş bulunamadı.",
+    "category_not_found": "Kategori bulunamadı.",
+    "invalid_price": "Geçersiz fiyat (örn: `9.99`).",
+    "invalid_quantity": "Geçersiz adet (1 ila 99).",
+    "invalid_transition": "Mevcut durumdan bu durum değişikliği yapılamaz."
+  }
+}

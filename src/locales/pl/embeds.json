@@ -1,0 +1,138 @@
+{
+  "builder": {
+    "title": "🎨 Kreator embedów",
+    "title_edit": "🎨 Edycja istniejącego embedu",
+    "footer": "Sesja {id} · wygasa",
+    "hint": "Użyj przycisków do edycji, menu Pola do pól, a selektora kanału do wysłania.",
+    "content": "Treść",
+    "buttons": "Przyciski",
+    "fields": "Pola",
+    "timestamp": "Znacznik czasu",
+    "target": "Wiadomość docelowa",
+    "empty_preview": "Embed jest na razie pusty. Zacznij od „Tytuł i opis”.",
+    "invalid_preview": "Nie można wyrenderować podglądu: sprawdź adresy URL i wprowadzone wartości.",
+    "btn_title": "Tytuł i opis",
+    "btn_color": "Kolor",
+    "btn_images": "Obraz i miniatura",
+    "btn_footer": "Stopka i autor",
+    "btn_timestamp": "Timestamp",
+    "btn_buttons": "Przyciski",
+    "btn_content": "Treść / wzmianki",
+    "btn_template": "Zapisz jako szablon",
+    "btn_import": "Importuj JSON",
+    "btn_export": "Eksportuj JSON",
+    "btn_update": "Zaktualizuj wiadomość",
+    "fields_placeholder": "Pola ({count}/{max}) — dodaj, usuń, wyczyść",
+    "field_add": "Dodaj pole",
+    "field_add_desc": "Nazwa, wartość i wyświetlanie w linii",
+    "field_clear": "Wyczyść wszystkie pola",
+    "field_added": "Pole dodane.",
+    "send_placeholder": "📨 Wyślij na kanał…",
+    "buttons_placeholder": "Przyciski ({count}/{max}) — dodaj link, usuń, wyczyść",
+    "button_add_link": "Dodaj przycisk z linkiem",
+    "button_add_role": "Dodaj przycisk roli (wybierz role)",
+    "button_clear": "Usuń wszystkie przyciski",
+    "button_added": "Przycisk z linkiem dodany.",
+    "role_buttons_added": "Dodano {count} przycisk(ów) roli.",
+    "sent": "Embed wysłany na {channel} → {url}",
+    "updated": "Wiadomość zaktualizowana → {url}",
+    "template_saved": "Szablon **{name}** zapisany.",
+    "template_updated": "Szablon **{name}** zaktualizowany.",
+    "imported": "JSON zaimportowany pomyślnie.",
+    "export_file": "📤 Eksport JSON (załączony plik).",
+    "cancelled": "Sesja anulowana. Nic nie zostało wysłane."
+  },
+  "cmd": {
+    "sent": "Szablon wysłany na {channel} → {url}",
+    "template_deleted": "Szablon **{name}** usunięty.",
+    "template_list_empty": "Brak szablonów na tym serwerze. Utwórz jeden za pomocą `/embed create`, a następnie „Zapisz jako szablon”.",
+    "template_list_title": "🗂️ Szablony embedów ({count})",
+    "variables_title": "🧩 Dostępne zmienne",
+    "variables_desc": "Te zmienne są automatycznie zastępowane w tytułach, opisach, polach, stopkach i treści."
+  },
+  "modal": {
+    "title": { "title": "Tytuł i opis", "field_title": "Tytuł", "field_url": "URL tytułu (opcjonalnie)", "field_description": "Opis", "description_placeholder": "Tekst główny. Zmienne: {server}, {date}, {user}…" },
+    "color": { "title": "Kolor", "field_hex": "Kolor hex lub nazwa koloru marki" },
+    "images": { "title": "Obraz i miniatura", "field_image": "URL obrazu", "field_thumbnail": "URL miniatury" },
+    "footer": { "title": "Stopka i autor", "field_footer": "Tekst stopki", "field_footer_icon": "Ikona stopki (URL)", "field_author": "Nazwa autora", "field_author_icon": "Ikona autora (URL)", "field_author_url": "Link autora (URL)" },
+    "field": { "title": "Dodaj pole", "field_name": "Nazwa", "field_value": "Wartość", "field_inline": "W linii? (tak / nie)", "inline_placeholder": "tak" },
+    "content": { "title": "Treść wiadomości", "field_content": "Tekst nad embedem", "placeholder": "Wzmianki, dowolny tekst… np. @everyone Nowa aktualizacja!" },
+    "link": { "title": "Przycisk z linkiem", "field_label": "Etykieta", "field_url": "URL", "field_emoji": "Emoji (opcjonalnie)" },
+    "template": { "title": "Zapisz jako szablon", "field_name": "Nazwa szablonu", "field_description": "Opis (opcjonalnie)" },
+    "import": { "title": "Importuj JSON", "field_json": "JSON (EmbedSpec lub wiadomość)" }
+  },
+  "errors": {
+    "not_found": "Nie znaleziono szablonu: `{details}`",
+    "duplicate_name": "Szablon o nazwie `{details}` już istnieje.",
+    "invalid_channel": "Nieprawidłowy lub niedostępny kanał (`{details}`).",
+    "message_not_found": "Nie znaleziono wiadomości (`{details}`).",
+    "not_bot_message": "Ta wiadomość nie została wysłana przez bota: nie można jej edytować.",
+    "no_embed": "Ta wiadomość nie zawiera żadnego embedu.",
+    "no_client": "Bot nie jest jeszcze gotowy. Spróbuj ponownie za kilka sekund.",
+    "invalid_spec": "Nieprawidłowy embed:\n{details}",
+    "invalid_json": "Nieprawidłowy JSON:\n{details}",
+    "invalid_reference": "Podaj prawidłowy link do wiadomości lub ID wiadomości (wraz z kanałem).",
+    "session_expired": "Ta sesja edycji wygasła. Uruchom komendę ponownie.",
+    "empty_embed": "Embed jest pusty: dodaj przynajmniej tytuł, opis, obraz lub pole.",
+    "fields_limit": "Osiągnięto limit: maksymalnie {max} pól.",
+    "buttons_limit": "Osiągnięto limit: maksymalnie {max} przycisków."
+  },
+  "defaults": {
+    "footer": "{server}",
+    "maintenance": {
+      "name": "Konserwacja",
+      "description": "Ogłoszenie o planowanej konserwacji",
+      "title": "Planowana konserwacja",
+      "body": "Na **{server}** zaplanowano konserwację. Usługi będą tymczasowo niedostępne.\n\nDziękujemy za cierpliwość.",
+      "fields": { "start": { "name": "Początek", "value": "{date}" }, "duration": { "name": "Szacowany czas", "value": "~1h" } }
+    },
+    "patch_note": {
+      "name": "Patch Note",
+      "description": "Notatki aktualizacji",
+      "title": "Patch Note — {date}",
+      "body": "Nowa aktualizacja jest dostępna na **{server}**.",
+      "fields": { "new": { "name": "Nowości", "value": "• …" }, "fixes": { "name": "Poprawki", "value": "• …" } }
+    },
+    "new_season": {
+      "name": "Nowy Sezon",
+      "description": "Start nowego sezonu",
+      "title": "Nowy sezon",
+      "body": "Nowy sezon **{server}** się zaczyna! Nowe wyzwania, nowe nagrody.",
+      "fields": { "start": { "name": "Początek", "value": "{date}" }, "rewards": { "name": "Nagrody", "value": "• …" } }
+    },
+    "tournament": {
+      "name": "Turniej",
+      "description": "Ogłoszenie turnieju",
+      "title": "Turniej",
+      "body": "Na **{server}** organizowany jest turniej. Zapisz się i zmierz z najlepszymi!",
+      "fields": { "date": { "name": "Data", "value": "{date}" }, "registration": { "name": "Zapisy", "value": "Otwarte" } }
+    },
+    "important": {
+      "name": "Ważne ogłoszenie",
+      "description": "Oficjalny komunikat",
+      "title": "Ważne ogłoszenie",
+      "body": "Ekipa **{server}** ma dla was ważną informację.\n\n…"
+    },
+    "giveaway": {
+      "name": "Giveaway",
+      "description": "Konkurs / losowanie",
+      "title": "Giveaway",
+      "body": "Na **{server}** trwa giveaway! Weź udział, aby spróbować wygrać.",
+      "fields": { "prize": { "name": "Nagroda", "value": "…" }, "end": { "name": "Koniec", "value": "{date}" } }
+    },
+    "event": {
+      "name": "Event",
+      "description": "Ogłoszenie wydarzenia",
+      "title": "Wydarzenie",
+      "body": "Na **{server}** szykuje się wydarzenie. Nie przegap!",
+      "fields": { "date": { "name": "Data", "value": "{date}" }, "location": { "name": "Miejsce", "value": "…" } }
+    },
+    "recruitment": {
+      "name": "Rekrutacja",
+      "description": "Rekrutacja staffu / ekipy",
+      "title": "Rekrutacja",
+      "body": "**{server}** rekrutuje! Dołącz do ekipy i weź udział w przygodzie.",
+      "fields": { "positions": { "name": "Stanowiska", "value": "• …" }, "apply": { "name": "Aplikuj", "value": "Otwórz ticket" } }
+    }
+  }
+}

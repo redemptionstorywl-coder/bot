@@ -1,0 +1,46 @@
+{
+  "status": {
+    "state": "Durum",
+    "online": "🟢 Çevrimiçi",
+    "offline": "🔴 Çevrimdışı",
+    "maintenance": "🟠 Bakım",
+    "players": "Oyuncular",
+    "version": "Sürüm",
+    "last_update": "Son güncelleme",
+    "uptime": "Çevrimiçi süresi",
+    "host": "Sunucu adresi"
+  },
+  "add": {
+    "done": "**{name}** sunucusu eklendi (anahtar `{key}`, framework **{framework}**).",
+    "api_base": "API temel URL'si",
+    "auth": "Kimlik doğrulama",
+    "auth_hint": "`{header}` başlığı = genel API anahtarı (FIVEM_API_KEY) veya bu sunucuya özel anahtar.",
+    "docs": "Tam dokümantasyon: docs/FIVEM.md"
+  },
+  "remove": { "done": "**{name}** sunucusu kaldırıldı." },
+  "list": {
+    "title": "🎮 FiveM sunucuları ({count})",
+    "empty": "Yapılandırılmış FiveM sunucusu yok. `/fivem add` komutunu kullan."
+  },
+  "maintenance": {
+    "on": "🟠 **{name}** üzerinde bakım **etkinleştirildi**.",
+    "off": "🟢 **{name}** üzerinde bakım **devre dışı bırakıldı**."
+  },
+  "status_channel": {
+    "set": "**{name}** durumu {channel} kanalında güncellenecek (her 60 sn).",
+    "removed": "**{name}** durum mesajı devre dışı bırakıldı."
+  },
+  "players": {
+    "title": "👥 {name} — {count} oyuncu",
+    "empty": "**{name}** üzerinde bağlı oyuncu yok (veya sunucu çevrimdışı)."
+  },
+  "errors": {
+    "not_found": "Sunucu bulunamadı. Anahtarı `/fivem list` ile kontrol et.",
+    "duplicate": "Bu anahtara sahip bir sunucu zaten var.",
+    "invalid_key": "Geçersiz anahtar: 2 ila 64 karakter, küçük harf, rakam, `-` veya `_`.",
+    "no_host": "Bu sunucu için yapılandırılmış adres yok.",
+    "unreachable": "Sunucuya ulaşılamıyor (zaman aşımı veya HTTP hatası).",
+    "unauthorized": "Geçersiz API anahtarı.",
+    "disabled": "Bu sunucu devre dışı."
+  }
+}

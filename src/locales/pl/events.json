@@ -1,0 +1,113 @@
+{
+  "status": {
+    "SCHEDULED": "Zaplanowane",
+    "ONGOING": "W trakcie",
+    "ENDED": "Zakończone",
+    "CANCELLED": "Anulowane"
+  },
+  "embed": {
+    "date": "📅 Data",
+    "ends": "🏁 Koniec",
+    "location": "📍 Miejsce",
+    "participants": "👥 Uczestnicy",
+    "role": "🔔 Rola",
+    "registered": "Zapisani",
+    "and_more": "i {count} innych",
+    "footer": "Wydarzenie #{id}"
+  },
+  "buttons": {
+    "join": "Dołącz",
+    "leave": "Zrezygnuj",
+    "list": "Lista"
+  },
+  "reminder": {
+    "message": "⏰ Wydarzenie **{name}** zaczyna się {when}"
+  },
+  "dm": {
+    "reminder": "⏰ Przypomnienie: wydarzenie **{name}** zaczyna się {when}.",
+    "cancelled": "⛔ Wydarzenie **{name}**, na które byłeś(aś) zapisany(a), zostało anulowane."
+  },
+  "modal": {
+    "create_title": "Utwórz wydarzenie",
+    "edit_title": "Edytuj wydarzenie #{id}",
+    "name": "Nazwa",
+    "name_placeholder": "Wieczór napadów, turniej…",
+    "description": "Opis",
+    "description_placeholder": "Przebieg, zasady, przydatne informacje…",
+    "date": "Data rozpoczęcia",
+    "date_placeholder": "31/01/2025 20:00 lub in 2h",
+    "location": "Miejsce (opcjonalnie)",
+    "location_placeholder": "Kanał głosowy, miejsce RP…",
+    "max": "Maks. uczestników (opcjonalnie)",
+    "max_placeholder": "Np. 20 (puste = bez limitu)"
+  },
+  "create": {
+    "success": "Wydarzenie **{name}** utworzone w <#{channel}> (ID `{id}`).",
+    "invalid_date": "Nieprawidłowa data: `{value}`. Formaty: `31/01/2025 20:00`, `2025-01-31 20:00`, `in 2h`.",
+    "past_date": "Data rozpoczęcia musi być w przyszłości.",
+    "invalid_max": "Maksymalna liczba uczestników musi być dodatnią liczbą całkowitą.",
+    "invalid_image": "URL obrazu jest nieprawidłowy.",
+    "expired": "Formularz wygasł, uruchom komendę ponownie.",
+    "channel_invalid": "Wybrany kanał musi być kanałem tekstowym."
+  },
+  "edit": {
+    "success": "Wydarzenie **{name}** zaktualizowane.",
+    "not_editable": "To wydarzenie jest zakończone lub anulowane i nie można go już edytować."
+  },
+  "cancel": {
+    "confirm_title": "Anulować wydarzenie?",
+    "confirm": "Czy na pewno chcesz anulować **{name}** ({count} uczestnik(ów))? Uczestnicy zostaną powiadomieni prywatną wiadomością.",
+    "button": "Anuluj wydarzenie",
+    "keep": "Zachowaj",
+    "success": "Wydarzenie **{name}** anulowane.",
+    "aborted": "Anulowanie przerwane.",
+    "already": "To wydarzenie jest już anulowane.",
+    "not_yours": "Tylko osoba, która uruchomiła komendę, może potwierdzić."
+  },
+  "list": {
+    "title": "📅 Wydarzenia — {server}",
+    "empty": "Brak wydarzeń.",
+    "line": "{emoji} `#{id}` **{name}** — {when} — {count} uczestnik(ów)",
+    "filter_all": "Wszystkie",
+    "filter_scheduled": "Zaplanowane",
+    "filter_ongoing": "W trakcie",
+    "filter_ended": "Zakończone",
+    "filter_cancelled": "Anulowane"
+  },
+  "participants": {
+    "title": "👥 Uczestnicy — {name}",
+    "empty": "Na razie brak uczestników.",
+    "count": "{count} uczestnik(ów)"
+  },
+  "remind": {
+    "success": "Przypomnienie wysłane dla **{name}**.",
+    "unavailable": "Nie można wysłać przypomnienia dla tego wydarzenia (zakończone lub anulowane)."
+  },
+  "join": {
+    "success": "✅ Bierzesz udział w **{name}** ({count} zapisanych).",
+    "already": "Już bierzesz udział w tym wydarzeniu.",
+    "full": "To wydarzenie jest pełne.",
+    "closed": "Zapisy na to wydarzenie są zamknięte."
+  },
+  "leave": {
+    "success": "❌ Nie bierzesz już udziału w **{name}**.",
+    "not_joined": "Nie brałeś(aś) udziału w tym wydarzeniu.",
+    "closed": "Zapisy na to wydarzenie są zamknięte."
+  },
+  "not_found": "Nie znaleziono wydarzenia (ID `{id}`).",
+  "commands": {
+    "description": "Zarządzaj wydarzeniami serwera",
+    "create": "Utwórz wydarzenie (formularz)",
+    "create_image": "URL obrazu",
+    "create_role": "Rola do wzmianki",
+    "create_channel": "Kanał publikacji (domyślnie: bieżący kanał)",
+    "create_language": "Język wyświetlania wydarzenia",
+    "edit": "Edytuj wydarzenie",
+    "cancel": "Anuluj wydarzenie",
+    "list": "Lista wydarzeń",
+    "list_status": "Filtruj według statusu",
+    "participants": "Zobacz uczestników wydarzenia",
+    "remind": "Wyślij ręczne przypomnienie",
+    "id": "ID wydarzenia"
+  }
+}

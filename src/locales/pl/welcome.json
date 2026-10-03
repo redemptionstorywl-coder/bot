@@ -1,0 +1,62 @@
+{
+  "default_message": "👋 Witaj {user} na **{server}**!",
+  "buttons": {
+    "choose_language": "Wybierz mój język"
+  },
+  "config": {
+    "enabled_set": "Wiadomość powitalna: {state}",
+    "channel_set": "Kanał powitalny: {channel}",
+    "image_set": "Obraz powitalny: {state}",
+    "dm_set": "Powitalny DM: {state}",
+    "language_prompt_set": "Przycisk „🌍 Wybierz mój język”: {state}",
+    "buttons_set": "Zapisano {count} przycisk(ów).",
+    "buttons_cleared": "Przyciski usunięte.",
+    "invalid_json": "Nieprawidłowy JSON:\n```\n{details}\n```",
+    "value_set": "{kind} ({what}) zapisany — {language}.",
+    "value_cleared": "{kind} ({what}) wyczyszczony.",
+    "all_languages": "wszystkie języki",
+    "target_welcome": "powitanie",
+    "target_dm": "DM",
+    "target_leave": "pożegnanie",
+    "kind_message": "Wiadomość",
+    "kind_embed": "Embed",
+    "modal_title_message": "Wiadomość — {target}",
+    "modal_title_embed": "Embed JSON — {target}",
+    "modal_title_buttons": "Przyciski (JSON)",
+    "modal_label_message": "Tekst ({language})",
+    "modal_label_embed": "EmbedSpec JSON ({language})",
+    "modal_label_buttons": "ButtonSpec[] JSON",
+    "modal_help_message": "Zmienne: {user} {username} {server} {memberCount}… Puste = wyczyść.",
+    "modal_help_embed": "{\"title\":\"…\",\"description\":\"…\",\"color\":\"#7C3AED\"} — puste = wyczyść.",
+    "modal_help_buttons": "[{\"label\":\"Strona\",\"style\":\"link\",\"url\":\"https://…\"}] — puste = wyczyść.",
+    "test_sent": "Wiadomość testowa wysłana na {channel}.",
+    "not_configured": "Brak konfiguracji: zacznij od `/welcome-config channel`.",
+    "show_title": "👋 Powitanie — {server}",
+    "field_enabled": "Stan",
+    "field_language_prompt": "Przycisk języka",
+    "field_buttons": "Przyciski",
+    "field_image": "Obraz",
+    "field_dm": "DM",
+    "background": "własne tło",
+    "variables": "Dostępne zmienne"
+  },
+  "leave": {
+    "default_message": "👋 **{username}** opuścił(a) serwer. Jest nas teraz {memberCount}.",
+    "image_title": "DO ZOBACZENIA",
+    "image_subtitle": "{username} · {memberCount} członków",
+    "log_title": "👤 Członek opuścił serwer",
+    "log_description": "{user} (`{tag}`) opuścił(a) serwer — {memberCount} członków",
+    "log_joined": "Dołączył",
+    "log_roles": "Role",
+    "config": {
+      "enabled_set": "Wiadomość pożegnalna: {state}",
+      "channel_set": "Kanał pożegnań: {channel}",
+      "image_set": "Obraz pożegnalny: {state}",
+      "logs_set": "Logi pożegnań: {state}",
+      "test_sent": "Wiadomość testowa wysłana na {channel}.",
+      "not_configured": "Brak konfiguracji: zacznij od `/leave-config channel`.",
+      "show_title": "👋 Pożegnanie — {server}",
+      "field_logs": "Logi"
+    }
+  }
+}

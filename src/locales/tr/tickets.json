@@ -1,0 +1,239 @@
+{
+  "defaults": {
+    "support": {
+      "label": "Destek",
+      "description": "Yardıma mı ihtiyacın var? Bir destek ticket'ı aç."
+    },
+    "bug": {
+      "label": "Hata",
+      "description": "Bir hata veya teknik sorun bildir."
+    },
+    "shop": {
+      "label": "Shop",
+      "description": "Mağaza veya sipariş hakkında soru."
+    },
+    "payment": {
+      "label": "Ödeme",
+      "description": "Ödeme veya satın alma teslimat sorunu."
+    },
+    "battle-royale": {
+      "label": "Battle Royale",
+      "description": "Battle Royale sunucusuyla ilgili sorular."
+    },
+    "prison": {
+      "label": "Prison RP",
+      "description": "Prison RP sunucusuyla ilgili sorular."
+    },
+    "school": {
+      "label": "School RP",
+      "description": "School RP sunucusuyla ilgili sorular."
+    },
+    "whitelist": {
+      "label": "Whitelist",
+      "description": "Whitelist talebi veya sorunu."
+    },
+    "staff": {
+      "label": "Yetkili",
+      "description": "Yetkili ekibiyle özel olarak iletişime geç."
+    },
+    "partnership": {
+      "label": "Ortaklık",
+      "description": "Bir ortaklık teklif et."
+    },
+    "report": {
+      "label": "Şikayet",
+      "description": "Bir oyuncuyu veya davranışı bildir."
+    },
+    "panel_title": "🎫 Destek — {server}",
+    "panel_description": "Yardıma mı ihtiyacın var? Bir ticket açmak için aşağıya tıkla. Ekipten biri en kısa sürede yanıt verecek.",
+    "panel_footer": "Bir ticket = bir konu. Lütfen nazik ol.",
+    "question_label": "Talebini açıkla",
+    "question_placeholder": "Sorununu veya talebini mümkün olduğunca ayrıntılı açıkla."
+  },
+  "panel": {
+    "open_button": "Ticket aç",
+    "select_placeholder": "Konu nedir?",
+    "pick_prompt": "Ticket'ının konusu nedir?",
+    "created": "Panel {channel} kanalında yayınlandı (ID `{id}`, {count} tür).",
+    "deleted": "Panel `{id}` silindi.",
+    "list_title": "Ticket panelleri",
+    "list_empty": "Yapılandırılmış panel yok. `/ticket-panel create` komutunu kullan.",
+    "list_line": "`#{id}` — {channel} • {style} • {count} tür",
+    "unknown_types": "Bilinmeyen tür anahtarları: {keys}",
+    "seeded": "{count} varsayılan ticket türü oluşturuldu."
+  },
+  "open": {
+    "title": "{emoji} Ticket #{number} — {type}",
+    "description": "Hoş geldin {user}! Talebini açıkla, ekip en kısa sürede yanıt verecek.",
+    "field_user": "Açan",
+    "field_type": "Tür",
+    "field_status": "Durum",
+    "field_claimed": "İlgilenen",
+    "field_created": "Açılış",
+    "field_closed": "Kapanış",
+    "field_closed_by": "Kapatan",
+    "field_reason": "Sebep",
+    "no_answer": "—",
+    "staff_ping": "{roles} — {user} tarafından yeni ticket.",
+    "created": "Ticket'ın oluşturuldu: {channel}",
+    "creating": "Ticket'ın oluşturuluyor…",
+    "modal_title": "{emoji} {type}"
+  },
+  "status": {
+    "OPEN": "🟢 Açık",
+    "CLAIMED": "👤 İlgileniliyor",
+    "CLOSED": "🔒 Kapalı",
+    "ARCHIVED": "📦 Arşivlendi",
+    "DELETED": "🗑️ Silindi"
+  },
+  "buttons": {
+    "close": "Kapat",
+    "reopen": "Yeniden aç",
+    "claim": "Üstlen",
+    "claimed": "Üstlenildi",
+    "add": "Ekle",
+    "remove": "Çıkar",
+    "transcript": "Transcript",
+    "transfer": "Aktar",
+    "delete": "Sil",
+    "confirm_delete": "Evet, sil",
+    "cancel": "İptal"
+  },
+  "modal": {
+    "close_title": "Ticket #{number} kapat",
+    "close_reason": "Sebep (isteğe bağlı)",
+    "close_reason_placeholder": "Sorun çözüldü, talep işlendi…",
+    "add_title": "Ticket'a üye ekle",
+    "remove_title": "Ticket'tan üye çıkar",
+    "user_field": "Üye (ID veya bahsetme)",
+    "user_placeholder": "123456789012345678 veya @üye",
+    "questions_title": "Sorular — {type}",
+    "question_slot": "Soru {index}",
+    "question_placeholder": "Label | placeholder | short/paragraph | required/optional | maxLength"
+  },
+  "actions": {
+    "closing": "Ticket kapatılıyor…",
+    "closed": "🔒 Ticket {user} tarafından kapatıldı.",
+    "closed_reason": "Sebep: {reason}",
+    "closed_confirm": "Ticket #{number} kapatıldı.",
+    "reopened": "🔓 Ticket {user} tarafından yeniden açıldı.",
+    "reopened_confirm": "Ticket #{number} yeniden açıldı.",
+    "claimed": "👤 {user} bu ticket ile ilgileniyor.",
+    "claimed_confirm": "Ticket #{number} ile ilgileniyorsun.",
+    "member_added": "👥 {target}, {user} tarafından ticket'a eklendi.",
+    "member_added_confirm": "{target} ticket'a eklendi.",
+    "member_removed": "🚫 {target}, {user} tarafından ticket'tan çıkarıldı.",
+    "member_removed_confirm": "{target} ticket'tan çıkarıldı.",
+    "transfer_prompt": "Bu ticket hangi türe aktarılsın?",
+    "transfer_select": "Bir tür seç…",
+    "transferred": "🔄 Ticket {user} tarafından **{type}** türüne aktarıldı.",
+    "transferred_confirm": "Ticket **{type}** türüne aktarıldı.",
+    "delete_confirm": "Ticket #{number} kalıcı olarak silinsin mi? Silmeden önce bir transcript oluşturulacak.",
+    "delete_cancelled": "Silme iptal edildi.",
+    "deleting": "🗑️ Bu ticket {seconds} saniye içinde silinecek.",
+    "deleted_confirm": "Ticket #{number} silindi.",
+    "renamed": "Kanal `{name}` olarak yeniden adlandırıldı.",
+    "transcript_generating": "Transcript oluşturuluyor…",
+    "transcript_sent": "Transcript oluşturuldu ve gönderildi.",
+    "transcript_dm": "**{server}** üzerindeki **#{number}** numaralı ticket'ının transcript'i."
+  },
+  "errors": {
+    "not_ticket_channel": "Bu kanal bir ticket değil.",
+    "not_found": "Ticket bulunamadı.",
+    "max_per_user": "Bu türde zaten {count} açık ticket'ın var (maksimum: {max}). Yeni bir tane açmadan önce birini kapat.",
+    "type_not_found": "Ticket türü bulunamadı.",
+    "type_disabled": "Bu ticket türü devre dışı.",
+    "no_types": "Kullanılabilir ticket türü yok. Bir yönetici `/ticket-type create` ile yapılandırmalı.",
+    "already_closed": "Bu ticket zaten kapalı.",
+    "not_closed": "Bu ticket kapalı değil.",
+    "already_claimed": "Bu ticket ile zaten {user} ilgileniyor.",
+    "no_permission": "Bu işlemi gerçekleştirme iznin yok.",
+    "staff_only": "Bu işlem yetkililere özeldir.",
+    "invalid_user": "Geçersiz kullanıcı. Bir ID veya bahsetme gir.",
+    "cannot_add_bot": "Ticket'a bot eklenemez.",
+    "member_not_found": "Üye bu sunucuda bulunamadı.",
+    "cannot_remove_creator": "Ticket'ı açan kişi çıkarılamaz.",
+    "channel_create_failed": "Ticket kanalı oluşturulamadı. İzinlerimi ve yapılandırılan kategoriyi kontrol et.",
+    "channel_missing": "Bu ticket'ın kanalı artık mevcut değil.",
+    "key_exists": "`{key}` anahtarına sahip bir tür zaten var.",
+    "invalid_key": "Geçersiz anahtar: yalnızca küçük harf, rakam ve tire (2 ila 32 karakter).",
+    "same_type": "Ticket zaten bu türde.",
+    "invalid_question": "Soru {index} geçersiz: {details}",
+    "panel_not_found": "Panel bulunamadı.",
+    "transcript_failed": "Transcript oluşturma başarısız oldu.",
+    "invalid_embed": "Geçersiz embed: {details}",
+    "deleted": "Bu ticket silindi.",
+    "unknown_types": "Bilinmeyen tür anahtarları: {keys}"
+  },
+  "type": {
+    "created": "**{label}** (`{key}`) türü oluşturuldu.",
+    "updated": "**{label}** türü güncellendi.",
+    "deleted": "**{label}** türü silindi. Mevcut ticket'lar korunur.",
+    "list_title": "Ticket türleri",
+    "list_empty": "Ticket türü yok. `/ticket-type create` veya `/ticket-panel create` (varsayılan türler) komutunu kullan.",
+    "list_line": "{emoji} **{label}** (`{key}`) {state}\n┗ Kategori: {category} • Arşiv: {archive} • Yetkili: {roles} • Maks/üye: {max} • Sorular: {questions}",
+    "questions_updated": "**{label}** türünün soruları güncellendi ({count}).",
+    "questions_help": "Alan başına biçim: `Label | placeholder | short/paragraph | required/optional | maxLength`. Yalnızca label zorunludur. Bir soruyu silmek için boş bırak.",
+    "enabled": "🟢",
+    "disabled": "🔴",
+    "nothing_to_update": "Hiçbir değişiklik belirtilmedi."
+  },
+  "info": {
+    "title": "Ticket #{number}",
+    "created_at": "Açılış",
+    "closed_at": "Kapanış",
+    "duration": "Süre",
+    "messages": "Mesajlar",
+    "participants": "Katılımcılar",
+    "channel": "Kanal",
+    "answers": "Form yanıtları"
+  },
+  "list": {
+    "title": "Ticket'lar ({status}) — {total}",
+    "empty": "Eşleşen ticket yok.",
+    "line": "`#{number}` {channel} • {user} • {type} • {status} • {created}",
+    "all": "tümü"
+  },
+  "transcript": {
+    "title": "Transcript — Ticket #{number}",
+    "ticket": "Ticket",
+    "type": "Tür",
+    "opened_by": "Açan",
+    "claimed_by": "İlgilenen",
+    "closed_by": "Kapatan",
+    "reason": "Sebep",
+    "opened_at": "Açılış",
+    "closed_at": "Kapanış",
+    "duration": "Süre",
+    "messages": "Mesajlar",
+    "participants": "Katılımcılar",
+    "no_messages": "Kayıtlı mesaj yok.",
+    "attachments": "Ekler",
+    "embed": "Embed",
+    "generated": "Redemption Story Studio tarafından {date} tarihinde oluşturuldu",
+    "log_title": "Ticket #{number} transcript'i",
+    "none": "—",
+    "unknown_user": "Bilinmeyen kullanıcı"
+  },
+  "log": {
+    "open": "🎫 Ticket #{number} açıldı",
+    "close": "🔒 Ticket #{number} kapatıldı",
+    "reopen": "🔓 Ticket #{number} yeniden açıldı",
+    "claim": "👤 Ticket #{number} üstlenildi",
+    "delete": "🗑️ Ticket #{number} silindi",
+    "transfer": "🔄 Ticket #{number} aktarıldı",
+    "add": "👥 Ticket #{number} içine üye eklendi",
+    "remove": "🚫 Ticket #{number} içinden üye çıkarıldı",
+    "channel_deleted": "Ticket kanalı manuel olarak silindi.",
+    "field_user": "Kullanıcı",
+    "field_type": "Tür",
+    "field_channel": "Kanal",
+    "field_staff": "Yetkili",
+    "field_reason": "Sebep",
+    "field_from": "Kaynak",
+    "field_to": "Hedef",
+    "field_target": "Üye",
+    "field_duration": "Süre",
+    "field_messages": "Mesajlar"
+  }
+}

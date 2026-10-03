@@ -1,0 +1,105 @@
+{
+  "roles": { "student": "🎒 Uczeń", "teacher": "📖 Nauczyciel", "staff": "🏛️ Personel" },
+  "status": { "pending": "⏳ Oczekująca", "accepted": "✅ Zaakceptowana", "rejected": "⛔ Odrzucona" },
+  "register": {
+    "modal_title": "🎓 Rejestracja",
+    "first_name": "Imię",
+    "last_name": "Nazwisko",
+    "bio": "Przedstawienie się (opcjonalnie)",
+    "done": "Twój profil został utworzony. Zobacz go za pomocą `/school profile`.",
+    "done_pick": "Twój profil został utworzony. Wybierz poniżej swoją klasę i/lub dom.",
+    "pick_class": "Wybierz klasę",
+    "pick_house": "Wybierz dom",
+    "class_set": "Jesteś teraz w klasie **{name}**.",
+    "house_set": "Dołączasz do domu **{name}**."
+  },
+  "profile": {
+    "none": "{user} nie ma profilu. Użyj `/school register`.",
+    "role": "Rola",
+    "class": "Klasa",
+    "house": "Dom",
+    "points": "Punkty",
+    "clubs": "Kluby"
+  },
+  "class": {
+    "list_title": "📚 Klasy",
+    "empty": "Brak klas.",
+    "students": "uczeń(niów)",
+    "created": "Klasa **{name}** utworzona.",
+    "deleted": "Klasa **{name}** usunięta.",
+    "assigned": "{user} przypisany(a) do klasy **{name}**."
+  },
+  "house": {
+    "list_title": "🏠 Domy",
+    "leaderboard_title": "🏆 Ranking domów",
+    "empty": "Brak domów.",
+    "points": "pkt",
+    "members": "członek(ów)",
+    "created": "Dom **{name}** utworzony.",
+    "deleted": "Dom **{name}** usunięty.",
+    "assigned": "{user} dołącza do domu **{name}**.",
+    "points_updated": "{name}: **{delta}** → **{points}** punktów."
+  },
+  "club": {
+    "list_title": "🎭 Kluby",
+    "empty": "Brak klubów.",
+    "created": "Klub **{name}** utworzony.",
+    "deleted": "Klub **{name}** usunięty.",
+    "joined": "Dołączyłeś(aś) do klubu **{name}**.",
+    "left": "Opuściłeś(aś) klub **{name}**."
+  },
+  "apply": {
+    "modal_title": "Podanie — {role}",
+    "q_identity": "Imię / nazwisko postaci",
+    "q_motivation": "Motywacja",
+    "q_experience": "Doświadczenie RP (opcjonalnie)",
+    "q_availability": "Dostępność (opcjonalnie)",
+    "done": "Twoje podanie **#{id}** zostało wysłane. Odpowiedź otrzymasz w prywatnej wiadomości."
+  },
+  "application": {
+    "title": "🎓 Podanie #{id}",
+    "applicant": "Kandydat",
+    "role": "Wnioskowana rola",
+    "status": "Status",
+    "submitted": "Złożone",
+    "reviewed_by": "Rozpatrzone przez",
+    "accept": "Zaakceptuj",
+    "reject": "Odrzuć",
+    "reject_modal_title": "Odrzuć podanie #{id}",
+    "note_label": "Notatka przekazana kandydatowi (opcjonalnie)",
+    "accepted": "Podanie **#{id}** od {user} zaakceptowane.",
+    "rejected": "Podanie **#{id}** od {user} odrzucone."
+  },
+  "dm": {
+    "accepted_title": "✅ Podanie zaakceptowane",
+    "rejected_title": "⛔ Podanie odrzucone",
+    "accepted": "Twoje podanie o rolę **{role}** na **{server}** zostało zaakceptowane. Witaj!",
+    "rejected": "Twoje podanie o rolę **{role}** na **{server}** zostało odrzucone."
+  },
+  "announce": {
+    "done": "Ogłoszenie opublikowane w {channel}.",
+    "no_channel": "Nie podano kanału i nie skonfigurowano kanału ogłoszeń (`/school config announce-channel`)."
+  },
+  "config": {
+    "title": "🎓 Konfiguracja School RP",
+    "application_channel": "Kanał podań",
+    "announce_channel": "Kanał ogłoszeń",
+    "roles": "Role Discord",
+    "updated": "Konfiguracja School RP zaktualizowana."
+  },
+  "errors": {
+    "profile_exists": "Masz już profil.",
+    "profile_not_found": "Nie znaleziono profilu. Zarejestruj się za pomocą `/school register`.",
+    "class_not_found": "Nie znaleziono klasy.",
+    "class_full": "Ta klasa jest pełna.",
+    "house_not_found": "Nie znaleziono domu.",
+    "club_not_found": "Nie znaleziono klubu.",
+    "club_full": "Ten klub jest pełny.",
+    "already_member": "Jesteś już członkiem tego klubu.",
+    "not_member": "Nie jesteś członkiem tego klubu.",
+    "application_not_found": "Nie znaleziono podania.",
+    "application_pending": "Masz już oczekujące podanie.",
+    "already_reviewed": "To podanie zostało już rozpatrzone.",
+    "name_taken": "Ta nazwa jest już używana."
+  }
+}

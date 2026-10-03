@@ -1,0 +1,51 @@
+{
+  "profile": {
+    "title": "⚔️ Profil — {name}",
+    "none": "{user} nie ma jeszcze profilu Battle Royale.",
+    "level": "Poziom",
+    "wins": "🏆 Zwycięstwa",
+    "kills": "🔫 Zabójstwa",
+    "kd": "⚖️ K/D",
+    "matches": "🎮 Mecze",
+    "top10": "🔟 Top 10",
+    "playtime": "⏱️ Czas gry",
+    "season": "📅 Sezon",
+    "battlepass": "🎟️ Battle Pass",
+    "tier": "Poziom przepustki",
+    "identifier": "🔗 Identyfikator FiveM",
+    "not_linked": "Niepowiązany — `/br-link`"
+  },
+  "leaderboard": {
+    "title": "🏆 Ranking {metric} — Sezon {season}",
+    "empty": "Brak statystyk dla sezonu {season}.",
+    "metrics": { "wins": "Zwycięstwa", "kills": "Zabójstwa", "level": "Poziom", "kd": "K/D" }
+  },
+  "battlepass": {
+    "title": "🎟️ Battle Pass — Sezon {season} · {name}",
+    "none": "Brak aktywnego sezonu. Administrator może utworzyć nowy za pomocą `/br-admin season new`.",
+    "tiers": "Poziomy",
+    "ends": "Koniec sezonu",
+    "maxed": "Wszystkie poziomy odblokowane!"
+  },
+  "link": {
+    "invalid": "Nieprawidłowy identyfikator. Oczekiwany format: `license:0123abcd…` (widoczny w konsoli F8 lub na serwerze).",
+    "done": "Identyfikator `{identifier}` powiązany z twoim profilem. Twoje statystyki z gry będą teraz synchronizowane.",
+    "verification": "Weryfikacja",
+    "verified": "✅ Identyfikator wykryty obecnie w grze.",
+    "not_online": "ℹ️ Identyfikator nie został wykryty online w tej chwili — powiązanie zapisano, zostanie zweryfikowane podczas twojego następnego meczu."
+  },
+  "admin": {
+    "season_set": "Aktywny sezon: **{season}** ({name}).",
+    "season_new": "Sezon **{season}** „{name}” utworzony, koniec {ends}. Postęp Battle Pass zresetowany.",
+    "seasons_title": "📅 Sezony",
+    "stat_set": "{user}: `{field}` = **{value}**.",
+    "xp_added": "{user}: {amount} XP → **{xp} XP** (poziom {level})."
+  },
+  "errors": {
+    "identifier_taken": "Ten identyfikator jest już powiązany z innym graczem.",
+    "profile_not_found": "Nie znaleziono profilu.",
+    "invalid_field": "Nieprawidłowe pole.",
+    "season_exists": "Ten sezon już istnieje.",
+    "no_season": "Brak aktywnego sezonu."
+  }
+}

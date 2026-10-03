@@ -1,0 +1,211 @@
+{
+  "case": "Vaka #{number}",
+  "case_title": "Vaka #{number} • {type}",
+  "case_not_found": "**#{number}** numaralı bir yaptırım yok.",
+  "expires": "Bitiş",
+  "warn_count": "Aktif uyarılar",
+  "types": {
+    "BAN": "Yasaklama",
+    "TEMPBAN": "Geçici yasaklama",
+    "UNBAN": "Yasak kaldırma",
+    "KICK": "Atma",
+    "WARN": "Uyarı",
+    "UNWARN": "Uyarı kaldırma",
+    "TIMEOUT": "Geçici susturma",
+    "UNTIMEOUT": "Susturma sonu",
+    "MUTE": "Mute",
+    "UNMUTE": "Unmute",
+    "PURGE": "Temizleme",
+    "LOCK": "Kanal kilitleme",
+    "UNLOCK": "Kanal kilidi açma",
+    "SLOWMODE": "Yavaş mod",
+    "LOCKDOWN": "Lockdown",
+    "LOCKDOWN_END": "Lockdown sonu"
+  },
+  "actions": {
+    "TIMEOUT": "Geçici susturma",
+    "KICK": "Atma",
+    "BAN": "Yasaklama",
+    "TEMPBAN": "Geçici yasaklama"
+  },
+  "fields": {
+    "warn_count": "Aktif uyarılar",
+    "warning_id": "Uyarı",
+    "cleared": "Kaldırılan uyarılar",
+    "channel": "Kanal",
+    "deleted": "Silinen mesajlar",
+    "filter": "Filtre",
+    "slowmode": "Yavaş mod",
+    "content": "İçerik",
+    "added_by": "Ekleyen",
+    "account_age": "Hesap yaşı"
+  },
+  "dm": {
+    "title": "{server} üzerinde yaptırım",
+    "description": "**{server}** üzerinde şu yaptırımı aldın: **{sanction}**."
+  },
+  "reply": {
+    "done": "**{type}** {user} kullanıcısına uygulandı — {number}",
+    "duration": "Süre: **{duration}**",
+    "reason": "Sebep: {reason}",
+    "dm_sent": "📨 Kullanıcı özel mesajla bilgilendirildi.",
+    "dm_failed": "📪 Özel mesaj gönderilemedi (DM'ler kapalı).",
+    "warn_count": "Aktif uyarılar: **{count}**",
+    "escalated": "⚠️ **{count}** uyarı eşiğine ulaşıldı → **{action}** {duration} otomatik olarak uygulandı (vaka #{number}).",
+    "escalation_failed": "⚠️ Eşiğe ulaşıldı ancak otomatik **{action}** işlemi başarısız oldu: {error}"
+  },
+  "escalation": {
+    "reason": "Otomatik yükseltme: {count} aktif uyarı"
+  },
+  "expire": {
+    "tempban": "Geçici yasaklama sona erdi",
+    "mute": "Geçici mute sona erdi"
+  },
+  "errors": {
+    "self": "Kendine yaptırım uygulayamazsın.",
+    "bot_target": "Bu işlem bu hesaba (bot) uygulanamaz.",
+    "owner": "Sunucu sahibine yaptırım uygulanamaz.",
+    "hierarchy": "Bu üyeye yaptırım uygulayamazsın: en yüksek rolü seninkinden yüksek veya eşit.",
+    "bot_hierarchy": "Bu üye üzerinde işlem yapamıyorum: en yüksek rolü benimkinden yüksek veya eşit.",
+    "member_only": "Bu komut bir sunucu üyesi tarafından kullanılmalı.",
+    "invalid_duration": "Geçersiz süre. Örnekler: `30m`, `1h30m`, `2d`, `1w`.",
+    "invalid_timeout_duration": "Geçersiz süre: bir timeout 1 dakika ile 28 gün arasında sürer (`10m`, `1h`, `7d`).",
+    "not_timed_out": "Bu üye geçici olarak susturulmuş değil.",
+    "not_banned": "Bu kullanıcı yasaklı değil.",
+    "no_mute_role": "Yapılandırılmış mute rolü yok. `/mod-config mute-role` komutunu kullan.",
+    "mute_role_missing": "Yapılandırılan mute rolü artık mevcut değil. `/mod-config mute-role` ile yeniden ayarla.",
+    "channel_unsupported": "Bu kanal türü bu işlemi desteklemiyor.",
+    "missing_permissions": "Bu işlemi gerçekleştirmek için gerekli izinlere sahip değilim.",
+    "escalation_failed": "otomatik işlem başarısız oldu (izinler veya hiyerarşi)."
+  },
+  "warnings": {
+    "title": "{user} uyarıları ({count})",
+    "empty": "Aktif uyarı yok.",
+    "more": "… ve {count} tane daha",
+    "remove_button": "Bir uyarı kaldır",
+    "clear_button": "Tümünü kaldır",
+    "clear_confirm": "{user} kullanıcısının **tüm** aktif uyarıları kaldırılsın mı?",
+    "remove_modal_title": "Bir uyarı kaldır",
+    "modal_id_label": "Uyarı ID'si (örn: 42)",
+    "removed": "{user} için **#{id}** uyarısı kaldırıldı (vaka #{number}).",
+    "cleared": "{user} için **{count}** uyarı kaldırıldı (vaka #{number}).",
+    "not_found": "Bu sunucuda **#{id}** ID'li aktif uyarı yok."
+  },
+  "history": {
+    "title": "{user} geçmişi",
+    "active_warnings": "Aktif uyarılar: **{count}**",
+    "empty": "Kayıtlı yaptırım yok.",
+    "footer": "{total} yaptırım • Sayfa {page}/{pages}"
+  },
+  "purge": {
+    "done": "{channel} kanalında **{count}** mesaj silindi (vaka #{number})."
+  },
+  "slowmode": {
+    "set": "{channel} yavaş modu **{duration}** olarak ayarlandı (vaka #{number}).",
+    "disabled": "{channel} kanalında yavaş mod devre dışı bırakıldı (vaka #{number})."
+  },
+  "lock": {
+    "locked": "🔒 {channel} kilitlendi (vaka #{number}).",
+    "unlocked": "🔓 {channel} kilidi açıldı (vaka #{number}).",
+    "notice_title": "🔒 Kanal kilitlendi",
+    "notice": "Bu kanal moderasyon tarafından kilitlendi.\nSebep: {reason}",
+    "unlock_notice_title": "🔓 Kanal kilidi açıldı",
+    "unlock_notice": "Bu kanala yeniden yazabilirsin."
+  },
+  "lockdown": {
+    "status_title": "Lockdown",
+    "active": "🔴 Aktif",
+    "inactive": "🟢 Pasif",
+    "status_on": "🔴 **Lockdown aktif** — {since} tarihinden beri, {actor} tarafından.\nKilitli kanallar: **{channels}**\nSebep: {reason}",
+    "status_off": "🟢 Devam eden lockdown yok.",
+    "already_on": "Lockdown zaten aktif.",
+    "already_off": "Aktif lockdown yok.",
+    "confirm_title": "Lockdown onayı",
+    "confirm_on": "**Tüm sunucuyu kilitlemek** üzeresin: @everyone için tüm metin kanallarında yazma engellenecek. Mevcut durum kaydedilecek ve `/lockdown off` ile geri yüklenebilecek.\nSebep: {reason}",
+    "confirm_off": "Lockdown devre dışı bırakılsın ve kaydedilen izinler tam olarak geri yüklensin mi?",
+    "in_progress": "⏳ Uygulanıyor…",
+    "enabled": "Lockdown etkinleştirildi: **{channels}** kanal kilitlendi, {failed} başarısız.",
+    "disabled": "Lockdown devre dışı bırakıldı: **{channels}** kanal geri yüklendi, {failed} başarısız.",
+    "alert_title": "🔴 LOCKDOWN ETKİNLEŞTİRİLDİ",
+    "alert_description": "**{server}** sunucusu lockdown altında: @everyone için **{channels}** kanalda yazma engellendi. Geri yüklemek için `/lockdown off` komutunu kullan.",
+    "alert_end_title": "🟢 Lockdown sona erdi",
+    "alert_end_description": "**{server}** lockdown'u kaldırıldı: **{channels}** kanal önceki durumuna geri yüklendi."
+  },
+  "buttons": {
+    "cancelled": "İşlem iptal edildi."
+  },
+  "config": {
+    "title": "Moderasyon — {server}",
+    "mute_role": "Mute rolü",
+    "mute_role_set": "Mute rolü ayarlandı: {role}",
+    "mute_role_removed": "Mute rolü kaldırıldı.",
+    "dm": "Yaptırım alanlara DM",
+    "dm_set": "Yaptırımlarda DM gönderimi: **{state}**.",
+    "thresholds_title": "Uyarı yükseltme eşikleri",
+    "no_thresholds": "Eşik yok: uyarılar otomatik bir işlem tetiklemez.",
+    "threshold_added": "Eşik kaydedildi: **{count}** uyarı → **{action}**.",
+    "threshold_removed": "**{count}** uyarı eşiği kaldırıldı.",
+    "threshold_not_found": "**{count}** uyarı için eşik yok.",
+    "stats_title": "İstatistikler (30 gün)",
+    "stats": "**{total}** yaptırım • {warnings} aktif uyarı • {bans} aktif yasak • {mutes} aktif mute"
+  },
+  "antiraid": {
+    "status_title": "Anti-raid — {server}",
+    "updated": "✅ Anti-raid yapılandırması güncellendi.",
+    "log_title": "🚨 Anti-raid: {trigger}",
+    "action_taken": "İşlem",
+    "days": "{days} gün",
+    "names": {
+      "spam": "Anti-spam",
+      "mentions": "Toplu bahsetme koruması",
+      "links": "Bağlantı / reklam koruması",
+      "new_account": "Yeni hesap koruması",
+      "bots": "Anti-bot",
+      "mass_join": "Toplu katılım koruması",
+      "exempt": "Muafiyetler"
+    },
+    "desc": {
+      "spam": "{seconds} sn içinde {max} mesaj → silme + timeout {timeout}",
+      "mentions": "Bir mesajda {max} bahsetme → silme + timeout {timeout}",
+      "links": "Davetler: {invites} • Tüm bağlantılar: {links} • İşlem: {action}\nBeyaz liste: {whitelist}",
+      "new_account": "{days} günden yeni hesap → {action} {role}",
+      "bots": "Yetkisiz botlar atılır (bir yönetici tarafından eklenenler hariç)\nİzin verilenler: {allowed}",
+      "mass_join": "{seconds} sn içinde {max} katılım → otomatik lockdown: {lockdown}",
+      "exempt": "Roller: {roles}\nKanallar: {channels}"
+    },
+    "link_actions": { "DELETE": "Silme", "TIMEOUT": "Silme + timeout" },
+    "account_actions": { "KICK": "Atma", "QUARANTINE": "Karantina rolü" },
+    "triggers": {
+      "spam": "Spam",
+      "mass_mention": "Toplu bahsetme",
+      "invite": "Discord daveti",
+      "link": "Yetkisiz bağlantı",
+      "new_account": "Yeni hesap",
+      "bot": "Yetkisiz bot",
+      "mass_join": "Toplu katılım"
+    },
+    "reasons": {
+      "spam": "Anti-raid: spam tespit edildi",
+      "mass_mention": "Anti-raid: toplu bahsetme",
+      "invite": "Anti-raid: yetkisiz Discord daveti",
+      "link": "Anti-raid: yetkisiz bağlantı",
+      "new_account": "Anti-raid: hesap {days} günden kısa süre önce oluşturulmuş",
+      "bot": "Anti-raid: yetkisiz bot",
+      "mass_join": "Anti-raid: {seconds} sn içinde {count} katılım (olası raid)"
+    },
+    "actions": {
+      "deleted": "Mesaj(lar) silindi",
+      "timeout_case": "Timeout (vaka #{number})",
+      "timeout_failed": "Timeout uygulanamadı",
+      "quarantined": "Karantina rolü {role} verildi",
+      "quarantine_failed": "Karantina rolü verilemedi",
+      "kicked_case": "Atıldı (vaka #{number})",
+      "kick_failed": "Atma başarısız"
+    },
+    "errors": {
+      "quarantine_role_required": "« Karantina rolü » işlemi için bir karantina rolü gerekli.",
+      "not_a_bot": "Belirtilen kullanıcı bir bot değil.",
+      "role_or_channel": "Bir rol veya kanal belirt."
+    }
+  }
+}

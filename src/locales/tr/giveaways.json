@@ -1,0 +1,79 @@
+{
+  "embed": {
+    "ends": "⏳ Bitiş",
+    "ended_at": "🏁 Sona erdi",
+    "winners_count": "🏆 Kazananlar",
+    "winners": "🏆 Kazanan(lar) ({count})",
+    "no_winner": "Kazanan yok (yeterli katılımcı yok)",
+    "host": "🎤 Düzenleyen",
+    "entries": "👥 Katılımcılar",
+    "conditions": "📋 Koşullar",
+    "condition_role": "{role} rolüne sahip olmak",
+    "condition_messages": "Sunucuda en az {count} mesaj göndermiş olmak",
+    "status": "Durum",
+    "cancelled": "⛔ Giveaway iptal edildi",
+    "footer": "Giveaway #{id}"
+  },
+  "buttons": {
+    "enter": "Katıl"
+  },
+  "announce": {
+    "winners": "🎉 Tebrikler {winners}! **{prize}** kazandınız!",
+    "reroll": "🔁 Yeniden çekiliş: tebrikler {winners}! **{prize}** kazandınız!",
+    "no_winner": "😕 **{prize}** giveaway'i geçerli katılımcı olmadan sona erdi."
+  },
+  "dm": {
+    "won": "🎉 Tebrikler! **{prize}** kazandın. {link}"
+  },
+  "enter": {
+    "joined": "🎁 Katılımın kaydedildi! Bol şans ({count} katılımcı).",
+    "left": "Katılımın geri çekildi ({count} katılımcı).",
+    "ended": "Bu giveaway sona erdi.",
+    "missing_role": "Katılmak için {role} rolüne sahip olmalısın.",
+    "min_messages": "Katılmak için sunucuda en az **{required}** mesaj gerekiyor (sende {current} var)."
+  },
+  "create": {
+    "success": "**{prize}** giveaway'i <#{channel}> kanalında oluşturuldu (ID `{id}`), bitiş {when}.",
+    "invalid_duration": "Geçersiz süre: `{value}`. Örnekler: `30m`, `1h`, `2d`, `1w`.",
+    "channel_invalid": "Seçilen kanal bir metin kanalı olmalı."
+  },
+  "end": {
+    "success": "**{prize}** giveaway'i sona erdi. Kazanan(lar): {winners}",
+    "no_winner": "**{prize}** giveaway'i kazanan olmadan sona erdi.",
+    "already_ended": "Bu giveaway zaten sona erdi."
+  },
+  "reroll": {
+    "success": "**{prize}** için yeniden çekiliş: {winners}",
+    "no_candidates": "Yeniden çekiliş için başka katılımcı yok.",
+    "not_ended": "Bu giveaway henüz sona ermedi. Önce `/giveaway end` komutunu kullan."
+  },
+  "cancel": {
+    "success": "**{prize}** giveaway'i iptal edildi.",
+    "already_ended": "Bu giveaway zaten sona erdi, artık iptal edilemez."
+  },
+  "list": {
+    "title": "🎁 Giveaway'ler — {server}",
+    "empty": "Giveaway yok.",
+    "line_active": "🟣 `#{id}` **{prize}** — bitiş {when} — {count} katılımcı",
+    "line_ended": "⚫ `#{id}` **{prize}** — sona erdi {when} — {winners}"
+  },
+  "not_found": "Giveaway bulunamadı (ID `{id}`).",
+  "commands": {
+    "description": "Giveaway'leri yönet",
+    "create": "Bir giveaway başlat",
+    "prize": "Kazanılacak ödül",
+    "duration": "Süre (örn: 1h, 2d)",
+    "winners": "Kazanan sayısı",
+    "channel": "Yayın kanalı (varsayılan: mevcut kanal)",
+    "required_role": "Katılmak için gerekli rol",
+    "min_messages": "Sunucuda gönderilmiş minimum mesaj sayısı",
+    "language": "Görüntüleme dili",
+    "description_opt": "Ek açıklama",
+    "end": "Bir giveaway'i şimdi bitir (çekiliş)",
+    "reroll": "Yeni kazananlar çek",
+    "reroll_count": "Çekilecek kazanan sayısı",
+    "cancel": "Bir giveaway'i iptal et (çekiliş yapmadan)",
+    "list": "Giveaway'leri listele",
+    "id": "Giveaway ID'si"
+  }
+}

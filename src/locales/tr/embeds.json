@@ -1,0 +1,138 @@
+{
+  "builder": {
+    "title": "🎨 Embed oluşturucu",
+    "title_edit": "🎨 Mevcut bir embed'i düzenleme",
+    "footer": "Oturum {id} · süresi dolar",
+    "hint": "Düzenlemek için butonları, alanlar için Alanlar menüsünü, göndermek için kanal seçiciyi kullan.",
+    "content": "İçerik",
+    "buttons": "Butonlar",
+    "fields": "Alanlar",
+    "timestamp": "Zaman damgası",
+    "target": "Hedef mesaj",
+    "empty_preview": "Embed şu an boş. « Başlık & açıklama » ile başla.",
+    "invalid_preview": "Önizleme oluşturulamadı: URL'leri ve girilen değerleri kontrol et.",
+    "btn_title": "Başlık & açıklama",
+    "btn_color": "Renk",
+    "btn_images": "Görsel & küçük resim",
+    "btn_footer": "Footer & yazar",
+    "btn_timestamp": "Timestamp",
+    "btn_buttons": "Butonlar",
+    "btn_content": "İçerik / bahsetmeler",
+    "btn_template": "Şablon olarak kaydet",
+    "btn_import": "JSON içe aktar",
+    "btn_export": "JSON dışa aktar",
+    "btn_update": "Mesajı güncelle",
+    "fields_placeholder": "Alanlar ({count}/{max}) — ekle, sil, temizle",
+    "field_add": "Alan ekle",
+    "field_add_desc": "Ad, değer ve satır içi görünüm",
+    "field_clear": "Tüm alanları temizle",
+    "field_added": "Alan eklendi.",
+    "send_placeholder": "📨 Bir kanala gönder…",
+    "buttons_placeholder": "Butonlar ({count}/{max}) — bağlantı ekle, sil, temizle",
+    "button_add_link": "Bağlantı butonu ekle",
+    "button_add_role": "Rol butonu ekle (rolleri seç)",
+    "button_clear": "Tüm butonları sil",
+    "button_added": "Bağlantı butonu eklendi.",
+    "role_buttons_added": "{count} rol butonu eklendi.",
+    "sent": "Embed {channel} kanalına gönderildi → {url}",
+    "updated": "Mesaj güncellendi → {url}",
+    "template_saved": "**{name}** şablonu kaydedildi.",
+    "template_updated": "**{name}** şablonu güncellendi.",
+    "imported": "JSON başarıyla içe aktarıldı.",
+    "export_file": "📤 JSON dışa aktarımı (ekli dosya).",
+    "cancelled": "Oturum iptal edildi. Hiçbir şey gönderilmedi."
+  },
+  "cmd": {
+    "sent": "Şablon {channel} kanalına gönderildi → {url}",
+    "template_deleted": "**{name}** şablonu silindi.",
+    "template_list_empty": "Bu sunucuda şablon yok. `/embed create` ile bir tane oluştur, ardından « Şablon olarak kaydet ».",
+    "template_list_title": "🗂️ Embed şablonları ({count})",
+    "variables_title": "🧩 Kullanılabilir değişkenler",
+    "variables_desc": "Bu değişkenler başlık, açıklama, alan, footer ve içeriklerde otomatik olarak değiştirilir."
+  },
+  "modal": {
+    "title": { "title": "Başlık & açıklama", "field_title": "Başlık", "field_url": "Başlık URL'si (isteğe bağlı)", "field_description": "Açıklama", "description_placeholder": "Ana metin. Değişkenler: {server}, {date}, {user}…" },
+    "color": { "title": "Renk", "field_hex": "Hex renk veya marka rengi adı" },
+    "images": { "title": "Görsel & küçük resim", "field_image": "Görsel URL'si", "field_thumbnail": "Küçük resim URL'si" },
+    "footer": { "title": "Footer & yazar", "field_footer": "Footer metni", "field_footer_icon": "Footer simgesi (URL)", "field_author": "Yazar adı", "field_author_icon": "Yazar simgesi (URL)", "field_author_url": "Yazar bağlantısı (URL)" },
+    "field": { "title": "Alan ekle", "field_name": "Ad", "field_value": "Değer", "field_inline": "Satır içi? (evet / hayır)", "inline_placeholder": "evet" },
+    "content": { "title": "Mesaj içeriği", "field_content": "Embed'in üstündeki metin", "placeholder": "Bahsetmeler, serbest metin… örn: @everyone Yeni güncelleme!" },
+    "link": { "title": "Bağlantı butonu", "field_label": "Etiket", "field_url": "URL", "field_emoji": "Emoji (isteğe bağlı)" },
+    "template": { "title": "Şablon olarak kaydet", "field_name": "Şablon adı", "field_description": "Açıklama (isteğe bağlı)" },
+    "import": { "title": "JSON içe aktar", "field_json": "JSON (EmbedSpec veya mesaj)" }
+  },
+  "errors": {
+    "not_found": "Şablon bulunamadı: `{details}`",
+    "duplicate_name": "`{details}` adında bir şablon zaten var.",
+    "invalid_channel": "Geçersiz veya erişilemeyen kanal (`{details}`).",
+    "message_not_found": "Mesaj bulunamadı (`{details}`).",
+    "not_bot_message": "Bu mesaj bot tarafından gönderilmedi: düzenlenemez.",
+    "no_embed": "Bu mesaj hiçbir embed içermiyor.",
+    "no_client": "Bot henüz hazır değil. Birkaç saniye sonra tekrar dene.",
+    "invalid_spec": "Geçersiz embed:\n{details}",
+    "invalid_json": "Geçersiz JSON:\n{details}",
+    "invalid_reference": "Geçerli bir mesaj bağlantısı veya mesaj ID'si (kanalıyla birlikte) gir.",
+    "session_expired": "Bu düzenleme oturumunun süresi doldu. Komutu yeniden çalıştır.",
+    "empty_embed": "Embed boş: en az bir başlık, açıklama, görsel veya alan ekle.",
+    "fields_limit": "Sınıra ulaşıldı: en fazla {max} alan.",
+    "buttons_limit": "Sınıra ulaşıldı: en fazla {max} buton."
+  },
+  "defaults": {
+    "footer": "{server}",
+    "maintenance": {
+      "name": "Bakım",
+      "description": "Planlı bakım duyurusu",
+      "title": "Planlı bakım",
+      "body": "**{server}** üzerinde bir bakım planlandı. Hizmetler geçici olarak kullanılamayacak.\n\nSabrın için teşekkürler.",
+      "fields": { "start": { "name": "Başlangıç", "value": "{date}" }, "duration": { "name": "Tahmini süre", "value": "~1 sa" } }
+    },
+    "patch_note": {
+      "name": "Patch Note",
+      "description": "Güncelleme notları",
+      "title": "Patch Note — {date}",
+      "body": "**{server}** üzerinde yeni bir güncelleme mevcut.",
+      "fields": { "new": { "name": "Yenilikler", "value": "• …" }, "fixes": { "name": "Düzeltmeler", "value": "• …" } }
+    },
+    "new_season": {
+      "name": "Yeni Sezon",
+      "description": "Yeni sezon başlangıcı",
+      "title": "Yeni sezon",
+      "body": "**{server}** sunucusunun yeni sezonu başlıyor! Yeni görevler, yeni ödüller.",
+      "fields": { "start": { "name": "Başlangıç", "value": "{date}" }, "rewards": { "name": "Ödüller", "value": "• …" } }
+    },
+    "tournament": {
+      "name": "Turnuva",
+      "description": "Turnuva duyurusu",
+      "title": "Turnuva",
+      "body": "**{server}** üzerinde bir turnuva düzenleniyor. Kaydol ve en iyilerle yarış!",
+      "fields": { "date": { "name": "Tarih", "value": "{date}" }, "registration": { "name": "Kayıtlar", "value": "Açık" } }
+    },
+    "important": {
+      "name": "Önemli duyuru",
+      "description": "Resmi bildirim",
+      "title": "Önemli duyuru",
+      "body": "**{server}** ekibinin sizinle paylaşacağı önemli bir bilgi var.\n\n…"
+    },
+    "giveaway": {
+      "name": "Giveaway",
+      "description": "Çekiliş / yarışma",
+      "title": "Giveaway",
+      "body": "**{server}** üzerinde bir giveaway sürüyor! Kazanma şansı için katıl.",
+      "fields": { "prize": { "name": "Ödül", "value": "…" }, "end": { "name": "Bitiş", "value": "{date}" } }
+    },
+    "event": {
+      "name": "Etkinlik",
+      "description": "Etkinlik duyurusu",
+      "title": "Etkinlik",
+      "body": "**{server}** üzerinde bir etkinlik hazırlanıyor. Kaçırma!",
+      "fields": { "date": { "name": "Tarih", "value": "{date}" }, "location": { "name": "Yer", "value": "…" } }
+    },
+    "recruitment": {
+      "name": "Alım",
+      "description": "Yetkili / ekip alımı",
+      "title": "Alım",
+      "body": "**{server}** ekip arkadaşları arıyor! Ekibe katıl ve maceranın parçası ol.",
+      "fields": { "positions": { "name": "Pozisyonlar", "value": "• …" }, "apply": { "name": "Başvuru", "value": "Bir ticket aç" } }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "panel": {
+    "title": "🌍 CHOOSE YOUR LANGUAGE",
+    "description": "Çevrilmiş mesajları ve duyuruları almak için dilini seç.\nSelect your language to receive translated messages and announcements.",
+    "published": "Dil paneli {channel} kanalında yayınlandı — [aç]({url})",
+    "refreshed": "Dil paneli güncellendi.",
+    "not_published": "Yayınlanmış panel yok. `/language-panel publish` komutunu kullan.",
+    "preview_note": "Panel önizlemesi (butonlar çalışır durumda):"
+  },
+  "select": {
+    "placeholder": "Dilini seç…",
+    "prompt": "🌍 Dilini seç:"
+  },
+  "changed": "✅ Dil ayarlandı: {flag} **{language}**",
+  "not_enabled": "⛔ {flag} **{language}** dili bu sunucuda etkin değil.",
+  "no_role": "ℹ️ Bu dile bağlı bir rol yok: tercihin kaydedildi.",
+  "blocked_roles": "⚠️ Şunları yönetemedim: {roles} (rol hiyerarşisi).",
+  "guild_unavailable": "Sunucu bulunamadı: bu işlemi sunucu içinden kullan.",
+  "module_disabled": "Çok dilli modül bu sunucuda devre dışı.",
+  "roles": {
+    "set": "{flag} **{language}** → {role}",
+    "removed": "{flag} **{language}** için eşleme kaldırıldı.",
+    "reset_title": "🌍 Dil rolleri sıfırlandı",
+    "none_default": "Bu sunucuda varsayılan rol yok. `/language-roles set` komutunu kullan.",
+    "missing": "Varsayılan roller bulunamadı",
+    "list_title": "🌍 Dil rolleri",
+    "using_defaults": "Varsayılan roller (Battle Royale) — özel yapılandırma yok"
+  },
+  "log": {
+    "title": "🌍 Dil değişikliği",
+    "description": "{user}, {flag} **{language}** dilini seçti",
+    "role_added": "Eklenen rol",
+    "roles_removed": "Kaldırılan roller",
+    "blocked": "Yönetilemeyenler (hiyerarşi)"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "default_message": "👋 **{server}** sunucusuna hoş geldin {user}!",
+  "buttons": {
+    "choose_language": "Dilimi seç"
+  },
+  "config": {
+    "enabled_set": "Karşılama mesajı: {state}",
+    "channel_set": "Karşılama kanalı: {channel}",
+    "image_set": "Karşılama görseli: {state}",
+    "dm_set": "Karşılama DM'i: {state}",
+    "language_prompt_set": "« 🌍 Dilimi seç » butonu: {state}",
+    "buttons_set": "{count} buton kaydedildi.",
+    "buttons_cleared": "Butonlar silindi.",
+    "invalid_json": "Geçersiz JSON:\n```\n{details}\n```",
+    "value_set": "{kind} ({what}) kaydedildi — {language}.",
+    "value_cleared": "{kind} ({what}) temizlendi.",
+    "all_languages": "tüm diller",
+    "target_welcome": "karşılama",
+    "target_dm": "DM",
+    "target_leave": "ayrılma",
+    "kind_message": "Mesaj",
+    "kind_embed": "Embed",
+    "modal_title_message": "Mesaj — {target}",
+    "modal_title_embed": "Embed JSON — {target}",
+    "modal_title_buttons": "Butonlar (JSON)",
+    "modal_label_message": "Metin ({language})",
+    "modal_label_embed": "EmbedSpec JSON ({language})",
+    "modal_label_buttons": "ButtonSpec[] JSON",
+    "modal_help_message": "Değişkenler: {user} {username} {server} {memberCount}… Boş = temizle.",
+    "modal_help_embed": "{\"title\":\"…\",\"description\":\"…\",\"color\":\"#7C3AED\"} — boş = temizle.",
+    "modal_help_buttons": "[{\"label\":\"Site\",\"style\":\"link\",\"url\":\"https://…\"}] — boş = temizle.",
+    "test_sent": "Test mesajı {channel} kanalına gönderildi.",
+    "not_configured": "Yapılandırma yok: `/welcome-config channel` ile başla.",
+    "show_title": "👋 Karşılama — {server}",
+    "field_enabled": "Durum",
+    "field_language_prompt": "Dil butonu",
+    "field_buttons": "Butonlar",
+    "field_image": "Görsel",
+    "field_dm": "DM",
+    "background": "özel arka plan",
+    "variables": "Kullanılabilir değişkenler"
+  },
+  "leave": {
+    "default_message": "👋 **{username}** sunucudan ayrıldı. Artık {memberCount} kişiyiz.",
+    "image_title": "GÜLE GÜLE",
+    "image_subtitle": "{username} · {memberCount} üye",
+    "log_title": "👤 Üye ayrıldı",
+    "log_description": "{user} (`{tag}`) sunucudan ayrıldı — {memberCount} üye",
+    "log_joined": "Katılma",
+    "log_roles": "Roller",
+    "config": {
+      "enabled_set": "Ayrılma mesajı: {state}",
+      "channel_set": "Ayrılma kanalı: {channel}",
+      "image_set": "Ayrılma görseli: {state}",
+      "logs_set": "Ayrılma logları: {state}",
+      "test_sent": "Test mesajı {channel} kanalına gönderildi.",
+      "not_configured": "Yapılandırma yok: `/leave-config channel` ile başla.",
+      "show_title": "👋 Ayrılma — {server}",
+      "field_logs": "Loglar"
+    }
+  }
+}
