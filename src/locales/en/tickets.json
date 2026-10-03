@@ -1,0 +1,239 @@
+{
+  "defaults": {
+    "support": {
+      "label": "Support",
+      "description": "Need help? Open a support ticket."
+    },
+    "bug": {
+      "label": "Bug",
+      "description": "Report a bug or a technical issue."
+    },
+    "shop": {
+      "label": "Shop",
+      "description": "Question about the shop or an order."
+    },
+    "payment": {
+      "label": "Payment",
+      "description": "Payment or purchase delivery issue."
+    },
+    "battle-royale": {
+      "label": "Battle Royale",
+      "description": "Questions about the Battle Royale server."
+    },
+    "prison": {
+      "label": "Prison RP",
+      "description": "Questions about the Prison RP server."
+    },
+    "school": {
+      "label": "School RP",
+      "description": "Questions about the School RP server."
+    },
+    "whitelist": {
+      "label": "Whitelist",
+      "description": "Whitelist request or issue."
+    },
+    "staff": {
+      "label": "Staff",
+      "description": "Contact the staff team privately."
+    },
+    "partnership": {
+      "label": "Partnership",
+      "description": "Propose a partnership."
+    },
+    "report": {
+      "label": "Report",
+      "description": "Report a player or a behaviour."
+    },
+    "panel_title": "🎫 Support — {server}",
+    "panel_description": "Need help? Click below to open a ticket. A team member will answer as soon as possible.",
+    "panel_footer": "One ticket = one topic. Please stay polite.",
+    "question_label": "Describe your request",
+    "question_placeholder": "Explain your issue or request with as many details as possible."
+  },
+  "panel": {
+    "open_button": "Open a ticket",
+    "select_placeholder": "What is the topic?",
+    "pick_prompt": "What is your ticket about?",
+    "created": "Panel published in {channel} (ID `{id}`, {count} type(s)).",
+    "deleted": "Panel `{id}` deleted.",
+    "list_title": "Ticket panels",
+    "list_empty": "No panel configured. Use `/ticket-panel create`.",
+    "list_line": "`#{id}` — {channel} • {style} • {count} type(s)",
+    "unknown_types": "Unknown type keys: {keys}",
+    "seeded": "{count} default ticket types have been created."
+  },
+  "open": {
+    "title": "{emoji} Ticket #{number} — {type}",
+    "description": "Welcome {user}! Describe your request, the team will answer as soon as possible.",
+    "field_user": "Opened by",
+    "field_type": "Type",
+    "field_status": "Status",
+    "field_claimed": "Claimed by",
+    "field_created": "Opened on",
+    "field_closed": "Closed on",
+    "field_closed_by": "Closed by",
+    "field_reason": "Reason",
+    "no_answer": "—",
+    "staff_ping": "{roles} — new ticket from {user}.",
+    "created": "Your ticket has been created: {channel}",
+    "creating": "Creating your ticket…",
+    "modal_title": "{emoji} {type}"
+  },
+  "status": {
+    "OPEN": "🟢 Open",
+    "CLAIMED": "👤 Claimed",
+    "CLOSED": "🔒 Closed",
+    "ARCHIVED": "📦 Archived",
+    "DELETED": "🗑️ Deleted"
+  },
+  "buttons": {
+    "close": "Close",
+    "reopen": "Reopen",
+    "claim": "Claim",
+    "claimed": "Claimed",
+    "add": "Add",
+    "remove": "Remove",
+    "transcript": "Transcript",
+    "transfer": "Transfer",
+    "delete": "Delete",
+    "confirm_delete": "Yes, delete",
+    "cancel": "Cancel"
+  },
+  "modal": {
+    "close_title": "Close ticket #{number}",
+    "close_reason": "Reason (optional)",
+    "close_reason_placeholder": "Issue solved, request handled…",
+    "add_title": "Add a member to the ticket",
+    "remove_title": "Remove a member from the ticket",
+    "user_field": "Member (ID or mention)",
+    "user_placeholder": "123456789012345678 or @member",
+    "questions_title": "Questions — {type}",
+    "question_slot": "Question {index}",
+    "question_placeholder": "Label | placeholder | short/paragraph | required/optional | maxLength"
+  },
+  "actions": {
+    "closing": "Closing the ticket…",
+    "closed": "🔒 Ticket closed by {user}.",
+    "closed_reason": "Reason: {reason}",
+    "closed_confirm": "Ticket #{number} closed.",
+    "reopened": "🔓 Ticket reopened by {user}.",
+    "reopened_confirm": "Ticket #{number} reopened.",
+    "claimed": "👤 {user} is now handling this ticket.",
+    "claimed_confirm": "You are now handling ticket #{number}.",
+    "member_added": "👥 {target} was added to the ticket by {user}.",
+    "member_added_confirm": "{target} added to the ticket.",
+    "member_removed": "🚫 {target} was removed from the ticket by {user}.",
+    "member_removed_confirm": "{target} removed from the ticket.",
+    "transfer_prompt": "Which type should this ticket be transferred to?",
+    "transfer_select": "Pick a type…",
+    "transferred": "🔄 Ticket transferred to **{type}** by {user}.",
+    "transferred_confirm": "Ticket transferred to **{type}**.",
+    "delete_confirm": "Permanently delete ticket #{number}? A transcript will be generated before deletion.",
+    "delete_cancelled": "Deletion cancelled.",
+    "deleting": "🗑️ This ticket will be deleted in {seconds} seconds.",
+    "deleted_confirm": "Ticket #{number} deleted.",
+    "renamed": "Channel renamed to `{name}`.",
+    "transcript_generating": "Generating the transcript…",
+    "transcript_sent": "Transcript generated and sent.",
+    "transcript_dm": "Here is the transcript of your ticket **#{number}** on **{server}**."
+  },
+  "errors": {
+    "not_ticket_channel": "This channel is not a ticket.",
+    "not_found": "Ticket not found.",
+    "max_per_user": "You already have {count} open ticket(s) of this type (maximum: {max}). Close one before opening another.",
+    "type_not_found": "Ticket type not found.",
+    "type_disabled": "This ticket type is disabled.",
+    "no_types": "No ticket type available. An administrator must configure one with `/ticket-type create`.",
+    "already_closed": "This ticket is already closed.",
+    "not_closed": "This ticket is not closed.",
+    "already_claimed": "This ticket is already claimed by {user}.",
+    "no_permission": "You are not allowed to perform this action.",
+    "staff_only": "This action is restricted to staff.",
+    "invalid_user": "Invalid user. Provide an ID or a mention.",
+    "cannot_add_bot": "Bots cannot be added to a ticket.",
+    "member_not_found": "Member not found on this server.",
+    "cannot_remove_creator": "The ticket creator cannot be removed.",
+    "channel_create_failed": "Unable to create the ticket channel. Check my permissions and the configured category.",
+    "channel_missing": "The channel of this ticket no longer exists.",
+    "key_exists": "A type with key `{key}` already exists.",
+    "invalid_key": "Invalid key: lowercase letters, digits and dashes only (2 to 32 characters).",
+    "same_type": "The ticket already has this type.",
+    "invalid_question": "Question {index} is invalid: {details}",
+    "panel_not_found": "Panel not found.",
+    "transcript_failed": "Transcript generation failed.",
+    "invalid_embed": "Invalid embed: {details}",
+    "deleted": "This ticket has been deleted.",
+    "unknown_types": "Unknown type keys: {keys}"
+  },
+  "type": {
+    "created": "Type **{label}** (`{key}`) created.",
+    "updated": "Type **{label}** updated.",
+    "deleted": "Type **{label}** deleted. Existing tickets are kept.",
+    "list_title": "Ticket types",
+    "list_empty": "No ticket type. Use `/ticket-type create` or `/ticket-panel create` (default types).",
+    "list_line": "{emoji} **{label}** (`{key}`) {state}\n┗ Category: {category} • Archive: {archive} • Staff: {roles} • Max/member: {max} • Questions: {questions}",
+    "questions_updated": "Questions of type **{label}** updated ({count}).",
+    "questions_help": "Format per field: `Label | placeholder | short/paragraph | required/optional | maxLength`. Only the label is mandatory. Leave empty to remove a question.",
+    "enabled": "🟢",
+    "disabled": "🔴",
+    "nothing_to_update": "No change provided."
+  },
+  "info": {
+    "title": "Ticket #{number}",
+    "created_at": "Opened on",
+    "closed_at": "Closed on",
+    "duration": "Duration",
+    "messages": "Messages",
+    "participants": "Participants",
+    "channel": "Channel",
+    "answers": "Form answers"
+  },
+  "list": {
+    "title": "Tickets ({status}) — {total}",
+    "empty": "No ticket matches.",
+    "line": "`#{number}` {channel} • {user} • {type} • {status} • {created}",
+    "all": "all"
+  },
+  "transcript": {
+    "title": "Transcript — Ticket #{number}",
+    "ticket": "Ticket",
+    "type": "Type",
+    "opened_by": "Opened by",
+    "claimed_by": "Claimed by",
+    "closed_by": "Closed by",
+    "reason": "Reason",
+    "opened_at": "Opened on",
+    "closed_at": "Closed on",
+    "duration": "Duration",
+    "messages": "Messages",
+    "participants": "Participants",
+    "no_messages": "No message recorded.",
+    "attachments": "Attachments",
+    "embed": "Embed",
+    "generated": "Generated by Redemption Story Studio on {date}",
+    "log_title": "Transcript of ticket #{number}",
+    "none": "—",
+    "unknown_user": "Unknown user"
+  },
+  "log": {
+    "open": "🎫 Ticket #{number} opened",
+    "close": "🔒 Ticket #{number} closed",
+    "reopen": "🔓 Ticket #{number} reopened",
+    "claim": "👤 Ticket #{number} claimed",
+    "delete": "🗑️ Ticket #{number} deleted",
+    "transfer": "🔄 Ticket #{number} transferred",
+    "add": "👥 Member added to ticket #{number}",
+    "remove": "🚫 Member removed from ticket #{number}",
+    "channel_deleted": "The ticket channel was deleted manually.",
+    "field_user": "User",
+    "field_type": "Type",
+    "field_channel": "Channel",
+    "field_staff": "Staff",
+    "field_reason": "Reason",
+    "field_from": "From",
+    "field_to": "To",
+    "field_target": "Member",
+    "field_duration": "Duration",
+    "field_messages": "Messages"
+  }
+}

@@ -83,7 +83,7 @@ export class EmbedService {
   }
 
   /** Transforme un EmbedSpec en EmbedBuilder, après remplacement des variables. */
-  build(spec: EmbedSpec, ctx: TemplateContext = {}, defaultColor = BRAND.colors.primary): EmbedBuilder {
+  build(spec: EmbedSpec, ctx: TemplateContext = {}, defaultColor: number = BRAND.colors.primary): EmbedBuilder {
     const s = renderObject(spec, ctx);
     const embed = new EmbedBuilder().setColor(parseColor(s.color, defaultColor) as ColorResolvable);
     if (s.title) embed.setTitle(s.title);
@@ -119,7 +119,7 @@ export class EmbedService {
   }
 
   /** Construit un message complet (content + embeds + boutons) depuis un MessageSpec. */
-  buildMessage(spec: MessageSpec, ctx: TemplateContext = {}, defaultColor = BRAND.colors.primary) {
+  buildMessage(spec: MessageSpec, ctx: TemplateContext = {}, defaultColor: number = BRAND.colors.primary) {
     return {
       content: spec.content ? renderObject(spec.content, ctx) : undefined,
       embeds: (spec.embeds ?? []).map((e) => this.build(e, ctx, defaultColor)),
