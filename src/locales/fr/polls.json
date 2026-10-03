@@ -1,0 +1,69 @@
+{
+  "yes": "Oui",
+  "no": "Non",
+  "embed": {
+    "votes": "{count} vote(s)",
+    "voters": "{count} votant(s)",
+    "anonymous": "🔒 Anonyme",
+    "multi_select": "☑️ Choix multiples",
+    "ends": "⏳ Fin",
+    "status": "Statut",
+    "ended": "🏁 Terminé",
+    "footer": "Sondage #{id}"
+  },
+  "select": {
+    "placeholder": "Choisissez une option…",
+    "placeholder_multi": "Choisissez une ou plusieurs options…"
+  },
+  "vote": {
+    "recorded": "🗳️ Vote enregistré : {options}",
+    "removed": "Votre vote a été retiré.",
+    "ended": "Ce sondage est terminé.",
+    "invalid_option": "Option invalide.",
+    "single_choice": "Ce sondage n'accepte qu'un seul choix."
+  },
+  "create": {
+    "success": "Sondage créé dans <#{channel}> (ID `{id}`).",
+    "invalid_options": "Options invalides : indiquez entre 2 et 10 options séparées par `|` (ex : `Rouge | Vert | Bleu`).",
+    "options_required": "Indiquez les options (`A | B | C`) ou choisissez le type Oui / Non.",
+    "invalid_duration": "Durée invalide : `{value}`. Exemples : `30m`, `1h`, `2d`.",
+    "channel_invalid": "Le salon choisi doit être un salon textuel."
+  },
+  "end": {
+    "success": "Sondage `#{id}` terminé ({count} votant(s)).",
+    "already_ended": "Ce sondage est déjà terminé."
+  },
+  "results": {
+    "title": "📊 Résultats — {question}",
+    "summary": "{voters} votant(s) · {total} voix",
+    "anonymous_notice": "🔒 Sondage anonyme : le détail des votants n'est pas disponible.",
+    "option_votes": "{percent}% · {count} vote(s)",
+    "voters_for": "Votants — {option}",
+    "no_voters": "Aucun votant"
+  },
+  "list": {
+    "title": "📊 Sondages — {server}",
+    "empty": "Aucun sondage.",
+    "line_active": "🟣 `#{id}` **{question}** — {count} votant(s){ends}",
+    "line_ended": "⚫ `#{id}` **{question}** — terminé — {count} votant(s)",
+    "ends_suffix": " — fin {when}"
+  },
+  "not_found": "Sondage introuvable (ID `{id}`).",
+  "commands": {
+    "description": "Gérer les sondages",
+    "create": "Créer un sondage",
+    "question": "Question posée",
+    "options": "Options séparées par | (2 à 10)",
+    "type": "Type de sondage",
+    "type_yes_no": "Oui / Non",
+    "type_multiple": "Choix multiples",
+    "anonymous": "Sondage anonyme (votants masqués)",
+    "multi_select": "Autoriser plusieurs choix par personne",
+    "duration": "Durée (ex : 1h, 2d) — vide = sans fin automatique",
+    "channel": "Salon de publication (défaut : salon actuel)",
+    "end": "Terminer un sondage",
+    "results": "Voir les résultats détaillés",
+    "list": "Lister les sondages",
+    "id": "ID du sondage"
+  }
+}

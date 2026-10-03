@@ -1,0 +1,69 @@
+{
+  "yes": "Yes",
+  "no": "No",
+  "embed": {
+    "votes": "{count} vote(s)",
+    "voters": "{count} voter(s)",
+    "anonymous": "🔒 Anonymous",
+    "multi_select": "☑️ Multiple choice",
+    "ends": "⏳ Ends",
+    "status": "Status",
+    "ended": "🏁 Ended",
+    "footer": "Poll #{id}"
+  },
+  "select": {
+    "placeholder": "Choose an option…",
+    "placeholder_multi": "Choose one or more options…"
+  },
+  "vote": {
+    "recorded": "🗳️ Vote recorded: {options}",
+    "removed": "Your vote has been removed.",
+    "ended": "This poll has ended.",
+    "invalid_option": "Invalid option.",
+    "single_choice": "This poll only accepts a single choice."
+  },
+  "create": {
+    "success": "Poll created in <#{channel}> (ID `{id}`).",
+    "invalid_options": "Invalid options: provide between 2 and 10 options separated by `|` (e.g. `Red | Green | Blue`).",
+    "options_required": "Provide the options (`A | B | C`) or choose the Yes / No type.",
+    "invalid_duration": "Invalid duration: `{value}`. Examples: `30m`, `1h`, `2d`.",
+    "channel_invalid": "The selected channel must be a text channel."
+  },
+  "end": {
+    "success": "Poll `#{id}` ended ({count} voter(s)).",
+    "already_ended": "This poll has already ended."
+  },
+  "results": {
+    "title": "📊 Results — {question}",
+    "summary": "{voters} voter(s) · {total} votes",
+    "anonymous_notice": "🔒 Anonymous poll: voter details are not available.",
+    "option_votes": "{percent}% · {count} vote(s)",
+    "voters_for": "Voters — {option}",
+    "no_voters": "No voters"
+  },
+  "list": {
+    "title": "📊 Polls — {server}",
+    "empty": "No polls.",
+    "line_active": "🟣 `#{id}` **{question}** — {count} voter(s){ends}",
+    "line_ended": "⚫ `#{id}` **{question}** — ended — {count} voter(s)",
+    "ends_suffix": " — ends {when}"
+  },
+  "not_found": "Poll not found (ID `{id}`).",
+  "commands": {
+    "description": "Manage polls",
+    "create": "Create a poll",
+    "question": "Question",
+    "options": "Options separated by | (2 to 10)",
+    "type": "Poll type",
+    "type_yes_no": "Yes / No",
+    "type_multiple": "Multiple choice",
+    "anonymous": "Anonymous poll (voters hidden)",
+    "multi_select": "Allow several choices per person",
+    "duration": "Duration (e.g. 1h, 2d) — empty = no automatic end",
+    "channel": "Channel to post in (default: current channel)",
+    "end": "End a poll",
+    "results": "Show detailed results",
+    "list": "List polls",
+    "id": "Poll ID"
+  }
+}

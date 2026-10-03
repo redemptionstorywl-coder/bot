@@ -1,0 +1,113 @@
+{
+  "status": {
+    "SCHEDULED": "Scheduled",
+    "ONGOING": "Ongoing",
+    "ENDED": "Ended",
+    "CANCELLED": "Cancelled"
+  },
+  "embed": {
+    "date": "📅 Date",
+    "ends": "🏁 Ends",
+    "location": "📍 Location",
+    "participants": "👥 Participants",
+    "role": "🔔 Role",
+    "registered": "Registered",
+    "and_more": "and {count} more",
+    "footer": "Event #{id}"
+  },
+  "buttons": {
+    "join": "Join",
+    "leave": "Leave",
+    "list": "List"
+  },
+  "reminder": {
+    "message": "⏰ The event **{name}** starts {when}"
+  },
+  "dm": {
+    "reminder": "⏰ Reminder: the event **{name}** starts {when}.",
+    "cancelled": "⛔ The event **{name}** you registered for has been cancelled."
+  },
+  "modal": {
+    "create_title": "Create an event",
+    "edit_title": "Edit event #{id}",
+    "name": "Name",
+    "name_placeholder": "Heist night, tournament…",
+    "description": "Description",
+    "description_placeholder": "Schedule, rules, useful information…",
+    "date": "Start date",
+    "date_placeholder": "31/01/2025 20:00 or in 2h",
+    "location": "Location (optional)",
+    "location_placeholder": "Voice channel, RP location…",
+    "max": "Max participants (optional)",
+    "max_placeholder": "E.g. 20 (empty = unlimited)"
+  },
+  "create": {
+    "success": "Event **{name}** created in <#{channel}> (ID `{id}`).",
+    "invalid_date": "Invalid date: `{value}`. Formats: `31/01/2025 20:00`, `2025-01-31 20:00`, `in 2h`.",
+    "past_date": "The start date must be in the future.",
+    "invalid_max": "The maximum number of participants must be a positive integer.",
+    "invalid_image": "The image URL is invalid.",
+    "expired": "The form expired, please run the command again.",
+    "channel_invalid": "The selected channel must be a text channel."
+  },
+  "edit": {
+    "success": "Event **{name}** updated.",
+    "not_editable": "This event has ended or been cancelled and can no longer be edited."
+  },
+  "cancel": {
+    "confirm_title": "Cancel the event?",
+    "confirm": "Do you really want to cancel **{name}** ({count} participant(s))? Participants will be notified by direct message.",
+    "button": "Cancel the event",
+    "keep": "Keep",
+    "success": "Event **{name}** cancelled.",
+    "aborted": "Cancellation aborted.",
+    "already": "This event is already cancelled.",
+    "not_yours": "Only the person who ran the command can confirm."
+  },
+  "list": {
+    "title": "📅 Events — {server}",
+    "empty": "No events.",
+    "line": "{emoji} `#{id}` **{name}** — {when} — {count} participant(s)",
+    "filter_all": "All",
+    "filter_scheduled": "Scheduled",
+    "filter_ongoing": "Ongoing",
+    "filter_ended": "Ended",
+    "filter_cancelled": "Cancelled"
+  },
+  "participants": {
+    "title": "👥 Participants — {name}",
+    "empty": "No participants yet.",
+    "count": "{count} participant(s)"
+  },
+  "remind": {
+    "success": "Reminder sent for **{name}**.",
+    "unavailable": "Cannot send a reminder for this event (ended or cancelled)."
+  },
+  "join": {
+    "success": "✅ You are registered for **{name}** ({count} registered).",
+    "already": "You are already registered for this event.",
+    "full": "This event is full.",
+    "closed": "Registrations for this event are closed."
+  },
+  "leave": {
+    "success": "❌ You are no longer registered for **{name}**.",
+    "not_joined": "You were not registered for this event.",
+    "closed": "Registrations for this event are closed."
+  },
+  "not_found": "Event not found (ID `{id}`).",
+  "commands": {
+    "description": "Manage server events",
+    "create": "Create an event (form)",
+    "create_image": "Image URL",
+    "create_role": "Role to mention",
+    "create_channel": "Channel to post in (default: current channel)",
+    "create_language": "Display language of the event",
+    "edit": "Edit an event",
+    "cancel": "Cancel an event",
+    "list": "List events",
+    "list_status": "Filter by status",
+    "participants": "Show the participants of an event",
+    "remind": "Send a manual reminder",
+    "id": "Event ID"
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "embed": {
+    "ends": "⏳ Ends",
+    "ended_at": "🏁 Ended",
+    "winners_count": "🏆 Winners",
+    "winners": "🏆 Winner(s) ({count})",
+    "no_winner": "No winner (not enough entries)",
+    "host": "🎤 Hosted by",
+    "entries": "👥 Entries",
+    "conditions": "📋 Requirements",
+    "condition_role": "Have the {role} role",
+    "condition_messages": "Have sent at least {count} message(s) on the server",
+    "status": "Status",
+    "cancelled": "⛔ Giveaway cancelled",
+    "footer": "Giveaway #{id}"
+  },
+  "buttons": {
+    "enter": "Enter"
+  },
+  "announce": {
+    "winners": "🎉 Congratulations {winners}! You won **{prize}**!",
+    "reroll": "🔁 Reroll: congratulations {winners}! You won **{prize}**!",
+    "no_winner": "😕 The giveaway **{prize}** ended without any valid entry."
+  },
+  "dm": {
+    "won": "🎉 Congratulations! You won **{prize}**. {link}"
+  },
+  "enter": {
+    "joined": "🎁 Entry recorded! Good luck ({count} entries).",
+    "left": "Your entry has been withdrawn ({count} entries).",
+    "ended": "This giveaway has ended.",
+    "missing_role": "You need the {role} role to enter.",
+    "min_messages": "You need at least **{required}** messages on the server to enter (you have {current})."
+  },
+  "create": {
+    "success": "Giveaway **{prize}** created in <#{channel}> (ID `{id}`), ends {when}.",
+    "invalid_duration": "Invalid duration: `{value}`. Examples: `30m`, `1h`, `2d`, `1w`.",
+    "channel_invalid": "The selected channel must be a text channel."
+  },
+  "end": {
+    "success": "Giveaway **{prize}** ended. Winner(s): {winners}",
+    "no_winner": "Giveaway **{prize}** ended without a winner.",
+    "already_ended": "This giveaway has already ended."
+  },
+  "reroll": {
+    "success": "Reroll for **{prize}**: {winners}",
+    "no_candidates": "No other entrant available for a reroll.",
+    "not_ended": "This giveaway has not ended yet. Use `/giveaway end` first."
+  },
+  "cancel": {
+    "success": "Giveaway **{prize}** cancelled.",
+    "already_ended": "This giveaway has already ended and cannot be cancelled."
+  },
+  "list": {
+    "title": "🎁 Giveaways — {server}",
+    "empty": "No giveaways.",
+    "line_active": "🟣 `#{id}` **{prize}** — ends {when} — {count} entries",
+    "line_ended": "⚫ `#{id}` **{prize}** — ended {when} — {winners}"
+  },
+  "not_found": "Giveaway not found (ID `{id}`).",
+  "commands": {
+    "description": "Manage giveaways",
+    "create": "Start a giveaway",
+    "prize": "Prize",
+    "duration": "Duration (e.g. 1h, 2d)",
+    "winners": "Number of winners",
+    "channel": "Channel to post in (default: current channel)",
+    "required_role": "Role required to enter",
+    "min_messages": "Minimum number of messages sent on the server",
+    "language": "Display language",
+    "description_opt": "Additional description",
+    "end": "End a giveaway now (draw)",
+    "reroll": "Draw new winners",
+    "reroll_count": "Number of winners to draw",
+    "cancel": "Cancel a giveaway (no draw)",
+    "list": "List giveaways",
+    "id": "Giveaway ID"
+  }
+}
