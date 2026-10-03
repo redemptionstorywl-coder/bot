@@ -116,6 +116,7 @@ DASHBOARD_URL=http://localhost:3000
 DASHBOARD_PORT=3000
 SESSION_SECRET=une-longue-chaine-aleatoire
 FIVEM_API_KEY=une-autre-chaine-aleatoire
+TEBEX_WEBHOOK_SECRET=        # optionnel, webhook Tebex
 ```
 
 Toutes les variables sont décrites dans [`.env.example`](.env.example).
@@ -187,7 +188,7 @@ pm2 save
 Démarre avec le bot sur `DASHBOARD_URL` (par défaut http://localhost:3000).
 
 - Connexion via **Discord OAuth2** ; accès réservé aux administrateurs des serveurs (ou `OWNER_IDS`).
-- Pages : Dashboard, Serveurs, Membres, Tickets, Embeds, Annonces, Bienvenue, Rôles, Reaction Roles, Logs, Modération, Giveaways, Événements, Battle Royale, School RP, Shop, Traductions, Paramètres.
+- Pages : Dashboard, Serveurs, Membres, Tickets, Embeds, Annonces, Bienvenue, Rôles, Reaction Roles, Logs, Modération, Giveaways, Événements, FiveM, Whitelist, Battle Royale, School RP, Shop, Traductions, Paramètres (+ une vue Administration globale pour les `OWNER_IDS`).
 - Chaque modification est appliquée **immédiatement** au bot (cache invalidé + Socket.IO).
 
 Voir [`dashboard/README.md`](dashboard/README.md) pour la structure et l'ajout de pages.
@@ -196,21 +197,23 @@ Voir [`dashboard/README.md`](dashboard/README.md) pour la structure et l'ajout d
 
 ## Commandes
 
-La liste complète et à jour est disponible avec `/help`. Principales commandes :
+La liste à jour est disponible avec `/help` (48 commandes). Principales commandes :
 
 | Catégorie | Commandes |
 | --- | --- |
-| Administration | `/guild-config`, `/help`, `/status`, `/fivem` |
-| Langue & rôles | `/language`, `/language-panel`, `/language-roles`, `/autorole`, `/rolemenu`, `/reactionrole`, `/notifications` |
-| Bienvenue | `/welcome-config`, `/leave-config` |
-| Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed` |
-| Tickets | `/ticket-panel`, `/ticket-type`, `/ticket` |
-| Modération | `/ban`, `/tempban`, `/unban`, `/kick`, `/warn`, `/warnings`, `/timeout`, `/untimeout`, `/purge`, `/slowmode`, `/lock`, `/unlock`, `/lockdown`, `/case`, `/history`, `/mod-config`, `/antiraid` |
-| Communauté | `/event`, `/giveaway`, `/poll` |
-| Whitelist | `/whitelist apply|review|status|list|config` |
-| Battle Royale | `/profile`, `/leaderboard wins|kills|level|kd`, `/battlepass`, `/br-link`, `/br-admin` |
-| School RP | `/school register|profile|class|house|club|apply|announce` |
-| Shop | `/shop catalog|product|category|order|announce` |
+| Administration | `/guild-config type|show|language|languages|staff-role|admin-role|log-channel|module|brand-color|translation-mode|language-channel`, `/help`, `/status`, `/fivem add|remove|list|status|maintenance|status-channel|players` |
+| Langue & rôles | `/language`, `/language-panel publish|refresh|preview`, `/language-roles set|remove|list|reset-defaults`, `/autorole add|remove|list`, `/rolemenu create|add-role|remove-role|publish|edit|delete|list`, `/reactionrole create|remove|list`, `/notifications setup|panel|add|remove|list` |
+| Bienvenue / départ | `/welcome-config enable|channel|message|embed-json|image|dm|dm-message|dm-embed|buttons|language-prompt|test|show`, `/leave-config enable|channel|message|embed-json|image|logs|test|show` |
+| Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |
+| Tickets | `/ticket-panel create|list|delete`, `/ticket-type create|edit|delete|list|questions`, `/ticket close|add|remove|claim|transcript|rename|info|list` |
+| Modération | `/ban`, `/tempban`, `/unban`, `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/purge`, `/slowmode`, `/lock`, `/unlock`, `/lockdown on|off|status`, `/case`, `/history`, `/mod-config thresholds|mute-role|dm|show`, `/antiraid status|spam|mentions|links|whitelist|new-account|bots|mass-join|exempt` |
+| Communauté | `/event create|edit|cancel|list|participants|remind`, `/giveaway create|end|reroll|cancel|list`, `/poll create|end|results|list` |
+| Whitelist (Prison / School) | `/whitelist apply|status|review|list|config` |
+| Battle Royale | `/profile`, `/leaderboard`, `/battlepass`, `/br-link`, `/br-admin season|stats|xp` |
+| School RP | `/school register|profile|apply|announce|class|house|club|config` |
+| Shop | `/shop catalog|announce|product|category|order` |
+
+Les commandes Battle Royale, School RP et Shop ne sont proposées que sur les serveurs du type correspondant (`/guild-config type`).
 
 ---
 
@@ -264,7 +267,7 @@ Voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). En résumé :
 npm test
 ```
 
-Les tests (Vitest) couvrent les systèmes critiques : tickets, permissions, traductions, rôles, sanctions, annonces, programmation, base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
+Les 535 tests (Vitest) couvrent les systèmes critiques : tickets, permissions, traductions, rôles, sanctions, annonces, programmation, base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
 
 ---
 
