@@ -262,22 +262,20 @@ export class LanguageService {
 
   /** Publie le panneau dans un salon (édite le message existant si même salon) et mémorise channelId/messageId. */
 
+
   /**
-   * Installation complète du système de langue sur un serveur :
-   *  1. crée les rôles de langue manquants (nom `🇫🇷・Français`), ou réutilise un rôle existant (ID par défaut ou même nom) ;
-   *  2. crée le salon de choix de langue s'il n'est pas fourni (lecture seule pour @everyone) ;
-   *  3. publie (ou met à jour) le panneau « CHOOSE YOUR LANGUAGE » ;
-   *  4. désactive le choix de langue sous le message de bienvenue.
+   * Crée les rôles de langue manquants (nom `🇫🇷・Français`) pour les langues données (défaut : langues activées).
+   * Réutilise un rôle existant par ID configuré, ID par défaut, ou nom. Appelé au démarrage pour chaque serveur.
    */
-  async setup(guild: Guild, opts: { channelId?: string; style?: PanelStyle; channelName?: string; languages?: string[] } = {}): Promise<{ createdRoles: string[]; reusedRoles: string[]; channelId: string; channelCreated: boolean; message: Message }> {
+  async ensureRoles(guild: Guild, languages?: string[]): Promise<{ createdRoles: string[]; reusedRoles: string[] }> {
     const config = await guildConfigService.getOrCreate(guild);
-    const languages = (opts.languages?.length ? opts.languages : config.enabledLanguages).filter((c) => getLanguage(c));
+    const codes = (languages?.length ? languages : config.enabledLanguages).filter((c) => getLanguage(c));
     const configured = await this.getLanguageRoleMap(guild.id);
     const createdRoles: string[] = [];
     const reusedRoles: string[] = [];
     const normalize = (n: string) => n.replace(/[\s・·|•-]+/g, ' ').trim().toLowerCase();
     await guild.roles.fetch();
-    for (const code of languages) {
+    for (const code of codes) {
       const def = getLanguage(code)!;
       const expectedName = `${def.flag}・${def.nativeLabel}`;
       let roleId = configured[code] && guild.roles.cache.has(configured[code]!) ? configured[code]! : undefined;
@@ -292,8 +290,47 @@ export class LanguageService {
         roleId = role.id;
         createdRoles.push(code);
       }
-      await this.setLanguageRole(guild.id, code, roleId, { emoji: def.flag, label: def.nativeLabel });
+      if (configured[code] !== roleId) await this.setLanguageRole(guild.id, code, roleId, { emoji: def.flag, label: def.nativeLabel });
     }
+    if (createdRoles.length) {
+      log.info({ guild: guild.id, createdRoles }, 'Rôles de langue créés');
+      await loggingService.log({ guildId: guild.id, category: LogCategory.ROLE, action: 'language.roles_created', title: '🌍 Rôles de langue créés', description: createdRoles.map((c) => `${getLanguage(c)?.flag} ${getLanguage(c)?.nativeLabel}`).join(', ') });
+    }
+    return { createdRoles, reusedRoles };
+  }
+
+  /** Crée les rôles de langue manquants sur tous les serveurs où le module langue est actif (démarrage). */
+  async ensureRolesEverywhere(): Promise<void> {
+    if (!this.client) return;
+    for (const guild of this.client.guilds.cache.values()) {
+      try {
+        const config = await guildConfigService.getOrCreate(guild);
+        if (!config.modules.language) continue;
+        const me = guild.members.me ?? (await guild.members.fetchMe().catch(() => null));
+        if (!me?.permissions.has(PermissionFlagsBits.ManageRoles)) {
+          log.warn({ guild: guild.id }, 'Rôles de langue non créés : permission ManageRoles manquante');
+          continue;
+        }
+        await this.ensureRoles(guild);
+      } catch (err) {
+        log.error({ err, guild: guild.id }, 'ensureRoles');
+      }
+    }
+  }
+
+  /**
+   * Installation complète du système de langue sur un serveur :
+   *  1. crée les rôles de langue manquants (nom `🇫🇷・Français`), ou réutilise un rôle existant (ID par défaut ou même nom) ;
+   *  2. crée le salon de choix de langue s'il n'est pas fourni (lecture seule pour @everyone) ;
+   *  3. publie (ou met à jour) le panneau « CHOOSE YOUR LANGUAGE » ;
+   *  4. désactive le choix de langue sous le message de bienvenue.
+   */
+  async setup(guild: Guild, opts: { channelId?: string; style?: PanelStyle; channelName?: string; languages?: string[] } = {}): Promise<{ createdRoles: string[]; reusedRoles: string[]; channelId: string; channelCreated: boolean; message: Message }> {
+    const config = await guildConfigService.getOrCreate(guild);
+    const languages = (opts.languages?.length ? opts.languages : config.enabledLanguages).filter((c) => getLanguage(c));
+    const configured = await this.getLanguageRoleMap(guild.id);
+    const { createdRoles, reusedRoles } = await this.ensureRoles(guild, languages);
+    const normalize = (n: string) => n.replace(/[\s・·|•-]+/g, ' ').trim().toLowerCase();
 
     let channelId = opts.channelId;
     let channelCreated = false;

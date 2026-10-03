@@ -1,6 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { defineButton } from '../structures';
-import { moderationService } from '../services/ModerationService';
+import { ModerationError, moderationService } from '../services/ModerationService';
 import { embedService } from '../services/EmbedService';
 import { buildCustomId } from '../utils/customId';
 import { lockdownReasonKey, pendingLockdownReasons } from '../commands/moderation/_shared';
@@ -26,6 +26,24 @@ export default defineButton({
     switch (action) {
       case 'cancel': {
         await interaction.update({ embeds: [embedService.info(t('moderation.buttons.cancelled'))], components: [] });
+        return;
+      }
+      case 'nuke': {
+        const channel = await interaction.guild.channels.fetch(a1 ?? '').catch(() => null);
+        if (!channel || !channel.isTextBased() || channel.isDMBased() || channel.isThread()) {
+          await interaction.update({ embeds: [embedService.error(t('core.channel_not_found'))], components: [] });
+          return;
+        }
+        await interaction.update({ embeds: [embedService.info(t('moderation.clear_channel.in_progress'))], components: [] });
+        try {
+          const result = await moderationService.nukeChannel({ channel, moderator: interaction.user });
+          const done = embedService.success(t('moderation.clear_channel.done', { channel: `<#${result.channel.id}>`, number: result.sanction.caseNumber }));
+          await interaction.editReply({ embeds: [done] }).catch(() => null);
+          if ('send' in result.channel) await result.channel.send({ embeds: [embedService.info(t('moderation.clear_channel.notice', { moderator: `<@${interaction.user.id}>` }))] }).catch(() => null);
+        } catch (err) {
+          const k = err instanceof ModerationError ? err.key : 'core.error';
+          await interaction.editReply({ embeds: [embedService.error(t(k))] }).catch(() => null);
+        }
         return;
       }
       case 'lockdown': {

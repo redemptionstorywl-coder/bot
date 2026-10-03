@@ -76,7 +76,8 @@
     "mute_role_missing": "Skonfigurowana rola mute już nie istnieje. Ustaw ją ponownie za pomocą `/mod-config mute-role`.",
     "channel_unsupported": "Ten typ kanału nie obsługuje tej akcji.",
     "missing_permissions": "Nie mam uprawnień wymaganych do wykonania tej akcji.",
-    "escalation_failed": "automatyczna akcja nie powiodła się (uprawnienia lub hierarchia)."
+    "escalation_failed": "automatyczna akcja nie powiodła się (uprawnienia lub hierarchia).",
+    "channel_type": "Tego typu kanału nie można wyczyścić."
   },
   "warnings": {
     "title": "Ostrzeżenia {user} ({count})",
@@ -173,8 +174,14 @@
       "mass_join": "{max} dołączeń w {seconds}s → automatyczny lockdown: {lockdown}",
       "exempt": "Role: {roles}\nKanały: {channels}"
     },
-    "link_actions": { "DELETE": "Usunięcie", "TIMEOUT": "Usunięcie + timeout" },
-    "account_actions": { "KICK": "Wyrzucenie", "QUARANTINE": "Rola kwarantanny" },
+    "link_actions": {
+      "DELETE": "Usunięcie",
+      "TIMEOUT": "Usunięcie + timeout"
+    },
+    "account_actions": {
+      "KICK": "Wyrzucenie",
+      "QUARANTINE": "Rola kwarantanny"
+    },
     "triggers": {
       "spam": "Spam",
       "mass_mention": "Masowe wzmianki",
@@ -207,5 +214,13 @@
       "not_a_bot": "Wskazany użytkownik nie jest botem.",
       "role_or_channel": "Podaj rolę lub kanał."
     }
+  },
+  "clear_channel": {
+    "title": "🧨 Wyczyść kanał",
+    "confirm": "Wszystkie wiadomości w {channel} zostaną usunięte. Kanał zostanie odtworzony identycznie (nazwa, uprawnienia, pozycja), a stary usunięty: jego ID się zmieni.\n\nTej akcji nie można cofnąć.",
+    "btn_confirm": "Wyczyść kanał",
+    "in_progress": "🧨 Odtwarzanie kanału…",
+    "done": "Kanał wyczyszczony: {channel} (sprawa #{number}).",
+    "notice": "🧹 Ten kanał został wyczyszczony przez {moderator}."
   }
 }

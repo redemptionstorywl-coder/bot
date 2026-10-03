@@ -76,7 +76,8 @@
     "mute_role_missing": "The configured mute role no longer exists. Set it again with `/mod-config mute-role`.",
     "channel_unsupported": "This channel type does not support this action.",
     "missing_permissions": "I do not have the permissions required for this action.",
-    "escalation_failed": "the automatic action failed (permissions or hierarchy)."
+    "escalation_failed": "the automatic action failed (permissions or hierarchy).",
+    "channel_type": "This channel type cannot be cleared."
   },
   "warnings": {
     "title": "Warnings of {user} ({count})",
@@ -173,8 +174,14 @@
       "mass_join": "{max} joins in {seconds}s → automatic lockdown: {lockdown}",
       "exempt": "Roles: {roles}\nChannels: {channels}"
     },
-    "link_actions": { "DELETE": "Delete", "TIMEOUT": "Delete + timeout" },
-    "account_actions": { "KICK": "Kick", "QUARANTINE": "Quarantine role" },
+    "link_actions": {
+      "DELETE": "Delete",
+      "TIMEOUT": "Delete + timeout"
+    },
+    "account_actions": {
+      "KICK": "Kick",
+      "QUARANTINE": "Quarantine role"
+    },
     "triggers": {
       "spam": "Spam",
       "mass_mention": "Mass mentions",
@@ -207,5 +214,13 @@
       "not_a_bot": "The given user is not a bot.",
       "role_or_channel": "Provide a role or a channel."
     }
+  },
+  "clear_channel": {
+    "title": "🧨 Clear channel",
+    "confirm": "All messages in {channel} will be deleted. The channel will be recreated identically (name, permissions, position) and the old one deleted: its ID changes.\n\nThis cannot be undone.",
+    "btn_confirm": "Clear channel",
+    "in_progress": "🧨 Recreating channel…",
+    "done": "Channel cleared: {channel} (case #{number}).",
+    "notice": "🧹 This channel was cleared by {moderator}."
   }
 }

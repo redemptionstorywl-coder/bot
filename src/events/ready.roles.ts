@@ -19,5 +19,7 @@ export default defineEvent({
     } catch (err) {
       log.error({ err }, 'Impossible de charger les reaction roles');
     }
+    // Rôles de langue manquants créés automatiquement sur chaque serveur
+    void languageService.ensureRolesEverywhere();
   },
 });

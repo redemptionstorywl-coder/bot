@@ -76,7 +76,8 @@
     "mute_role_missing": "O cargo de mute configurado não existe mais. Reconfigure-o com `/mod-config mute-role`.",
     "channel_unsupported": "Este tipo de canal não suporta esta ação.",
     "missing_permissions": "Não tenho as permissões necessárias para executar esta ação.",
-    "escalation_failed": "a ação automática falhou (permissões ou hierarquia)."
+    "escalation_failed": "a ação automática falhou (permissões ou hierarquia).",
+    "channel_type": "Este tipo de canal não pode ser limpo."
   },
   "warnings": {
     "title": "Advertências de {user} ({count})",
@@ -173,8 +174,14 @@
       "mass_join": "{max} entradas em {seconds}s → lockdown automático: {lockdown}",
       "exempt": "Cargos: {roles}\nCanais: {channels}"
     },
-    "link_actions": { "DELETE": "Exclusão", "TIMEOUT": "Exclusão + castigo" },
-    "account_actions": { "KICK": "Expulsão", "QUARANTINE": "Cargo de quarentena" },
+    "link_actions": {
+      "DELETE": "Exclusão",
+      "TIMEOUT": "Exclusão + castigo"
+    },
+    "account_actions": {
+      "KICK": "Expulsão",
+      "QUARANTINE": "Cargo de quarentena"
+    },
     "triggers": {
       "spam": "Spam",
       "mass_mention": "Menções em massa",
@@ -207,5 +214,13 @@
       "not_a_bot": "O usuário indicado não é um bot.",
       "role_or_channel": "Indique um cargo ou um canal."
     }
+  },
+  "clear_channel": {
+    "title": "🧨 Limpar o canal",
+    "confirm": "Todas as mensagens de {channel} serão apagadas. O canal será recriado de forma idêntica (nome, permissões, posição) e o antigo apagado: o ID muda.\n\nEsta ação é irreversível.",
+    "btn_confirm": "Limpar o canal",
+    "in_progress": "🧨 Recriando o canal…",
+    "done": "Canal limpo: {channel} (caso #{number}).",
+    "notice": "🧹 Este canal foi limpo por {moderator}."
   }
 }

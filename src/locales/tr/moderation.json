@@ -76,7 +76,8 @@
     "mute_role_missing": "Yapılandırılan mute rolü artık mevcut değil. `/mod-config mute-role` ile yeniden ayarla.",
     "channel_unsupported": "Bu kanal türü bu işlemi desteklemiyor.",
     "missing_permissions": "Bu işlemi gerçekleştirmek için gerekli izinlere sahip değilim.",
-    "escalation_failed": "otomatik işlem başarısız oldu (izinler veya hiyerarşi)."
+    "escalation_failed": "otomatik işlem başarısız oldu (izinler veya hiyerarşi).",
+    "channel_type": "Bu kanal türü temizlenemez."
   },
   "warnings": {
     "title": "{user} uyarıları ({count})",
@@ -173,8 +174,14 @@
       "mass_join": "{seconds} sn içinde {max} katılım → otomatik lockdown: {lockdown}",
       "exempt": "Roller: {roles}\nKanallar: {channels}"
     },
-    "link_actions": { "DELETE": "Silme", "TIMEOUT": "Silme + timeout" },
-    "account_actions": { "KICK": "Atma", "QUARANTINE": "Karantina rolü" },
+    "link_actions": {
+      "DELETE": "Silme",
+      "TIMEOUT": "Silme + timeout"
+    },
+    "account_actions": {
+      "KICK": "Atma",
+      "QUARANTINE": "Karantina rolü"
+    },
     "triggers": {
       "spam": "Spam",
       "mass_mention": "Toplu bahsetme",
@@ -207,5 +214,13 @@
       "not_a_bot": "Belirtilen kullanıcı bir bot değil.",
       "role_or_channel": "Bir rol veya kanal belirt."
     }
+  },
+  "clear_channel": {
+    "title": "🧨 Kanalı temizle",
+    "confirm": "{channel} kanalındaki tüm mesajlar silinecek. Kanal aynı şekilde yeniden oluşturulacak (ad, izinler, konum) ve eskisi silinecek: kimliği değişir.\n\nBu işlem geri alınamaz.",
+    "btn_confirm": "Kanalı temizle",
+    "in_progress": "🧨 Kanal yeniden oluşturuluyor…",
+    "done": "Kanal temizlendi: {channel} (vaka #{number}).",
+    "notice": "🧹 Bu kanal {moderator} tarafından temizlendi."
   }
 }

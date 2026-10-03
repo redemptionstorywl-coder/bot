@@ -76,7 +76,8 @@
     "mute_role_missing": "Die konfigurierte Mute-Rolle existiert nicht mehr. Konfiguriere sie erneut mit `/mod-config mute-role`.",
     "channel_unsupported": "Dieser Kanaltyp unterstützt diese Aktion nicht.",
     "missing_permissions": "Ich habe nicht die nötigen Berechtigungen für diese Aktion.",
-    "escalation_failed": "die automatische Aktion ist fehlgeschlagen (Berechtigungen oder Hierarchie)."
+    "escalation_failed": "die automatische Aktion ist fehlgeschlagen (Berechtigungen oder Hierarchie).",
+    "channel_type": "Dieser Kanaltyp kann nicht geleert werden."
   },
   "warnings": {
     "title": "Verwarnungen von {user} ({count})",
@@ -173,8 +174,14 @@
       "mass_join": "{max} Beitritte in {seconds}s → automatischer Lockdown: {lockdown}",
       "exempt": "Rollen: {roles}\nKanäle: {channels}"
     },
-    "link_actions": { "DELETE": "Löschen", "TIMEOUT": "Löschen + Timeout" },
-    "account_actions": { "KICK": "Kick", "QUARANTINE": "Quarantäne-Rolle" },
+    "link_actions": {
+      "DELETE": "Löschen",
+      "TIMEOUT": "Löschen + Timeout"
+    },
+    "account_actions": {
+      "KICK": "Kick",
+      "QUARANTINE": "Quarantäne-Rolle"
+    },
     "triggers": {
       "spam": "Spam",
       "mass_mention": "Massenerwähnungen",
@@ -207,5 +214,13 @@
       "not_a_bot": "Der angegebene Benutzer ist kein Bot.",
       "role_or_channel": "Gib eine Rolle oder einen Kanal an."
     }
+  },
+  "clear_channel": {
+    "title": "🧨 Kanal leeren",
+    "confirm": "Alle Nachrichten in {channel} werden gelöscht. Der Kanal wird identisch neu erstellt (Name, Rechte, Position) und der alte gelöscht: seine ID ändert sich.\n\nDies kann nicht rückgängig gemacht werden.",
+    "btn_confirm": "Kanal leeren",
+    "in_progress": "🧨 Kanal wird neu erstellt…",
+    "done": "Kanal geleert: {channel} (Fall #{number}).",
+    "notice": "🧹 Dieser Kanal wurde von {moderator} geleert."
   }
 }

@@ -715,6 +715,31 @@ export class ModerationService {
   }
 
   /** Verrouille un salon : refuse SendMessages à @everyone (l'état précédent est conservé dans la case). */
+
+  /**
+   * Vide totalement un salon : clone à l'identique (nom, sujet, permissions, position, mode lent, NSFW, catégorie)
+   * puis supprime l'original. Retourne le nouveau salon. Enregistre une case PURGE.
+   */
+  async nukeChannel(opts: { channel: GuildTextBasedChannel; moderator: User; reason?: string | null }): Promise<{ channel: GuildTextBasedChannel; sanction: Sanction }> {
+    const { channel, moderator } = opts;
+    if (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement) throw new ModerationError('moderation.errors.channel_type');
+    const position = channel.position;
+    const clone = await channel.clone({ reason: auditReason(moderator, opts.reason ?? 'clear-salon') });
+    await clone.setPosition(position).catch(() => null);
+    await channel.delete(auditReason(moderator, opts.reason ?? 'clear-salon'));
+    const sanction = await this.createSanction({
+      guildId: channel.guild.id,
+      type: 'PURGE',
+      userId: null,
+      moderatorId: moderator.id,
+      reason: opts.reason ?? null,
+      channelId: clone.id,
+      metadata: { nuke: true, oldChannelId: channel.id, name: channel.name },
+    });
+    await this.logSanction(channel.guild.id, sanction, { moderator, extraFields: [{ key: 'channel', value: `<#${clone.id}> (${channel.name})`, inline: true }] });
+    return { channel: clone as GuildTextBasedChannel, sanction };
+  }
+
   async lockChannel(opts: { channel: GuildTextBasedChannel; moderator: User; reason?: string | null }): Promise<Sanction> {
     const { channel, moderator } = opts;
     if (channel.isThread() || !('permissionOverwrites' in channel)) throw new ModerationError('moderation.errors.channel_unsupported');

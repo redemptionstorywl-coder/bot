@@ -217,7 +217,7 @@ La liste à jour est disponible avec `/help` (48 commandes). Principales command
 | Bienvenue / départ | `/welcome-config` — panneau interactif éphémère (onglets Bienvenue / Départ : activation, salon, message, embed, image, DM, bouton langue, boutons liens, logs des départs, test) |
 | Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |
 | Tickets | `/ticket-panel create|list|delete`, `/ticket-type create|edit|delete|list|questions`, `/ticket close|add|remove|claim|transcript|rename|info|list` |
-| Modération | `/ban`, `/tempban`, `/unban`, `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/purge`, `/slowmode`, `/lock`, `/unlock`, `/lockdown on|off|status`, `/case`, `/history`, `/mod-config thresholds|mute-role|dm|show`, `/antiraid status|spam|mentions|links|whitelist|new-account|bots|mass-join|exempt` |
+| Modération | `/ban`, `/tempban`, `/unban`, `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/clear` (N messages), `/clear-salon` (tout le salon), `/slowmode`, `/lock`, `/unlock`, `/lockdown on|off|status`, `/case`, `/history`, `/mod-config thresholds|mute-role|dm|show`, `/antiraid status|spam|mentions|links|whitelist|new-account|bots|mass-join|exempt` |
 | Communauté | `/event create|edit|cancel|list|participants|remind`, `/giveaway create|end|reroll|cancel|list`, `/poll create|end|results|list` |
 | Whitelist (Prison / School) | `/whitelist apply|status|review|list|config` |
 | Battle Royale | `/profile`, `/leaderboard`, `/battlepass`, `/br-link`, `/br-admin season|stats|xp` |

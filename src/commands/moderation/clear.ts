@@ -6,8 +6,8 @@ import { EPHEMERAL, MOD_PERMS, errorKey, readReason, replyError } from './_share
 
 export default defineCommand({
   data: new SlashCommandBuilder()
-    .setName('purge')
-    .setDescription('Supprimer des messages en masse (moins de 14 jours)')
+    .setName('clear')
+    .setDescription('Supprimer un nombre de messages dans ce salon')
     .addIntegerOption((o) => o.setName('amount').setDescription('Nombre de messages à supprimer (1-500)').setRequired(true).setMinValue(1).setMaxValue(500))
     .addUserOption((o) => o.setName('user').setDescription('Ne supprimer que les messages de cet utilisateur'))
     .addStringOption((o) =>

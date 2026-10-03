@@ -76,7 +76,8 @@
     "mute_role_missing": "Le rôle mute configuré n'existe plus. Reconfigurez-le avec `/mod-config mute-role`.",
     "channel_unsupported": "Ce type de salon ne supporte pas cette action.",
     "missing_permissions": "Je n'ai pas les permissions nécessaires pour effectuer cette action.",
-    "escalation_failed": "l'action automatique a échoué (permissions ou hiérarchie)."
+    "escalation_failed": "l'action automatique a échoué (permissions ou hiérarchie).",
+    "channel_type": "Ce type de salon ne peut pas être vidé."
   },
   "warnings": {
     "title": "Avertissements de {user} ({count})",
@@ -173,8 +174,14 @@
       "mass_join": "{max} arrivées en {seconds}s → lockdown automatique : {lockdown}",
       "exempt": "Rôles : {roles}\nSalons : {channels}"
     },
-    "link_actions": { "DELETE": "Suppression", "TIMEOUT": "Suppression + timeout" },
-    "account_actions": { "KICK": "Expulsion", "QUARANTINE": "Rôle quarantaine" },
+    "link_actions": {
+      "DELETE": "Suppression",
+      "TIMEOUT": "Suppression + timeout"
+    },
+    "account_actions": {
+      "KICK": "Expulsion",
+      "QUARANTINE": "Rôle quarantaine"
+    },
     "triggers": {
       "spam": "Spam",
       "mass_mention": "Mentions en masse",
@@ -207,5 +214,13 @@
       "not_a_bot": "L'utilisateur indiqué n'est pas un bot.",
       "role_or_channel": "Indiquez un rôle ou un salon."
     }
+  },
+  "clear_channel": {
+    "title": "🧨 Vider le salon",
+    "confirm": "Tous les messages de {channel} vont être supprimés. Le salon sera recréé à l'identique (nom, permissions, position) et l'ancien supprimé : son identifiant change.\n\nCette action est irréversible.",
+    "btn_confirm": "Vider le salon",
+    "in_progress": "🧨 Salon en cours de recréation…",
+    "done": "Salon vidé : {channel} (case #{number}).",
+    "notice": "🧹 Ce salon a été vidé par {moderator}."
   }
 }

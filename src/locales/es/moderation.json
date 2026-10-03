@@ -76,7 +76,8 @@
     "mute_role_missing": "El rol mute configurado ya no existe. Vuelve a configurarlo con `/mod-config mute-role`.",
     "channel_unsupported": "Este tipo de canal no admite esta acción.",
     "missing_permissions": "No tengo los permisos necesarios para realizar esta acción.",
-    "escalation_failed": "la acción automática ha fallado (permisos o jerarquía)."
+    "escalation_failed": "la acción automática ha fallado (permisos o jerarquía).",
+    "channel_type": "Este tipo de canal no se puede vaciar."
   },
   "warnings": {
     "title": "Advertencias de {user} ({count})",
@@ -173,8 +174,14 @@
       "mass_join": "{max} llegadas en {seconds}s → lockdown automático: {lockdown}",
       "exempt": "Roles: {roles}\nCanales: {channels}"
     },
-    "link_actions": { "DELETE": "Eliminación", "TIMEOUT": "Eliminación + timeout" },
-    "account_actions": { "KICK": "Expulsión", "QUARANTINE": "Rol de cuarentena" },
+    "link_actions": {
+      "DELETE": "Eliminación",
+      "TIMEOUT": "Eliminación + timeout"
+    },
+    "account_actions": {
+      "KICK": "Expulsión",
+      "QUARANTINE": "Rol de cuarentena"
+    },
     "triggers": {
       "spam": "Spam",
       "mass_mention": "Menciones masivas",
@@ -207,5 +214,13 @@
       "not_a_bot": "El usuario indicado no es un bot.",
       "role_or_channel": "Indica un rol o un canal."
     }
+  },
+  "clear_channel": {
+    "title": "🧨 Vaciar el canal",
+    "confirm": "Se eliminarán todos los mensajes de {channel}. El canal se recreará idéntico (nombre, permisos, posición) y el antiguo se eliminará: su ID cambia.\n\nEsta acción es irreversible.",
+    "btn_confirm": "Vaciar el canal",
+    "in_progress": "🧨 Recreando el canal…",
+    "done": "Canal vaciado: {channel} (caso #{number}).",
+    "notice": "🧹 Este canal fue vaciado por {moderator}."
   }
 }

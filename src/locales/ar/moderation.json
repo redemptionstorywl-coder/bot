@@ -76,7 +76,8 @@
     "mute_role_missing": "رتبة الكتم المُعدّة لم تعد موجودة. أعد إعدادها عبر `/mod-config mute-role`.",
     "channel_unsupported": "هذا النوع من القنوات لا يدعم هذا الإجراء.",
     "missing_permissions": "لا أملك الصلاحيات اللازمة لتنفيذ هذا الإجراء.",
-    "escalation_failed": "فشل الإجراء التلقائي (الصلاحيات أو التسلسل)."
+    "escalation_failed": "فشل الإجراء التلقائي (الصلاحيات أو التسلسل).",
+    "channel_type": "لا يمكن تفريغ هذا النوع من القنوات."
   },
   "warnings": {
     "title": "تحذيرات {user} ({count})",
@@ -173,8 +174,14 @@
       "mass_join": "{max} انضمامات خلال {seconds} ثانية → إغلاق تام تلقائي: {lockdown}",
       "exempt": "الرتب: {roles}\nالقنوات: {channels}"
     },
-    "link_actions": { "DELETE": "حذف", "TIMEOUT": "حذف + إسكات مؤقت" },
-    "account_actions": { "KICK": "طرد", "QUARANTINE": "رتبة الحجر" },
+    "link_actions": {
+      "DELETE": "حذف",
+      "TIMEOUT": "حذف + إسكات مؤقت"
+    },
+    "account_actions": {
+      "KICK": "طرد",
+      "QUARANTINE": "رتبة الحجر"
+    },
     "triggers": {
       "spam": "سبام",
       "mass_mention": "إشارات جماعية",
@@ -207,5 +214,13 @@
       "not_a_bot": "المستخدم المحدد ليس بوتًا.",
       "role_or_channel": "حدد رتبة أو قناة."
     }
+  },
+  "clear_channel": {
+    "title": "🧨 تفريغ القناة",
+    "confirm": "سيتم حذف جميع رسائل {channel}. ستُعاد القناة بنفس الإعدادات (الاسم، الصلاحيات، الموضع) وتُحذف القديمة: سيتغير معرّفها.\n\nلا يمكن التراجع عن هذا الإجراء.",
+    "btn_confirm": "تفريغ القناة",
+    "in_progress": "🧨 جارٍ إعادة إنشاء القناة…",
+    "done": "تم تفريغ القناة: {channel} (الحالة #{number}).",
+    "notice": "🧹 تم تفريغ هذه القناة بواسطة {moderator}."
   }
 }
