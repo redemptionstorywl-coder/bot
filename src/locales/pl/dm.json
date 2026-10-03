@@ -1,0 +1,33 @@
+{
+  "user": {
+    "sent": "Wiadomość prywatna wysłana do {user}."
+  },
+  "all": {
+    "everyone": "wszyscy członkowie",
+    "confirm_title": "✉️ Masowa wysyłka — potwierdzenie",
+    "confirm": "Powyższa wiadomość zostanie wysłana prywatnie do **{count} członków** ({target}). Szacowany czas: ~{minutes} min.\n\nTej akcji nie można cofnąć.",
+    "confirm_footer": "Członkowie z zamkniętymi DM nic nie otrzymają.",
+    "btn_confirm": "Wyślij do {count} członków",
+    "aborted": "Wysyłka anulowana.",
+    "cancelled": "Masowa wysyłka zostanie zatrzymana.",
+    "no_job": "Brak trwającej masowej wysyłki.",
+    "no_targets": "Brak wybranych członków.",
+    "progress_title": "✉️ Masowa wysyłka",
+    "status_running": "w toku…",
+    "status_done": "zakończono",
+    "status_cancelled": "anulowano",
+    "f_sent": "Wysłane",
+    "f_closed": "Zamknięte DM",
+    "f_failed": "Błędy"
+  },
+  "errors": {
+    "dm_closed": "{user} ma wyłączone wiadomości prywatne.",
+    "bot": "Nie można wysłać wiadomości prywatnej do bota.",
+    "unknown": "Nie udało się wysłać wiadomości do {user}.",
+    "mass_dm_running": "Masowa wysyłka już trwa. Użyj `/dm status` lub `/dm cancel`.",
+    "expired": "To potwierdzenie wygasło. Uruchom komendę ponownie."
+  },
+  "log": {
+    "user_title": "✉️ Wysłano wiadomość prywatną"
+  }
+}

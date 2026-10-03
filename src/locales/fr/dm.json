@@ -1,0 +1,33 @@
+{
+  "user": {
+    "sent": "Message privé envoyé à {user}."
+  },
+  "all": {
+    "everyone": "tous les membres",
+    "confirm_title": "✉️ Envoi massif — confirmation",
+    "confirm": "Le message ci-dessus va être envoyé en privé à **{count} membres** ({target}). Durée estimée : ~{minutes} min.\n\nCette action est irréversible.",
+    "confirm_footer": "Les membres ayant fermé leurs DM ne recevront rien.",
+    "btn_confirm": "Envoyer à {count} membres",
+    "aborted": "Envoi annulé.",
+    "cancelled": "L'envoi massif va s'arrêter.",
+    "no_job": "Aucun envoi massif en cours.",
+    "no_targets": "Aucun membre ciblé.",
+    "progress_title": "✉️ Envoi massif",
+    "status_running": "en cours…",
+    "status_done": "terminé",
+    "status_cancelled": "annulé",
+    "f_sent": "Envoyés",
+    "f_closed": "DM fermés",
+    "f_failed": "Échecs"
+  },
+  "errors": {
+    "dm_closed": "{user} a désactivé ses messages privés.",
+    "bot": "Impossible d'envoyer un message privé à un bot.",
+    "unknown": "Le message n'a pas pu être envoyé à {user}.",
+    "mass_dm_running": "Un envoi massif est déjà en cours. Utilisez `/dm status` ou `/dm cancel`.",
+    "expired": "Cette confirmation a expiré. Relancez la commande."
+  },
+  "log": {
+    "user_title": "✉️ Message privé envoyé"
+  }
+}

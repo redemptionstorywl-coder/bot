@@ -1,0 +1,33 @@
+{
+  "user": {
+    "sent": "Direct message sent to {user}."
+  },
+  "all": {
+    "everyone": "all members",
+    "confirm_title": "✉️ Mass DM — confirmation",
+    "confirm": "The message above will be sent privately to **{count} members** ({target}). Estimated time: ~{minutes} min.\n\nThis cannot be undone.",
+    "confirm_footer": "Members with closed DMs will not receive it.",
+    "btn_confirm": "Send to {count} members",
+    "aborted": "Sending cancelled.",
+    "cancelled": "The mass DM will stop.",
+    "no_job": "No mass DM in progress.",
+    "no_targets": "No member targeted.",
+    "progress_title": "✉️ Mass DM",
+    "status_running": "in progress…",
+    "status_done": "done",
+    "status_cancelled": "cancelled",
+    "f_sent": "Sent",
+    "f_closed": "Closed DMs",
+    "f_failed": "Failed"
+  },
+  "errors": {
+    "dm_closed": "{user} has direct messages disabled.",
+    "bot": "Cannot send a direct message to a bot.",
+    "unknown": "The message could not be sent to {user}.",
+    "mass_dm_running": "A mass DM is already running. Use `/dm status` or `/dm cancel`.",
+    "expired": "This confirmation has expired. Run the command again."
+  },
+  "log": {
+    "user_title": "✉️ Direct message sent"
+  }
+}

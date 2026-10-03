@@ -212,7 +212,7 @@ La liste à jour est disponible avec `/help` (48 commandes). Principales command
 
 | Catégorie | Commandes |
 | --- | --- |
-| Administration | `/guild-config type|show|language|languages|staff-role|admin-role|log-channel|module|brand-color|translation-mode|language-channel`, `/help`, `/status`, `/fivem add|remove|list|status|maintenance|status-channel|players` |
+| Administration | `/dm user|all|status|cancel` (messages privés via le bot), `/guild-config type|show|language|languages|staff-role|admin-role|log-channel|module|brand-color|translation-mode|language-channel`, `/help`, `/status`, `/fivem add|remove|list|status|maintenance|status-channel|players` |
 | Langue & rôles | `/language`, `/language-panel publish|refresh|preview`, `/language-roles set|remove|list|reset-defaults`, `/autorole add|remove|list`, `/rolemenu create|add-role|remove-role|publish|edit|delete|list`, `/reactionrole create|remove|list`, `/notifications setup|panel|add|remove|list` |
 | Bienvenue / départ | `/welcome-config enable|channel|message|embed-json|image|dm|dm-message|dm-embed|buttons|language-prompt|test|show`, `/leave-config enable|channel|message|embed-json|image|logs|test|show` |
 | Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |

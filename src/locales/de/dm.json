@@ -1,0 +1,33 @@
+{
+  "user": {
+    "sent": "Direktnachricht an {user} gesendet."
+  },
+  "all": {
+    "everyone": "alle Mitglieder",
+    "confirm_title": "✉️ Massen-DM — Bestätigung",
+    "confirm": "Die obige Nachricht wird privat an **{count} Mitglieder** ({target}) gesendet. Geschätzte Dauer: ~{minutes} Min.\n\nDies kann nicht rückgängig gemacht werden.",
+    "confirm_footer": "Mitglieder mit geschlossenen DMs erhalten nichts.",
+    "btn_confirm": "An {count} Mitglieder senden",
+    "aborted": "Versand abgebrochen.",
+    "cancelled": "Der Massenversand wird gestoppt.",
+    "no_job": "Kein Massenversand läuft.",
+    "no_targets": "Kein Mitglied ausgewählt.",
+    "progress_title": "✉️ Massen-DM",
+    "status_running": "läuft…",
+    "status_done": "abgeschlossen",
+    "status_cancelled": "abgebrochen",
+    "f_sent": "Gesendet",
+    "f_closed": "Geschlossene DMs",
+    "f_failed": "Fehler"
+  },
+  "errors": {
+    "dm_closed": "{user} hat Direktnachrichten deaktiviert.",
+    "bot": "An einen Bot kann keine Direktnachricht gesendet werden.",
+    "unknown": "Die Nachricht konnte nicht an {user} gesendet werden.",
+    "mass_dm_running": "Ein Massenversand läuft bereits. Nutze `/dm status` oder `/dm cancel`.",
+    "expired": "Diese Bestätigung ist abgelaufen. Führe den Befehl erneut aus."
+  },
+  "log": {
+    "user_title": "✉️ Direktnachricht gesendet"
+  }
+}

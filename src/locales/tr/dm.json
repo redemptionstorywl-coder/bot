@@ -1,0 +1,33 @@
+{
+  "user": {
+    "sent": "{user} kullanıcısına özel mesaj gönderildi."
+  },
+  "all": {
+    "everyone": "tüm üyeler",
+    "confirm_title": "✉️ Toplu DM — onay",
+    "confirm": "Yukarıdaki mesaj **{count} üyeye** ({target}) özel olarak gönderilecek. Tahmini süre: ~{minutes} dk.\n\nBu işlem geri alınamaz.",
+    "confirm_footer": "DM'leri kapalı olan üyeler mesajı almaz.",
+    "btn_confirm": "{count} üyeye gönder",
+    "aborted": "Gönderim iptal edildi.",
+    "cancelled": "Toplu gönderim durdurulacak.",
+    "no_job": "Devam eden toplu gönderim yok.",
+    "no_targets": "Hedeflenen üye yok.",
+    "progress_title": "✉️ Toplu DM",
+    "status_running": "devam ediyor…",
+    "status_done": "tamamlandı",
+    "status_cancelled": "iptal edildi",
+    "f_sent": "Gönderilen",
+    "f_closed": "Kapalı DM",
+    "f_failed": "Başarısız"
+  },
+  "errors": {
+    "dm_closed": "{user} özel mesajları kapatmış.",
+    "bot": "Bir bota özel mesaj gönderilemez.",
+    "unknown": "Mesaj {user} kullanıcısına gönderilemedi.",
+    "mass_dm_running": "Zaten bir toplu gönderim devam ediyor. `/dm status` veya `/dm cancel` kullan.",
+    "expired": "Bu onayın süresi doldu. Komutu yeniden çalıştır."
+  },
+  "log": {
+    "user_title": "✉️ Özel mesaj gönderildi"
+  }
+}
