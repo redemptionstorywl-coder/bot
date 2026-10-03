@@ -1,0 +1,62 @@
+{
+  "default_message": "👋 Bienvenue {user} sur **{server}** !",
+  "buttons": {
+    "choose_language": "Choisir ma langue"
+  },
+  "config": {
+    "enabled_set": "Message de bienvenue : {state}",
+    "channel_set": "Salon de bienvenue : {channel}",
+    "image_set": "Image de bienvenue : {state}",
+    "dm_set": "DM de bienvenue : {state}",
+    "language_prompt_set": "Bouton « 🌍 Choisir ma langue » : {state}",
+    "buttons_set": "{count} bouton(s) enregistré(s).",
+    "buttons_cleared": "Boutons supprimés.",
+    "invalid_json": "JSON invalide :\n```\n{details}\n```",
+    "value_set": "{kind} ({what}) enregistré — {language}.",
+    "value_cleared": "{kind} ({what}) effacé.",
+    "all_languages": "toutes les langues",
+    "target_welcome": "bienvenue",
+    "target_dm": "DM",
+    "target_leave": "départ",
+    "kind_message": "Message",
+    "kind_embed": "Embed",
+    "modal_title_message": "Message — {target}",
+    "modal_title_embed": "Embed JSON — {target}",
+    "modal_title_buttons": "Boutons (JSON)",
+    "modal_label_message": "Texte ({language})",
+    "modal_label_embed": "EmbedSpec JSON ({language})",
+    "modal_label_buttons": "ButtonSpec[] JSON",
+    "modal_help_message": "Variables : {user} {username} {server} {memberCount}… Vide = effacer.",
+    "modal_help_embed": "{\"title\":\"…\",\"description\":\"…\",\"color\":\"#7C3AED\"} — vide = effacer.",
+    "modal_help_buttons": "[{\"label\":\"Site\",\"style\":\"link\",\"url\":\"https://…\"}] — vide = effacer.",
+    "test_sent": "Message de test envoyé dans {channel}.",
+    "not_configured": "Aucune configuration : commencez par `/welcome-config channel`.",
+    "show_title": "👋 Bienvenue — {server}",
+    "field_enabled": "État",
+    "field_language_prompt": "Bouton langue",
+    "field_buttons": "Boutons",
+    "field_image": "Image",
+    "field_dm": "DM",
+    "background": "fond personnalisé",
+    "variables": "Variables disponibles"
+  },
+  "leave": {
+    "default_message": "👋 **{username}** a quitté le serveur. Nous sommes désormais {memberCount}.",
+    "image_title": "AU REVOIR",
+    "image_subtitle": "{username} · {memberCount} membres",
+    "log_title": "👤 Membre parti",
+    "log_description": "{user} (`{tag}`) a quitté le serveur — {memberCount} membres",
+    "log_joined": "Arrivé",
+    "log_roles": "Rôles",
+    "config": {
+      "enabled_set": "Message de départ : {state}",
+      "channel_set": "Salon des départs : {channel}",
+      "image_set": "Image de départ : {state}",
+      "logs_set": "Logs des départs : {state}",
+      "test_sent": "Message de test envoyé dans {channel}.",
+      "not_configured": "Aucune configuration : commencez par `/leave-config channel`.",
+      "show_title": "👋 Départ — {server}",
+      "field_logs": "Logs"
+    }
+  }
+}

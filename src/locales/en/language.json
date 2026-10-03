@@ -1,0 +1,36 @@
+{
+  "panel": {
+    "title": "🌍 CHOOSE YOUR LANGUAGE",
+    "description": "Select your language to receive translated messages and announcements.\nSélectionnez votre langue pour recevoir les messages et annonces traduits.",
+    "published": "Language panel published in {channel} — [open]({url})",
+    "refreshed": "Language panel updated.",
+    "not_published": "No panel published yet. Use `/language-panel publish`.",
+    "preview_note": "Panel preview (buttons are functional):"
+  },
+  "select": {
+    "placeholder": "Choose your language…",
+    "prompt": "🌍 Choose your language:"
+  },
+  "changed": "✅ Language set: {flag} **{language}**",
+  "not_enabled": "⛔ The language {flag} **{language}** is not enabled on this server.",
+  "no_role": "ℹ️ No role is linked to this language: your preference has been saved.",
+  "blocked_roles": "⚠️ I could not manage: {roles} (role hierarchy).",
+  "guild_unavailable": "Server not found: use this action from the server.",
+  "module_disabled": "The language module is disabled on this server.",
+  "roles": {
+    "set": "{flag} **{language}** → {role}",
+    "removed": "Mapping removed for {flag} **{language}**.",
+    "reset_title": "🌍 Language roles reset",
+    "none_default": "No default role exists on this server. Use `/language-roles set`.",
+    "missing": "Default roles not found",
+    "list_title": "🌍 Language roles",
+    "using_defaults": "Default roles (Battle Royale) — no custom configuration"
+  },
+  "log": {
+    "title": "🌍 Language change",
+    "description": "{user} chose {flag} **{language}**",
+    "role_added": "Role added",
+    "roles_removed": "Roles removed",
+    "blocked": "Not managed (hierarchy)"
+  }
+}

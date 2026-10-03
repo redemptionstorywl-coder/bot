@@ -1,0 +1,62 @@
+{
+  "default_message": "👋 Welcome {user} to **{server}**!",
+  "buttons": {
+    "choose_language": "Choose my language"
+  },
+  "config": {
+    "enabled_set": "Welcome message: {state}",
+    "channel_set": "Welcome channel: {channel}",
+    "image_set": "Welcome image: {state}",
+    "dm_set": "Welcome DM: {state}",
+    "language_prompt_set": "“🌍 Choose my language” button: {state}",
+    "buttons_set": "{count} button(s) saved.",
+    "buttons_cleared": "Buttons removed.",
+    "invalid_json": "Invalid JSON:\n```\n{details}\n```",
+    "value_set": "{kind} ({what}) saved — {language}.",
+    "value_cleared": "{kind} ({what}) cleared.",
+    "all_languages": "all languages",
+    "target_welcome": "welcome",
+    "target_dm": "DM",
+    "target_leave": "leave",
+    "kind_message": "Message",
+    "kind_embed": "Embed",
+    "modal_title_message": "Message — {target}",
+    "modal_title_embed": "Embed JSON — {target}",
+    "modal_title_buttons": "Buttons (JSON)",
+    "modal_label_message": "Text ({language})",
+    "modal_label_embed": "EmbedSpec JSON ({language})",
+    "modal_label_buttons": "ButtonSpec[] JSON",
+    "modal_help_message": "Variables: {user} {username} {server} {memberCount}… Empty = clear.",
+    "modal_help_embed": "{\"title\":\"…\",\"description\":\"…\",\"color\":\"#7C3AED\"} — empty = clear.",
+    "modal_help_buttons": "[{\"label\":\"Website\",\"style\":\"link\",\"url\":\"https://…\"}] — empty = clear.",
+    "test_sent": "Test message sent to {channel}.",
+    "not_configured": "Nothing configured yet: start with `/welcome-config channel`.",
+    "show_title": "👋 Welcome — {server}",
+    "field_enabled": "Status",
+    "field_language_prompt": "Language button",
+    "field_buttons": "Buttons",
+    "field_image": "Image",
+    "field_dm": "DM",
+    "background": "custom background",
+    "variables": "Available variables"
+  },
+  "leave": {
+    "default_message": "👋 **{username}** left the server. We are now {memberCount}.",
+    "image_title": "GOODBYE",
+    "image_subtitle": "{username} · {memberCount} members",
+    "log_title": "👤 Member left",
+    "log_description": "{user} (`{tag}`) left the server — {memberCount} members",
+    "log_joined": "Joined",
+    "log_roles": "Roles",
+    "config": {
+      "enabled_set": "Leave message: {state}",
+      "channel_set": "Leave channel: {channel}",
+      "image_set": "Leave image: {state}",
+      "logs_set": "Leave logs: {state}",
+      "test_sent": "Test message sent to {channel}.",
+      "not_configured": "Nothing configured yet: start with `/leave-config channel`.",
+      "show_title": "👋 Leave — {server}",
+      "field_logs": "Logs"
+    }
+  }
+}

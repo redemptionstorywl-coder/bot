@@ -1,0 +1,328 @@
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  GuildMember,
+  MessageFlags,
+  type Client,
+  type EmbedBuilder,
+  type Guild,
+  type Message,
+  type MessageActionRowComponentBuilder,
+  type MessageComponentInteraction,
+  type RepliableInteraction,
+} from 'discord.js';
+import { AutoRoleType, LogCategory, PanelStyle, type LanguageRole } from '@prisma/client';
+import { prisma } from '../database/client';
+import { BRAND, LANGUAGES, getLanguage, type LanguageDefinition } from '../config/constants';
+import { TTLCache } from '../utils/cache';
+import { childLogger } from '../utils/logger';
+import { buildCustomId } from '../utils/customId';
+import { colorToHex, embedService } from './EmbedService';
+import { guildConfigService, type ResolvedGuildConfig } from './GuildConfigService';
+import { loggingService } from './LoggingService';
+import { roleService } from './RoleService';
+import { translationService, type Translator } from './TranslationService';
+import { renderWelcome, welcomeService } from './WelcomeService';
+
+const log = childLogger('LanguageService');
+
+export type LanguageRoleMap = Record<string, string>;
+
+/** Map `{ lang: roleId }` construite depuis LANGUAGES[].defaultRoleId, limitée aux rôles existants. */
+export function buildDefaultRoleMap(hasRole: (roleId: string) => boolean): LanguageRoleMap {
+  const out: LanguageRoleMap = {};
+  for (const l of LANGUAGES) if (l.defaultRoleId && hasRole(l.defaultRoleId)) out[l.code] = l.defaultRoleId;
+  return out;
+}
+
+/** Map effective : LanguageRole configurés, sinon rôles par défaut (Battle Royale) présents sur le serveur. */
+export function resolveRoleMap(configured: LanguageRoleMap, hasRole: (roleId: string) => boolean): LanguageRoleMap {
+  const filtered: LanguageRoleMap = {};
+  for (const [lang, roleId] of Object.entries(configured)) if (hasRole(roleId)) filtered[lang] = roleId;
+  if (Object.keys(filtered).length) return filtered;
+  return buildDefaultRoleMap(hasRole);
+}
+
+/** Langues activées sur le serveur, dans l'ordre de LANGUAGES. */
+export function enabledLanguageDefinitions(config: Pick<ResolvedGuildConfig, 'enabledLanguages'> | null | undefined): LanguageDefinition[] {
+  const enabled = config?.enabledLanguages?.length ? config.enabledLanguages : ['fr', 'en'];
+  return LANGUAGES.filter((l) => enabled.includes(l.code));
+}
+
+export interface ApplyLanguageResult {
+  ok: boolean;
+  language: LanguageDefinition;
+  /** Langue non activée sur le serveur */
+  notEnabled?: boolean;
+  /** Aucun rôle configuré pour cette langue (la préférence est quand même enregistrée) */
+  noRole?: boolean;
+  roleAdded: string | null;
+  rolesRemoved: string[];
+  autoRolesAdded: string[];
+  /** Rôles impossibles à gérer (hiérarchie) */
+  blocked: string[];
+}
+
+/**
+ * Multilingue par rôle : panneau « 🌍 CHOOSE YOUR LANGUAGE », rôles de langue,
+ * application du choix (rôles + préférence + autoroles MEMBER/LANGUAGE), réponse de bienvenue traduite.
+ */
+export class LanguageService {
+  private client: Client | null = null;
+  private readonly roleMaps = new TTLCache<LanguageRoleMap>(5 * 60_000);
+  private readonly roleRows = new TTLCache<LanguageRole[]>(5 * 60_000);
+
+  attach(client: Client): void {
+    this.client = client;
+  }
+
+  invalidate(guildId: string): void {
+    this.roleMaps.delete(guildId);
+    this.roleRows.delete(guildId);
+  }
+
+  // ───── Rôles de langue ─────
+
+  async listLanguageRoles(guildId: string): Promise<LanguageRole[]> {
+    return this.roleRows.getOrSet(guildId, () => prisma.languageRole.findMany({ where: { guildId }, orderBy: { id: 'asc' } }));
+  }
+
+  /** Map `{ lang: roleId }` des LanguageRole activés (cache TTL). */
+  async getLanguageRoleMap(guildId: string): Promise<LanguageRoleMap> {
+    return this.roleMaps.getOrSet(guildId, async () => {
+      const rows = await this.listLanguageRoles(guildId);
+      const map: LanguageRoleMap = {};
+      for (const r of rows) if (r.enabled) map[r.language] = r.roleId;
+      return map;
+    });
+  }
+
+  /** Map effective pour un serveur (configurée, sinon défauts existants). */
+  async getEffectiveRoleMap(guild: Guild): Promise<LanguageRoleMap> {
+    const configured = await this.getLanguageRoleMap(guild.id);
+    return resolveRoleMap(configured, (id) => guild.roles.cache.has(id));
+  }
+
+  async setLanguageRole(guildId: string, language: string, roleId: string, opts: { emoji?: string | null; label?: string | null } = {}): Promise<LanguageRole> {
+    if (!getLanguage(language)) throw new Error(`Langue inconnue : ${language}`);
+    const row = await prisma.languageRole.upsert({
+      where: { guildId_language: { guildId, language } },
+      create: { guildId, language, roleId, emoji: opts.emoji ?? null, label: opts.label ?? null },
+      update: { roleId, enabled: true, ...(opts.emoji !== undefined ? { emoji: opts.emoji } : {}), ...(opts.label !== undefined ? { label: opts.label } : {}) },
+    });
+    this.invalidate(guildId);
+    return row;
+  }
+
+  async removeLanguageRole(guildId: string, language: string): Promise<number> {
+    const r = await prisma.languageRole.deleteMany({ where: { guildId, language } });
+    this.invalidate(guildId);
+    return r.count;
+  }
+
+  /** Remplace la configuration par les rôles par défaut (LANGUAGES[].defaultRoleId) présents sur le serveur. */
+  async resetDefaults(guild: Guild): Promise<{ configured: LanguageRoleMap; missing: string[] }> {
+    const defaults = buildDefaultRoleMap((id) => guild.roles.cache.has(id));
+    const missing = LANGUAGES.filter((l) => l.defaultRoleId && !defaults[l.code]).map((l) => l.code);
+    await prisma.languageRole.deleteMany({ where: { guildId: guild.id } });
+    for (const [language, roleId] of Object.entries(defaults)) {
+      const def = getLanguage(language)!;
+      await prisma.languageRole.create({ data: { guildId: guild.id, language, roleId, emoji: def.flag, label: def.nativeLabel } });
+    }
+    this.invalidate(guild.id);
+    return { configured: defaults, missing };
+  }
+
+  // ───── Application du choix ─────
+
+  /**
+   * Applique une langue à un membre :
+   * 1. retire les autres rôles de langue · 2. donne le rôle de la langue · 3. enregistre la préférence
+   * 4. donne les autoroles MEMBER / LANGUAGE. Un seul PATCH Discord. Log MEMBER `language.change`.
+   */
+  async applyLanguage(member: GuildMember, lang: string, opts: { actorId?: string | null } = {}): Promise<ApplyLanguageResult> {
+    const language = getLanguage(lang);
+    if (!language) throw new Error(`Langue inconnue : ${lang}`);
+    const cfg = await guildConfigService.get(member.guild.id);
+    const base: ApplyLanguageResult = { ok: false, language, roleAdded: null, rolesRemoved: [], autoRolesAdded: [], blocked: [] };
+    if (cfg && !cfg.enabledLanguages.includes(lang)) return { ...base, notEnabled: true };
+
+    const roleMap = await this.getEffectiveRoleMap(member.guild);
+    const target = roleMap[lang] ?? null;
+    const others = Object.entries(roleMap)
+      .filter(([l, roleId]) => l !== lang && roleId !== target && member.roles.cache.has(roleId))
+      .map(([, roleId]) => roleId);
+    const autoRoleRules = (await roleService.listAutoRoles(member.guild.id)).filter((r) => r.enabled && (r.type === AutoRoleType.MEMBER || r.type === AutoRoleType.LANGUAGE));
+    const autoRoles = autoRoleRules
+      .filter((r) => r.delaySeconds <= 0)
+      .map((r) => r.roleId)
+      .filter((id) => id !== target && !others.includes(id));
+    for (const rule of autoRoleRules.filter((r) => r.delaySeconds > 0)) roleService.scheduleAutoRole(member, rule);
+
+    const result = await roleService.changeRoles(member, { add: [...(target ? [target] : []), ...autoRoles], remove: others }, `Language: ${language.code}`);
+
+    await translationService.setUserLanguage(member.guild.id, member.id, lang, {
+      username: member.user.username,
+      globalName: member.user.globalName,
+      avatar: member.user.avatar,
+    });
+
+    const roleAdded = target && (result.added.includes(target) || member.roles.cache.has(target)) && !result.blocked.includes(target) ? target : null;
+    const out: ApplyLanguageResult = {
+      ok: true,
+      language,
+      noRole: !target,
+      roleAdded,
+      rolesRemoved: result.removed,
+      autoRolesAdded: result.added.filter((id) => autoRoles.includes(id)),
+      blocked: result.blocked,
+    };
+
+    const t = translationService.bind(cfg?.defaultLanguage ?? 'fr', member.guild.id);
+    await loggingService.log({
+      guildId: member.guild.id,
+      category: LogCategory.MEMBER,
+      action: 'language.change',
+      title: t('language.log.title'),
+      description: t('language.log.description', { user: `<@${member.id}>`, flag: language.flag, language: language.nativeLabel }),
+      fields: [
+        { name: t('language.log.role_added'), value: roleAdded ? `<@&${roleAdded}>` : '—', inline: true },
+        { name: t('language.log.roles_removed'), value: result.removed.map((r) => `<@&${r}>`).join(' ') || '—', inline: true },
+        ...(result.blocked.length ? [{ name: t('language.log.blocked'), value: result.blocked.map((r) => `<@&${r}>`).join(' '), inline: true }] : []),
+      ],
+      actorId: opts.actorId ?? member.id,
+      targetId: member.id,
+      color: BRAND.colors.primary,
+      data: { language: lang, roleAdded, removed: result.removed, autoRoles: out.autoRolesAdded, blocked: result.blocked },
+    });
+    return out;
+  }
+
+  /** Réponse éphémère après un choix : confirmation + message de bienvenue rendu dans la langue choisie. */
+  async buildChoiceReply(member: GuildMember, result: ApplyLanguageResult): Promise<{ content: string; embeds: EmbedBuilder[] }> {
+    const t = translationService.bind(result.language.code, member.guild.id);
+    if (result.notEnabled) return { content: t('language.not_enabled', { flag: result.language.flag, language: result.language.nativeLabel }), embeds: [] };
+    const lines = [t('language.changed', { flag: result.language.flag, language: result.language.nativeLabel })];
+    if (result.noRole) lines.push(t('language.no_role'));
+    else if (result.blocked.length) lines.push(t('language.blocked_roles', { roles: result.blocked.map((r) => `<@&${r}>`).join(' ') }));
+    const embeds: EmbedBuilder[] = [];
+    const welcome = await welcomeService.getConfig(member.guild.id).catch(() => null);
+    if (welcome && (welcome.message || welcome.embed)) {
+      const cfg = await guildConfigService.get(member.guild.id);
+      const rendered = renderWelcome(member, welcome, { language: result.language.code, fallbackLanguage: cfg?.defaultLanguage, image: null, withButtons: false, brandColor: cfg?.brandColor, t });
+      if (rendered.content) lines.push('', rendered.content);
+      embeds.push(...rendered.embeds);
+    }
+    return { content: lines.join('\n').slice(0, 2000), embeds };
+  }
+
+  // ───── Panneau ─────
+
+  /** Ligne de sélection (select menu) des langues activées. `guildId` est encodé pour un usage en DM. */
+  buildSelectRow(config: Pick<ResolvedGuildConfig, 'enabledLanguages'> | null, t: Translator, guildId?: string): ActionRowBuilder<MessageActionRowComponentBuilder> {
+    const langs = enabledLanguageDefinitions(config);
+    const select = new StringSelectMenuBuilder()
+      .setCustomId(guildId ? buildCustomId('lang', 'select', guildId) : buildCustomId('lang', 'select'))
+      .setPlaceholder(t('language.select.placeholder').slice(0, 150))
+      .setMinValues(1)
+      .setMaxValues(1)
+      .addOptions(langs.map((l) => new StringSelectMenuOptionBuilder().setValue(l.code).setLabel(l.nativeLabel).setEmoji(l.flag).setDescription(l.label)));
+    return new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(select);
+  }
+
+  /** Panneau « 🌍 CHOOSE YOUR LANGUAGE » : embed + boutons drapeaux (5 par rangée) ou select. */
+  buildPanel(config: ResolvedGuildConfig, lang: string, style: PanelStyle = PanelStyle.BUTTONS): { embeds: EmbedBuilder[]; components: ActionRowBuilder<MessageActionRowComponentBuilder>[] } {
+    const t = translationService.bind(lang, config.guildId);
+    const langs = enabledLanguageDefinitions(config);
+    const embed = embedService
+      .build({ title: t('language.panel.title'), description: `${t('language.panel.description')}\n\n${langs.map((l) => `${l.flag} **${l.nativeLabel}**`).join('\n')}`, footer: { text: config.footerText ?? BRAND.footer }, color: colorToHex(config.brandColor) }, { guild: null });
+    const components: ActionRowBuilder<MessageActionRowComponentBuilder>[] = [];
+    if (style === PanelStyle.SELECT) {
+      components.push(this.buildSelectRow(config, t));
+    } else {
+      for (let i = 0; i < langs.length && components.length < 5; i += 5) {
+        const row = new ActionRowBuilder<MessageActionRowComponentBuilder>();
+        for (const l of langs.slice(i, i + 5)) row.addComponents(new ButtonBuilder().setCustomId(buildCustomId('lang', 'set', l.code)).setLabel(l.nativeLabel).setEmoji(l.flag).setStyle(ButtonStyle.Secondary));
+        components.push(row);
+      }
+    }
+    return { embeds: [embed], components };
+  }
+
+  private async fetchPanelMessage(guild: Guild, channelId: string, messageId: string): Promise<Message | null> {
+    const channel = await guild.channels.fetch(channelId).catch(() => null);
+    if (!channel || !channel.isTextBased() || !('messages' in channel)) return null;
+    return channel.messages.fetch(messageId).catch(() => null);
+  }
+
+  /** Publie le panneau dans un salon (édite le message existant si même salon) et mémorise channelId/messageId. */
+  async publishPanel(guild: Guild, channelId: string, style: PanelStyle = PanelStyle.BUTTONS): Promise<Message> {
+    const config = await guildConfigService.getOrCreate(guild);
+    const payload = this.buildPanel(config, config.defaultLanguage, style);
+    const settings = config.raw.settings;
+    const channel = await guild.channels.fetch(channelId).catch(() => null);
+    if (!channel || !channel.isTextBased() || !('send' in channel)) throw new Error('Salon invalide');
+    let message: Message | null = null;
+    if (settings?.languagePanelChannelId && settings.languagePanelMessageId) {
+      const existing = await this.fetchPanelMessage(guild, settings.languagePanelChannelId, settings.languagePanelMessageId);
+      if (existing && settings.languagePanelChannelId === channelId) message = await existing.edit(payload);
+      else await existing?.delete().catch(() => null);
+    }
+    if (!message) message = await channel.send(payload);
+    await guildConfigService.updateSettings(guild.id, { languagePanelChannelId: channelId, languagePanelMessageId: message.id });
+    log.info({ guild: guild.id, channel: channelId, message: message.id, style }, 'Panneau de langue publié');
+    return message;
+  }
+
+  /** Met à jour le panneau publié (après changement des langues activées). Retourne false s'il n'existe pas. */
+  async refreshPanel(guild: Guild, style?: PanelStyle): Promise<boolean> {
+    const config = await guildConfigService.getOrCreate(guild);
+    const settings = config.raw.settings;
+    if (!settings?.languagePanelChannelId || !settings.languagePanelMessageId) return false;
+    const existing = await this.fetchPanelMessage(guild, settings.languagePanelChannelId, settings.languagePanelMessageId);
+    if (!existing) return false;
+    const currentStyle = style ?? (existing.components.some((row) => 'components' in row && row.components.some((c) => c.type === 3)) ? PanelStyle.SELECT : PanelStyle.BUTTONS);
+    await existing.edit(this.buildPanel(config, config.defaultLanguage, currentStyle));
+    return true;
+  }
+
+  /**
+   * Flux complet d'un choix de langue depuis un bouton / select / commande :
+   * accuse réception (< 3 s), applique, puis répond en éphémère dans la langue choisie.
+   */
+  async respondToChoice(interaction: RepliableInteraction, code: string, guildIdHint?: string | null): Promise<void> {
+    const guild = interaction.guild ?? this.resolveGuild(guildIdHint ?? interaction.guildId);
+    const ephemeralSource = interaction.isMessageComponent() && interaction.message.flags.has(MessageFlags.Ephemeral);
+    if (ephemeralSource) await (interaction as MessageComponentInteraction).deferUpdate();
+    else if (!interaction.deferred && !interaction.replied) await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    const language = getLanguage(code);
+    const tFallback = translationService.bind(language?.code ?? 'en', guild?.id);
+    if (!guild) {
+      await interaction.editReply({ content: tFallback('language.guild_unavailable'), embeds: [], components: [] });
+      return;
+    }
+    if (!language) {
+      await interaction.editReply({ content: tFallback('core.invalid_input', { details: code }), embeds: [], components: [] });
+      return;
+    }
+    const member = interaction.member instanceof GuildMember && interaction.member.guild.id === guild.id ? interaction.member : await guild.members.fetch(interaction.user.id).catch(() => null);
+    if (!member) {
+      await interaction.editReply({ content: tFallback('core.member_not_found'), embeds: [], components: [] });
+      return;
+    }
+    const result = await this.applyLanguage(member, code);
+    const reply = await this.buildChoiceReply(member, result);
+    await interaction.editReply({ content: reply.content, embeds: reply.embeds, components: [] });
+  }
+
+  /** Résout le serveur d'une interaction (en DM, l'ID est encodé dans le customId). */
+  resolveGuild(guildId: string | null | undefined): Guild | null {
+    if (!guildId || !this.client) return null;
+    return this.client.guilds.cache.get(guildId) ?? null;
+  }
+}
+
+export const languageService = new LanguageService();
