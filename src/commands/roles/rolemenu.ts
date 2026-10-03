@@ -13,7 +13,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('rolemenu')
     .setDescription('Menus de rôles (boutons / menu déroulant)')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addSubcommand((s) => s.setName('create').setDescription('Créer un menu de rôles (éditeur interactif)'))
     .addSubcommand((s) =>
       s

@@ -1,6 +1,15 @@
 import { GuildMember, PermissionFlagsBits, PermissionResolvable, PermissionsBitField } from 'discord.js';
 import type { InternalPermission } from '../structures/types';
 import type { ResolvedGuildConfig } from '../services/GuildConfigService';
+import { DEFAULT_TEAM_ROLE_NAMES } from '../config/constants';
+
+const normalizeRoleName = (n: string) => n.replace(/[\s・·|•-]+/g, ' ').trim().toLowerCase();
+const TEAM_NAMES = DEFAULT_TEAM_ROLE_NAMES.map(normalizeRoleName);
+
+/** Vrai si le membre porte un rôle « équipe » reconnu par son nom (ex. 🛡️ RS Team). */
+export function hasTeamRole(member: GuildMember): boolean {
+  return member.roles.cache.some((r) => TEAM_NAMES.includes(normalizeRoleName(r.name)));
+}
 
 const LEVELS: Record<InternalPermission, number> = { everyone: 0, staff: 1, admin: 2, owner: 3 };
 
@@ -18,6 +27,7 @@ export function resolveInternalLevel(member: GuildMember | null, config: Resolve
   const roles = member.roles.cache;
   if (member.permissions.has(PermissionFlagsBits.Administrator)) return 'admin';
   if (config?.adminRoleIds.some((r) => roles.has(r))) return 'admin';
+  if (hasTeamRole(member)) return 'admin';
   if (config?.staffRoleIds.some((r) => roles.has(r))) return 'staff';
   if (member.permissions.has(PermissionFlagsBits.ManageGuild) || member.permissions.has(PermissionFlagsBits.ModerateMembers)) return 'staff';
   return 'everyone';

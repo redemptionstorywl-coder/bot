@@ -15,7 +15,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('guild-config')
     .setDescription('Configurer ce serveur (type, langues, rôles, logs, modules)')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand((s) =>
       s
         .setName('type')

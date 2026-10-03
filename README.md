@@ -185,9 +185,9 @@ Le dashboard écoute automatiquement sur le port `PORT` fourni par l'hébergeur.
 
 1. `/guild-config type` → choisissez **Prison**, **Battle Royale**, **School** ou **Shop**. Les modules adaptés sont activés.
 2. `/guild-config language` et `/guild-config languages` → langue par défaut et langues activées.
-3. `/guild-config staff-role` / `admin-role` → rôles autorisés à modérer / configurer.
+3. `/guild-config staff-role` / `admin-role` → rôles autorisés à modérer / configurer. Un rôle nommé **🛡️ RS Team** est reconnu automatiquement comme équipe (accès à toutes les commandes staff et admin, sans permissions Discord particulières).
 4. `/guild-config log-channel` → un salon par catégorie de logs.
-5. `/language-roles reset-defaults` (Battle Royale) puis `/language-panel` → panneau de choix de langue.
+5. `/language-setup` → crée les rôles de langue manquants, un salon 🌍・langues en lecture seule et y publie le panneau de choix.
 6. `/welcome-config`, `/autorole`, `/ticket-panel`, `/notifications setup`… ou **tout faire depuis le dashboard**.
 
 `/guild-config show` affiche l'état complet. Chaque module s'active/désactive avec `/guild-config module` ou depuis la page **Paramètres** du dashboard.
@@ -213,7 +213,7 @@ La liste à jour est disponible avec `/help` (48 commandes). Principales command
 | Catégorie | Commandes |
 | --- | --- |
 | Administration | `/dm user|all|status|cancel` (messages privés via le bot), `/guild-config type|show|language|languages|staff-role|admin-role|log-channel|module|brand-color|translation-mode|language-channel`, `/help`, `/status`, `/fivem add|remove|list|status|maintenance|status-channel|players` |
-| Langue & rôles | `/language`, `/language-panel publish|refresh|preview`, `/language-roles set|remove|list|reset-defaults`, `/autorole add|remove|list`, `/rolemenu create|add-role|remove-role|publish|edit|delete|list`, `/reactionrole create|remove|list`, `/notifications setup|panel|add|remove|list` |
+| Langue & rôles | `/language`, `/language-setup` (crée rôles + salon + panneau), `/autorole add|remove|list`, `/rolemenu create|add-role|remove-role|publish|edit|delete|list`, `/reactionrole create|remove|list`, `/notifications setup|panel|add|remove|list` |
 | Bienvenue / départ | `/welcome-config` — panneau interactif éphémère (onglets Bienvenue / Départ : activation, salon, message, embed, image, DM, bouton langue, boutons liens, logs des départs, test) |
 | Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |
 | Tickets | `/ticket-panel create|list|delete`, `/ticket-type create|edit|delete|list|questions`, `/ticket close|add|remove|claim|transcript|rename|info|list` |

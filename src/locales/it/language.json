@@ -32,5 +32,15 @@
     "role_added": "Ruolo aggiunto",
     "roles_removed": "Ruoli rimossi",
     "blocked": "Non gestiti (gerarchia)"
+  },
+  "setup": {
+    "title": "🌍 Sistema lingue installato",
+    "done": "Il pannello delle lingue è pubblicato in {channel} ([vedi messaggio]({url})). La scelta della lingua sotto il messaggio di benvenuto è stata disattivata.",
+    "created_roles": "Ruoli creati",
+    "reused_roles": "Ruoli esistenti riutilizzati",
+    "channel": "Canale",
+    "channel_created": "{channel} creato (sola lettura, i membri cliccano la loro bandiera).",
+    "channel_reused": "{channel} riutilizzato.",
+    "footer": "Riesegui /language-setup dopo aver attivato una nuova lingua (/guild-config languages)."
   }
 }

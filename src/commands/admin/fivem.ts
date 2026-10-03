@@ -16,7 +16,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('fivem')
     .setDescription('Gérer les serveurs FiveM reliés à ce Discord')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand((s) =>
       s
         .setName('add')

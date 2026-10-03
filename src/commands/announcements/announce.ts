@@ -61,7 +61,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('announce')
     .setDescription('Annonces multilingues : créer, programmer, publier')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .addSubcommand((s) => s.setName('create').setDescription('Créer une annonce (éditeur interactif)'))
     .addSubcommand((s) => s.setName('edit').setDescription('Modifier une annonce').addIntegerOption(idOption))
     .addSubcommand((s) => s.setName('delete').setDescription('Supprimer une annonce (et ses messages)').addIntegerOption(idOption))

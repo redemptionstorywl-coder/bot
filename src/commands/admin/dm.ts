@@ -29,7 +29,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('dm')
     .setDescription('Envoyer un message privé via le bot')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addSubcommand((s) =>
       s
         .setName('user')

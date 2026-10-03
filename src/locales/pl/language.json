@@ -32,5 +32,15 @@
     "role_added": "Dodana rola",
     "roles_removed": "Usunięte role",
     "blocked": "Niezarządzane (hierarchia)"
+  },
+  "setup": {
+    "title": "🌍 System języków zainstalowany",
+    "done": "Panel wyboru języka opublikowano w {channel} ([zobacz wiadomość]({url})). Wybór języka pod wiadomością powitalną został wyłączony.",
+    "created_roles": "Utworzone role",
+    "reused_roles": "Ponownie użyte role",
+    "channel": "Kanał",
+    "channel_created": "Utworzono {channel} (tylko do odczytu, członkowie klikają swoją flagę).",
+    "channel_reused": "Ponownie użyto {channel}.",
+    "footer": "Uruchom /language-setup ponownie po włączeniu nowego języka (/guild-config languages)."
   }
 }

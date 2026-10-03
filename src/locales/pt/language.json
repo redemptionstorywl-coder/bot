@@ -32,5 +32,15 @@
     "role_added": "Cargo adicionado",
     "roles_removed": "Cargos removidos",
     "blocked": "Não gerenciados (hierarquia)"
+  },
+  "setup": {
+    "title": "🌍 Sistema de idiomas instalado",
+    "done": "O painel de idiomas foi publicado em {channel} ([ver mensagem]({url})). A escolha de idioma sob a mensagem de boas-vindas foi desativada.",
+    "created_roles": "Cargos criados",
+    "reused_roles": "Cargos existentes reutilizados",
+    "channel": "Canal",
+    "channel_created": "{channel} criado (somente leitura, os membros clicam na bandeira).",
+    "channel_reused": "{channel} reutilizado.",
+    "footer": "Execute /language-setup novamente após ativar um novo idioma (/guild-config languages)."
   }
 }

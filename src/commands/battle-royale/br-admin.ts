@@ -12,7 +12,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('br-admin')
     .setDescription('Administration Battle Royale')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommandGroup((g) =>
       g
         .setName('season')

@@ -83,7 +83,6 @@ export default defineCommand({
     .setName('event')
     .setDescription(fr('events.commands.description'))
     .setDescriptionLocalizations(en('events.commands.description'))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents)
     .addSubcommand((s) =>
       s
         .setName('create')

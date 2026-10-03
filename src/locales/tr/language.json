@@ -32,5 +32,15 @@
     "role_added": "Eklenen rol",
     "roles_removed": "Kaldırılan roller",
     "blocked": "Yönetilemeyenler (hiyerarşi)"
+  },
+  "setup": {
+    "title": "🌍 Dil sistemi kuruldu",
+    "done": "Dil paneli {channel} kanalında yayınlandı ([mesajı gör]({url})). Hoş geldin mesajı altındaki dil seçimi devre dışı bırakıldı.",
+    "created_roles": "Oluşturulan roller",
+    "reused_roles": "Yeniden kullanılan roller",
+    "channel": "Kanal",
+    "channel_created": "{channel} oluşturuldu (salt okunur, üyeler bayraklarına tıklar).",
+    "channel_reused": "{channel} yeniden kullanıldı.",
+    "footer": "Yeni bir dil etkinleştirdikten sonra /language-setup komutunu tekrar çalıştır (/guild-config languages)."
   }
 }

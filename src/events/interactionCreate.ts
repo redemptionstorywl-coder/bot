@@ -4,7 +4,7 @@ import type { Command, CommandPermissions, ComponentHandler, InteractionContext 
 import { resolveContext } from '../core/context';
 import { env } from '../config/env';
 import { embedService } from '../services/EmbedService';
-import { hasInternalPermission, missingDiscordPermissions } from '../utils/permissions';
+import { hasInternalPermission, missingDiscordPermissions, resolveInternalLevel } from '../utils/permissions';
 import { parseCustomId } from '../utils/customId';
 import { childLogger } from '../utils/logger';
 import { COOLDOWN_DEFAULT_SECONDS, DEFAULT_LANGUAGE, MODULE_LABELS, fromDiscordLocale, type ModuleKey } from '../config/constants';
@@ -40,9 +40,12 @@ async function checkAccess(
     return false;
   }
   const member = interaction.member instanceof GuildMember ? interaction.member : null;
-  if (opts.permissions?.discord?.length && interaction.inGuild()) {
+  const level = resolveInternalLevel(member, config, env().OWNER_IDS);
+  // Les administrateurs du bot (rôles admin configurés, 🛡️ RS Team, owners) ne sont pas limités par les permissions Discord.
+  const bypassDiscordPerms = level === 'admin' || level === 'owner';
+  if (opts.permissions?.discord?.length && interaction.inGuild() && !bypassDiscordPerms) {
     const missing = missingDiscordPermissions(member?.permissions ?? null, opts.permissions.discord);
-    if (missing.length && !env().OWNER_IDS.includes(interaction.user.id)) {
+    if (missing.length) {
       await reply(interaction, { embeds: [embedService.error(t('core.missing_permissions', { permissions: missing.join(', ') }))] });
       return false;
     }

@@ -32,5 +32,15 @@
     "role_added": "Role added",
     "roles_removed": "Roles removed",
     "blocked": "Not managed (hierarchy)"
+  },
+  "setup": {
+    "title": "🌍 Language system installed",
+    "done": "The language panel is published in {channel} ([view message]({url})). The language prompt under the welcome message has been disabled.",
+    "created_roles": "Roles created",
+    "reused_roles": "Existing roles reused",
+    "channel": "Channel",
+    "channel_created": "{channel} created (read-only, members click their flag).",
+    "channel_reused": "{channel} reused.",
+    "footer": "Run /language-setup again after enabling a new language (/guild-config languages)."
   }
 }

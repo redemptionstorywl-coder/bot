@@ -172,6 +172,12 @@ export const TEMPLATE_VARIABLES: Record<string, string> = {
   '{time}': 'Heure actuelle',
 };
 
+/**
+ * Rôles reconnus automatiquement comme équipe (niveau interne « admin ») sur tous les serveurs,
+ * sans configuration : il suffit qu'un rôle porte l'un de ces noms.
+ */
+export const DEFAULT_TEAM_ROLE_NAMES = ['🛡️ RS Team', '🛡️・RS Team', 'RS Team'];
+
 export const COOLDOWN_DEFAULT_SECONDS = 3;
 export const SCHEDULER_INTERVAL_MS = 15_000;
 export const CACHE_TTL_MS = 5 * 60_000;

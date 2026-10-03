@@ -18,7 +18,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('reactionrole')
     .setDescription('Rôles attribués par réaction')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addSubcommand((s) =>
       s
         .setName('create')

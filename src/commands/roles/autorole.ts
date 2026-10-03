@@ -13,7 +13,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('autorole')
     .setDescription('Rôles attribués automatiquement')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addSubcommand((s) =>
       s
         .setName('add')

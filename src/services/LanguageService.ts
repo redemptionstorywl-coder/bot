@@ -1,4 +1,6 @@
 import {
+  PermissionFlagsBits,
+  ChannelType,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -259,6 +261,68 @@ export class LanguageService {
   }
 
   /** Publie le panneau dans un salon (édite le message existant si même salon) et mémorise channelId/messageId. */
+
+  /**
+   * Installation complète du système de langue sur un serveur :
+   *  1. crée les rôles de langue manquants (nom `🇫🇷・Français`), ou réutilise un rôle existant (ID par défaut ou même nom) ;
+   *  2. crée le salon de choix de langue s'il n'est pas fourni (lecture seule pour @everyone) ;
+   *  3. publie (ou met à jour) le panneau « CHOOSE YOUR LANGUAGE » ;
+   *  4. désactive le choix de langue sous le message de bienvenue.
+   */
+  async setup(guild: Guild, opts: { channelId?: string; style?: PanelStyle; channelName?: string; languages?: string[] } = {}): Promise<{ createdRoles: string[]; reusedRoles: string[]; channelId: string; channelCreated: boolean; message: Message }> {
+    const config = await guildConfigService.getOrCreate(guild);
+    const languages = (opts.languages?.length ? opts.languages : config.enabledLanguages).filter((c) => getLanguage(c));
+    const configured = await this.getLanguageRoleMap(guild.id);
+    const createdRoles: string[] = [];
+    const reusedRoles: string[] = [];
+    const normalize = (n: string) => n.replace(/[\s・·|•-]+/g, ' ').trim().toLowerCase();
+    await guild.roles.fetch();
+    for (const code of languages) {
+      const def = getLanguage(code)!;
+      const expectedName = `${def.flag}・${def.nativeLabel}`;
+      let roleId = configured[code] && guild.roles.cache.has(configured[code]!) ? configured[code]! : undefined;
+      if (!roleId && def.defaultRoleId && guild.roles.cache.has(def.defaultRoleId)) roleId = def.defaultRoleId;
+      if (!roleId) {
+        const byName = guild.roles.cache.find((r) => normalize(r.name) === normalize(expectedName) || normalize(r.name) === normalize(def.nativeLabel));
+        if (byName) roleId = byName.id;
+      }
+      if (roleId) reusedRoles.push(code);
+      else {
+        const role = await guild.roles.create({ name: expectedName, mentionable: false, hoist: false, permissions: [], reason: 'Redemption Story — rôle de langue' });
+        roleId = role.id;
+        createdRoles.push(code);
+      }
+      await this.setLanguageRole(guild.id, code, roleId, { emoji: def.flag, label: def.nativeLabel });
+    }
+
+    let channelId = opts.channelId;
+    let channelCreated = false;
+    if (!channelId) {
+      const wanted = normalize(opts.channelName ?? '🌍・langues');
+      const existing = guild.channels.cache.find((c) => c.type === ChannelType.GuildText && (normalize(c.name) === wanted || normalize(c.name) === 'choose language' || normalize(c.name) === 'langues' || normalize(c.name) === 'language'));
+      if (existing) channelId = existing.id;
+      else {
+        const channel = await guild.channels.create({
+          name: opts.channelName ?? '🌍・langues',
+          type: ChannelType.GuildText,
+          reason: 'Redemption Story — salon de choix de langue',
+          permissionOverwrites: [
+            { id: guild.roles.everyone.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory], deny: [PermissionFlagsBits.SendMessages, PermissionFlagsBits.AddReactions, PermissionFlagsBits.CreatePublicThreads, PermissionFlagsBits.CreatePrivateThreads] },
+            { id: guild.members.me?.id ?? guild.client.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.ManageMessages] },
+          ],
+        });
+        channelId = channel.id;
+        channelCreated = true;
+      }
+    }
+
+    const message = await this.publishPanel(guild, channelId, opts.style ?? PanelStyle.BUTTONS);
+    await prisma.welcomeConfig.upsert({ where: { guildId: guild.id }, create: { guildId: guild.id, languagePromptEnabled: false }, update: { languagePromptEnabled: false } });
+    this.invalidate(guild.id);
+    await loggingService.log({ guildId: guild.id, category: LogCategory.SYSTEM, action: 'language.setup', title: '🌍 Système de langue installé', fields: [{ name: 'Rôles créés', value: createdRoles.join(', ') || '—', inline: true }, { name: 'Salon', value: `<#${channelId}>`, inline: true }] });
+    return { createdRoles, reusedRoles, channelId, channelCreated, message };
+  }
+
   async publishPanel(guild: Guild, channelId: string, style: PanelStyle = PanelStyle.BUTTONS): Promise<Message> {
     const config = await guildConfigService.getOrCreate(guild);
     const payload = this.buildPanel(config, config.defaultLanguage, style);

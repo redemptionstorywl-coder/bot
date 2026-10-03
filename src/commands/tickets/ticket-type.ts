@@ -36,7 +36,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('ticket-type')
     .setDescription('Gérer les types de tickets de ce serveur')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand((s) => addCommonOptions(s.setName('create').setDescription('Créer un type de ticket').addStringOption((o) => o.setName('key').setDescription('Clé unique (ex: support)').setRequired(true).setMaxLength(32)), false))
     .addSubcommand((s) =>
       addCommonOptions(s.setName('edit').setDescription('Modifier un type de ticket').addStringOption((o) => o.setName('type').setDescription('Type').setRequired(true).setAutocomplete(true)), true)

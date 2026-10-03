@@ -10,7 +10,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('notifications')
     .setDescription('Rôles de notification (annonces, événements, streams…)')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addSubcommand((s) => s.setName('setup').setDescription('Créer / associer les rôles de notification par défaut'))
     .addSubcommand((s) =>
       s

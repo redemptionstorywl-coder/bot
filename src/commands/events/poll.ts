@@ -75,7 +75,6 @@ export default defineCommand({
     .setName('poll')
     .setDescription(fr('polls.commands.description'))
     .setDescriptionLocalizations(en('polls.commands.description'))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .addSubcommand((s) =>
       s
         .setName('create')

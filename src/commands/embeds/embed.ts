@@ -23,7 +23,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('embed')
     .setDescription('Créer, modifier et envoyer des embeds personnalisés')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .addSubcommand((s) =>
       s
         .setName('create')

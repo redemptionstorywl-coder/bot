@@ -46,7 +46,6 @@ export default defineCommand({
     .setName('giveaway')
     .setDescription(fr('giveaways.commands.description'))
     .setDescriptionLocalizations(en('giveaways.commands.description'))
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addSubcommand((s) =>
       s
         .setName('create')

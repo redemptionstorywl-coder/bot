@@ -32,5 +32,15 @@
     "role_added": "رتبة مضافة",
     "roles_removed": "رتب مُزالة",
     "blocked": "غير مُدارة (التسلسل)"
+  },
+  "setup": {
+    "title": "🌍 تم تثبيت نظام اللغة",
+    "done": "تم نشر لوحة اختيار اللغة في {channel} ([عرض الرسالة]({url})). تم تعطيل اختيار اللغة أسفل رسالة الترحيب.",
+    "created_roles": "الأدوار المنشأة",
+    "reused_roles": "الأدوار الموجودة المعاد استخدامها",
+    "channel": "القناة",
+    "channel_created": "تم إنشاء {channel} (للقراءة فقط، يضغط الأعضاء على علمهم).",
+    "channel_reused": "تمت إعادة استخدام {channel}.",
+    "footer": "أعد تشغيل /language-setup بعد تفعيل لغة جديدة (/guild-config languages)."
   }
 }

@@ -32,5 +32,15 @@
     "role_added": "Rolle hinzugefügt",
     "roles_removed": "Rollen entfernt",
     "blocked": "Nicht verwaltet (Hierarchie)"
+  },
+  "setup": {
+    "title": "🌍 Sprachsystem eingerichtet",
+    "done": "Das Sprachpanel wurde in {channel} veröffentlicht ([Nachricht ansehen]({url})). Die Sprachauswahl unter der Willkommensnachricht wurde deaktiviert.",
+    "created_roles": "Erstellte Rollen",
+    "reused_roles": "Wiederverwendete Rollen",
+    "channel": "Kanal",
+    "channel_created": "{channel} erstellt (nur Lesen, Mitglieder klicken auf ihre Flagge).",
+    "channel_reused": "{channel} wiederverwendet.",
+    "footer": "Führe /language-setup erneut aus, nachdem du eine neue Sprache aktiviert hast (/guild-config languages)."
   }
 }

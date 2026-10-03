@@ -13,7 +13,6 @@ export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('ticket-panel')
     .setDescription('Gérer les panneaux d’ouverture de tickets')
-    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand((s) =>
       s
         .setName('create')
