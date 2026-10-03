@@ -4,7 +4,8 @@ import { createPrismaMock } from '../helpers/prisma';
 vi.mock('../../src/database/client', () => ({ prisma: createPrismaMock() }));
 
 import { canCloseTicket, canManageTicket, canViewTicket, parseQuestions, ticketService } from '../../src/services/TicketService';
-import { parseQuestionLine, parseUserId, serializeQuestion } from '../../src/commands/tickets/_shared';
+import { parseUserId } from '../../src/commands/tickets/_shared';
+import { parseQuestionLine, serializeQuestion } from '../../src/commands/tickets/_configPanel';
 
 const open = { userId: 'creator', status: 'OPEN' as const };
 const claimed = { userId: 'creator', status: 'CLAIMED' as const };

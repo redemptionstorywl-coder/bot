@@ -188,7 +188,7 @@ Le dashboard écoute automatiquement sur le port `PORT` fourni par l'hébergeur.
 3. `/guild-config staff-role` / `admin-role` → rôles autorisés à modérer / configurer. Un rôle nommé **🛡️ RS Team** est reconnu automatiquement comme équipe (accès à toutes les commandes staff et admin, sans permissions Discord particulières).
 4. `/guild-config log-channel` → un salon par catégorie de logs.
 5. `/language-setup` → crée les rôles de langue manquants, un salon 🌍・langues en lecture seule et y publie le panneau de choix.
-6. `/welcome-config`, `/autorole`, `/ticket-panel`, `/notifications setup`… ou **tout faire depuis le dashboard**.
+6. `/welcome-config`, `/autorole`, `/ticket-config`, `/notifications setup`… ou **tout faire depuis le dashboard**.
 
 `/guild-config show` affiche l'état complet. Chaque module s'active/désactive avec `/guild-config module` ou depuis la page **Paramètres** du dashboard.
 
@@ -216,7 +216,7 @@ La liste à jour est disponible avec `/help` (48 commandes). Principales command
 | Langue & rôles | `/language`, `/language-setup` (crée rôles + salon + panneau), `/autorole add|remove|list`, `/rolemenu create|add-role|remove-role|publish|edit|delete|list`, `/reactionrole create|remove|list`, `/notifications setup|panel|add|remove|list` |
 | Bienvenue / départ | `/welcome-config` — panneau interactif éphémère (onglets Bienvenue / Départ : activation, salon, message, embed, image, DM, bouton langue, boutons liens, logs des départs, test) |
 | Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |
-| Tickets | `/ticket-panel create|list|delete`, `/ticket-type create|edit|delete|list|questions`, `/ticket close|add|remove|claim|transcript|rename|info|list` |
+| Tickets | `/ticket-config` (panneau interactif : raisons, catégories, accès, questions, panneau), `/ticket close|add|remove|claim|transcript|rename|info|list` |
 | Modération | `/ban`, `/tempban`, `/unban`, `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/clear` (N messages), `/clear-salon` (tout le salon), `/slowmode`, `/lock`, `/unlock`, `/mute-salon [duration] [channel] [reason]` (sourdine programmée, déverrouillage automatique), `/lockdown on|off|status`, `/case`, `/history`, `/mod-config thresholds|mute-role|dm|show`, `/antiraid status|spam|mentions|links|whitelist|new-account|bots|mass-join|exempt`, `/antiraid nuke status|enable|disable|threshold|punishment|whitelist|lockdown|bot-add|options` |
 | Communauté | `/event create|edit|cancel|list|participants|remind`, `/giveaway create|end|reroll|cancel|list`, `/poll create|end|results|list` |
 | Whitelist (Prison / School) | `/whitelist apply|status|review|list|config` |

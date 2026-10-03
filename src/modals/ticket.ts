@@ -1,24 +1,20 @@
-import { PermissionFlagsBits } from 'discord.js';
 import { defineModal } from '../structures';
 import { embedService } from '../services/EmbedService';
 import { TicketError, canCloseTicket, canManageTicket, parseQuestions, ticketService } from '../services/TicketService';
-import { env } from '../config/env';
-import { hasInternalPermission } from '../utils/permissions';
-import { EPHEMERAL, createTicketAndReply, fetchMember, loadTicketContext, parseUserId, readAnswers, readQuestionsConfig, replyTicketError } from '../commands/tickets/_shared';
+import { EPHEMERAL, createTicketAndReply, loadTicketContext, parseUserId, readAnswers, replyTicketError } from '../commands/tickets/_shared';
 
 /**
  * Modals du module tickets :
  *  - `ticket:open:<typeId>`          : formulaire d'ouverture (questions du type)
  *  - `ticket:close-modal:<ticketId>` : raison de fermeture
  *  - `ticket:add-modal:<ticketId>` / `ticket:remove-modal:<ticketId>` : membre (ID ou mention)
- *  - `ticket:questions:<typeId>`     : configuration des questions d'un type (admin)
  */
 export default defineModal({
   id: 'ticket',
   module: 'tickets',
   async execute(interaction, args, ctx) {
     if (!interaction.inCachedGuild()) return;
-    const { t, config } = ctx;
+    const { t } = ctx;
     const [action = '', arg = ''] = args;
     try {
       switch (action) {
@@ -53,18 +49,6 @@ export default defineModal({
             await ticketService.removeMember({ ticketId: ticket.id, targetId, byId: interaction.user.id });
             await interaction.editReply({ embeds: [embedService.success(t('tickets.actions.member_removed_confirm', { target: `<@${targetId}>` }))] });
           }
-          return;
-        }
-        case 'questions': {
-          const member = await fetchMember(interaction);
-          const isAdmin = hasInternalPermission({ member, config, ownerIds: env().OWNER_IDS, required: 'admin' }) || member?.permissions.has(PermissionFlagsBits.Administrator) === true;
-          if (!isAdmin) throw new TicketError('no_permission');
-          await interaction.deferReply(EPHEMERAL);
-          const type = await ticketService.getType(interaction.guildId, Number(arg));
-          if (!type) throw new TicketError('type_not_found');
-          const questions = readQuestionsConfig(interaction);
-          const updated = await ticketService.updateType(interaction.guildId, type.id, { questions });
-          await interaction.editReply({ embeds: [embedService.success(t('tickets.type.questions_updated', { label: updated.label, count: questions.length }))] });
           return;
         }
         default:

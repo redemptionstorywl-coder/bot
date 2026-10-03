@@ -5,8 +5,7 @@ import { embedService } from '../../services/EmbedService';
 import { TicketError, canCloseTicket, canManageTicket, canViewTicket, ticketService, type TicketListFilters } from '../../services/TicketService';
 import { discordTimestamp } from '../../utils/time';
 import { chunk, paginate } from '../../utils/pagination';
-import { EPHEMERAL, fetchMember, loadChannelTicket, replyTicketError } from './_shared';
-import { autocompleteTypes } from './ticket-type';
+import { EPHEMERAL, autocompleteTypes, fetchMember, loadChannelTicket, replyTicketError } from './_shared';
 
 /**
  * /ticket — actions staff dans un ticket (close, add, remove, claim, transcript, rename, info) + liste paginée.

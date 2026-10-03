@@ -130,7 +130,7 @@ export interface TicketActor {
 
 export type TicketBusEvent = 'ticket:open' | 'ticket:close' | 'ticket:update';
 
-/** Types par défaut créés à la première utilisation de /ticket-panel. */
+/** Types par défaut (bouton « Raisons par défaut » de /ticket-config, dashboard). */
 export const DEFAULT_TICKET_TYPES: { key: string; emoji: string }[] = [
   { key: 'support', emoji: '🎫' },
   { key: 'bug', emoji: '🐛' },

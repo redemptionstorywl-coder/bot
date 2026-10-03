@@ -5,6 +5,7 @@ import {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
+  type AutocompleteInteraction,
   type ButtonInteraction,
   type Interaction,
   type ModalSubmitInteraction,
@@ -13,7 +14,7 @@ import {
 } from 'discord.js';
 import type { TicketType } from '@prisma/client';
 import { embedService } from '../../services/EmbedService';
-import { TicketError, parseQuestions, ticketQuestionSchema, ticketService, type FormAnswer, type TicketActor, type TicketFull, type TicketQuestion } from '../../services/TicketService';
+import { TicketError, parseQuestions, ticketService, type FormAnswer, type TicketActor, type TicketFull, type TicketQuestion } from '../../services/TicketService';
 import type { Translator } from '../../services/TranslationService';
 import type { InteractionContext } from '../../structures/types';
 import { buildCustomId } from '../../utils/customId';
@@ -30,6 +31,15 @@ export async function replyTicketError(interaction: RepliableInteraction, t: Tra
   else if (interaction.replied) await interaction.followUp({ embeds, ...EPHEMERAL }).catch(() => null);
   else await interaction.reply({ embeds, ...EPHEMERAL }).catch(() => null);
   return true;
+}
+
+/** Autocomplete partagé : propose les types du serveur (valeur = clé). */
+export async function autocompleteTypes(interaction: AutocompleteInteraction): Promise<void> {
+  if (!interaction.guildId) return interaction.respond([]);
+  const focused = interaction.options.getFocused().toLowerCase();
+  const types = await ticketService.listTypes(interaction.guildId);
+  const filtered = types.filter((t) => !focused || t.key.includes(focused) || t.label.toLowerCase().includes(focused)).slice(0, 25);
+  await interaction.respond(filtered.map((t) => ({ name: `${t.emoji ?? ''} ${t.label} (${t.key})`.trim().slice(0, 100), value: t.key })));
 }
 
 /** Extrait un ID utilisateur depuis un ID brut ou une mention. */
@@ -125,63 +135,4 @@ export async function startOpenFlow(interaction: ButtonInteraction | StringSelec
   }
   await interaction.deferReply(EPHEMERAL);
   await createTicketAndReply(interaction, type, [], ctx);
-}
-
-// ───── Configuration des questions (modal admin) ─────
-
-export const QUESTION_SLOTS = 5;
-
-/** `Label | placeholder | short/paragraph | required/optional | maxLength` */
-export function serializeQuestion(q: TicketQuestion): string {
-  return [q.label, q.placeholder ?? '', q.style, q.required ? 'required' : 'optional', q.maxLength ? String(q.maxLength) : ''].join(' | ').replace(/(\s\|\s)+$/, '');
-}
-
-export function parseQuestionLine(line: string, index: number): TicketQuestion | null {
-  const raw = line.trim();
-  if (!raw) return null;
-  const [label = '', placeholder = '', style = '', required = '', maxLength = ''] = raw.split('|').map((p) => p.trim());
-  const candidate = {
-    id: `q${index}`,
-    label: label.slice(0, 45),
-    placeholder: placeholder ? placeholder.slice(0, 100) : undefined,
-    style: /^(p|para|paragraph|long|multi)/i.test(style) ? 'paragraph' : 'short',
-    required: !/^(optional|optionnel|false|no|non|0)$/i.test(required),
-    maxLength: maxLength && /^\d+$/.test(maxLength) ? Number(maxLength) : undefined,
-  };
-  const r = ticketQuestionSchema.safeParse(candidate);
-  if (!r.success) throw new TicketError('invalid_question', { index, details: r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ') });
-  return r.data;
-}
-
-export function buildQuestionsConfigModal(type: TicketType, t: Translator): ModalBuilder {
-  const existing = parseQuestions(type.questions);
-  const modal = new ModalBuilder().setCustomId(buildCustomId('ticket', 'questions', type.id)).setTitle(t('tickets.modal.questions_title', { type: type.label }).slice(0, 45));
-  for (let i = 0; i < QUESTION_SLOTS; i++) {
-    const input = new TextInputBuilder()
-      .setCustomId(`slot_${i + 1}`)
-      .setLabel(t('tickets.modal.question_slot', { index: i + 1 }).slice(0, 45))
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder(t('tickets.modal.question_placeholder').slice(0, 100))
-      .setRequired(false)
-      .setMaxLength(200);
-    const q = existing[i];
-    if (q) input.setValue(serializeQuestion(q).slice(0, 200));
-    modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(input));
-  }
-  return modal;
-}
-
-export function readQuestionsConfig(interaction: ModalSubmitInteraction): TicketQuestion[] {
-  const out: TicketQuestion[] = [];
-  for (let i = 0; i < QUESTION_SLOTS; i++) {
-    let value = '';
-    try {
-      value = interaction.fields.getTextInputValue(`slot_${i + 1}`);
-    } catch {
-      value = '';
-    }
-    const q = parseQuestionLine(value, i + 1);
-    if (q) out.push(q);
-  }
-  return out;
 }
