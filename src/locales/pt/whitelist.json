@@ -1,0 +1,67 @@
+{
+  "status": { "pending": "⏳ Pendente", "accepted": "✅ Aceita", "rejected": "⛔ Recusada" },
+  "default_questions": {
+    "identity": "Nome / Sobrenome do seu personagem",
+    "experience": "Sua experiência em RP",
+    "motivation": "Por que entrar no servidor?"
+  },
+  "apply": {
+    "modal_title": "📝 Candidatura à whitelist",
+    "done": "Sua candidatura **#{id}** foi enviada. A staff responderá por mensagem privada."
+  },
+  "status_cmd": {
+    "title": "📝 Candidatura #{id}",
+    "none": "Você não tem nenhuma candidatura. Use `/whitelist apply`.",
+    "reviewed": "Avaliada"
+  },
+  "review": {
+    "title": "📝 Candidatura à whitelist #{id}",
+    "applicant": "Candidato",
+    "status": "Status",
+    "submitted": "Enviada",
+    "identifier": "Identificador FiveM",
+    "reviewed_by": "Avaliada por",
+    "accept": "Aceitar",
+    "reject": "Recusar",
+    "reject_modal_title": "Recusar a candidatura #{id}",
+    "note_label": "Nota enviada ao candidato (opcional)",
+    "accepted": "Candidatura **#{id}** de {user} aceita.",
+    "rejected": "Candidatura **#{id}** de {user} recusada.",
+    "need_target": "Informe um número de candidatura (`id`) ou um candidato (`user`)."
+  },
+  "list": {
+    "title": "📝 Candidaturas — {status}",
+    "all": "todas",
+    "empty": "Nenhuma candidatura."
+  },
+  "config": {
+    "title": "📝 Configuração da whitelist",
+    "enabled": "Candidaturas",
+    "review_channel": "Canal de avaliação",
+    "dm": "DM na decisão",
+    "accepted_role": "Cargo de aceito",
+    "pending_role": "Cargo de pendente",
+    "questions": "Perguntas ({count})",
+    "default": "padrão",
+    "questions_modal_title": "Perguntas da candidatura",
+    "question_n": "Pergunta {n}",
+    "question_placeholder": "Deixe vazio para não fazer esta pergunta",
+    "questions_saved": "{count} pergunta(s) salva(s).",
+    "updated": "Configuração da whitelist atualizada."
+  },
+  "dm": {
+    "accepted_title": "✅ Whitelist aceita",
+    "rejected_title": "⛔ Whitelist recusada",
+    "accepted": "Parabéns, sua candidatura à whitelist em **{server}** foi aceita. Bem-vindo(a)!",
+    "rejected": "Sua candidatura à whitelist em **{server}** foi recusada. Você poderá se candidatar novamente mais tarde."
+  },
+  "errors": {
+    "disabled": "As candidaturas estão fechadas no momento.",
+    "already_pending": "Você já tem uma candidatura pendente.",
+    "already_accepted": "Você já está na whitelist.",
+    "not_found": "Candidatura não encontrada ou já avaliada.",
+    "already_reviewed": "Esta candidatura já foi avaliada.",
+    "no_questions": "Nenhuma pergunta configurada.",
+    "invalid_identifier": "Identificador FiveM inválido (formato esperado: `license:…`)."
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "guild_config": {
+    "title": "⚙️ Configuração — {server}",
+    "kind": "Tipo de servidor",
+    "default_language": "Idioma padrão",
+    "enabled_languages": "Idiomas ativados",
+    "admin_roles": "Cargos admin",
+    "staff_roles": "Cargos staff",
+    "translation_mode": "Modo multilíngue",
+    "modules": "Módulos",
+    "logs": "Canais de logs",
+    "language_stats": "Membros por idioma",
+    "dashboard": "Dashboard",
+    "kind_set": "Tipo de servidor definido: **{kind}**",
+    "language_set": "Idioma padrão: **{language}**",
+    "languages_updated": "Idiomas ativados: {languages}",
+    "role_added": "Cargo {role} adicionado.",
+    "role_removed": "Cargo {role} removido.",
+    "log_set": "Logs **{category}** → {channel}",
+    "log_removed": "Logs **{category}** desativados.",
+    "module_set": "Módulo {module}: {state}",
+    "color_set": "Cor padrão: `{color}`",
+    "translation_mode_set": "Modo multilíngue: **{mode}**",
+    "language_channel_set": "Canal para **{language}**: {channel}"
+  },
+  "help": {
+    "title": "📖 Ajuda — Redemption Story Studio",
+    "description": "Aqui estão os comandos disponíveis. A configuração completa é feita no dashboard: {dashboard}"
+  },
+  "status": {
+    "title": "📡 Status do bot",
+    "uptime": "Uptime",
+    "ping": "Latência",
+    "database": "Banco de dados",
+    "guilds": "Servidores",
+    "users": "Membros",
+    "memory": "Memória",
+    "tasks": "Tarefas agendadas"
+  }
+}

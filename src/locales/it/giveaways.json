@@ -1,0 +1,79 @@
+{
+  "embed": {
+    "ends": "⏳ Fine",
+    "ended_at": "🏁 Terminato",
+    "winners_count": "🏆 Vincitori",
+    "winners": "🏆 Vincitore/i ({count})",
+    "no_winner": "Nessun vincitore (partecipanti insufficienti)",
+    "host": "🎤 Organizzato da",
+    "entries": "👥 Partecipanti",
+    "conditions": "📋 Condizioni",
+    "condition_role": "Avere il ruolo {role}",
+    "condition_messages": "Aver inviato almeno {count} messaggio/i sul server",
+    "status": "Stato",
+    "cancelled": "⛔ Giveaway annullato",
+    "footer": "Giveaway #{id}"
+  },
+  "buttons": {
+    "enter": "Partecipa"
+  },
+  "announce": {
+    "winners": "🎉 Congratulazioni {winners}! Hai vinto **{prize}**!",
+    "reroll": "🔁 Nuova estrazione: congratulazioni {winners}! Hai vinto **{prize}**!",
+    "no_winner": "😕 Il giveaway **{prize}** si è concluso senza partecipanti validi."
+  },
+  "dm": {
+    "won": "🎉 Congratulazioni! Hai vinto **{prize}**. {link}"
+  },
+  "enter": {
+    "joined": "🎁 Partecipazione registrata! Buona fortuna ({count} partecipante/i).",
+    "left": "La tua partecipazione è stata rimossa ({count} partecipante/i).",
+    "ended": "Questo giveaway è terminato.",
+    "missing_role": "Devi avere il ruolo {role} per partecipare.",
+    "min_messages": "Servono almeno **{required}** messaggi sul server per partecipare (ne hai {current})."
+  },
+  "create": {
+    "success": "Giveaway **{prize}** creato in <#{channel}> (ID `{id}`), fine {when}.",
+    "invalid_duration": "Durata non valida: `{value}`. Esempi: `30m`, `1h`, `2d`, `1w`.",
+    "channel_invalid": "Il canale scelto deve essere un canale testuale."
+  },
+  "end": {
+    "success": "Giveaway **{prize}** terminato. Vincitore/i: {winners}",
+    "no_winner": "Giveaway **{prize}** terminato senza vincitore.",
+    "already_ended": "Questo giveaway è già terminato."
+  },
+  "reroll": {
+    "success": "Nuova estrazione per **{prize}**: {winners}",
+    "no_candidates": "Nessun altro partecipante disponibile per una nuova estrazione.",
+    "not_ended": "Questo giveaway non è ancora terminato. Usa prima `/giveaway end`."
+  },
+  "cancel": {
+    "success": "Giveaway **{prize}** annullato.",
+    "already_ended": "Questo giveaway è già terminato, non può più essere annullato."
+  },
+  "list": {
+    "title": "🎁 Giveaway — {server}",
+    "empty": "Nessun giveaway.",
+    "line_active": "🟣 `#{id}` **{prize}** — fine {when} — {count} partecipante/i",
+    "line_ended": "⚫ `#{id}` **{prize}** — terminato {when} — {winners}"
+  },
+  "not_found": "Giveaway non trovato (ID `{id}`).",
+  "commands": {
+    "description": "Gestire i giveaway",
+    "create": "Lanciare un giveaway",
+    "prize": "Premio in palio",
+    "duration": "Durata (es.: 1h, 2d)",
+    "winners": "Numero di vincitori",
+    "channel": "Canale di pubblicazione (predefinito: canale attuale)",
+    "required_role": "Ruolo richiesto per partecipare",
+    "min_messages": "Numero minimo di messaggi inviati sul server",
+    "language": "Lingua di visualizzazione",
+    "description_opt": "Descrizione aggiuntiva",
+    "end": "Terminare un giveaway adesso (estrazione)",
+    "reroll": "Estrarre nuovi vincitori",
+    "reroll_count": "Numero di vincitori da estrarre",
+    "cancel": "Annullare un giveaway (senza estrazione)",
+    "list": "Elencare i giveaway",
+    "id": "ID del giveaway"
+  }
+}

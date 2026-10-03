@@ -1,0 +1,113 @@
+{
+  "status": {
+    "SCHEDULED": "Agendado",
+    "ONGOING": "Em andamento",
+    "ENDED": "Encerrado",
+    "CANCELLED": "Cancelado"
+  },
+  "embed": {
+    "date": "📅 Data",
+    "ends": "🏁 Fim",
+    "location": "📍 Local",
+    "participants": "👥 Participantes",
+    "role": "🔔 Cargo",
+    "registered": "Inscritos",
+    "and_more": "e mais {count}",
+    "footer": "Evento #{id}"
+  },
+  "buttons": {
+    "join": "Participar",
+    "leave": "Deixar de participar",
+    "list": "Lista"
+  },
+  "reminder": {
+    "message": "⏰ O evento **{name}** começa {when}"
+  },
+  "dm": {
+    "reminder": "⏰ Lembrete: o evento **{name}** começa {when}.",
+    "cancelled": "⛔ O evento **{name}** em que você estava inscrito foi cancelado."
+  },
+  "modal": {
+    "create_title": "Criar um evento",
+    "edit_title": "Editar o evento #{id}",
+    "name": "Nome",
+    "name_placeholder": "Noite de assalto, torneio…",
+    "description": "Descrição",
+    "description_placeholder": "Programação, regras, informações úteis…",
+    "date": "Data de início",
+    "date_placeholder": "31/01/2025 20:00 ou in 2h",
+    "location": "Local (opcional)",
+    "location_placeholder": "Canal de voz, local RP…",
+    "max": "Participantes máx. (opcional)",
+    "max_placeholder": "Ex.: 20 (vazio = ilimitado)"
+  },
+  "create": {
+    "success": "Evento **{name}** criado em <#{channel}> (ID `{id}`).",
+    "invalid_date": "Data inválida: `{value}`. Formatos: `31/01/2025 20:00`, `2025-01-31 20:00`, `in 2h`.",
+    "past_date": "A data de início deve estar no futuro.",
+    "invalid_max": "O número máximo de participantes deve ser um inteiro positivo.",
+    "invalid_image": "A URL da imagem é inválida.",
+    "expired": "O preenchimento expirou, execute o comando novamente.",
+    "channel_invalid": "O canal escolhido deve ser um canal de texto."
+  },
+  "edit": {
+    "success": "Evento **{name}** atualizado.",
+    "not_editable": "Este evento está encerrado ou cancelado e não pode mais ser editado."
+  },
+  "cancel": {
+    "confirm_title": "Cancelar o evento?",
+    "confirm": "Você realmente quer cancelar **{name}** ({count} participante(s))? Os participantes serão avisados por mensagem privada.",
+    "button": "Cancelar o evento",
+    "keep": "Manter",
+    "success": "Evento **{name}** cancelado.",
+    "aborted": "Cancelamento abandonado.",
+    "already": "Este evento já está cancelado.",
+    "not_yours": "Apenas a pessoa que executou o comando pode confirmar."
+  },
+  "list": {
+    "title": "📅 Eventos — {server}",
+    "empty": "Nenhum evento.",
+    "line": "{emoji} `#{id}` **{name}** — {when} — {count} participante(s)",
+    "filter_all": "Todos",
+    "filter_scheduled": "Agendados",
+    "filter_ongoing": "Em andamento",
+    "filter_ended": "Encerrados",
+    "filter_cancelled": "Cancelados"
+  },
+  "participants": {
+    "title": "👥 Participantes — {name}",
+    "empty": "Nenhum participante por enquanto.",
+    "count": "{count} participante(s)"
+  },
+  "remind": {
+    "success": "Lembrete enviado para **{name}**.",
+    "unavailable": "Não é possível enviar um lembrete para este evento (encerrado ou cancelado)."
+  },
+  "join": {
+    "success": "✅ Você está participando de **{name}** ({count} inscrito(s)).",
+    "already": "Você já participa deste evento.",
+    "full": "Este evento está lotado.",
+    "closed": "As inscrições para este evento estão encerradas."
+  },
+  "leave": {
+    "success": "❌ Você não participa mais de **{name}**.",
+    "not_joined": "Você não estava participando deste evento.",
+    "closed": "As inscrições para este evento estão encerradas."
+  },
+  "not_found": "Evento não encontrado (ID `{id}`).",
+  "commands": {
+    "description": "Gerenciar os eventos do servidor",
+    "create": "Criar um evento (formulário)",
+    "create_image": "URL da imagem",
+    "create_role": "Cargo a mencionar",
+    "create_channel": "Canal de publicação (padrão: canal atual)",
+    "create_language": "Idioma de exibição do evento",
+    "edit": "Editar um evento",
+    "cancel": "Cancelar um evento",
+    "list": "Listar os eventos",
+    "list_status": "Filtrar por status",
+    "participants": "Ver os participantes de um evento",
+    "remind": "Enviar um lembrete manual",
+    "id": "ID do evento"
+  }
+}

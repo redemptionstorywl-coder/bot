@@ -1,0 +1,67 @@
+{
+  "status": { "pending": "⏳ In attesa", "accepted": "✅ Accettata", "rejected": "⛔ Rifiutata" },
+  "default_questions": {
+    "identity": "Nome / Cognome del tuo personaggio",
+    "experience": "La tua esperienza RP",
+    "motivation": "Perché vuoi unirti al server?"
+  },
+  "apply": {
+    "modal_title": "📝 Candidatura whitelist",
+    "done": "La tua candidatura **#{id}** è stata inviata. Lo staff ti risponderà in messaggio privato."
+  },
+  "status_cmd": {
+    "title": "📝 Candidatura #{id}",
+    "none": "Non hai alcuna candidatura. Usa `/whitelist apply`.",
+    "reviewed": "Gestita"
+  },
+  "review": {
+    "title": "📝 Candidatura whitelist #{id}",
+    "applicant": "Candidato",
+    "status": "Stato",
+    "submitted": "Inviata",
+    "identifier": "Identificativo FiveM",
+    "reviewed_by": "Gestita da",
+    "accept": "Accetta",
+    "reject": "Rifiuta",
+    "reject_modal_title": "Rifiuta la candidatura #{id}",
+    "note_label": "Nota trasmessa al candidato (opzionale)",
+    "accepted": "Candidatura **#{id}** di {user} accettata.",
+    "rejected": "Candidatura **#{id}** di {user} rifiutata.",
+    "need_target": "Indica un numero di pratica (`id`) o un candidato (`user`)."
+  },
+  "list": {
+    "title": "📝 Candidature — {status}",
+    "all": "tutte",
+    "empty": "Nessuna candidatura."
+  },
+  "config": {
+    "title": "📝 Configurazione whitelist",
+    "enabled": "Candidature",
+    "review_channel": "Canale di revisione",
+    "dm": "DM alla decisione",
+    "accepted_role": "Ruolo accettato",
+    "pending_role": "Ruolo in attesa",
+    "questions": "Domande ({count})",
+    "default": "predefinite",
+    "questions_modal_title": "Domande della candidatura",
+    "question_n": "Domanda {n}",
+    "question_placeholder": "Lascia vuoto per non porre questa domanda",
+    "questions_saved": "{count} domanda/e salvata/e.",
+    "updated": "Configurazione whitelist aggiornata."
+  },
+  "dm": {
+    "accepted_title": "✅ Whitelist accettata",
+    "rejected_title": "⛔ Whitelist rifiutata",
+    "accepted": "Congratulazioni, la tua candidatura whitelist su **{server}** è stata accettata. Benvenuto!",
+    "rejected": "La tua candidatura whitelist su **{server}** è stata rifiutata. Potrai candidarti di nuovo più avanti."
+  },
+  "errors": {
+    "disabled": "Le candidature sono chiuse per il momento.",
+    "already_pending": "Hai già una candidatura in attesa.",
+    "already_accepted": "Sei già in whitelist.",
+    "not_found": "Candidatura non trovata o già gestita.",
+    "already_reviewed": "Questa candidatura è già stata gestita.",
+    "no_questions": "Nessuna domanda configurata.",
+    "invalid_identifier": "Identificativo FiveM non valido (formato atteso: `license:…`)."
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "panel": {
+    "title": "🌍 CHOOSE YOUR LANGUAGE",
+    "description": "Selecione seu idioma para receber as mensagens e os anúncios traduzidos.\nSelect your language to receive translated messages and announcements.",
+    "published": "Painel de idioma publicado em {channel} — [abrir]({url})",
+    "refreshed": "Painel de idioma atualizado.",
+    "not_published": "Nenhum painel publicado. Use `/language-panel publish`.",
+    "preview_note": "Pré-visualização do painel (os botões são funcionais):"
+  },
+  "select": {
+    "placeholder": "Escolha seu idioma…",
+    "prompt": "🌍 Escolha seu idioma:"
+  },
+  "changed": "✅ Idioma definido: {flag} **{language}**",
+  "not_enabled": "⛔ O idioma {flag} **{language}** não está ativado neste servidor.",
+  "no_role": "ℹ️ Nenhum cargo está associado a este idioma: sua preferência foi salva.",
+  "blocked_roles": "⚠️ Não consegui gerenciar: {roles} (hierarquia de cargos).",
+  "guild_unavailable": "Servidor não encontrado: use esta ação a partir do servidor.",
+  "module_disabled": "O módulo multilíngue está desativado neste servidor.",
+  "roles": {
+    "set": "{flag} **{language}** → {role}",
+    "removed": "Associação removida para {flag} **{language}**.",
+    "reset_title": "🌍 Cargos de idioma redefinidos",
+    "none_default": "Nenhum cargo padrão existe neste servidor. Use `/language-roles set`.",
+    "missing": "Cargos padrão não encontrados",
+    "list_title": "🌍 Cargos de idioma",
+    "using_defaults": "Cargos padrão (Battle Royale) — nenhuma configuração personalizada"
+  },
+  "log": {
+    "title": "🌍 Mudança de idioma",
+    "description": "{user} escolheu {flag} **{language}**",
+    "role_added": "Cargo adicionado",
+    "roles_removed": "Cargos removidos",
+    "blocked": "Não gerenciados (hierarquia)"
+  }
+}

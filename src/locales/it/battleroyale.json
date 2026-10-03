@@ -1,0 +1,51 @@
+{
+  "profile": {
+    "title": "⚔️ Profilo — {name}",
+    "none": "{user} non ha ancora un profilo Battle Royale.",
+    "level": "Livello",
+    "wins": "🏆 Vittorie",
+    "kills": "🔫 Kill",
+    "kd": "⚖️ K/D",
+    "matches": "🎮 Partite",
+    "top10": "🔟 Top 10",
+    "playtime": "⏱️ Tempo di gioco",
+    "season": "📅 Stagione",
+    "battlepass": "🎟️ Battle Pass",
+    "tier": "Livello pass",
+    "identifier": "🔗 Identificativo FiveM",
+    "not_linked": "Non collegato — `/br-link`"
+  },
+  "leaderboard": {
+    "title": "🏆 Classifica {metric} — Stagione {season}",
+    "empty": "Nessuna statistica per la stagione {season}.",
+    "metrics": { "wins": "Vittorie", "kills": "Kill", "level": "Livello", "kd": "K/D" }
+  },
+  "battlepass": {
+    "title": "🎟️ Battle Pass — Stagione {season} · {name}",
+    "none": "Nessuna stagione attiva. Un amministratore può crearne una con `/br-admin season new`.",
+    "tiers": "Livelli",
+    "ends": "Fine stagione",
+    "maxed": "Tutti i livelli sbloccati!"
+  },
+  "link": {
+    "invalid": "Identificativo non valido. Formato atteso: `license:0123abcd…` (visibile nella console F8 o tramite il server).",
+    "done": "Identificativo `{identifier}` collegato al tuo profilo. Le tue statistiche in gioco saranno ora sincronizzate.",
+    "verification": "Verifica",
+    "verified": "✅ Identificativo rilevato in gioco in questo momento.",
+    "not_online": "ℹ️ Identificativo non rilevato online al momento — il collegamento è salvato e verrà verificato alla tua prossima partita."
+  },
+  "admin": {
+    "season_set": "Stagione attiva: **{season}** ({name}).",
+    "season_new": "Stagione **{season}** « {name} » creata, termina il {ends}. Progressione Battle Pass azzerata.",
+    "seasons_title": "📅 Stagioni",
+    "stat_set": "{user}: `{field}` = **{value}**.",
+    "xp_added": "{user}: {amount} XP → **{xp} XP** (livello {level})."
+  },
+  "errors": {
+    "identifier_taken": "Questo identificativo è già collegato a un altro giocatore.",
+    "profile_not_found": "Profilo non trovato.",
+    "invalid_field": "Campo non valido.",
+    "season_exists": "Questa stagione esiste già.",
+    "no_season": "Nessuna stagione attiva."
+  }
+}

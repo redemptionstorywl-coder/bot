@@ -1,0 +1,105 @@
+{
+  "roles": { "student": "🎒 Aluno", "teacher": "📖 Professor", "staff": "🏛️ Funcionário" },
+  "status": { "pending": "⏳ Pendente", "accepted": "✅ Aceita", "rejected": "⛔ Recusada" },
+  "register": {
+    "modal_title": "🎓 Inscrição",
+    "first_name": "Nome",
+    "last_name": "Sobrenome",
+    "bio": "Apresentação (opcional)",
+    "done": "Seu perfil foi criado. Consulte-o com `/school profile`.",
+    "done_pick": "Seu perfil foi criado. Escolha sua turma e/ou sua casa abaixo.",
+    "pick_class": "Escolher uma turma",
+    "pick_house": "Escolher uma casa",
+    "class_set": "Agora você está na turma **{name}**.",
+    "house_set": "Você entrou na casa **{name}**."
+  },
+  "profile": {
+    "none": "{user} não tem perfil. Use `/school register`.",
+    "role": "Cargo",
+    "class": "Turma",
+    "house": "Casa",
+    "points": "Pontos",
+    "clubs": "Clubes"
+  },
+  "class": {
+    "list_title": "📚 Turmas",
+    "empty": "Nenhuma turma.",
+    "students": "aluno(s)",
+    "created": "Turma **{name}** criada.",
+    "deleted": "Turma **{name}** excluída.",
+    "assigned": "{user} atribuído(a) à turma **{name}**."
+  },
+  "house": {
+    "list_title": "🏠 Casas",
+    "leaderboard_title": "🏆 Ranking das casas",
+    "empty": "Nenhuma casa.",
+    "points": "pts",
+    "members": "membro(s)",
+    "created": "Casa **{name}** criada.",
+    "deleted": "Casa **{name}** excluída.",
+    "assigned": "{user} entrou na casa **{name}**.",
+    "points_updated": "{name}: **{delta}** → **{points}** pontos."
+  },
+  "club": {
+    "list_title": "🎭 Clubes",
+    "empty": "Nenhum clube.",
+    "created": "Clube **{name}** criado.",
+    "deleted": "Clube **{name}** excluído.",
+    "joined": "Você entrou no clube **{name}**.",
+    "left": "Você saiu do clube **{name}**."
+  },
+  "apply": {
+    "modal_title": "Candidatura — {role}",
+    "q_identity": "Nome / Sobrenome do personagem",
+    "q_motivation": "Motivação",
+    "q_experience": "Experiência em RP (opcional)",
+    "q_availability": "Disponibilidade (opcional)",
+    "done": "Sua candidatura **#{id}** foi enviada. Você receberá a resposta por mensagem privada."
+  },
+  "application": {
+    "title": "🎓 Candidatura #{id}",
+    "applicant": "Candidato",
+    "role": "Cargo pretendido",
+    "status": "Status",
+    "submitted": "Enviada",
+    "reviewed_by": "Avaliada por",
+    "accept": "Aceitar",
+    "reject": "Recusar",
+    "reject_modal_title": "Recusar a candidatura #{id}",
+    "note_label": "Nota enviada ao candidato (opcional)",
+    "accepted": "Candidatura **#{id}** de {user} aceita.",
+    "rejected": "Candidatura **#{id}** de {user} recusada."
+  },
+  "dm": {
+    "accepted_title": "✅ Candidatura aceita",
+    "rejected_title": "⛔ Candidatura recusada",
+    "accepted": "Sua candidatura ao cargo **{role}** em **{server}** foi aceita. Bem-vindo(a)!",
+    "rejected": "Sua candidatura ao cargo **{role}** em **{server}** foi recusada."
+  },
+  "announce": {
+    "done": "Anúncio publicado em {channel}.",
+    "no_channel": "Nenhum canal indicado e nenhum canal de anúncios configurado (`/school config announce-channel`)."
+  },
+  "config": {
+    "title": "🎓 Configuração School RP",
+    "application_channel": "Canal de candidaturas",
+    "announce_channel": "Canal de anúncios",
+    "roles": "Cargos do Discord",
+    "updated": "Configuração School RP atualizada."
+  },
+  "errors": {
+    "profile_exists": "Você já tem um perfil.",
+    "profile_not_found": "Perfil não encontrado. A inscrição é feita com `/school register`.",
+    "class_not_found": "Turma não encontrada.",
+    "class_full": "Esta turma está lotada.",
+    "house_not_found": "Casa não encontrada.",
+    "club_not_found": "Clube não encontrado.",
+    "club_full": "Este clube está lotado.",
+    "already_member": "Você já é membro deste clube.",
+    "not_member": "Você não é membro deste clube.",
+    "application_not_found": "Candidatura não encontrada.",
+    "application_pending": "Você já tem uma candidatura pendente.",
+    "already_reviewed": "Esta candidatura já foi avaliada.",
+    "name_taken": "Este nome já está em uso."
+  }
+}

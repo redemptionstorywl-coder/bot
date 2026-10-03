@@ -1,0 +1,59 @@
+{
+  "status": { "pending": "⏳ In attesa", "paid": "💳 Pagato", "delivered": "📦 Consegnato", "cancelled": "✖️ Annullato", "refunded": "↩️ Rimborsato" },
+  "catalog": {
+    "title": "🛒 Catalogo",
+    "empty": "Nessun prodotto disponibile.",
+    "order": "Ordina",
+    "unlimited": "Stock illimitato",
+    "in_stock": "{stock} disponibili",
+    "sold_out": "Esaurito"
+  },
+  "product": {
+    "price": "Prezzo",
+    "stock": "Stock",
+    "category": "Categoria",
+    "added": "Prodotto **#{id} {name}** aggiunto ({price}).",
+    "edited": "Prodotto **#{id} {name}** modificato.",
+    "removed": "Prodotto **{name}** eliminato.",
+    "list_title": "🛒 Prodotti ({count})"
+  },
+  "category": {
+    "added": "Categoria **{name}** aggiunta.",
+    "removed": "Categoria **{name}** eliminata.",
+    "empty": "Nessuna categoria.",
+    "list_title": "📂 Categorie"
+  },
+  "order": {
+    "modal_title": "Ordina — {product}",
+    "quantity": "Quantità",
+    "note": "Nota (opzionale)",
+    "product": "Prodotto",
+    "total": "Totale",
+    "status": "Stato",
+    "summary_title": "🧾 Ordine #{id}",
+    "pay_hint": "Completa il pagamento tramite il pulsante qui sotto. Il tuo ordine sarà convalidato automaticamente una volta confermato il pagamento.",
+    "support_hint": "Un membro dello staff gestirà il tuo ordine. Apri un ticket in caso di domande.",
+    "pay_button": "Paga su Tebex",
+    "placed": "Ordine **#{id}** registrato. Ti è stato inviato un riepilogo in messaggio privato.",
+    "created": "Ordine **#{id}** creato per {user} — {total}.",
+    "status_updated": "Ordine **#{id}** → {status}.",
+    "status_dm_title": "🧾 Ordine #{id} aggiornato",
+    "status_dm": "Il tuo ordine ({product}) è ora: **{status}**.",
+    "list_title": "🧾 Ordini — {status}",
+    "all": "tutti",
+    "empty": "Nessun ordine.",
+    "history_title": "🧾 Cronologia — {user}",
+    "history_empty": "Nessun ordine per {user}."
+  },
+  "announce": { "done": "Prodotto **{product}** annunciato in {channel}." },
+  "errors": {
+    "product_not_found": "Prodotto non trovato.",
+    "product_disabled": "Questo prodotto non è disponibile.",
+    "out_of_stock": "Questo prodotto è esaurito.",
+    "order_not_found": "Ordine non trovato.",
+    "category_not_found": "Categoria non trovata.",
+    "invalid_price": "Prezzo non valido (es.: `9.99`).",
+    "invalid_quantity": "Quantità non valida (da 1 a 99).",
+    "invalid_transition": "Cambio di stato impossibile dallo stato attuale."
+  }
+}
