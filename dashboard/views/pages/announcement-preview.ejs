@@ -1,0 +1,13 @@
+<section class="page-header">
+  <div>
+    <a class="link" href="/guilds/<%= guild.id %>/announcements/<%= announcement.id %>">← Retour à l'annonce</a>
+    <h2 class="page-title">Aperçu · <%= announcement.title %></h2>
+    <p class="muted">Rendu tel qu'il sera envoyé (variables remplacées, couleur de marque appliquée).<% if (!translated) { %> <strong>Aucune traduction pour cette langue : contenu source affiché.</strong><% } %></p>
+  </div>
+  <div class="page-actions">
+    <% for (const l of languages) { %><a class="btn btn-sm <%= l.code === lang ? 'btn-primary' : 'btn-ghost' %>" href="/guilds/<%= guild.id %>/announcements/<%= announcement.id %>/preview?lang=<%= l.code %>"><%= l.flag %> <%= l.code.toUpperCase() %></a><% } %>
+  </div>
+</section>
+<div class="card">
+  <%- include('../partials/embed-preview', { embed: preview.embeds && preview.embeds[0] ? preview.embeds[0] : null, buttons: preview.buttons || [], content: preview.content || '' }) %>
+</div>

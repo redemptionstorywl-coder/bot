@@ -1,0 +1,71 @@
+<section class="page-header">
+  <div>
+    <a class="link" href="/guilds/<%= guild.id %>/tickets?tab=types">← Retour aux types</a>
+    <h2 class="page-title"><%= type ? 'Modifier le type « ' + type.label + ' »' : 'Nouveau type de ticket' %></h2>
+    <p class="muted">Clé unique, catégorie de création, rôles staff, questions posées à l'ouverture et message d'accueil.</p>
+  </div>
+</section>
+
+<form method="post" action="/guilds/<%= guild.id %>/tickets/types<%= type ? '/' + type.id : '' %>" class="form">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="grid-2">
+    <div class="card">
+      <h3 class="card-title">Identité</h3>
+      <div class="grid-2 grid-tight">
+        <div class="field"><label for="t-label">Libellé</label><input id="t-label" name="label" class="input" maxlength="80" required value="<%= type ? type.label : '' %>" placeholder="Support"></div>
+        <div class="field"><label for="t-emoji">Emoji</label><input id="t-emoji" name="emoji" class="input" maxlength="64" value="<%= type && type.emoji ? type.emoji : '' %>" placeholder="🎫"></div>
+      </div>
+      <div class="field"><label for="t-key">Clé (unique, utilisée par les commandes)</label><input id="t-key" name="key" class="input input-mono" maxlength="32" required pattern="^[a-z0-9-]{2,32}$" value="<%= type ? type.key : '' %>" placeholder="support"><small class="hint">Lettres minuscules, chiffres et tirets.</small></div>
+      <div class="field"><label for="t-description">Description (100 caractères, affichée sur le panneau)</label><input id="t-description" name="description" class="input" maxlength="100" value="<%= type && type.description ? type.description : '' %>"></div>
+      <div class="grid-2 grid-tight">
+        <div class="field"><label for="t-language">Langue des messages</label><select id="t-language" name="language" class="select"><option value="">Langue de l'utilisateur / serveur</option><% for (const l of languages) { %><option value="<%= l.code %>" <%= type && type.language === l.code ? 'selected' : '' %>><%= l.flag %> <%= l.nativeLabel %></option><% } %></select></div>
+        <div class="field"><label for="t-order">Ordre d'affichage</label><input id="t-order" name="order" type="number" class="input" min="-1000" max="1000" value="<%= type ? type.order : nextOrder %>"></div>
+      </div>
+      <div class="grid-2 grid-tight">
+        <div class="field"><label for="t-nameFormat">Format du nom de salon</label><input id="t-nameFormat" name="nameFormat" class="input input-mono" maxlength="60" value="<%= type ? type.nameFormat : 'ticket-{number}' %>"><small class="hint">Variables : <code>{number}</code>, <code>{username}</code>, <code>{type}</code>.</small></div>
+        <div class="field"><label for="t-maxPerUser">Tickets ouverts max par membre</label><input id="t-maxPerUser" name="maxPerUser" type="number" class="input" min="1" max="25" value="<%= type ? type.maxPerUser : 1 %>"></div>
+      </div>
+      <label class="check"><input type="checkbox" name="enabled" <%= !type || type.enabled ? 'checked' : '' %>><span>Type activé (visible sur les panneaux)</span></label>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">Salons &amp; staff</h3>
+      <div class="field"><label for="t-category">Catégorie de création des salons</label><select id="t-category" name="categoryId" class="select"><option value="">— Aucune (racine du serveur) —</option><% for (const c of guild.categories) { %><option value="<%= c.id %>" <%= type && type.categoryId === c.id ? 'selected' : '' %>><%= c.name %></option><% } %></select></div>
+      <div class="field"><label for="t-archive">Catégorie d'archivage (à la fermeture)</label><select id="t-archive" name="archiveCategoryId" class="select"><option value="">— Aucune (salon fermé sur place) —</option><% for (const c of guild.categories) { %><option value="<%= c.id %>" <%= type && type.archiveCategoryId === c.id ? 'selected' : '' %>><%= c.name %></option><% } %></select></div>
+      <div class="field"><label for="t-staff">Rôles staff de ce type</label>
+        <select id="t-staff" name="staffRoleIds" class="select" multiple size="8" data-multi><%- include('../partials/role-options', { roles: guild.roles, selected: type && Array.isArray(type.staffRoleIds) ? type.staffRoleIds : [] }) %></select>
+        <small class="hint">Ces rôles voient les tickets de ce type en plus des rôles staff globaux. Ctrl/Cmd + clic pour une sélection multiple.</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3 class="card-title">Questions à l'ouverture</h3><span class="muted">jusqu'à 5 (formulaire Discord)</span></div>
+    <%- include('../partials/repeater', { kind: 'question', rows: questions, name: 'questionsJson', id: 'questions-json', max: 5, addLabel: 'Ajouter une question' }) %>
+    <small class="hint">Le libellé est limité à 45 caractères par Discord. Les réponses apparaissent dans l'embed d'ouverture et le transcript.</small>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3 class="card-title">Message de bienvenue dans le ticket</h3>
+      <div class="field"><label for="t-welcome">Texte envoyé à l'ouverture</label><textarea id="t-welcome" name="welcomeMessage" class="textarea" rows="4" maxlength="2000" placeholder="Merci {user} ! Un membre du staff va vous répondre."><%= type && type.welcomeMessage ? type.welcomeMessage : '' %></textarea></div>
+      <div class="var-list">
+        <% for (const [k, v] of Object.entries(constants.TEMPLATE_VARIABLES)) { %><div><code><%= k %></code><span class="muted"><%= v %></span></div><% } %>
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="card-title">Embed d'ouverture (JSON, optionnel)</h3>
+      <div class="field"><textarea id="t-embed" name="embedJson" class="textarea input-mono" rows="10" placeholder='{
+  "title": "🎫 Support",
+  "description": "Décrivez votre problème, {user}.",
+  "color": "#7C3AED"
+}'><%= embed ? JSON.stringify(embed, null, 2) : '' %></textarea></div>
+      <small class="hint">Format <code>EmbedSpec</code> : <code>title</code>, <code>url</code>, <code>description</code>, <code>color</code> (#RRGGBB), <code>image</code>, <code>thumbnail</code>, <code>footer.text</code>, <code>author.name</code>, <code>timestamp</code>, <code>fields[{name,value,inline}]</code>. Vide = embed par défaut.</small>
+    </div>
+  </div>
+
+  <div class="form-actions sticky-actions">
+    <a class="btn btn-ghost" href="/guilds/<%= guild.id %>/tickets?tab=types">Annuler</a>
+    <button type="submit" class="btn btn-primary"><%= type ? 'Enregistrer' : 'Créer le type' %></button>
+  </div>
+</form>

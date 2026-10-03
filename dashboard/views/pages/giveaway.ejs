@@ -1,0 +1,44 @@
+<% const g = giveaway; %>
+<section class="page-header">
+  <div>
+    <a class="link" href="/guilds/<%= guild.id %>/giveaways">← Retour aux giveaways</a>
+    <h2 class="page-title">🎁 <%= g.prize %> <span class="badge <%= g.ended ? 'badge-muted' : 'badge-primary' %>"><%= g.ended ? 'terminé' : 'en cours' %></span></h2>
+    <p class="muted">Organisé par <%= names[g.hostId] || g.hostId %> · #<%= channelName %> · <%= g.ended ? 'terminé le' : 'fin le' %> <%= fmt.dateTime(g.endsAt) %> (<%= fmt.relative(g.endsAt) %>)<% if (g.messageId) { %> · <a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= g.channelId %>/<%= g.messageId %>" target="_blank" rel="noopener noreferrer">message ↗</a><% } %></p>
+  </div>
+  <div class="page-actions">
+    <% if (!g.ended) { %>
+      <form method="post" action="/guilds/<%= guild.id %>/giveaways/<%= g.id %>/end"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-primary" data-confirm="Terminer maintenant et tirer les gagnants ?" <%= botReady ? '' : 'disabled' %>>Terminer maintenant</button></form>
+      <form method="post" action="/guilds/<%= guild.id %>/giveaways/<%= g.id %>/cancel"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger" data-confirm="Annuler ce giveaway sans gagnant ?">Annuler</button></form>
+    <% } else { %>
+      <form method="post" action="/guilds/<%= guild.id %>/giveaways/<%= g.id %>/reroll" class="inline-fields"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><div class="field field-fixed"><label for="rr-count" class="sr-only">Nombre</label><input id="rr-count" name="count" type="number" class="input input-sm" min="1" max="50" value="1" aria-label="Nombre de gagnants à retirer"></div><div class="field field-fixed"><button type="submit" class="btn btn-primary" data-confirm="Retirer de nouveaux gagnants (les précédents sont exclus) ?" <%= g.entries.length && botReady ? '' : 'disabled' %>>Reroll</button></div></form>
+    <% } %>
+  </div>
+</section>
+
+<div class="grid-2 grid-2-aside">
+  <aside class="stack">
+    <section class="card">
+      <h3 class="card-title">Détails</h3>
+      <dl class="dl">
+        <dt>Gagnants prévus</dt><dd><%= g.winnersCount %></dd>
+        <dt>Rôle requis</dt><dd><%= roleName || '—' %></dd>
+        <dt>Messages minimum</dt><dd><%= g.minMessages || '—' %></dd>
+        <dt>Langue</dt><dd><%= g.language || config.defaultLanguage %></dd>
+        <dt>Créé le</dt><dd><%= fmt.dateTime(g.createdAt) %></dd>
+      </dl>
+      <% if (g.description) { %><p class="pre-wrap"><%= g.description %></p><% } %>
+    </section>
+    <section class="card">
+      <div class="card-head"><h3 class="card-title">Gagnants</h3><span class="badge badge-muted"><%= winners.length %></span></div>
+      <% if (!winners.length) { %><p class="muted"><%= g.ended ? 'Aucun gagnant (annulé ou aucun participant).' : 'Tirage à la fin du giveaway.' %></p><% } else { %>
+      <div class="winner-list"><% for (const id of winners) { %><a class="badge badge-primary" href="/guilds/<%= guild.id %>/members/<%= id %>">🏆 <%= names[id] || id %></a><% } %></div>
+      <% } %>
+    </section>
+  </aside>
+  <section class="card">
+    <div class="card-head"><h3 class="card-title">Participants</h3><span class="badge badge-muted"><%= g.entries.length %></span></div>
+    <% if (!g.entries.length) { %><p class="muted">Aucun participant pour le moment.</p><% } else { %>
+    <div class="participant-grid"><% for (const e of g.entries) { %><a class="badge <%= winners.includes(e.userId) ? 'badge-primary' : '' %>" href="/guilds/<%= guild.id %>/members/<%= e.userId %>" title="<%= fmt.dateTime(e.createdAt) %>"><%= names[e.userId] || e.userId %></a><% } %></div>
+    <% } %>
+  </section>
+</div>

@@ -1,0 +1,46 @@
+<section class="page-header">
+  <div><h2 class="page-title">Embeds</h2><p class="muted">Templates réutilisables par <code>/embed</code>, les annonces et le dashboard. Aperçu fidèle au rendu Discord.</p></div>
+  <div class="page-actions">
+    <form method="post" action="/guilds/<%= guild.id %>/embeds/defaults" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost">Créer les templates par défaut</button></form>
+    <a class="btn btn-primary" href="/guilds/<%= guild.id %>/embeds/new">+ Nouveau template</a>
+  </div>
+</section>
+
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Embeds est désactivé : la commande <code>/embed</code> ne répond pas, mais les templates restent utilisables par les autres modules.</span></div><% } %>
+
+<div class="grid-2 grid-2-aside">
+  <aside class="stack">
+    <form method="post" action="/guilds/<%= guild.id %>/embeds/import" class="card form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <h3 class="card-title">Importer un JSON</h3>
+      <div class="field"><label for="imp-name">Nom du template</label><input id="imp-name" name="name" class="input" maxlength="100" required placeholder="Patch note"></div>
+      <div class="field"><label for="imp-json">JSON (EmbedSpec ou message { content, embeds, buttons })</label><textarea id="imp-json" name="json" class="textarea input-mono textarea-sm" rows="8" required placeholder='{"title": "…", "description": "…", "color": "#7C3AED"}'></textarea></div>
+      <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">Importer</button></div>
+    </form>
+    <div class="card card-muted">
+      <h3 class="card-title">Variables</h3>
+      <div class="var-list"><% for (const [k, v] of Object.entries(constants.TEMPLATE_VARIABLES)) { %><div><code><%= k %></code><span class="muted"><%= v %></span></div><% } %></div>
+    </div>
+  </aside>
+
+  <div>
+    <div class="card">
+      <div class="card-head"><h3 class="card-title">Templates (<%= templates.length %>)</h3><input type="search" class="input input-sm" placeholder="Filtrer…" data-filter="#template-list" aria-label="Filtrer les templates"></div>
+      <% if (!templates.length) { %><p class="muted">Aucun template. Créez-en un, importez un JSON ou générez les templates par défaut (maintenance, patch note, saison, tournoi…).</p><% } %>
+      <div class="card-grid" id="template-list">
+        <% for (const t of templates) { %>
+          <article class="card card-compact" data-filter-item data-filter-text="<%= (t.name + ' ' + (t.description || '')).toLowerCase() %>">
+            <div class="card-head"><h4 class="card-title"><%= t.name %></h4><small class="muted"><%= fmt.relative(t.updatedAt) %></small></div>
+            <% if (t.description) { %><p class="muted"><%= t.description %></p><% } %>
+            <%- include('../partials/embed-preview', { embed: t.spec, buttons: t.buttonList, content: '', compact: true }) %>
+            <div class="card-actions">
+              <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/embeds/<%= t.id %>">Modifier / envoyer</a>
+              <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/embeds/<%= t.id %>/export">Exporter JSON</a>
+              <form method="post" action="/guilds/<%= guild.id %>/embeds/<%= t.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer le template « <%= t.name %> » ?">Supprimer</button></form>
+            </div>
+          </article>
+        <% } %>
+      </div>
+    </div>
+  </div>
+</div>

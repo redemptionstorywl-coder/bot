@@ -310,7 +310,7 @@ describe('Dashboard — pages connectées', () => {
       [`/members/${USER_ID}`, 'Avertissements'],
       ['/translations?only=overrides', 'Ouais'],
       ['/translations?lang=en&q=yes&only=all', 'Traductions'],
-      ['/tickets', "en cours d'intégration"],
+      ['/school', "en cours d'intégration"],
       ['/battle-royale', "en cours d'intégration"],
     ] as const) {
       const r = await get(`/guilds/${GUILD_ID}${path}`, { auth: true });

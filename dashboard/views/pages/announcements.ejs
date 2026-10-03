@@ -1,0 +1,28 @@
+<section class="page-header">
+  <div><h2 class="page-title">Annonces</h2><p class="muted">Annonces multilingues : brouillon → programmation → publication (un message par langue / salon), archivage.</p></div>
+  <div class="page-actions"><a class="btn btn-primary" href="/guilds/<%= guild.id %>/announcements/new">+ Nouvelle annonce</a></div>
+</section>
+
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Annonces est désactivé : les programmations ne seront pas publiées tant qu'il n'est pas réactivé.</span></div><% } %>
+
+<div class="status-columns">
+  <% for (const col of columns) { %>
+    <div class="status-column">
+      <div class="status-column-title"><span><%= col.label %></span><span><%= fmt.number(col.total) %></span></div>
+      <% if (!col.items.length) { %><p class="muted">Aucune annonce.</p><% } %>
+      <% for (const a of col.items) { %>
+        <a class="status-item" href="/guilds/<%= guild.id %>/announcements/<%= a.id %>">
+          <strong><%= a.title || 'Sans titre' %></strong>
+          <small>
+            <%= a.sourceLanguage.toUpperCase() %> → <%= a.targetLanguages === '*' ? 'toutes' : a.targetLanguages.join(', ').toUpperCase() %>
+            <% if (a.channelId) { %>· #<%= channelName(a.channelId) %><% } %>
+            <% if (col.status === 'SCHEDULED' && scheduleMap[a.id]) { %>· 📅 <%= fmt.dateTime(scheduleMap[a.id]) %><% } %>
+            <% if (col.status === 'PUBLISHED') { %>· publiée <%= fmt.relative(a.publishedAt) %> (<%= a.messages.length %> msg)<% } %>
+            <% if (col.status === 'ARCHIVED') { %>· archivée <%= fmt.relative(a.archivedAt) %><% } %>
+            <% if (col.status === 'DRAFT') { %>· modifiée <%= fmt.relative(a.updatedAt) %><% } %>
+          </small>
+        </a>
+      <% } %>
+    </div>
+  <% } %>
+</div>

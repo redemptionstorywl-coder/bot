@@ -1,0 +1,38 @@
+<% const p = poll; %>
+<section class="page-header">
+  <div>
+    <a class="link" href="/guilds/<%= guild.id %>/events?tab=polls">← Retour aux sondages</a>
+    <h2 class="page-title">📊 <%= p.question %> <span class="badge <%= p.ended ? 'badge-muted' : 'badge-primary' %>"><%= p.ended ? 'terminé' : 'ouvert' %></span></h2>
+    <p class="muted">Par <%= names[p.createdById] || p.createdById %> · #<%= channelName %> · <%= p.type === 'YES_NO' ? 'Oui / Non' : 'Choix multiples' %><%= p.multiSelect ? ' · plusieurs réponses' : '' %><%= p.anonymous ? ' · anonyme' : '' %><% if (p.endsAt) { %> · <%= p.ended ? 'terminé le' : 'fin le' %> <%= fmt.dateTime(p.endsAt) %><% } %><% if (p.messageId) { %> · <a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= p.channelId %>/<%= p.messageId %>" target="_blank" rel="noopener noreferrer">message ↗</a><% } %></p>
+  </div>
+  <% if (!p.ended) { %>
+  <div class="page-actions"><form method="post" action="/guilds/<%= guild.id %>/events/polls/<%= p.id %>/end"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger" data-confirm="Terminer ce sondage maintenant ?">Terminer le sondage</button></form></div>
+  <% } %>
+</section>
+
+<div class="card poll-results">
+  <div class="card-head"><h3 class="card-title">Résultats</h3><span class="muted"><%= fmt.number(results.voters) %> votant(s) · <%= fmt.number(results.total) %> voix</span></div>
+  <ul class="bars">
+    <% for (let i = 0; i < options.length; i++) { %>
+      <li class="bar-row">
+        <span class="bar-label"><span class="truncate"><%= options[i].emoji ? options[i].emoji + ' ' : '' %><%= options[i].label %></span></span>
+        <span class="bar-track"><span class="bar-fill" data-pct="<%= results.percentages[i] %>"></span></span>
+        <span class="bar-value"><%= fmt.number(results.counts[i]) %> · <%= results.percentages[i] %> %</span>
+      </li>
+    <% } %>
+  </ul>
+</div>
+
+<% if (voters) { %>
+<div class="card">
+  <h3 class="card-title">Votants par option</h3>
+  <div class="card-grid">
+    <% for (let i = 0; i < options.length; i++) { %>
+      <div class="card card-compact card-muted">
+        <h4 class="card-title"><%= options[i].emoji ? options[i].emoji + ' ' : '' %><%= options[i].label %> <span class="badge badge-muted"><%= voters[i].length %></span></h4>
+        <% if (!voters[i].length) { %><p class="muted">Aucun vote.</p><% } else { %><div class="participant-grid"><% for (const id of voters[i]) { %><a class="badge" href="/guilds/<%= guild.id %>/members/<%= id %>"><%= names[id] || id %></a><% } %></div><% } %>
+      </div>
+    <% } %>
+  </div>
+</div>
+<% } else { %><p class="muted">Sondage anonyme : la liste des votants n'est pas conservée.</p><% } %>

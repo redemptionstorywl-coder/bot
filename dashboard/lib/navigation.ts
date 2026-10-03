@@ -50,8 +50,11 @@ export const NAV_GROUP_LABELS: Record<NavEntry['group'], string> = {
   global: 'Global',
 };
 
+/** Pages disposant d'un routeur dédié dans routes/guild/ (retirer une clé ici dès que sa page existe). */
+const IMPLEMENTED_MODULE_PAGES = new Set(['logs', 'tickets', 'embeds', 'announcements', 'welcome', 'roles', 'reactionroles', 'moderation', 'giveaways', 'events']);
+
 /** Pages de modules servies par la page générique « en cours d'intégration » tant qu'aucune route dédiée n'existe. */
-export const PENDING_MODULE_PAGES: NavEntry[] = NAVIGATION.filter((e) => e.group === 'modules' && e.key !== 'logs');
+export const PENDING_MODULE_PAGES: NavEntry[] = NAVIGATION.filter((e) => e.group === 'modules' && !IMPLEMENTED_MODULE_PAGES.has(e.key));
 
 export function navHref(entry: NavEntry, guildId: string | null): string {
   if (entry.key === 'guilds') return '/guilds';

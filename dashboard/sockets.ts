@@ -23,6 +23,7 @@ export const RELAYED_BUS_EVENTS = [
   'ticket:claim',
   'ticket:close',
   'ticket:update',
+  'ticket:type',
   'moderation:sanction',
   'moderation:warning',
   'announcement:published',

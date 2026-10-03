@@ -1,0 +1,130 @@
+<section class="page-header">
+  <div><h2 class="page-title">Rôles</h2><p class="muted">Auto-roles à l'arrivée, role menus (boutons / menu déroulant) et rôles de notification.</p></div>
+  <div class="page-actions"><a class="btn btn-primary" href="/guilds/<%= guild.id %>/roles/menus/new">+ Nouveau role menu</a></div>
+</section>
+
+<div class="tabs" data-tabs data-active="<%= tab %>">
+  <div class="tab-list" role="tablist">
+    <button type="button" class="tab" role="tab" data-tab="autoroles">Auto-roles <span class="badge badge-muted"><%= autoroles.length %></span></button>
+    <button type="button" class="tab" role="tab" data-tab="menus">Role menus <span class="badge badge-muted"><%= menus.length %></span></button>
+    <button type="button" class="tab" role="tab" data-tab="notifications">Notifications <span class="badge badge-muted"><%= notifications.length %></span></button>
+  </div>
+
+  <!-- ─── Auto-roles ─── -->
+  <section class="tab-panel" data-tab-panel="autoroles" role="tabpanel">
+    <% if (!modules.autorole) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Auto Role est désactivé : aucun rôle ne sera attribué automatiquement.</span></div><% } %>
+    <div class="grid-2">
+      <div class="card">
+        <h3 class="card-title">Règles actives</h3>
+        <% if (!autoroles.length) { %><p class="muted">Aucun auto-role.</p><% } else { %>
+        <div class="table-wrap"><table class="table table-compact">
+          <thead><tr><th>Rôle</th><th>Déclencheur</th><th>Délai</th><th></th></tr></thead>
+          <tbody>
+            <% for (const a of autoroles) { %>
+              <tr class="<%= a.enabled ? '' : 'row-disabled' %>">
+                <td><%= roleName(a.roleId) %></td>
+                <td><span class="badge badge-muted"><%= autoroleTypes.find((t) => t.value === a.type).label %></span></td>
+                <td><%= a.delaySeconds ? fmt.duration(a.delaySeconds) : 'immédiat' %></td>
+                <td class="right"><form method="post" action="/guilds/<%= guild.id %>/roles/autoroles/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="roleId" value="<%= a.roleId %>"><input type="hidden" name="type" value="<%= a.type %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Retirer cet auto-role ?">Retirer</button></form></td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table></div>
+        <% } %>
+      </div>
+      <form method="post" action="/guilds/<%= guild.id %>/roles/autoroles" class="card form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <h3 class="card-title">Ajouter un auto-role</h3>
+        <div class="field"><label for="ar-role">Rôle</label><select id="ar-role" name="roleId" class="select" required><option value="">— Choisir —</option><%- include('../partials/role-options', { roles: guild.roles.filter((r) => !r.managed), selected: '' }) %></select></div>
+        <div class="field"><label for="ar-type">Déclencheur</label><select id="ar-type" name="type" class="select"><% for (const t of autoroleTypes) { %><option value="<%= t.value %>"><%= t.label %></option><% } %></select></div>
+        <div class="field"><label for="ar-delay">Délai (minutes, 0 = immédiat, max 1440)</label><input id="ar-delay" name="delayMinutes" type="number" class="input" min="0" max="1440" value="0"></div>
+        <div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter</button></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ─── Role menus ─── -->
+  <section class="tab-panel" data-tab-panel="menus" role="tabpanel">
+    <% if (!modules.rolemenu) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Role Menus est désactivé : les boutons publiés ne répondent pas.</span></div><% } %>
+    <div class="card">
+      <div class="card-head"><h3 class="card-title">Role menus</h3><a class="btn btn-primary btn-sm" href="/guilds/<%= guild.id %>/roles/menus/new">+ Nouveau</a></div>
+      <% if (!menus.length) { %><p class="muted">Aucun role menu. Créez-en un, ajoutez des rôles puis publiez-le dans un salon.</p><% } else { %>
+      <div class="table-wrap"><table class="table table-compact">
+        <thead><tr><th>Nom</th><th>Style</th><th>Rôles</th><th>Publié</th><th></th></tr></thead>
+        <tbody>
+          <% for (const m of menus) { %>
+            <tr>
+              <td><strong><%= m.name %></strong><% if (m.exclusive) { %> <span class="badge badge-muted">exclusif</span><% } %></td>
+              <td><%= m.style === 'SELECT' ? 'Menu déroulant' : 'Boutons' %></td>
+              <td><div class="badges"><% for (const o of m.optionList.slice(0, 6)) { %><span class="badge badge-muted"><%= o.emoji ? o.emoji + ' ' : '' %><%= o.label || roleName(o.roleId) %></span><% } %><% if (m.optionList.length > 6) { %><span class="badge badge-muted">+<%= m.optionList.length - 6 %></span><% } %><% if (!m.optionList.length) { %><span class="muted">aucun</span><% } %></div></td>
+              <td><% if (m.messageId) { %>#<%= channelName(m.channelId) %> · <a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= m.channelId %>/<%= m.messageId %>" target="_blank" rel="noopener noreferrer">voir ↗</a><% } else { %><span class="muted">non publié</span><% } %></td>
+              <td class="right"><div class="actions-cell">
+                <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/roles/menus/<%= m.id %>">Modifier</a>
+                <form method="post" action="/guilds/<%= guild.id %>/roles/menus/<%= m.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer le role menu « <%= m.name %> » et son message Discord ?">Supprimer</button></form>
+              </div></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table></div>
+      <% } %>
+    </div>
+  </section>
+
+  <!-- ─── Notifications ─── -->
+  <section class="tab-panel" data-tab-panel="notifications" role="tabpanel">
+    <% if (!modules.notifications) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Notifications est désactivé : le panneau publié ne répond pas.</span></div><% } %>
+    <div class="grid-2">
+      <div class="stack">
+        <div class="card">
+          <div class="card-head"><h3 class="card-title">Rôles de notification</h3>
+            <form method="post" action="/guilds/<%= guild.id %>/roles/notifications/setup"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost btn-sm" data-confirm="Créer les rôles de notification manquants (<%= defaultNotifications.map((d) => d.label).join(', ') %>) ?" <%= botReady ? '' : 'disabled' %>>Configuration par défaut</button></form>
+          </div>
+          <% if (!notifications.length) { %><p class="muted">Aucun rôle de notification. Utilisez la configuration par défaut ou ajoutez-en un.</p><% } else { %>
+          <div class="table-wrap"><table class="table table-compact">
+            <thead><tr><th>Ordre</th><th>Clé</th><th>Libellé</th><th>Rôle</th><th>État</th><th></th></tr></thead>
+            <tbody>
+              <% for (const n of notifications) { %>
+                <tr class="<%= n.enabled ? '' : 'row-disabled' %>">
+                  <td class="muted"><%= n.order %></td>
+                  <td><code><%= n.key %></code></td>
+                  <td><%= n.emoji ? n.emoji + ' ' : '' %><%= n.label %><% if (n.description) { %><br><small class="muted"><%= n.description %></small><% } %></td>
+                  <td><%= roleName(n.roleId) %></td>
+                  <td><span class="badge <%= n.enabled ? 'badge-primary' : 'badge-muted' %>"><%= n.enabled ? 'activé' : 'masqué' %></span></td>
+                  <td class="right"><div class="actions-cell">
+                    <button type="button" class="btn btn-ghost btn-sm" data-fill-form="#notif-form" data-form-title-text="Modifier « <%= n.label %> »" data-set-key="<%= n.key %>" data-set-roleId="<%= n.roleId %>" data-set-label="<%= n.label %>" data-set-emoji="<%= n.emoji || '' %>" data-set-description="<%= n.description || '' %>" data-set-order="<%= n.order %>" data-set-enabled="<%= n.enabled ? '1' : '' %>">Modifier</button>
+                    <form method="post" action="/guilds/<%= guild.id %>/roles/notifications/<%= n.key %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Retirer la notification « <%= n.label %> » ? Le rôle Discord est conservé.">Retirer</button></form>
+                  </div></td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table></div>
+          <% } %>
+        </div>
+        <form method="post" action="/guilds/<%= guild.id %>/roles/notifications/publish" class="card inline-fields">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="field"><label for="np-channel">Publier le panneau dans</label><select id="np-channel" name="channelId" class="select" required><%- include('../partials/channel-options', { channels: guild.textChannels, selected: '', allowEmpty: true, emptyLabel: '— Choisir un salon —' }) %></select></div>
+          <div class="field"><label for="np-style">Style</label><select id="np-style" name="style" class="select"><option value="SELECT">Menu déroulant (multi)</option><option value="BUTTONS">Boutons</option></select></div>
+          <div class="field field-fixed"><button type="submit" class="btn btn-primary" <%= botReady && notifications.length ? '' : 'disabled' %>>Publier</button></div>
+        </form>
+      </div>
+      <form method="post" action="/guilds/<%= guild.id %>/roles/notifications" class="card form" id="notif-form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <h3 class="card-title" data-form-title>Ajouter / modifier une notification</h3>
+        <div class="grid-2 grid-tight">
+          <div class="field"><label for="nf-key">Clé</label><input id="nf-key" name="key" class="input input-mono" maxlength="64" required pattern="^[a-z0-9_-]{1,64}$" placeholder="events"></div>
+          <div class="field"><label for="nf-role">Rôle</label><select id="nf-role" name="roleId" class="select" required><option value="">— Choisir —</option><%- include('../partials/role-options', { roles: guild.roles.filter((r) => !r.managed), selected: '' }) %></select></div>
+        </div>
+        <div class="grid-2 grid-tight">
+          <div class="field"><label for="nf-label">Libellé</label><input id="nf-label" name="label" class="input" maxlength="100" required placeholder="Événements"></div>
+          <div class="field"><label for="nf-emoji">Emoji</label><input id="nf-emoji" name="emoji" class="input" maxlength="64" placeholder="🎉"></div>
+        </div>
+        <div class="field"><label for="nf-description">Description</label><input id="nf-description" name="description" class="input" maxlength="100" placeholder="Annonces d'événements et soirées"></div>
+        <div class="grid-2 grid-tight">
+          <div class="field"><label for="nf-order">Ordre</label><input id="nf-order" name="order" type="number" class="input" min="0" max="1000" value="0"></div>
+          <div class="field"><label class="check check-tall"><input type="checkbox" name="enabled" id="nf-enabled" checked><span>Visible sur le panneau</span></label></div>
+        </div>
+        <div class="form-actions"><button type="reset" class="btn btn-ghost">Vider</button><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+      </form>
+    </div>
+  </section>
+</div>

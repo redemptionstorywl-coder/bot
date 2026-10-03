@@ -1,0 +1,79 @@
+<section class="page-header">
+  <div>
+    <a class="link" href="/guilds/<%= guild.id %>/tickets?tab=tickets">← Retour aux tickets</a>
+    <h2 class="page-title">Ticket #<%= ticket.number %> <span class="badge badge-status-<%= ticket.status %>"><%= statusLabels[ticket.status] || ticket.status %></span></h2>
+    <p class="muted"><%= ticket.type ? (ticket.type.emoji ? ticket.type.emoji + ' ' : '') + ticket.type.label : 'Sans type' %> · ouvert <%= fmt.relative(ticket.createdAt) %><% if (channelExists) { %> · <a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= ticket.channelId %>" target="_blank" rel="noopener noreferrer">Ouvrir le salon ↗</a><% } %></p>
+  </div>
+  <div class="page-actions">
+    <% if (isOpen && !ticket.claimedById) { %>
+      <form method="post" action="/guilds/<%= guild.id %>/tickets/<%= ticket.id %>/claim"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost" <%= botReady ? '' : 'disabled title="Bot hors ligne"' %>>Prendre en charge</button></form>
+    <% } %>
+    <% if (ticket.status !== 'DELETED') { %>
+      <form method="post" action="/guilds/<%= guild.id %>/tickets/<%= ticket.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger" data-confirm="Supprimer définitivement le ticket #<%= ticket.number %> et son salon Discord ? Le transcript est conservé.">Supprimer</button></form>
+    <% } %>
+  </div>
+</section>
+
+<div class="grid-2 grid-2-aside">
+  <aside class="stack">
+    <section class="card">
+      <h3 class="card-title">Informations</h3>
+      <dl class="dl">
+        <dt>Créateur</dt><dd><a class="link" href="/guilds/<%= guild.id %>/members/<%= ticket.userId %>"><%= names[ticket.userId] || ticket.userId %></a><br><small class="mono muted"><%= ticket.userId %></small></dd>
+        <dt>Pris en charge</dt><dd><% if (ticket.claimedById) { %><a class="link" href="/guilds/<%= guild.id %>/members/<%= ticket.claimedById %>"><%= names[ticket.claimedById] || ticket.claimedById %></a><% } else { %><span class="muted">personne</span><% } %></dd>
+        <dt>Ouvert le</dt><dd><%= fmt.dateTime(ticket.createdAt) %></dd>
+        <% if (ticket.closedAt) { %><dt>Fermé le</dt><dd><%= fmt.dateTime(ticket.closedAt) %><% if (ticket.closedById) { %><br><small class="muted">par <%= names[ticket.closedById] || ticket.closedById %></small><% } %></dd><% } %>
+        <% if (ticket.closeReason) { %><dt>Raison</dt><dd><%= ticket.closeReason %></dd><% } %>
+        <dt>Langue</dt><dd><%= ticket.language || config.defaultLanguage %></dd>
+        <dt>Salon</dt><dd class="mono"><%= ticket.channelId %><%= channelExists ? '' : ' (supprimé)' %></dd>
+      </dl>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h3 class="card-title">Participants</h3><span class="badge badge-muted"><%= participants.length %></span></div>
+      <% if (!participants.length) { %><p class="muted">Aucun membre ajouté.</p><% } else { %>
+      <div class="badges"><% for (const id of participants) { %><a class="badge" href="/guilds/<%= guild.id %>/members/<%= id %>"><%= names[id] || id %></a><% } %></div>
+      <% } %>
+    </section>
+  </aside>
+
+  <div class="stack">
+    <section class="card">
+      <h3 class="card-title">Réponses au formulaire</h3>
+      <% if (!answers.length) { %><p class="muted">Aucune question posée à l'ouverture.</p><% } else { %>
+      <div class="qa-list"><% for (const a of answers) { %><div class="qa-item"><div class="qa-q"><%= a.question %></div><div class="qa-a"><%= a.answer || '—' %></div></div><% } %></div>
+      <% } %>
+    </section>
+
+    <section class="card">
+      <h3 class="card-title">Transcript</h3>
+      <% if (!ticket.transcript) { %>
+        <p class="muted">Le transcript est généré à la fermeture du ticket.</p>
+      <% } else { %>
+        <dl class="dl">
+          <dt>Messages</dt><dd><%= fmt.number(ticket.transcript.messageCount) %></dd>
+          <dt>Durée</dt><dd><%= fmt.duration(ticket.transcript.durationSeconds) %></dd>
+          <dt>Généré le</dt><dd><%= fmt.dateTime(ticket.transcript.createdAt) %></dd>
+        </dl>
+        <% if (!formats.length) { %><p class="muted">Fichiers indisponibles.</p><% } else { %>
+        <div class="card-actions">
+          <% for (const f of formats) { %>
+            <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/tickets/<%= ticket.id %>/transcript/<%= f %>" target="_blank" rel="noopener">Voir <%= f.toUpperCase() %></a>
+            <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/tickets/<%= ticket.id %>/transcript/<%= f %>?download=1">Télécharger <%= f.toUpperCase() %></a>
+          <% } %>
+        </div>
+        <% } %>
+      <% } %>
+    </section>
+
+    <% if (isOpen) { %>
+    <form method="post" action="/guilds/<%= guild.id %>/tickets/<%= ticket.id %>/close" class="card card-danger form" data-confirm="Fermer le ticket #<%= ticket.number %> ? Un transcript sera généré et le salon verrouillé.">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <h3 class="card-title">Fermer le ticket</h3>
+      <% if (!botReady) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le bot n'est pas connecté : la fermeture sera enregistrée mais le salon Discord ne sera pas verrouillé.</span></div><% } %>
+      <div class="field"><label for="close-reason">Raison (optionnelle, visible dans le transcript)</label><input id="close-reason" name="reason" class="input" maxlength="500" placeholder="Résolu, doublon, inactivité…"></div>
+      <div class="form-actions"><button type="submit" class="btn btn-danger">Fermer le ticket</button></div>
+    </form>
+    <% } %>
+  </div>
+</div>

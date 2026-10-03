@@ -1,0 +1,53 @@
+<section class="page-header">
+  <div>
+    <a class="link" href="/guilds/<%= guild.id %>/roles?tab=menus">← Retour aux role menus</a>
+    <h2 class="page-title"><%= menu ? 'Role menu « ' + menu.name + ' »' : 'Nouveau role menu' %></h2>
+    <p class="muted"><% if (menu && menu.messageId) { %>Publié dans #<%= (guild.textChannels.find((c) => c.id === menu.channelId) || { name: menu.channelId }).name %> · <a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= menu.channelId %>/<%= menu.messageId %>" target="_blank" rel="noopener noreferrer">voir le message ↗</a><% } else { %>Les membres cliquent sur un bouton (ou choisissent dans le menu) pour obtenir / retirer un rôle.<% } %></p>
+  </div>
+  <% if (menu) { %>
+  <div class="page-actions">
+    <form method="post" action="/guilds/<%= guild.id %>/roles/menus/<%= menu.id %>/refresh"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost" <%= botReady && menu.messageId ? '' : 'disabled' %>>Rafraîchir le message</button></form>
+    <form method="post" action="/guilds/<%= guild.id %>/roles/menus/<%= menu.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger" data-confirm="Supprimer ce role menu et son message Discord ?">Supprimer</button></form>
+  </div>
+  <% } %>
+</section>
+
+<form method="post" action="/guilds/<%= guild.id %>/roles/menus<%= menu ? '/' + menu.id : '' %>" class="form">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="card">
+    <h3 class="card-title">Réglages</h3>
+    <div class="grid-3 grid-tight">
+      <div class="field"><label for="rm-name">Nom interne</label><input id="rm-name" name="name" class="input" maxlength="100" required value="<%= menu ? menu.name : '' %>" placeholder="Couleurs"></div>
+      <div class="field"><label for="rm-style">Style</label><select id="rm-style" name="style" class="select"><option value="BUTTONS" <%= !menu || menu.style === 'BUTTONS' ? 'selected' : '' %>>Boutons</option><option value="SELECT" <%= menu && menu.style === 'SELECT' ? 'selected' : '' %>>Menu déroulant</option></select></div>
+      <div class="field"><label for="rm-placeholder">Texte du menu déroulant</label><input id="rm-placeholder" name="placeholder" class="input" maxlength="150" value="<%= menu && menu.placeholder ? menu.placeholder : '' %>" placeholder="Choisissez vos rôles…"></div>
+    </div>
+    <div class="grid-3 grid-tight">
+      <div class="field"><label class="check check-tall"><input type="checkbox" name="exclusive" <%= menu && menu.exclusive ? 'checked' : '' %>><span>Exclusif (un seul rôle à la fois)</span></label></div>
+      <div class="field"><label for="rm-min">Sélection minimale (menu)</label><input id="rm-min" name="minValues" type="number" class="input" min="0" max="25" value="<%= menu ? menu.minValues : 0 %>"></div>
+      <div class="field"><label for="rm-max">Sélection maximale (menu)</label><input id="rm-max" name="maxValues" type="number" class="input" min="1" max="25" value="<%= menu ? menu.maxValues : 25 %>"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h3 class="card-title">Rôles proposés</h3><span class="muted">jusqu'à 25 · libellé par défaut = nom du rôle</span></div>
+    <%- include('../partials/repeater', { kind: 'option', rows: options, name: 'optionsJson', id: 'rm-options', max: 25, addLabel: 'Ajouter un rôle', roles: guild.roles.filter((r) => !r.managed) }) %>
+  </div>
+
+  <div class="card">
+    <h3 class="card-title">Embed du message</h3>
+    <%- include('../partials/embed-editor', { prefix: 'embed', spec, id: 'rm-embed', buttons: null, withPreview: true, withJson: true, compact: true }) %>
+  </div>
+
+  <div class="form-actions sticky-actions">
+    <a class="btn btn-ghost" href="/guilds/<%= guild.id %>/roles?tab=menus">Annuler</a>
+    <button type="submit" class="btn btn-primary"><%= menu ? 'Enregistrer' : 'Créer le role menu' %></button>
+  </div>
+</form>
+
+<% if (menu) { %>
+<form method="post" action="/guilds/<%= guild.id %>/roles/menus/<%= menu.id %>/publish" class="card inline-fields">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="field"><label for="rm-channel"><%= menu.messageId ? 'Republier / déplacer dans' : 'Publier dans' %></label><select id="rm-channel" name="channelId" class="select" required><%- include('../partials/channel-options', { channels: guild.textChannels, selected: menu.channelId || '', allowEmpty: true, emptyLabel: '— Choisir un salon —' }) %></select></div>
+  <div class="field field-fixed"><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled title="Bot hors ligne"' %>>Publier (version enregistrée)</button></div>
+</form>
+<% } %>

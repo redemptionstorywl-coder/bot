@@ -1,0 +1,16 @@
+<%#
+  Liste dynamique complète : lignes existantes + template + bouton d'ajout + champ caché JSON.
+  Attend : kind, rows (array), name (nom du champ caché), id (identifiant unique), max (nombre max), addLabel, roles (option).
+%>
+<% const _rows = Array.isArray(rows) ? rows : []; const _roles = typeof roles !== 'undefined' ? roles : []; %>
+<div class="repeater" data-repeater data-repeater-max="<%= typeof max === 'number' ? max : 25 %>" data-repeater-json="#<%= id %>">
+  <div class="repeater-rows" data-repeater-rows>
+    <% for (const row of _rows) { %><%- include('repeater-row', { kind, row, roles: _roles }) %><% } %>
+  </div>
+  <template data-repeater-template><%- include('repeater-row', { kind, row: null, roles: _roles }) %></template>
+  <div class="repeater-foot">
+    <button type="button" class="btn btn-ghost btn-sm" data-repeater-add>+ <%= typeof addLabel === 'string' ? addLabel : 'Ajouter' %></button>
+    <span class="hint" data-repeater-count></span>
+  </div>
+  <input type="hidden" name="<%= name %>" id="<%= id %>" value="<%= JSON.stringify(_rows) %>">
+</div>

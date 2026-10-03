@@ -1,0 +1,42 @@
+<section class="page-header">
+  <div><h2 class="page-title">Reaction Roles</h2><p class="muted">Un emoji réagi sur un message = un rôle attribué (retiré quand la réaction est enlevée).</p></div>
+</section>
+
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Reaction Roles est désactivé : les réactions ne donnent plus de rôle.</span></div><% } %>
+
+<div class="grid-2">
+  <div class="card">
+    <div class="card-head"><h3 class="card-title">Reaction roles configurés</h3><span class="badge badge-muted"><%= total %></span></div>
+    <% if (!groups.length) { %><p class="muted">Aucun reaction role.</p><% } else { %>
+    <% for (const g of groups) { %>
+      <h4 class="card-subtitle">#<%= channelName(g.channelId) %> · <a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= g.channelId %>/<%= g.messageId %>" target="_blank" rel="noopener noreferrer">message <%= g.messageId %> ↗</a></h4>
+      <div class="table-wrap"><table class="table table-compact">
+        <thead><tr><th>Emoji</th><th>Rôle</th><th>Ajouté</th><th></th></tr></thead>
+        <tbody>
+          <% for (const r of g.items) { %>
+            <tr>
+              <td><%= r.emoji.includes(':') ? '<:' + r.emoji + '>' : r.emoji %></td>
+              <td><%= roleName(r.roleId) %></td>
+              <td class="nowrap muted"><%= fmt.date(r.createdAt) %></td>
+              <td class="right"><form method="post" action="/guilds/<%= guild.id %>/reaction-roles/<%= r.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer ce reaction role ?">Supprimer</button></form></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table></div>
+    <% } %>
+    <% } %>
+  </div>
+
+  <form method="post" action="/guilds/<%= guild.id %>/reaction-roles" class="card form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <h3 class="card-title">Ajouter un reaction role</h3>
+    <% if (!botReady) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le bot n'est pas connecté : impossible de vérifier le message et d'y réagir pour le moment.</span></div><% } %>
+    <div class="field"><label for="rr-channel">Salon du message</label><select id="rr-channel" name="channelId" class="select" required><%- include('../partials/channel-options', { channels: guild.textChannels, selected: '', allowEmpty: true, emptyLabel: '— Choisir un salon —' }) %></select></div>
+    <div class="field"><label for="rr-message">ID du message (ou lien)</label><input id="rr-message" name="messageId" class="input input-mono" required placeholder="1234567890123456789"><small class="hint">Clic droit sur le message → « Copier l'identifiant » (mode développeur).</small></div>
+    <div class="grid-2 grid-tight">
+      <div class="field"><label for="rr-emoji">Emoji</label><input id="rr-emoji" name="emoji" class="input" required maxlength="128" placeholder="🎮 ou <:nom:id>"></div>
+      <div class="field"><label for="rr-role">Rôle</label><select id="rr-role" name="roleId" class="select" required><option value="">— Choisir —</option><%- include('../partials/role-options', { roles: guild.roles.filter((r) => !r.managed), selected: '' }) %></select></div>
+    </div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>>Ajouter et réagir</button></div>
+  </form>
+</div>

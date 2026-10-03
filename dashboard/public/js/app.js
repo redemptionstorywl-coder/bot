@@ -87,13 +87,14 @@
 
   // ───── Onglets ─────
   $$('[data-tabs]').forEach(function (container) {
-    var tabs = $$('[data-tab]', container);
-    var panels = $$('[data-tab-panel]', container);
+    var tabs = $$('[data-tab]', container).filter(function (t) { return t.closest('[data-tabs]') === container; });
+    var panels = $$('[data-tab-panel]', container).filter(function (p) { return p.parentElement.closest('[data-tabs]') === container; });
+    var param = container.getAttribute('data-tab-param') || 'tab';
     function activate(name, push) {
       tabs.forEach(function (t) { var on = t.getAttribute('data-tab') === name; t.classList.toggle('active', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); });
       panels.forEach(function (p) { p.classList.toggle('active', p.getAttribute('data-tab-panel') === name); });
       if (push && window.history.replaceState) {
-        var url = new URL(window.location.href); url.searchParams.set('tab', name); window.history.replaceState(null, '', url.toString());
+        var url = new URL(window.location.href); url.searchParams.set(param, name); window.history.replaceState(null, '', url.toString());
       }
     }
     tabs.forEach(function (t) { t.addEventListener('click', function () { activate(t.getAttribute('data-tab'), true); }); });
@@ -146,6 +147,46 @@
     function sync() { target.hidden = select.value !== expected; }
     select.addEventListener('change', sync);
     sync();
+  });
+  // Case à cocher qui affiche / masque une cible ([data-check-toggle="#cible"], data-check-toggle-invert pour inverser)
+  $$('[data-check-toggle], [data-check-hide]').forEach(function (box) {
+    var show = box.hasAttribute('data-check-toggle') ? $$(box.getAttribute('data-check-toggle')) : [];
+    var hide = box.hasAttribute('data-check-hide') ? $$(box.getAttribute('data-check-hide')) : [];
+    var invert = box.hasAttribute('data-check-toggle-invert');
+    if (!show.length && !hide.length) return;
+    function sync() {
+      show.forEach(function (t) { t.hidden = invert ? box.checked : !box.checked; });
+      hide.forEach(function (t) { t.hidden = box.checked; });
+    }
+    box.addEventListener('change', sync);
+    sync();
+  });
+  // Boutons radio qui affichent une cible ([data-radio-toggle="#cible"]) : les cibles des autres radios du groupe sont masquées
+  $$('[data-radio-toggle]').forEach(function (radio) {
+    var group = radio.name ? $$('input[type="radio"][name="' + radio.name + '"][data-radio-toggle]') : [radio];
+    function sync() { group.forEach(function (r) { $$(r.getAttribute('data-radio-toggle')).forEach(function (t) { t.hidden = !r.checked; }); }); }
+    radio.addEventListener('change', sync);
+    sync();
+  });
+  // Pré-remplissage d'un formulaire ([data-fill-form="#form"] + data-set-<champ>="valeur")
+  $$('[data-fill-form]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var form = $(btn.getAttribute('data-fill-form'));
+      if (!form) return;
+      Array.prototype.forEach.call(btn.attributes, function (attr) {
+        if (attr.name.indexOf('data-set-') !== 0) return;
+        var key = attr.name.slice(9).toLowerCase(); // les attributs HTML sont insensibles à la casse
+        var field = Array.prototype.find.call(form.elements, function (el) { return (el.name || '').toLowerCase() === key; });
+        if (!field) return;
+        if (field.type === 'checkbox') field.checked = Boolean(attr.value);
+        else field.value = attr.value;
+      });
+      var title = form.querySelector('[data-form-title]');
+      if (title && btn.hasAttribute('data-form-title-text')) title.textContent = btn.getAttribute('data-form-title-text');
+      form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      var first = form.querySelector('input:not([type="hidden"]), select, textarea');
+      if (first) first.focus();
+    });
   });
   $$('[data-submit-on-change]').forEach(function (el) {
     el.addEventListener('change', function () { if (el.form) el.form.submit(); });
@@ -260,6 +301,29 @@
     socket.on('log:new', function (payload) {
       if (!payload || payload.guildId !== guildId) return;
       refreshOverview();
+    });
+    // Événements des modules : toast + rechargement de la page concernée (sauf si un champ est en cours d'édition)
+    var MODULE_EVENTS = {
+      'ticket:open': ['tickets', 'Nouveau ticket ouvert'], 'ticket:close': ['tickets', 'Ticket fermé'], 'ticket:update': ['tickets', 'Tickets mis à jour'], 'ticket:type': ['tickets', 'Types de tickets mis à jour'],
+      'embed:update': ['embeds', 'Templates d’embeds mis à jour'], 'announcement:update': ['announcements', 'Annonces mises à jour'], 'announcement:published': ['announcements', 'Annonce publiée'], 'announcement:scheduled': ['announcements', 'Annonce programmée'],
+      'welcome:update': ['welcome', 'Configuration de bienvenue mise à jour'], 'roles:update': ['roles', 'Configuration des rôles mise à jour'],
+      'moderation:update': ['moderation', 'Modération mise à jour'], 'moderation:sanction': ['moderation', 'Nouvelle sanction'], 'moderation:warning': ['moderation', 'Avertissements mis à jour'],
+      'giveaway:start': ['giveaways', 'Giveaway lancé'], 'giveaway:end': ['giveaways', 'Giveaway mis à jour'], 'event:update': ['events', 'Événements mis à jour'],
+    };
+    var reloadTimer = null;
+    socket.onAny(function (event, payload) {
+      var def = MODULE_EVENTS[event];
+      if (!def || !payload || payload.guildId !== guildId) return;
+      var currentPage = body.getAttribute('data-page');
+      var pageKey = def[0] === 'roles' && currentPage === 'reactionroles' ? 'reactionroles' : def[0];
+      if (currentPage !== pageKey) { toast(def[1], 'info'); return; }
+      var active = document.activeElement;
+      var editing = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT');
+      var hasForm = Boolean($('form.form'));
+      if (editing || hasForm) { toast(def[1] + ' — rechargez pour voir les changements.', 'info'); return; }
+      toast(def[1] + ' — actualisation…', 'info', 1500);
+      clearTimeout(reloadTimer);
+      reloadTimer = setTimeout(function () { window.location.reload(); }, 1200);
     });
     socket.on('connect_error', function () { /* session absente : pas de temps réel */ });
   }

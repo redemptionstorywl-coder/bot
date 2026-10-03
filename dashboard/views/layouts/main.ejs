@@ -9,7 +9,7 @@
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/app.css">
 </head>
-<body class="<%= user ? 'has-sidebar' : 'no-sidebar' %>" data-guild-id="<%= guild ? guild.id : '' %>" data-page="<%= page || view || '' %>">
+<body class="<%= user ? 'has-sidebar' : 'no-sidebar' %>" data-guild-id="<%= guild ? guild.id : '' %>" data-page="<%= page || view || '' %>" data-brand-color="<%= config && config.brandColor !== undefined ? fmt.hex(config.brandColor) : brand.primary %>">
   <a class="skip-link" href="#main">Aller au contenu</a>
   <% if (user) { %>
     <div class="sidebar-backdrop" data-sidebar-close hidden></div>
@@ -27,5 +27,7 @@
   <%- include('../partials/modal') %>
   <% if (user) { %><script src="/socket.io/socket.io.js" defer></script><% } %>
   <script src="/js/app.js" defer></script>
+  <script src="/js/repeater.js" defer></script>
+  <script src="/js/embed-editor.js" defer></script>
 </body>
 </html>

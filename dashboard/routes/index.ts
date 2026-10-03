@@ -10,6 +10,15 @@ import { createSettingsRouter } from './guild/settings';
 import { createLogsRouter } from './guild/logs';
 import { createMembersRouter } from './guild/members';
 import { createTranslationsRouter } from './guild/translations';
+import { createTicketsRouter } from './guild/tickets';
+import { createEmbedsRouter } from './guild/embeds';
+import { createAnnouncementsRouter } from './guild/announcements';
+import { createWelcomeRouter } from './guild/welcome';
+import { createRolesRouter } from './guild/roles';
+import { createReactionRolesRouter } from './guild/reactionroles';
+import { createModerationRouter } from './guild/moderation';
+import { createGiveawaysRouter } from './guild/giveaways';
+import { createEventsRouter } from './guild/events';
 import { createComingRouter } from './guild/coming';
 
 /**
@@ -35,7 +44,16 @@ export function mountRoutes(client: RedemptionClient): Router {
     createLogsRouter,
     createMembersRouter,
     createTranslationsRouter,
-    // ↑ les routeurs des modules métier s'insèrent ici
+    createTicketsRouter,
+    createEmbedsRouter,
+    createAnnouncementsRouter,
+    createWelcomeRouter,
+    createRolesRouter,
+    createReactionRolesRouter,
+    createModerationRouter,
+    createGiveawaysRouter,
+    createEventsRouter,
+    // ↑ les routeurs des modules métier s'insèrent ici (avant createComingRouter)
     createComingRouter,
   ];
   for (const factory of guildRouters) guildScoped.use('/', factory(client));

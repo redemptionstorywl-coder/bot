@@ -1,0 +1,48 @@
+<%#
+  Ligne d'une liste dynamique (public/js/repeater.js). Les inputs portent `data-field` (jamais `name`) :
+  la liste est sérialisée en JSON dans le champ caché désigné par `data-repeater-json`.
+  Attend : kind ('field' | 'button' | 'question' | 'threshold' | 'option' | 'polloption'), row (objet ou null), roles (RoleOption[] pour 'option').
+%>
+<% const r = row || {}; %>
+<div class="repeater-row repeater-<%= kind %>" data-repeater-row>
+  <% if (kind === 'field') { %>
+    <input class="input input-sm" data-field="name" maxlength="256" placeholder="Nom du champ" value="<%= r.name || '' %>" aria-label="Nom du champ">
+    <textarea class="textarea textarea-sm" data-field="value" maxlength="1024" placeholder="Valeur (variables autorisées)" aria-label="Valeur du champ"><%= r.value || '' %></textarea>
+    <label class="check check-sm"><input type="checkbox" data-field="inline" <%= r.inline ? 'checked' : '' %>><span>En ligne</span></label>
+  <% } else if (kind === 'button') { %>
+    <input class="input input-sm" data-field="label" maxlength="80" placeholder="Libellé" value="<%= r.label || '' %>" aria-label="Libellé du bouton">
+    <select class="select select-sm" data-field="style" aria-label="Style du bouton" data-button-style>
+      <% for (const s of [['secondary', 'Gris'], ['primary', 'Violet / bleu'], ['success', 'Vert'], ['danger', 'Rouge'], ['link', 'Lien']]) { %><option value="<%= s[0] %>" <%= (r.style || 'secondary') === s[0] ? 'selected' : '' %>><%= s[1] %></option><% } %>
+    </select>
+    <input class="input input-sm" data-field="emoji" maxlength="64" placeholder="Emoji" value="<%= r.emoji || '' %>" aria-label="Emoji">
+    <input class="input input-sm" data-field="url" type="url" maxlength="2048" placeholder="URL (style lien)" value="<%= r.url || '' %>" aria-label="URL du bouton">
+    <input class="input input-sm input-mono" data-field="customId" maxlength="100" placeholder="customId (ex. welcome:lang:ID)" value="<%= r.customId || '' %>" aria-label="Identifiant interne">
+  <% } else if (kind === 'question') { %>
+    <input class="input input-sm input-mono" data-field="id" maxlength="32" pattern="^[a-zA-Z0-9_-]+$" placeholder="identifiant (ex. details)" value="<%= r.id || '' %>" aria-label="Identifiant de la question">
+    <input class="input input-sm" data-field="label" maxlength="45" placeholder="Question (45 car. max)" value="<%= r.label || '' %>" aria-label="Libellé de la question">
+    <input class="input input-sm" data-field="placeholder" maxlength="100" placeholder="Texte indicatif" value="<%= r.placeholder || '' %>" aria-label="Texte indicatif">
+    <select class="select select-sm" data-field="style" aria-label="Type de réponse"><option value="short" <%= (r.style || 'short') === 'short' ? 'selected' : '' %>>Courte</option><option value="paragraph" <%= r.style === 'paragraph' ? 'selected' : '' %>>Paragraphe</option></select>
+    <input class="input input-sm" data-field="maxLength" type="number" min="1" max="4000" placeholder="Long. max" value="<%= r.maxLength || '' %>" aria-label="Longueur maximale">
+    <label class="check check-sm"><input type="checkbox" data-field="required" <%= r.required === false ? '' : 'checked' %>><span>Obligatoire</span></label>
+  <% } else if (kind === 'threshold') { %>
+    <label class="repeater-inline"><span class="muted">À</span><input class="input input-sm" data-field="count" type="number" min="1" max="100" value="<%= r.count || '' %>" aria-label="Nombre d'avertissements"><span class="muted">warn(s)</span></label>
+    <select class="select select-sm" data-field="action" aria-label="Action">
+      <% for (const a of [['TIMEOUT', 'Exclusion temporaire (timeout)'], ['KICK', 'Expulsion'], ['TEMPBAN', 'Bannissement temporaire'], ['BAN', 'Bannissement']]) { %><option value="<%= a[0] %>" <%= (r.action || 'TIMEOUT') === a[0] ? 'selected' : '' %>><%= a[1] %></option><% } %>
+    </select>
+    <label class="repeater-inline"><input class="input input-sm" data-field="durationMinutes" type="number" min="1" max="525600" placeholder="Durée" value="<%= r.duration ? Math.round(r.duration / 60) : '' %>" aria-label="Durée en minutes"><span class="muted">min (timeout / tempban)</span></label>
+  <% } else if (kind === 'option') { %>
+    <select class="select select-sm" data-field="roleId" aria-label="Rôle"><option value="">— Rôle —</option><%- include('role-options', { roles: roles || [], selected: r.roleId || '' }) %></select>
+    <input class="input input-sm" data-field="label" maxlength="80" placeholder="Libellé (défaut : nom du rôle)" value="<%= r.label || '' %>" aria-label="Libellé">
+    <input class="input input-sm" data-field="emoji" maxlength="64" placeholder="Emoji" value="<%= r.emoji || '' %>" aria-label="Emoji">
+    <input class="input input-sm" data-field="description" maxlength="100" placeholder="Description (select)" value="<%= r.description || '' %>" aria-label="Description">
+    <select class="select select-sm" data-field="style" aria-label="Style du bouton"><option value="" <%= !r.style ? 'selected' : '' %>>Style auto</option><% for (const s of [['secondary', 'Gris'], ['primary', 'Violet / bleu'], ['success', 'Vert'], ['danger', 'Rouge']]) { %><option value="<%= s[0] %>" <%= r.style === s[0] ? 'selected' : '' %>><%= s[1] %></option><% } %></select>
+  <% } else if (kind === 'polloption') { %>
+    <input class="input input-sm" data-field="label" maxlength="100" placeholder="Option" value="<%= r.label || '' %>" aria-label="Libellé de l'option">
+    <input class="input input-sm" data-field="emoji" maxlength="64" placeholder="Emoji" value="<%= r.emoji || '' %>" aria-label="Emoji">
+  <% } %>
+  <div class="repeater-actions">
+    <button type="button" class="icon-btn icon-btn-sm" data-repeater-up title="Monter" aria-label="Monter">↑</button>
+    <button type="button" class="icon-btn icon-btn-sm" data-repeater-down title="Descendre" aria-label="Descendre">↓</button>
+    <button type="button" class="icon-btn icon-btn-sm text-danger" data-repeater-remove title="Retirer" aria-label="Retirer">✕</button>
+  </div>
+</div>

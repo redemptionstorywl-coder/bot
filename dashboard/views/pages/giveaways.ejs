@@ -1,0 +1,79 @@
+<section class="page-header">
+  <div><h2 class="page-title">Giveaways</h2><p class="muted">Tirages au sort avec conditions (rôle requis, messages minimum), fin automatique et reroll.</p></div>
+</section>
+
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Giveaways est désactivé : les boutons de participation ne répondent pas et les tirages automatiques sont suspendus.</span></div><% } %>
+
+<div class="grid-2 grid-2-aside">
+  <form method="post" action="/guilds/<%= guild.id %>/giveaways" class="card form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <h3 class="card-title">Lancer un giveaway</h3>
+    <% if (!botReady) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le bot n'est pas connecté : le lancement est indisponible.</span></div><% } %>
+    <div class="field"><label for="g-prize">Prix</label><input id="g-prize" name="prize" class="input" maxlength="190" required placeholder="Nitro 1 mois"></div>
+    <div class="field"><label for="g-description">Description</label><textarea id="g-description" name="description" class="textarea textarea-sm" rows="2" maxlength="1000" placeholder="Conditions, détails…"></textarea></div>
+    <div class="field"><label for="g-channel">Salon</label><select id="g-channel" name="channelId" class="select" required><%- include('../partials/channel-options', { channels: guild.textChannels, selected: '', allowEmpty: true, emptyLabel: '— Choisir —' }) %></select></div>
+    <fieldset class="field"><legend>Fin du giveaway</legend>
+      <div class="tag-list">
+        <label class="check check-sm"><input type="radio" name="endMode" value="duration" checked data-radio-toggle="#g-end-duration"><span>Durée</span></label>
+        <label class="check check-sm"><input type="radio" name="endMode" value="date" data-radio-toggle="#g-end-date"><span>Date précise</span></label>
+      </div>
+      <div class="field" id="g-end-duration"><label for="g-duration">Durée</label><input id="g-duration" name="duration" class="input" maxlength="32" value="1d" placeholder="1h30m, 2j, 1w"></div>
+      <div class="field" id="g-end-date" hidden><label for="g-endsAt">Date et heure de fin (<%= timezone %>)</label><input id="g-endsAt" name="endsAt" type="datetime-local" class="input" min="<%= minEnd %>" value="<%= minEnd %>"></div>
+    </fieldset>
+    <div class="grid-2 grid-tight">
+      <div class="field"><label for="g-winners">Nombre de gagnants</label><input id="g-winners" name="winnersCount" type="number" class="input" min="1" max="50" value="1"></div>
+      <div class="field"><label for="g-min">Messages minimum</label><input id="g-min" name="minMessages" type="number" class="input" min="0" max="100000" value="0"></div>
+    </div>
+    <div class="grid-2 grid-tight">
+      <div class="field"><label for="g-role">Rôle requis</label><select id="g-role" name="requiredRoleId" class="select"><option value="">— Aucun —</option><%- include('../partials/role-options', { roles: guild.roles, selected: '' }) %></select></div>
+      <div class="field"><label for="g-lang">Langue de l'embed</label><select id="g-lang" name="language" class="select"><option value="">Langue du serveur</option><% for (const l of languages) { %><option value="<%= l.code %>"><%= l.flag %> <%= l.nativeLabel %></option><% } %></select></div>
+    </div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>>Lancer</button></div>
+  </form>
+
+  <div class="stack">
+    <div class="card">
+      <div class="card-head"><h3 class="card-title">En cours</h3><span class="badge badge-primary"><%= active.length %></span></div>
+      <% if (!active.length) { %><p class="muted">Aucun giveaway en cours.</p><% } else { %>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>Prix</th><th>Salon</th><th>Fin</th><th>Participants</th><th>Gagnants</th><th></th></tr></thead>
+        <tbody>
+          <% for (const g of active) { %>
+            <tr>
+              <td><a class="link" href="/guilds/<%= guild.id %>/giveaways/<%= g.id %>"><strong><%= g.prize %></strong></a><br><small class="muted">par <%= names[g.hostId] || g.hostId %><% if (g.requiredRoleId) { %> · rôle <%= roleName(g.requiredRoleId) %><% } %><% if (g.minMessages) { %> · ≥ <%= g.minMessages %> msg<% } %></small></td>
+              <td>#<%= channelName(g.channelId) %></td>
+              <td class="nowrap"><%= fmt.dateTime(g.endsAt) %><br><small class="muted"><%= fmt.relative(g.endsAt) %></small></td>
+              <td><%= g.entries.length %></td>
+              <td><%= g.winnersCount %></td>
+              <td class="right"><div class="actions-cell">
+                <form method="post" action="/guilds/<%= guild.id %>/giveaways/<%= g.id %>/end"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost btn-sm" data-confirm="Terminer maintenant « <%= g.prize %> » et tirer les gagnants ?">Terminer</button></form>
+                <form method="post" action="/guilds/<%= guild.id %>/giveaways/<%= g.id %>/cancel"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Annuler « <%= g.prize %> » sans gagnant ?">Annuler</button></form>
+              </div></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table></div>
+      <% } %>
+    </div>
+    <div class="card">
+      <div class="card-head"><h3 class="card-title">Terminés</h3><span class="badge badge-muted"><%= ended.length %></span></div>
+      <% if (!ended.length) { %><p class="muted">Aucun giveaway terminé.</p><% } else { %>
+      <div class="table-wrap"><table class="table table-compact">
+        <thead><tr><th>Prix</th><th>Terminé le</th><th>Participants</th><th>Gagnants</th><th></th></tr></thead>
+        <tbody>
+          <% for (const g of ended) { %>
+            <% const w = winnersOf(g); %>
+            <tr>
+              <td><a class="link" href="/guilds/<%= guild.id %>/giveaways/<%= g.id %>"><%= g.prize %></a></td>
+              <td class="nowrap"><%= fmt.dateTime(g.endsAt) %></td>
+              <td><%= g.entries.length %></td>
+              <td><% if (!w.length) { %><span class="muted"><%= g.entries.length ? 'aucun' : 'annulé / aucun participant' %></span><% } else { %><div class="winner-list"><% for (const id of w) { %><span class="badge badge-primary">🏆 <%= names[id] || id %></span><% } %></div><% } %></td>
+              <td class="right"><form method="post" action="/guilds/<%= guild.id %>/giveaways/<%= g.id %>/reroll" class="inline-fields"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="count" value="1"><button type="submit" class="btn btn-ghost btn-sm" <%= g.entries.length ? '' : 'disabled' %> data-confirm="Retirer un nouveau gagnant pour « <%= g.prize %> » ?">Reroll</button></form></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table></div>
+      <% } %>
+    </div>
+  </div>
+</div>

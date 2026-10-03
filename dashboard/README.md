@@ -31,6 +31,11 @@ dashboard/
     rateLimit.ts       createRateLimiter() (fenêtre glissante mémoire), wantsJson(req)
     flash.ts           flash(req, type, message) / takeFlash(req)
     format.ts          fmt.* (dates, nombres, durées, JSON), avatarUrl(), guildIconUrl()
+    dates.ts           parseLocalDateTime(value, tz) / toLocalInputValue(date, tz) (champs datetime-local ↔ Date dans le fuseau du serveur)
+    names.ts           resolveUserNames(client, guildId, ids) → { id: nom }, requireBotGuild(client, guildId) (503 lisible si bot absent)
+    embedForm.ts       embedFormSchema / toEmbedSpec / buttonsJsonSchema / jsonArray / embedJsonSchema (formulaire d'embed → EmbedSpec)
+    serviceErrors.ts   describeError(err) (TicketError, AnnouncementError, EmbedTemplateError, ModerationError, Zod, Discord → message FR),
+                       formAction(back, fn) : handler de formulaire qui convertit toute erreur en flash + redirection
     async.ts           wrap(handler) pour les handlers async
     errors.ts          HttpError(status, message, details?)
     types.ts           augmentation SessionData / Express.Locals, SessionRequest
@@ -46,15 +51,30 @@ dashboard/
       logs.ts          GET /logs, POST /logs/channels
       members.ts       GET /members, GET /members/:userId
       translations.ts  GET/POST /translations, GET /translations/export
+      tickets.ts       /tickets (liste, fiche, close/claim/delete, transcript protégé), /tickets/types (CRUD), /tickets/panels
+      embeds.ts        /embeds (templates, éditeur, import/export JSON, envoi dans un salon, templates par défaut)
+      announcements.ts /announcements (colonnes par statut, éditeur multilingue, publish/schedule/duplicate/archive/delete, preview)
+      welcome.ts       /welcome (bienvenue, départ, test, rôles de langue + panneau)
+      roles.ts         /roles (auto-roles, role menus + publication, notifications)
+      reactionroles.ts /reaction-roles (liste, ajout avec réaction du bot, suppression)
+      moderation.ts    /moderation (config warns, anti-raid, lockdown, sanctions, warnings, stats 30 j)
+      giveaways.ts     /giveaways (liste, fiche, création, end/reroll/cancel)
+      events.ts        /events (événements : CRUD, cancel, remind ; sondages : création, fin, résultats)
       modules.ts       toggleModuleHandler(client) (partagé page + API)
-      coming.ts        pages génériques « en cours d'intégration » (modules non encore intégrés)
+      coming.ts        pages génériques « en cours d'intégration » (modules non encore intégrés : Battle Royale, School, Shop)
   views/
     layouts/main.ejs   layout : <head>, sidebar, topbar, flash, <%- body %>, footer, toasts, modale
-    partials/          sidebar, header, footer, flash, modal, pagination, channel-options, role-options, logo
-    pages/             landing, guilds, dashboard, settings, logs, members, member, translations, admin, coming, error, config-missing
+    partials/          sidebar, header, footer, flash, modal, pagination, channel-options, role-options, logo,
+                       embed-preview (rendu façon Discord), embed-editor (formulaire complet + aperçu live), repeater / repeater-row (listes dynamiques)
+    pages/             landing, guilds, dashboard, settings, logs, members, member, translations, admin, coming, error, config-missing,
+                       tickets, ticket, ticket-type, embeds, embed-form, announcements, announcement-form, announcement-preview, welcome,
+                       roles, role-menu, reactionroles, moderation, giveaways, giveaway, events, event-form, poll
   public/
-    css/app.css        design system maison (variables CSS, sidebar 260 px, cartes, tableaux, formulaires…)
-    js/app.js          api(), toast(), toggles de modules, modale de confirmation, filtres, onglets, Socket.IO
+    css/app.css        design system maison (variables CSS, sidebar 260 px, cartes, tableaux, formulaires, aperçu Discord, repeater…)
+    js/app.js          api(), toast(), toggles de modules, modale de confirmation, filtres, onglets (imbriqués), toggles (check/radio),
+                       pré-remplissage de formulaire, Socket.IO (toasts + actualisation des pages de modules)
+    js/repeater.js     listes dynamiques [data-repeater] → JSON dans un champ caché (champs d'embed, boutons, questions, seuils, options)
+    js/embed-editor.js aperçu live de l'éditeur d'embed, import/export JSON côté client, renderEmbedPreview()
     img/favicon.svg
 ```
 
@@ -117,6 +137,22 @@ Les vues et fichiers statiques sont copiés dans `dist/dashboard/` au build (`sc
 6. **Temps réel** — émettre `client.bus.emit('ticket:open', { guildId, … })` depuis le service : l'événement est relayé
    dans la room `guild:<id>` (liste `RELAYED_BUS_EVENTS` dans `sockets.ts`, à compléter si besoin) ; ou appeler
    `broadcastToGuild(guildId, event, payload)` directement depuis une route. Côté client : `socket.on('ticket:open', …)` dans `app.js`.
+
+## Formulaires de modules : helpers
+
+- **`formAction(back, fn)`** (`lib/serviceErrors.ts`) : enveloppe un POST de formulaire. `fn` retourne éventuellement l'URL de redirection ;
+  toute erreur (HttpError, ZodError, TicketError, AnnouncementError, EmbedTemplateError, ModerationError, DiscordAPIError, Error « métier ») est
+  convertie en message flash lisible puis redirigée vers `back(req, res)` (ou en JSON si la requête le demande).
+- **Éditeur d'embed** : `<%- include('../partials/embed-editor', { prefix: 'embed', spec, id: 'xxx', buttons, buttonsName: 'buttonsJson', contentSource: '#textarea' }) %>`
+  côté vue ; côté route `embed: embedFormSchema` + `buttonsJson: buttonsJsonSchema` dans le schéma Zod puis `toEmbedSpec(body.embed)`.
+  `buttons: null` masque la section boutons ; `withPreview` / `withJson` / `compact` sont optionnels.
+- **Aperçu Discord** : `<%- include('../partials/embed-preview', { embed, buttons, content, compact }) %>` (même balisage que `renderEmbedPreview()` en JS).
+- **Listes dynamiques** : `<%- include('../partials/repeater', { kind, rows, name: 'xxxJson', id: 'xxx-json', max, addLabel, roles? }) %>` ;
+  kinds disponibles dans `partials/repeater-row.ejs` (`field`, `button`, `question`, `threshold`, `option`, `polloption`). Côté route : `jsonArray(schema, max)`.
+- **Dates** : `<input type="datetime-local">` → `parseLocalDateTime(value, config.timezone)` ; pré-remplissage avec `toLocalInputValue(date, config.timezone)`.
+- **Actions Discord** : `requireBotGuild(client, guildId)` lève un 503 lisible si le bot n'est pas prêt ; les vues désactivent les boutons quand `!botReady`.
+- **Attributs JS supplémentaires** : `data-check-toggle="#cible"` / `data-check-hide="#cible"` (case à cocher), `data-radio-toggle="#cible"` (radio),
+  `data-fill-form="#form"` + `data-set-<champ>="valeur"` (pré-remplissage), `data-tab-param="lang"` (onglets imbriqués avec leur propre paramètre d'URL).
 
 ## Conventions
 

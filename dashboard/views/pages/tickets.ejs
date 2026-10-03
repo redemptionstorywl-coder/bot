@@ -1,0 +1,170 @@
+<section class="page-header">
+  <div><h2 class="page-title">Tickets</h2><p class="muted">Suivi des tickets, types configurables, panneaux d'ouverture et statistiques.</p></div>
+  <div class="page-actions">
+    <a class="btn btn-primary" href="/guilds/<%= guild.id %>/tickets/types/new">+ Nouveau type</a>
+  </div>
+</section>
+
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Tickets est désactivé sur ce serveur : les panneaux et commandes ne répondent pas. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Gérer les modules</a></span></div><% } %>
+
+<div class="stat-grid">
+  <div class="stat-card"><span class="stat-label">Ouverts</span><span class="stat-value" data-stat="openTickets"><%= fmt.number(stats.open + stats.claimed) %></span></div>
+  <div class="stat-card"><span class="stat-label">Pris en charge</span><span class="stat-value"><%= fmt.number(stats.claimed) %></span></div>
+  <div class="stat-card"><span class="stat-label">Fermés</span><span class="stat-value"><%= fmt.number(stats.closed) %></span></div>
+  <div class="stat-card"><span class="stat-label">Temps moyen de résolution</span><span class="stat-value stat-value-sm"><%= stats.avgDurationSeconds ? fmt.duration(stats.avgDurationSeconds) : '—' %></span></div>
+</div>
+
+<div class="tabs" data-tabs data-active="<%= tab %>">
+  <div class="tab-list" role="tablist">
+    <button type="button" class="tab" role="tab" data-tab="tickets">Tickets <span class="badge badge-muted"><%= fmt.number(pagination.total) %></span></button>
+    <button type="button" class="tab" role="tab" data-tab="types">Types <span class="badge badge-muted"><%= types.length %></span></button>
+    <button type="button" class="tab" role="tab" data-tab="panels">Panneaux <span class="badge badge-muted"><%= panels.length %></span></button>
+    <button type="button" class="tab" role="tab" data-tab="stats">Statistiques</button>
+  </div>
+
+  <!-- ─── Tickets ─── -->
+  <section class="tab-panel" data-tab-panel="tickets" role="tabpanel">
+    <form method="get" action="/guilds/<%= guild.id %>/tickets" class="card filter-bar">
+      <input type="hidden" name="tab" value="tickets">
+      <div class="field"><label for="f-status">Statut</label>
+        <select id="f-status" name="status" class="select">
+          <option value="">Tous</option>
+          <option value="open" <%= filters.status === 'open' ? 'selected' : '' %>>Ouverts (tous)</option>
+          <option value="closed" <%= filters.status === 'closed' ? 'selected' : '' %>>Fermés (tous)</option>
+          <% for (const s of Object.keys(statusLabels)) { %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= statusLabels[s] %></option><% } %>
+        </select>
+      </div>
+      <div class="field"><label for="f-type">Type</label>
+        <select id="f-type" name="type" class="select"><option value="">Tous</option><% for (const t of types) { %><option value="<%= t.id %>" <%= filters.type === t.id ? 'selected' : '' %>><%= t.emoji ? t.emoji + ' ' : '' %><%= t.label %></option><% } %></select>
+      </div>
+      <div class="field"><label for="f-user">ID utilisateur</label><input id="f-user" name="user" class="input input-mono" value="<%= filters.user || '' %>" placeholder="123456789012345678" pattern="^\d{15,22}$"></div>
+      <div class="field"><label for="f-q">Recherche</label><input id="f-q" name="q" class="input" value="<%= filters.q %>" placeholder="numéro, ID, raison de fermeture…"></div>
+      <div class="field field-actions"><button type="submit" class="btn btn-primary">Filtrer</button><a class="btn btn-ghost" href="/guilds/<%= guild.id %>/tickets">Réinitialiser</a></div>
+    </form>
+
+    <div class="card">
+      <% if (!tickets.length) { %><p class="muted">Aucun ticket ne correspond à ces filtres.</p><% } else { %>
+      <div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>#</th><th>Statut</th><th>Type</th><th>Créateur</th><th>Pris en charge par</th><th>Ouvert</th><th>Fermé</th><th></th></tr></thead>
+          <tbody>
+            <% for (const t of tickets) { %>
+              <tr>
+                <td><a class="link" href="/guilds/<%= guild.id %>/tickets/<%= t.id %>">#<%= t.number %></a></td>
+                <td><span class="badge badge-status-<%= t.status %>"><%= statusLabels[t.status] || t.status %></span></td>
+                <td><%= t.type ? (t.type.emoji ? t.type.emoji + ' ' : '') + t.type.label : '—' %></td>
+                <td><a class="link" href="/guilds/<%= guild.id %>/members/<%= t.userId %>"><%= names[t.userId] || t.userId %></a></td>
+                <td><% if (t.claimedById) { %><a class="link" href="/guilds/<%= guild.id %>/members/<%= t.claimedById %>"><%= names[t.claimedById] || t.claimedById %></a><% } else { %><span class="muted">—</span><% } %></td>
+                <td class="nowrap"><%= fmt.dateTime(t.createdAt) %><br><small class="muted"><%= fmt.relative(t.createdAt) %></small></td>
+                <td class="nowrap"><%= t.closedAt ? fmt.dateTime(t.closedAt) : '—' %></td>
+                <td class="right"><a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/tickets/<%= t.id %>">Ouvrir</a></td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <% } %>
+      <%- include('../partials/pagination', { pagination, baseQuery, baseUrl: `/guilds/${guild.id}/tickets` }) %>
+    </div>
+  </section>
+
+  <!-- ─── Types ─── -->
+  <section class="tab-panel" data-tab-panel="types" role="tabpanel">
+    <div class="card">
+      <div class="card-head">
+        <h3 class="card-title">Types de tickets</h3>
+        <div class="page-actions">
+          <form method="post" action="/guilds/<%= guild.id %>/tickets/types/defaults" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost btn-sm" <%= types.length ? 'disabled title="Des types existent déjà"' : '' %>>Créer les types par défaut</button></form>
+          <a class="btn btn-primary btn-sm" href="/guilds/<%= guild.id %>/tickets/types/new">+ Nouveau type</a>
+        </div>
+      </div>
+      <% if (!types.length) { %><p class="muted">Aucun type : créez-en un ou générez les types par défaut (support, bug, boutique, paiement…).</p><% } else { %>
+      <div class="table-wrap">
+        <table class="table table-compact">
+          <thead><tr><th>Ordre</th><th>Type</th><th>Clé</th><th>Catégorie</th><th>Rôles staff</th><th>Questions</th><th>Max / membre</th><th>État</th><th></th></tr></thead>
+          <tbody>
+            <% for (const t of types) { %>
+              <% const staff = Array.isArray(t.staffRoleIds) ? t.staffRoleIds : []; const qCount = Array.isArray(t.questions) ? t.questions.length : 0; %>
+              <tr class="<%= t.enabled ? '' : 'row-disabled' %>">
+                <td class="muted"><%= t.order %></td>
+                <td><strong><%= t.emoji ? t.emoji + ' ' : '' %><%= t.label %></strong><% if (t.description) { %><br><small class="muted"><%= t.description %></small><% } %></td>
+                <td><code><%= t.key %></code></td>
+                <td><%= t.categoryId ? (guild.categories.find((c) => c.id === t.categoryId) || { name: t.categoryId }).name : '—' %></td>
+                <td><div class="badges"><% for (const rid of staff) { %><% const r = guild.roles.find((x) => x.id === rid); %><span class="badge badge-muted"><%= r ? r.name : rid %></span><% } %><% if (!staff.length) { %><span class="muted">staff global</span><% } %></div></td>
+                <td><%= qCount %></td>
+                <td><%= t.maxPerUser %></td>
+                <td><span class="badge <%= t.enabled ? 'badge-primary' : 'badge-muted' %>"><%= t.enabled ? 'activé' : 'désactivé' %></span></td>
+                <td class="right"><div class="actions-cell">
+                  <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/tickets/types/<%= t.id %>">Modifier</a>
+                  <form method="post" action="/guilds/<%= guild.id %>/tickets/types/<%= t.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer le type « <%= t.label %> » ? Les tickets existants sont conservés mais perdront leur type.">Supprimer</button></form>
+                </div></td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <% } %>
+    </div>
+  </section>
+
+  <!-- ─── Panneaux ─── -->
+  <section class="tab-panel" data-tab-panel="panels" role="tabpanel">
+    <div class="grid-2">
+      <div class="card">
+        <h3 class="card-title">Panneaux publiés</h3>
+        <% if (!panels.length) { %><p class="muted">Aucun panneau. Publiez-en un pour permettre l'ouverture de tickets depuis Discord.</p><% } else { %>
+        <ul class="list-plain">
+          <% for (const p of panels) { %>
+            <li>
+              <div>
+                <strong>#<%= (guild.textChannels.find((c) => c.id === p.channelId) || { name: p.channelId }).name %></strong>
+                <span class="badge badge-muted"><%= p.style === 'SELECT' ? 'Menu déroulant' : 'Boutons' %></span>
+                <br><small class="muted"><%= p.typeLabels.length ? p.typeLabels.join(', ') : 'Tous les types activés' %> · <%= fmt.date(p.createdAt) %></small>
+                <% if (p.messageId) { %><br><a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= p.channelId %>/<%= p.messageId %>" target="_blank" rel="noopener noreferrer">Voir le message ↗</a><% } %>
+              </div>
+              <form method="post" action="/guilds/<%= guild.id %>/tickets/panels/<%= p.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer ce panneau et son message Discord ?">Supprimer</button></form>
+            </li>
+          <% } %>
+        </ul>
+        <% } %>
+      </div>
+
+      <form method="post" action="/guilds/<%= guild.id %>/tickets/panels" class="card form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <h3 class="card-title">Publier un panneau</h3>
+        <% if (!botReady) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le bot n'est pas connecté : la publication sera refusée tant qu'il n'est pas prêt.</span></div><% } %>
+        <div class="field"><label for="p-channel">Salon</label><select id="p-channel" name="channelId" class="select" required><%- include('../partials/channel-options', { channels: guild.textChannels, selected: '', allowEmpty: true, emptyLabel: '— Choisir un salon —' }) %></select></div>
+        <div class="field"><label for="p-style">Style</label><select id="p-style" name="style" class="select"><option value="BUTTONS">Boutons (un par type)</option><option value="SELECT">Menu déroulant</option></select></div>
+        <fieldset class="field"><legend>Types affichés (aucun coché = tous les types activés)</legend>
+          <div class="check-grid"><% for (const t of types.filter((x) => x.enabled)) { %><label class="check"><input type="checkbox" name="typeIds" value="<%= t.id %>"><span><%= t.emoji ? t.emoji + ' ' : '' %><%= t.label %></span></label><% } %></div>
+          <% if (!types.some((x) => x.enabled)) { %><small class="hint text-danger">Aucun type activé : créez-en un d'abord.</small><% } %>
+        </fieldset>
+        <div class="field"><label for="p-embed">Embed du panneau (JSON, optionnel)</label><textarea id="p-embed" name="embedJson" class="textarea textarea-sm input-mono" rows="4" placeholder='{"title": "🎫 Support", "description": "Choisissez un type de ticket ci-dessous."}'></textarea><small class="hint">Vide = embed par défaut traduit. Format <code>EmbedSpec</code> (title, description, color, fields…).</small></div>
+        <div class="form-actions"><button type="submit" class="btn btn-primary" <%= botReady && types.some((x) => x.enabled) ? '' : 'disabled' %>>Publier le panneau</button></div>
+      </form>
+    </div>
+  </section>
+
+  <!-- ─── Statistiques ─── -->
+  <section class="tab-panel" data-tab-panel="stats" role="tabpanel">
+    <div class="stat-grid">
+      <div class="stat-card"><span class="stat-label">Total</span><span class="stat-value"><%= fmt.number(stats.total) %></span></div>
+      <div class="stat-card"><span class="stat-label">Ouverts</span><span class="stat-value"><%= fmt.number(stats.open) %></span></div>
+      <div class="stat-card"><span class="stat-label">Pris en charge</span><span class="stat-value"><%= fmt.number(stats.claimed) %></span></div>
+      <div class="stat-card"><span class="stat-label">Fermés / archivés</span><span class="stat-value"><%= fmt.number(stats.closed) %></span></div>
+      <div class="stat-card"><span class="stat-label">Supprimés</span><span class="stat-value"><%= fmt.number(stats.deleted) %></span></div>
+      <div class="stat-card"><span class="stat-label">Messages moyens</span><span class="stat-value"><%= fmt.number(stats.avgMessages) %></span></div>
+    </div>
+    <div class="card">
+      <h3 class="card-title">Répartition par type</h3>
+      <% if (!stats.byType.length) { %><p class="muted">Aucun ticket enregistré.</p><% } else { %>
+      <ul class="bars">
+        <% const maxCount = Math.max(...stats.byType.map((b) => b.count), 1); %>
+        <% for (const b of [...stats.byType].sort((a, c) => c.count - a.count)) { %>
+          <li class="bar-row"><span class="bar-label"><span class="truncate"><%= b.label %></span></span><span class="bar-track"><span class="bar-fill" data-pct="<%= fmt.percent(b.count, maxCount) %>"></span></span><span class="bar-value"><%= fmt.number(b.count) %> · <%= fmt.percent(b.count, stats.total) %> %</span></li>
+        <% } %>
+      </ul>
+      <% } %>
+    </div>
+  </section>
+</div>

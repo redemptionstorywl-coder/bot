@@ -1,0 +1,78 @@
+<%#
+  Éditeur d'embed complet (public/js/embed-editor.js). Les champs sont nommés `<prefix>[clé]`.
+  Attend : prefix (ex. 'embed' ou 'translations[en]'), spec (EmbedSpec), id (identifiant unique sans crochets),
+           buttons (ButtonSpec[] | null → pas de section boutons), buttonsName (nom du champ caché des boutons),
+           withPreview (bool, défaut true), contentSource (sélecteur CSS d'un textarea de contenu à afficher dans l'aperçu),
+           withJson (bool, import/export JSON côté client, défaut true), compact (bool : masque auteur/footer avancés).
+%>
+<%
+  const _spec = spec || {};
+  const _id = id;
+  const _buttons = typeof buttons === 'undefined' ? null : buttons;
+  const _preview = typeof withPreview === 'undefined' ? true : withPreview;
+  const _json = typeof withJson === 'undefined' ? true : withJson;
+  const _compact = typeof compact !== 'undefined' && compact;
+  const n = (k) => `${prefix}[${k}]`;
+%>
+<div class="embed-editor<%= _preview ? ' has-preview' : '' %>" data-embed-editor <%- typeof contentSource === 'string' ? `data-content-source="${contentSource}"` : '' %> data-default-color="<%= config && config.brandColor !== undefined ? fmt.hex(config.brandColor) : '#7C3AED' %>">
+  <div class="embed-editor-form">
+    <div class="grid-2 grid-tight">
+      <div class="field"><label for="<%= _id %>-title">Titre</label><input id="<%= _id %>-title" class="input" name="<%= n('title') %>" data-embed-key="title" maxlength="256" value="<%= _spec.title || '' %>"></div>
+      <div class="field"><label for="<%= _id %>-url">URL du titre</label><input id="<%= _id %>-url" class="input" type="url" name="<%= n('url') %>" data-embed-key="url" maxlength="2048" value="<%= _spec.url || '' %>" placeholder="https://…"></div>
+    </div>
+    <div class="field"><label for="<%= _id %>-description">Description</label><textarea id="<%= _id %>-description" class="textarea" name="<%= n('description') %>" data-embed-key="description" maxlength="4096" rows="5"><%= _spec.description || '' %></textarea><small class="hint">Markdown Discord et variables (<code>{user}</code>, <code>{server}</code>…) acceptés.</small></div>
+    <div class="grid-2 grid-tight">
+      <div class="field"><label for="<%= _id %>-color">Couleur</label>
+        <div class="color-field">
+          <input type="color" value="<%= _spec.color ? (_spec.color.startsWith('#') ? _spec.color : '#' + _spec.color) : (config && config.brandColor !== undefined ? fmt.hex(config.brandColor) : '#7C3AED') %>" data-color-input aria-label="Choisir une couleur">
+          <input id="<%= _id %>-color" type="text" class="input input-mono" name="<%= n('color') %>" data-embed-key="color" data-color-text value="<%= _spec.color || '' %>" placeholder="défaut (marque)" pattern="^#?[0-9a-fA-F]{6}$">
+        </div>
+      </div>
+      <div class="field"><label class="check check-sm check-tall"><input type="checkbox" name="<%= n('timestamp') %>" data-embed-key="timestamp" <%= _spec.timestamp ? 'checked' : '' %>><span>Afficher l'horodatage</span></label></div>
+    </div>
+    <div class="grid-2 grid-tight">
+      <div class="field"><label for="<%= _id %>-image">Image (URL)</label><input id="<%= _id %>-image" class="input" type="url" name="<%= n('image') %>" data-embed-key="image" maxlength="2048" value="<%= _spec.image || '' %>" placeholder="https://…"></div>
+      <div class="field"><label for="<%= _id %>-thumbnail">Miniature (URL)</label><input id="<%= _id %>-thumbnail" class="input" type="url" name="<%= n('thumbnail') %>" data-embed-key="thumbnail" maxlength="2048" value="<%= _spec.thumbnail || '' %>" placeholder="https://…"></div>
+    </div>
+    <details class="editor-section" <%= !_compact || (_spec.author && _spec.author.name) || (_spec.footer && _spec.footer.text) ? 'open' : '' %>>
+      <summary>Auteur &amp; pied de page</summary>
+      <div class="grid-3 grid-tight">
+        <div class="field"><label for="<%= _id %>-authorName">Nom de l'auteur</label><input id="<%= _id %>-authorName" class="input" name="<%= n('authorName') %>" data-embed-key="authorName" maxlength="256" value="<%= _spec.author ? _spec.author.name || '' : '' %>"></div>
+        <div class="field"><label for="<%= _id %>-authorIconUrl">Icône de l'auteur</label><input id="<%= _id %>-authorIconUrl" class="input" type="url" name="<%= n('authorIconUrl') %>" data-embed-key="authorIconUrl" maxlength="2048" value="<%= _spec.author ? _spec.author.iconUrl || '' : '' %>"></div>
+        <div class="field"><label for="<%= _id %>-authorUrl">Lien de l'auteur</label><input id="<%= _id %>-authorUrl" class="input" type="url" name="<%= n('authorUrl') %>" data-embed-key="authorUrl" maxlength="2048" value="<%= _spec.author ? _spec.author.url || '' : '' %>"></div>
+      </div>
+      <div class="grid-2 grid-tight">
+        <div class="field"><label for="<%= _id %>-footerText">Texte du pied de page</label><input id="<%= _id %>-footerText" class="input" name="<%= n('footerText') %>" data-embed-key="footerText" maxlength="2048" value="<%= _spec.footer ? _spec.footer.text || '' : '' %>"></div>
+        <div class="field"><label for="<%= _id %>-footerIconUrl">Icône du pied de page</label><input id="<%= _id %>-footerIconUrl" class="input" type="url" name="<%= n('footerIconUrl') %>" data-embed-key="footerIconUrl" maxlength="2048" value="<%= _spec.footer ? _spec.footer.iconUrl || '' : '' %>"></div>
+      </div>
+    </details>
+    <fieldset class="field">
+      <legend>Champs (<span data-fields-count><%= (_spec.fields || []).length %></span>/25)</legend>
+      <div data-embed-fields><%- include('repeater', { kind: 'field', rows: _spec.fields || [], name: n('fieldsJson'), id: `${_id}-fields`, max: 25, addLabel: 'Ajouter un champ' }) %></div>
+    </fieldset>
+    <% if (_buttons !== null) { %>
+    <fieldset class="field">
+      <legend>Boutons (max 25)</legend>
+      <div data-embed-buttons><%- include('repeater', { kind: 'button', rows: _buttons, name: typeof buttonsName === 'string' ? buttonsName : 'buttonsJson', id: `${_id}-buttons`, max: 25, addLabel: 'Ajouter un bouton' }) %></div>
+      <small class="hint">Un bouton « Lien » requiert une URL ; les autres styles requièrent un identifiant interne (<code>namespace:args</code>).</small>
+    </fieldset>
+    <% } %>
+    <% if (_json) { %>
+    <details class="editor-section">
+      <summary>Importer / exporter JSON</summary>
+      <textarea class="textarea textarea-sm input-mono" rows="6" data-embed-json placeholder='{"title": "…", "description": "…"}' aria-label="JSON de l'embed"></textarea>
+      <div class="card-actions">
+        <button type="button" class="btn btn-ghost btn-sm" data-embed-import>Appliquer le JSON au formulaire</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-embed-export>Exporter le formulaire en JSON</button>
+      </div>
+      <small class="hint" data-embed-json-status></small>
+    </details>
+    <% } %>
+  </div>
+  <% if (_preview) { %>
+  <div class="embed-editor-preview">
+    <div class="preview-label">Aperçu en direct</div>
+    <div data-embed-preview><%- include('embed-preview', { embed: _spec, buttons: _buttons || [], content: '' }) %></div>
+  </div>
+  <% } %>
+</div>
