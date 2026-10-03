@@ -1,7 +1,7 @@
 <%#
   Ligne d'une liste dynamique (public/js/repeater.js). Les inputs portent `data-field` (jamais `name`) :
   la liste est sérialisée en JSON dans le champ caché désigné par `data-repeater-json`.
-  Attend : kind ('field' | 'button' | 'question' | 'threshold' | 'option' | 'polloption'), row (objet ou null), roles (RoleOption[] pour 'option').
+  Attend : kind ('field' | 'button' | 'question' | 'threshold' | 'option' | 'polloption' | 'tier'), row (objet ou null), roles (RoleOption[] pour 'option').
 %>
 <% const r = row || {}; %>
 <div class="repeater-row repeater-<%= kind %>" data-repeater-row>
@@ -39,6 +39,11 @@
   <% } else if (kind === 'polloption') { %>
     <input class="input input-sm" data-field="label" maxlength="100" placeholder="Option" value="<%= r.label || '' %>" aria-label="Libellé de l'option">
     <input class="input input-sm" data-field="emoji" maxlength="64" placeholder="Emoji" value="<%= r.emoji || '' %>" aria-label="Emoji">
+  <% } else if (kind === 'tier') { %>
+    <label class="repeater-inline"><span class="muted">Palier</span><input class="input input-sm" data-field="tier" type="number" min="1" max="1000" value="<%= r.tier || '' %>" aria-label="Numéro du palier"></label>
+    <label class="repeater-inline"><input class="input input-sm" data-field="xpRequired" type="number" min="0" max="100000000" placeholder="XP" value="<%= r.xpRequired === undefined || r.xpRequired === null ? '' : r.xpRequired %>" aria-label="XP requis"><span class="muted">XP</span></label>
+    <input class="input input-sm" data-field="freeReward" maxlength="200" placeholder="Récompense gratuite" value="<%= r.freeReward || '' %>" aria-label="Récompense gratuite">
+    <input class="input input-sm" data-field="premiumReward" maxlength="200" placeholder="Récompense premium" value="<%= r.premiumReward || '' %>" aria-label="Récompense premium">
   <% } %>
   <div class="repeater-actions">
     <button type="button" class="icon-btn icon-btn-sm" data-repeater-up title="Monter" aria-label="Monter">↑</button>

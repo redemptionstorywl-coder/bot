@@ -1,0 +1,204 @@
+<section class="page-header">
+  <div><h2 class="page-title">⚔️ Battle Royale</h2><p class="muted">Classements par saison, profils des joueurs, saisons et Battle Pass.</p></div>
+</section>
+
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Battle Royale est désactivé sur ce serveur : les commandes <code>/br-*</code> ne répondent pas. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Gérer les modules</a></span></div><% } %>
+
+<div class="stat-grid">
+  <div class="stat-card"><span class="stat-label">Profils</span><span class="stat-value"><%= fmt.number(profileCount) %></span></div>
+  <div class="stat-card"><span class="stat-label">Saison courante</span><span class="stat-value"><%= currentSeason %></span></div>
+  <div class="stat-card"><span class="stat-label">Battle Pass actif</span><span class="stat-value stat-value-sm"><%= activePass ? activePass.name : 'aucun' %></span></div>
+  <div class="stat-card"><span class="stat-label">Fin de saison</span><span class="stat-value stat-value-sm"><%= activePass ? fmt.date(activePass.endsAt) : '—' %></span></div>
+</div>
+
+<div class="tabs" data-tabs data-active="<%= tab %>">
+  <div class="tab-list" role="tablist">
+    <button type="button" class="tab" role="tab" data-tab="leaderboard">Classements</button>
+    <button type="button" class="tab" role="tab" data-tab="profiles">Profils</button>
+    <button type="button" class="tab" role="tab" data-tab="seasons">Saisons &amp; Battle Pass <span class="badge badge-muted"><%= seasons.length %></span></button>
+  </div>
+
+  <!-- ─── Classements ─── -->
+  <section class="tab-panel" data-tab-panel="leaderboard" role="tabpanel">
+    <form method="get" action="/guilds/<%= guild.id %>/battle-royale" class="card filter-bar">
+      <input type="hidden" name="tab" value="leaderboard">
+      <div class="field"><label for="lb-metric">Classement</label><select id="lb-metric" name="metric" class="select" data-submit-on-change><% for (const m of metrics) { %><option value="<%= m.value %>" <%= filters.metric === m.value ? 'selected' : '' %>><%= m.label %></option><% } %></select></div>
+      <div class="field"><label for="lb-season">Saison</label><select id="lb-season" name="season" class="select" data-submit-on-change><% for (const s of seasonNumbers) { %><option value="<%= s %>" <%= filters.season === s ? 'selected' : '' %>>Saison <%= s %><%= s === currentSeason ? ' (courante)' : '' %></option><% } %></select></div>
+      <div class="field field-actions"><button type="submit" class="btn btn-primary">Afficher</button></div>
+    </form>
+    <div class="card">
+      <div class="card-head"><h3 class="card-title">Top <%= leaderboard.length %> — <%= metrics.find((m) => m.value === filters.metric).label %> · saison <%= filters.season %></h3></div>
+      <% if (!leaderboard.length) { %><p class="muted">Aucune statistique pour cette saison.</p><% } else { %>
+      <div class="table-wrap"><table class="table table-compact rank-table">
+        <thead><tr><th>#</th><th>Joueur</th><th>Victoires</th><th>Kills</th><th>Morts</th><th>K/D</th><th>Parties</th><th>Niveau</th><th>XP</th><th class="nowrap">Part</th></tr></thead>
+        <tbody>
+          <% for (const r of leaderboard) { %>
+            <% const p = people[r.userId]; %>
+            <tr>
+              <td class="rank <%= r.rank <= 3 ? 'rank-top' : '' %>"><%= r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : '#' + r.rank %></td>
+              <td><a class="user-cell link" href="/guilds/<%= guild.id %>/battle-royale?tab=profiles&user=<%= r.userId %>"><% if (p) { %><img class="avatar" src="<%= p.avatarUrl %>" alt=""><% } else { %><span class="avatar avatar-fallback"><%= fmt.initials(r.nickname || r.userId) %></span><% } %><span class="truncate"><%= p ? p.name : (r.nickname || r.userId) %></span></a><% if (r.nickname && p && r.nickname !== p.name) { %><br><small class="muted"><%= r.nickname %></small><% } %></td>
+              <td><%= fmt.number(r.wins) %></td><td><%= fmt.number(r.kills) %></td><td><%= fmt.number(r.deaths) %></td><td><%= r.kd %></td><td><%= fmt.number(r.matches) %></td><td><%= r.level %></td><td><%= fmt.number(r.xp) %></td>
+              <td><span class="bar-track"><span class="bar-fill" data-pct="<%= r.pct %>"></span></span></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table></div>
+      <% } %>
+    </div>
+  </section>
+
+  <!-- ─── Profils ─── -->
+  <section class="tab-panel" data-tab-panel="profiles" role="tabpanel">
+    <form method="get" action="/guilds/<%= guild.id %>/battle-royale" class="card filter-bar">
+      <input type="hidden" name="tab" value="profiles">
+      <div class="field"><label for="pf-user">ID utilisateur Discord</label><input id="pf-user" name="user" class="input input-mono" value="<%= filters.user %>" pattern="^\d{15,22}$" placeholder="123456789012345678"></div>
+      <div class="field"><label for="pf-ident">ou identifiant FiveM</label><input id="pf-ident" name="identifier" class="input input-mono" value="<%= filters.identifier %>" maxlength="128" placeholder="license:abcd1234…"></div>
+      <div class="field field-actions"><button type="submit" class="btn btn-primary">Rechercher</button><a class="btn btn-ghost" href="/guilds/<%= guild.id %>/battle-royale?tab=profiles">Réinitialiser</a></div>
+    </form>
+
+    <% if (lookupError) { %><div class="alert alert-info"><span class="alert-icon" aria-hidden="true">i</span><span class="alert-text"><%= lookupError %></span></div><% } %>
+
+    <% if (lookupUserId) { %>
+      <% const p = people[lookupUserId]; const pr = profile; %>
+      <div class="grid-2 grid-2-aside">
+        <aside class="stack">
+          <section class="card profile-card">
+            <% if (p) { %><img class="avatar avatar-xl" src="<%= p.avatarUrl %>" alt=""><% } else { %><span class="avatar avatar-xl avatar-fallback"><%= fmt.initials(pr && pr.nickname ? pr.nickname : lookupUserId) %></span><% } %>
+            <h2 class="profile-name"><%= p ? p.name : (pr && pr.nickname ? pr.nickname : lookupUserId) %></h2>
+            <p class="muted"><span class="mono"><%= lookupUserId %></span> · <a class="link" href="/guilds/<%= guild.id %>/members/<%= lookupUserId %>">fiche membre</a></p>
+            <% if (pr) { %>
+            <div class="progress">
+              <div class="progress-label"><span>Niveau <strong><%= pr.progress.level %></strong></span><span><%= fmt.number(pr.progress.current) %> / <%= fmt.number(pr.progress.needed) %> XP</span></div>
+              <span class="bar-track"><span class="bar-fill" data-pct="<%= Math.round(pr.progress.ratio * 1000) / 10 %>"></span></span>
+            </div>
+            <dl class="dl">
+              <dt>XP total</dt><dd><%= fmt.number(pr.xp) %></dd>
+              <dt>Temps de jeu</dt><dd><%= fmt.duration(pr.playtimeMinutes * 60) %></dd>
+              <dt>Pseudo en jeu</dt><dd><%= pr.nickname || '—' %></dd>
+              <dt>Identifiant FiveM</dt><dd class="mono"><%= pr.identifier || '—' %></dd>
+              <dt>Profil créé</dt><dd><%= fmt.date(pr.createdAt) %></dd>
+            </dl>
+            <% } %>
+          </section>
+          <% if (pr) { %>
+          <section class="card">
+            <div class="card-head"><h3 class="card-title">Battle Pass</h3><% if (pr.battlePassPremium) { %><span class="badge badge-primary">premium</span><% } else { %><span class="badge badge-muted">gratuit</span><% } %></div>
+            <% if (!activePass) { %><p class="muted">Aucune saison active.</p><% } else { %>
+            <div class="progress">
+              <div class="progress-label"><span>Palier <strong><%= pr.battlePass.tier %></strong><%= pr.battlePass.maxed ? ' (max)' : pr.battlePass.nextTier ? ' → ' + pr.battlePass.nextTier.tier : '' %></span><span><%= pr.battlePass.maxed ? fmt.number(pr.battlePassXp) + ' XP' : fmt.number(pr.battlePass.current) + ' / ' + fmt.number(pr.battlePass.needed) + ' XP' %></span></div>
+              <span class="bar-track"><span class="bar-fill" data-pct="<%= Math.round(pr.battlePass.ratio * 1000) / 10 %>"></span></span>
+            </div>
+            <% if (pr.battlePass.nextTier) { %><p class="hint">Prochain palier : <%= pr.battlePass.nextTier.freeReward || '—' %><%= pr.battlePass.nextTier.premiumReward ? ' · premium : ' + pr.battlePass.nextTier.premiumReward : '' %></p><% } %>
+            <% } %>
+          </section>
+          <% } %>
+        </aside>
+
+        <div class="stack">
+          <section class="card">
+            <div class="card-head"><h3 class="card-title">Statistiques par saison</h3></div>
+            <% if (!pr || !pr.stats.length) { %><p class="muted">Aucune statistique enregistrée.</p><% } else { %>
+            <div class="table-wrap"><table class="table table-compact">
+              <thead><tr><th>Saison</th><th>Victoires</th><th>Kills</th><th>Morts</th><th>K/D</th><th>Parties</th><th>Top 10</th><th>Dégâts</th><th>Mis à jour</th></tr></thead>
+              <tbody><% for (const s of pr.stats) { %><tr class="<%= s.season === currentSeason ? '' : 'row-disabled' %>"><td><strong><%= s.season %></strong><%= s.season === currentSeason ? ' <span class="badge badge-primary">courante</span>' : '' %></td><td><%= fmt.number(s.wins) %></td><td><%= fmt.number(s.kills) %></td><td><%= fmt.number(s.deaths) %></td><td><%= s.kd %></td><td><%= fmt.number(s.matches) %></td><td><%= fmt.number(s.top10) %></td><td><%= fmt.number(s.damage) %></td><td class="nowrap"><%= fmt.dateTime(s.updatedAt) %></td></tr><% } %></tbody>
+            </table></div>
+            <% } %>
+          </section>
+
+          <section class="card">
+            <h3 class="card-title">Actions admin</h3>
+            <div class="grid-2 grid-tight">
+              <form method="post" action="/guilds/<%= guild.id %>/battle-royale/profiles/<%= lookupUserId %>/stat" class="form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <h4 class="card-subtitle">Modifier une stat</h4>
+                <div class="field"><label for="st-field">Champ</label><select id="st-field" name="field" class="select"><% for (const f of statFields) { %><option value="<%= f.value %>"><%= f.label %><%= f.perSeason ? ' (par saison)' : '' %></option><% } %></select></div>
+                <div class="grid-2 grid-tight">
+                  <div class="field"><label for="st-value">Valeur</label><input id="st-value" name="value" type="number" class="input" min="0" required value="0"></div>
+                  <div class="field"><label for="st-season">Saison (stats)</label><select id="st-season" name="season" class="select"><option value="">courante (<%= currentSeason %>)</option><% for (const s of seasonNumbers) { %><option value="<%= s %>"><%= s %></option><% } %></select></div>
+                </div>
+                <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">Appliquer</button></div>
+              </form>
+              <div>
+                <form method="post" action="/guilds/<%= guild.id %>/battle-royale/profiles/<%= lookupUserId %>/xp" class="form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <h4 class="card-subtitle">Ajouter / retirer de l'XP</h4>
+                  <div class="inline-fields">
+                    <div class="field"><label for="xp-amount">Montant (négatif = retrait)</label><input id="xp-amount" name="amount" type="number" class="input" required value="100" min="-1000000000" max="1000000000"></div>
+                    <div class="field field-fixed"><button type="submit" class="btn btn-primary btn-sm">Ajouter</button></div>
+                  </div>
+                </form>
+                <form method="post" action="/guilds/<%= guild.id %>/battle-royale/profiles/<%= lookupUserId %>/link" class="form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <h4 class="card-subtitle">Identifiant FiveM</h4>
+                  <div class="inline-fields">
+                    <div class="field"><label for="lk-ident">Identifiant</label><input id="lk-ident" name="identifier" class="input input-mono" required maxlength="128" placeholder="license:abcd1234…" value="<%= pr && pr.identifier ? pr.identifier : '' %>"></div>
+                    <div class="field"><label for="lk-nick">Pseudo (optionnel)</label><input id="lk-nick" name="nickname" class="input" maxlength="64" value="<%= pr && pr.nickname ? pr.nickname : '' %>"></div>
+                    <div class="field field-fixed"><button type="submit" class="btn btn-primary btn-sm">Lier</button></div>
+                  </div>
+                </form>
+                <% if (pr && pr.identifier) { %>
+                <form method="post" action="/guilds/<%= guild.id %>/battle-royale/profiles/<%= lookupUserId %>/unlink"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Délier l'identifiant « <%= pr.identifier %> » ? Les stats envoyées par le serveur ne seront plus attribuées à ce joueur.">Délier l'identifiant</button></form>
+                <% } %>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    <% } else { %>
+      <p class="muted">Recherchez un joueur par ID Discord ou identifiant FiveM pour afficher sa fiche et les actions admin.</p>
+    <% } %>
+  </section>
+
+  <!-- ─── Saisons & Battle Pass ─── -->
+  <section class="tab-panel" data-tab-panel="seasons" role="tabpanel">
+    <% if (selectedPass) { %>
+    <form method="post" action="/guilds/<%= guild.id %>/battle-royale/seasons/<%= selectedPass.season %>" class="card form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-head"><h3 class="card-title">Modifier la saison <%= selectedPass.season %></h3><a class="link" href="/guilds/<%= guild.id %>/battle-royale?tab=seasons">Fermer</a></div>
+      <div class="grid-3 grid-tight">
+        <div class="field"><label for="sp-name">Nom</label><input id="sp-name" name="name" class="input" required maxlength="100" value="<%= selectedPass.name %>"></div>
+        <div class="field"><label for="sp-start">Début</label><input id="sp-start" name="startsAt" type="datetime-local" class="input" required value="<%= selectedPass.startsAtInput %>"></div>
+        <div class="field"><label for="sp-end">Fin</label><input id="sp-end" name="endsAt" type="datetime-local" class="input" required value="<%= selectedPass.endsAtInput %>"></div>
+      </div>
+      <h4 class="card-subtitle">Paliers (<%= selectedPass.tiers.length %>)</h4>
+      <%- include('../partials/repeater', { kind: 'tier', rows: selectedPass.tiers, name: 'tiersJson', id: 'edit-tiers-json', max: 100, addLabel: 'Ajouter un palier' }) %>
+      <div class="form-actions"><a class="btn btn-ghost" href="/guilds/<%= guild.id %>/battle-royale?tab=seasons">Annuler</a><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+    </form>
+    <% } %>
+
+    <div class="card">
+      <div class="card-head"><h3 class="card-title">Saisons</h3><span class="muted">la saison active définit le Battle Pass en cours</span></div>
+      <% if (!seasons.length) { %><p class="muted">Aucune saison : créez-en une ci-dessous.</p><% } else { %>
+      <div class="table-wrap"><table class="table table-compact">
+        <thead><tr><th>Saison</th><th>Nom</th><th>Début</th><th>Fin</th><th>Paliers</th><th>État</th><th></th></tr></thead>
+        <tbody>
+          <% for (const s of seasons) { %>
+            <tr class="<%= s.active ? '' : 'row-disabled' %>">
+              <td><strong><%= s.season %></strong></td><td><%= s.name %></td><td class="nowrap"><%= fmt.date(s.startsAt) %></td><td class="nowrap"><%= fmt.date(s.endsAt) %></td><td><%= s.tiers.length %><% if (s.tiers.length) { %> <small class="muted">(max <%= fmt.number(s.tiers[s.tiers.length - 1].xpRequired) %> XP)</small><% } %></td>
+              <td><span class="badge <%= s.active ? 'badge-primary' : 'badge-muted' %>"><%= s.active ? 'active' : 'inactive' %></span></td>
+              <td class="right"><div class="actions-cell">
+                <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/battle-royale?tab=seasons&pass=<%= s.season %>">Modifier les paliers</a>
+                <% if (!s.active) { %><form method="post" action="/guilds/<%= guild.id %>/battle-royale/seasons/<%= s.season %>/activate"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-primary btn-sm" data-confirm="Définir la saison <%= s.season %> comme saison courante ?">Activer</button></form><% } %>
+              </div></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table></div>
+      <% } %>
+    </div>
+
+    <form method="post" action="/guilds/<%= guild.id %>/battle-royale/seasons" class="card form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <h3 class="card-title">Nouvelle saison</h3>
+      <div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Créer une saison désactive les précédentes et remet à zéro la progression Battle Pass de tous les joueurs (les stats et l'XP de niveau sont conservés).</span></div>
+      <div class="grid-3 grid-tight">
+        <div class="field"><label for="ns-name">Nom</label><input id="ns-name" name="name" class="input" required maxlength="100" placeholder="Saison <%= (seasons[0] ? seasons[0].season : 0) + 1 %>"></div>
+        <div class="field"><label for="ns-start">Début (vide = maintenant)</label><input id="ns-start" name="startsAt" type="datetime-local" class="input"></div>
+        <div class="field"><label for="ns-end">Fin</label><input id="ns-end" name="endsAt" type="datetime-local" class="input" required value="<%= defaultEndsAt %>"></div>
+      </div>
+      <h4 class="card-subtitle">Paliers du Battle Pass (vide = 30 paliers de 1 000 XP)</h4>
+      <%- include('../partials/repeater', { kind: 'tier', rows: [], name: 'tiersJson', id: 'new-tiers-json', max: 100, addLabel: 'Ajouter un palier' }) %>
+      <div class="form-actions"><button type="submit" class="btn btn-primary" data-confirm="Créer une nouvelle saison et réinitialiser la progression Battle Pass de tous les joueurs ?">Créer la saison</button></div>
+    </form>
+  </section>
+</div>

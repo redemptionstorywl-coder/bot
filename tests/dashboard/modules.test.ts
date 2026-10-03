@@ -138,6 +138,7 @@ import { eventService } from '../../src/services/EventService';
 import { pollService } from '../../src/services/PollService';
 import { welcomeService } from '../../src/services/WelcomeService';
 import { parseLocalDateTime, toLocalInputValue } from '../../dashboard/lib/dates';
+import { PENDING_MODULE_PAGES } from '../../dashboard/lib/navigation';
 
 setTestEnv();
 const prisma = mockedPrisma as unknown as ReturnType<typeof createPrismaMock>;
@@ -275,13 +276,10 @@ afterAll(async () => {
 });
 
 describe('Pages génériques restantes', () => {
-  it('seules les pages Battle Royale / School / Shop restent « en cours d’intégration »', async () => {
-    for (const p of ['/battle-royale', '/school', '/shop']) {
-      const r = await get(`/guilds/${GUILD_ID}${p}`);
-      expect(r.status, p).toBe(200);
-      expect(r.text, p).toContain("en cours d'intégration");
-    }
+  it('aucune page de module ne reste « en cours d’intégration » (FiveM / Whitelist / Battle Royale / School / Shop : voir modules2.test.ts)', async () => {
+    expect(PENDING_MODULE_PAGES).toEqual([]);
     const tickets = await get(`/guilds/${GUILD_ID}/tickets`);
+    expect(tickets.status).toBe(200);
     expect(tickets.text).not.toContain("en cours d'intégration");
   });
 });

@@ -26,15 +26,17 @@ dashboard/
     validate.ts        validate({ body, query, params }), valid(req), parseOrThrow(), schémas réutilisables
     access.ts          hasGuildAccess(), parsePermissions(), canManageGuild() (fonctions pures)
     guildData.ts       describeGuild(guild) → GuildView (salons/rôles triés pour les selects)
-    navigation.ts      NAVIGATION (menu latéral), PENDING_MODULE_PAGES, navHref()
+    navigation.ts      NAVIGATION (menu latéral), IMPLEMENTED_MODULE_PAGES / PENDING_MODULE_PAGES (vide : tout est implémenté), navHref()
     stats.ts           buildOverview(client, guild, config) (page dashboard + /api/…/overview)
     rateLimit.ts       createRateLimiter() (fenêtre glissante mémoire), wantsJson(req)
     flash.ts           flash(req, type, message) / takeFlash(req)
     format.ts          fmt.* (dates, nombres, durées, JSON), avatarUrl(), guildIconUrl()
     dates.ts           parseLocalDateTime(value, tz) / toLocalInputValue(date, tz) (champs datetime-local ↔ Date dans le fuseau du serveur)
-    names.ts           resolveUserNames(client, guildId, ids) → { id: nom }, requireBotGuild(client, guildId) (503 lisible si bot absent)
+    names.ts           resolveUserNames(client, guildId, ids) → { id: nom }, resolveUserProfiles() → { id: { name, avatarUrl } },
+                       requireBotGuild(client, guildId) (503 lisible si bot absent)
     embedForm.ts       embedFormSchema / toEmbedSpec / buttonsJsonSchema / jsonArray / embedJsonSchema (formulaire d'embed → EmbedSpec)
-    serviceErrors.ts   describeError(err) (TicketError, AnnouncementError, EmbedTemplateError, ModerationError, Zod, Discord → message FR),
+    serviceErrors.ts   describeError(err) (TicketError, AnnouncementError, EmbedTemplateError, ModerationError, WhitelistError, SchoolError,
+                       ShopError, FiveMError, BattleRoyaleError (codes → locales/fr/<module>.json errors.*), Zod, Discord → message FR),
                        formAction(back, fn) : handler de formulaire qui convertit toute erreur en flash + redirection
     async.ts           wrap(handler) pour les handlers async
     errors.ts          HttpError(status, message, details?)
@@ -60,19 +62,25 @@ dashboard/
       moderation.ts    /moderation (config warns, anti-raid, lockdown, sanctions, warnings, stats 30 j)
       giveaways.ts     /giveaways (liste, fiche, création, end/reroll/cancel)
       events.ts        /events (événements : CRUD, cancel, remind ; sondages : création, fin, résultats)
+      fivem.ts         /fivem (serveurs FiveM : statut 🟢/🔴/🟠, joueurs, ajout/édition (clé API masquée), maintenance, test de connexion, encart API)
+      whitelist.ts     /whitelist (dossiers par statut, recherche, fiche + accepter/refuser, identifiant FiveM ; configuration : questions, salon, rôles)
+      battleroyale.ts  /battle-royale (classements wins/kills/level/kd par saison, profils + actions admin, saisons & Battle Pass avec paliers)
+      school.ts        /school (config, élèves & profils paginés, classes, maisons + points, clubs + membres, candidatures)
+      shop.ts          /shop (produits + aperçu, catégories, commandes paginées + transitions, historique client, stats 30 j, webhook Tebex)
       modules.ts       toggleModuleHandler(client) (partagé page + API)
-      coming.ts        pages génériques « en cours d'intégration » (modules non encore intégrés : Battle Royale, School, Shop)
+      coming.ts        pages génériques « en cours d'intégration » (aucune entrée aujourd'hui : PENDING_MODULE_PAGES est vide, conservé pour un futur module)
   views/
     layouts/main.ejs   layout : <head>, sidebar, topbar, flash, <%- body %>, footer, toasts, modale
     partials/          sidebar, header, footer, flash, modal, pagination, channel-options, role-options, logo,
                        embed-preview (rendu façon Discord), embed-editor (formulaire complet + aperçu live), repeater / repeater-row (listes dynamiques)
     pages/             landing, guilds, dashboard, settings, logs, members, member, translations, admin, coming, error, config-missing,
                        tickets, ticket, ticket-type, embeds, embed-form, announcements, announcement-form, announcement-preview, welcome,
-                       roles, role-menu, reactionroles, moderation, giveaways, giveaway, events, event-form, poll
+                       roles, role-menu, reactionroles, moderation, giveaways, giveaway, events, event-form, poll,
+                       fivem, whitelist, battleroyale, school, shop
   public/
     css/app.css        design system maison (variables CSS, sidebar 260 px, cartes, tableaux, formulaires, aperçu Discord, repeater…)
     js/app.js          api(), toast(), toggles de modules, modale de confirmation, filtres, onglets (imbriqués), toggles (check/radio),
-                       pré-remplissage de formulaire, Socket.IO (toasts + actualisation des pages de modules)
+                       pré-remplissage de formulaire, formulaire création/édition partagé (data-id-action), Socket.IO (toasts + actualisation des pages de modules)
     js/repeater.js     listes dynamiques [data-repeater] → JSON dans un champ caché (champs d'embed, boutons, questions, seuils, options)
     js/embed-editor.js aperçu live de l'éditeur d'embed, import/export JSON côté client, renderEmbedPreview()
     img/favicon.svg
@@ -136,7 +144,8 @@ Les vues et fichiers statiques sont copiés dans `dist/dashboard/` au build (`sc
 
 6. **Temps réel** — émettre `client.bus.emit('ticket:open', { guildId, … })` depuis le service : l'événement est relayé
    dans la room `guild:<id>` (liste `RELAYED_BUS_EVENTS` dans `sockets.ts`, à compléter si besoin) ; ou appeler
-   `broadcastToGuild(guildId, event, payload)` directement depuis une route. Côté client : `socket.on('ticket:open', …)` dans `app.js`.
+   `broadcastToGuild(guildId, event, payload)` directement depuis une route. Côté client : `socket.on('ticket:open', …)` dans `app.js`
+   (table `MODULE_EVENTS` : `fivem:status`, `shop:order`, `whitelist:update`, `school:update`, `br:update`… → toast + actualisation de la page du module).
 
 ## Formulaires de modules : helpers
 
@@ -148,11 +157,16 @@ Les vues et fichiers statiques sont copiés dans `dist/dashboard/` au build (`sc
   `buttons: null` masque la section boutons ; `withPreview` / `withJson` / `compact` sont optionnels.
 - **Aperçu Discord** : `<%- include('../partials/embed-preview', { embed, buttons, content, compact }) %>` (même balisage que `renderEmbedPreview()` en JS).
 - **Listes dynamiques** : `<%- include('../partials/repeater', { kind, rows, name: 'xxxJson', id: 'xxx-json', max, addLabel, roles? }) %>` ;
-  kinds disponibles dans `partials/repeater-row.ejs` (`field`, `button`, `question`, `threshold`, `option`, `polloption`). Côté route : `jsonArray(schema, max)`.
+  kinds disponibles dans `partials/repeater-row.ejs` (`field`, `button`, `question`, `threshold`, `option`, `polloption`, `tier`). Côté route : `jsonArray(schema, max)`.
+- **Formulaire création / édition partagé** : `<form data-id-action="/guilds/:id/school/classes">` + `<input type="hidden" name="id">` + boutons `data-fill-form` avec `data-set-id` :
+  à l'envoi, l'action devient `/base/<id>` si un id est pré-rempli (route POST `/base/:id`), sinon `/base` (création) ; `type="reset"` revient en mode création.
 - **Dates** : `<input type="datetime-local">` → `parseLocalDateTime(value, config.timezone)` ; pré-remplissage avec `toLocalInputValue(date, config.timezone)`.
 - **Actions Discord** : `requireBotGuild(client, guildId)` lève un 503 lisible si le bot n'est pas prêt ; les vues désactivent les boutons quand `!botReady`.
 - **Attributs JS supplémentaires** : `data-check-toggle="#cible"` / `data-check-hide="#cible"` (case à cocher), `data-radio-toggle="#cible"` (radio),
   `data-fill-form="#form"` + `data-set-<champ>="valeur"` (pré-remplissage), `data-tab-param="lang"` (onglets imbriqués avec leur propre paramètre d'URL).
+- **Méthodes de service manquantes** : quand un service n'expose pas l'opération (ex. édition d'une classe / maison / club / catégorie, suppression d'un profil School,
+  déliaison d'un identifiant BR, édition des paliers d'un Battle Pass, liste paginée des commandes / profils), la route écrit via `prisma` directement
+  (commentaire `// Pas de méthode …` dans la route) — ces services n'ont pas de cache sur ces entités, donc aucune invalidation nécessaire.
 
 ## Conventions
 

@@ -35,6 +35,8 @@ export const NAVIGATION: NavEntry[] = [
   { key: 'moderation', label: 'Modération', icon: '🛡️', path: 'moderation', module: 'moderation', group: 'modules' },
   { key: 'giveaways', label: 'Giveaways', icon: '🎁', path: 'giveaways', module: 'giveaways', group: 'modules' },
   { key: 'events', label: 'Événements', icon: '📅', path: 'events', module: 'events', group: 'modules' },
+  { key: 'fivem', label: 'FiveM', icon: '🎮', path: 'fivem', module: 'fivem', group: 'modules' },
+  { key: 'whitelist', label: 'Whitelist', icon: '📝', path: 'whitelist', module: 'whitelist', group: 'modules' },
   { key: 'battleRoyale', label: 'Battle Royale', icon: '⚔️', path: 'battle-royale', module: 'battleRoyale', group: 'modules' },
   { key: 'school', label: 'School RP', icon: '🎓', path: 'school', module: 'school', group: 'modules' },
   { key: 'shop', label: 'Shop', icon: '🛒', path: 'shop', module: 'shop', group: 'modules' },
@@ -51,9 +53,9 @@ export const NAV_GROUP_LABELS: Record<NavEntry['group'], string> = {
 };
 
 /** Pages disposant d'un routeur dédié dans routes/guild/ (retirer une clé ici dès que sa page existe). */
-const IMPLEMENTED_MODULE_PAGES = new Set(['logs', 'tickets', 'embeds', 'announcements', 'welcome', 'roles', 'reactionroles', 'moderation', 'giveaways', 'events']);
+const IMPLEMENTED_MODULE_PAGES = new Set(['logs', 'tickets', 'embeds', 'announcements', 'welcome', 'roles', 'reactionroles', 'moderation', 'giveaways', 'events', 'fivem', 'whitelist', 'battleRoyale', 'school', 'shop']);
 
-/** Pages de modules servies par la page générique « en cours d'intégration » tant qu'aucune route dédiée n'existe. */
+/** Pages de modules servies par la page générique « en cours d'intégration » tant qu'aucune route dédiée n'existe (vide : toutes les pages sont implémentées). */
 export const PENDING_MODULE_PAGES: NavEntry[] = NAVIGATION.filter((e) => e.group === 'modules' && !IMPLEMENTED_MODULE_PAGES.has(e.key));
 
 export function navHref(entry: NavEntry, guildId: string | null): string {

@@ -4,6 +4,11 @@ import { TicketError } from '../../src/services/TicketService';
 import { AnnouncementError } from '../../src/services/AnnouncementService';
 import { EmbedTemplateError } from '../../src/services/EmbedTemplateService';
 import { ModerationError } from '../../src/services/ModerationService';
+import { WhitelistError } from '../../src/services/WhitelistService';
+import { SchoolError } from '../../src/services/SchoolService';
+import { ShopError } from '../../src/services/ShopService';
+import { FiveMError } from '../../src/services/FiveMService';
+import { BattleRoyaleError } from '../../src/services/BattleRoyaleService';
 import { translationService } from '../../src/services/TranslationService';
 import { childLogger } from '../../src/utils/logger';
 import { HttpError } from './errors';
@@ -59,12 +64,36 @@ export function describeError(err: unknown, guildId?: string | null): DescribedE
     return { status: err.code === 'not_found' ? 404 : 400, message: base, details: err.details && err.code === 'invalid_spec' ? err.details.split('\n') : undefined };
   }
   if (err instanceof ModerationError) return { status: 400, message: translationService.translate('fr', err.key, err.vars, guildId) };
+  // Modules FiveM / Whitelist / Battle Royale / School / Shop : codes → messages traduits (locales/fr/<module>.json → errors.<code>)
+  const coded = describeCodedError(err, guildId);
+  if (coded) return coded;
   if (err instanceof Error) {
     if (err.name === 'DiscordAPIError' || err.name === 'HTTPError') return { status: 502, message: `Discord a refusé l'action : ${err.message}` };
     // Erreurs « métier » levées en clair par les services (ex. « Salon invalide »)
     if (err.name === 'Error' && err.message && err.message.length <= 200 && !/prisma|undefined|null|cannot|is not/i.test(err.message)) return { status: 400, message: err.message };
   }
   return { status: 500, message: 'Une erreur interne est survenue. Réessayez plus tard.' };
+}
+
+const NOT_FOUND_CODES = new Set(['not_found', 'profile_not_found', 'class_not_found', 'house_not_found', 'club_not_found', 'application_not_found', 'product_not_found', 'order_not_found', 'category_not_found']);
+
+/** Erreurs à code des modules métier (WhitelistError, SchoolError, ShopError, FiveMError, BattleRoyaleError) → message FR. */
+function describeCodedError(err: unknown, guildId?: string | null): DescribedError | null {
+  let ns: string | null = null;
+  let fallback = '';
+  if (err instanceof WhitelistError) (ns = 'whitelist'), (fallback = 'Erreur du module Whitelist.');
+  else if (err instanceof SchoolError) (ns = 'school'), (fallback = 'Erreur du module School RP.');
+  else if (err instanceof ShopError) (ns = 'shop'), (fallback = 'Erreur du module Shop.');
+  else if (err instanceof FiveMError) (ns = 'fivem'), (fallback = 'Erreur du module FiveM.');
+  else if (err instanceof BattleRoyaleError) (ns = 'battleroyale'), (fallback = 'Erreur du module Battle Royale.');
+  if (!ns) return null;
+  const code = (err as { code: string }).code;
+  const key = `${ns}.errors.${code}`;
+  const translated = translationService.translate('fr', key, undefined, guildId);
+  let message = translated === key ? fallback : translated;
+  if (err instanceof FiveMError && code === 'unreachable' && err.message && err.message !== code) message = `${message} ${err.message.slice(0, 160)}`;
+  const status = NOT_FOUND_CODES.has(code) ? 404 : err instanceof FiveMError && code === 'unreachable' ? 502 : 400;
+  return { status, message };
 }
 
 /** Transforme une erreur de service en HttpError (pour les handlers JSON). */

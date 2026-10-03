@@ -189,7 +189,7 @@ async function post(path: string, body: Record<string, string> | object, opts: {
   return r;
 }
 
-const MODELS = ['dashboardSession', 'guild', 'guildSettings', 'logChannel', 'log', 'commandPermission', 'userLanguage', 'user', 'translation', 'ticket', 'warning', 'sanction'];
+const MODELS = ['dashboardSession', 'guild', 'guildSettings', 'logChannel', 'log', 'commandPermission', 'userLanguage', 'user', 'translation', 'ticket', 'warning', 'sanction', 'fiveMServer', 'whitelist', 'whitelistConfig'];
 const METHODS = ['findUnique', 'findFirst', 'findMany', 'create', 'createMany', 'update', 'updateMany', 'upsert', 'delete', 'deleteMany', 'count', 'groupBy', 'aggregate'];
 
 /** vitest `restoreMocks` efface les implémentations avant chaque test : on les réarme ici. */
@@ -299,7 +299,7 @@ describe('Dashboard — pages connectées', () => {
     const r = await get('/guilds/abc', { auth: true });
     expect(r.status).toBe(400);
   });
-  it('GET settings / logs / members / translations / coming se rendent', async () => {
+  it('GET settings / logs / members / translations / fivem / whitelist se rendent', async () => {
     for (const [path, needle] of [
       ['/settings', 'Permissions par commande'],
       ['/settings?tab=modules', 'data-module-toggle="tickets"'],
@@ -310,8 +310,8 @@ describe('Dashboard — pages connectées', () => {
       [`/members/${USER_ID}`, 'Avertissements'],
       ['/translations?only=overrides', 'Ouais'],
       ['/translations?lang=en&q=yes&only=all', 'Traductions'],
-      ['/school', "en cours d'intégration"],
-      ['/battle-royale', "en cours d'intégration"],
+      ['/fivem', 'Intégration — API REST'],
+      ['/whitelist', 'Questions du formulaire'],
     ] as const) {
       const r = await get(`/guilds/${GUILD_ID}${path}`, { auth: true });
       expect(r.status, path).toBe(200);

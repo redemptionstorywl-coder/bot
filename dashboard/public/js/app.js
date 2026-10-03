@@ -191,6 +191,21 @@
   $$('[data-submit-on-change]').forEach(function (el) {
     el.addEventListener('change', function () { if (el.form) el.form.submit(); });
   });
+  // Formulaire création / édition partagé ([data-id-action="/base"] + champ caché `id`) : l'action devient /base/<id> quand un id est pré-rempli
+  $$('form[data-id-action]').forEach(function (form) {
+    var baseAction = form.getAttribute('data-id-action');
+    var title = form.querySelector('[data-form-title]');
+    var originalTitle = title ? title.textContent : '';
+    form.addEventListener('submit', function () {
+      var idField = form.elements.namedItem('id');
+      var id = idField && typeof idField.value === 'string' ? idField.value.trim() : '';
+      form.action = id ? baseAction + '/' + encodeURIComponent(id) : baseAction;
+    });
+    form.addEventListener('reset', function () {
+      if (title) title.textContent = originalTitle;
+      form.action = baseAction;
+    });
+  });
 
   // ───── Modale de confirmation ─────
   var modal = $('#confirm-modal');
@@ -309,6 +324,8 @@
       'welcome:update': ['welcome', 'Configuration de bienvenue mise à jour'], 'roles:update': ['roles', 'Configuration des rôles mise à jour'],
       'moderation:update': ['moderation', 'Modération mise à jour'], 'moderation:sanction': ['moderation', 'Nouvelle sanction'], 'moderation:warning': ['moderation', 'Avertissements mis à jour'],
       'giveaway:start': ['giveaways', 'Giveaway lancé'], 'giveaway:end': ['giveaways', 'Giveaway mis à jour'], 'event:update': ['events', 'Événements mis à jour'],
+      'fivem:status': ['fivem', 'Statut FiveM mis à jour'], 'shop:order': ['shop', 'Commandes mises à jour'], 'whitelist:update': ['whitelist', 'Whitelist mise à jour'],
+      'school:update': ['school', 'School RP mis à jour'], 'br:update': ['battleRoyale', 'Battle Royale mis à jour'],
     };
     var reloadTimer = null;
     socket.onAny(function (event, payload) {

@@ -34,3 +34,31 @@ export function requireBotGuild(client: RedemptionClient, guildId: string): Guil
   if (!guild) throw new HttpError(503, "Le bot n'est pas présent sur ce serveur.");
   return guild;
 }
+
+export interface UserProfileView {
+  name: string;
+  avatarUrl: string;
+}
+
+/**
+ * Résout des identifiants Discord en { nom, avatar } (membre → utilisateur en cache → fetch limité).
+ * Les identifiants inconnus sont absents du résultat : la vue affiche alors l'ID brut et un avatar de secours.
+ */
+export async function resolveUserProfiles(client: RedemptionClient, guildId: string, ids: Iterable<string | null | undefined>): Promise<Record<string, UserProfileView>> {
+  const out: Record<string, UserProfileView> = {};
+  if (!client.isReady()) return out;
+  const guild = client.guilds.cache.get(guildId);
+  const missing: string[] = [];
+  for (const id of new Set(ids)) {
+    if (!id || !/^\d{15,22}$/.test(id)) continue;
+    const member = guild?.members.cache.get(id);
+    const user = member?.user ?? client.users.cache.get(id);
+    if (user) out[id] = { name: member?.displayName ?? user.globalName ?? user.username, avatarUrl: (member ?? user).displayAvatarURL({ size: 64 }) };
+    else missing.push(id);
+  }
+  for (const id of missing.slice(0, MAX_FETCH)) {
+    const user = await client.users.fetch(id).catch(() => null);
+    if (user) out[id] = { name: user.globalName ?? user.username, avatarUrl: user.displayAvatarURL({ size: 64 }) };
+  }
+  return out;
+}

@@ -19,6 +19,11 @@ import { createReactionRolesRouter } from './guild/reactionroles';
 import { createModerationRouter } from './guild/moderation';
 import { createGiveawaysRouter } from './guild/giveaways';
 import { createEventsRouter } from './guild/events';
+import { createFiveMRouter } from './guild/fivem';
+import { createWhitelistRouter } from './guild/whitelist';
+import { createBattleRoyaleRouter } from './guild/battleroyale';
+import { createSchoolRouter } from './guild/school';
+import { createShopRouter } from './guild/shop';
 import { createComingRouter } from './guild/coming';
 
 /**
@@ -53,6 +58,11 @@ export function mountRoutes(client: RedemptionClient): Router {
     createModerationRouter,
     createGiveawaysRouter,
     createEventsRouter,
+    createFiveMRouter,
+    createWhitelistRouter,
+    createBattleRoyaleRouter,
+    createSchoolRouter,
+    createShopRouter,
     // ↑ les routeurs des modules métier s'insèrent ici (avant createComingRouter)
     createComingRouter,
   ];

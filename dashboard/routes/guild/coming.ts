@@ -8,6 +8,8 @@ import { MODULE_LABELS } from '../../../src/config/constants';
  * Pages de modules « en cours d'intégration ».
  * Chaque module métier remplace son entrée en montant son propre routeur AVANT celui-ci
  * dans routes/index.ts (ou en retirant l'entrée de PENDING_MODULE_PAGES).
+ * Toutes les entrées de navigation ayant aujourd'hui un routeur dédié, PENDING_MODULE_PAGES est vide
+ * et ce routeur n'enregistre aucune route : il reste disponible pour un futur module.
  */
 export function createComingRouter(_client: RedemptionClient): Router {
   const router = Router({ mergeParams: true });

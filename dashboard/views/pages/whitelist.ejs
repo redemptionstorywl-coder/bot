@@ -1,0 +1,124 @@
+<section class="page-header">
+  <div><h2 class="page-title">📝 Whitelist</h2><p class="muted">Dossiers de candidature, décisions, identifiants FiveM et configuration du formulaire.</p></div>
+</section>
+
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Whitelist est désactivé sur ce serveur : la commande <code>/whitelist</code> ne répond pas. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Gérer les modules</a></span></div><% } %>
+
+<div class="stat-grid">
+  <div class="stat-card"><span class="stat-label">En attente</span><span class="stat-value"><%= fmt.number(counts.PENDING) %></span></div>
+  <div class="stat-card"><span class="stat-label">Acceptées</span><span class="stat-value"><%= fmt.number(counts.ACCEPTED) %></span></div>
+  <div class="stat-card"><span class="stat-label">Refusées</span><span class="stat-value"><%= fmt.number(counts.REJECTED) %></span></div>
+  <div class="stat-card"><span class="stat-label">Candidatures</span><span class="stat-value stat-value-sm <%= settings.enabled ? '' : 'text-danger' %>"><%= settings.enabled ? 'ouvertes' : 'fermées' %></span></div>
+</div>
+
+<div class="tabs" data-tabs data-active="<%= tab %>">
+  <div class="tab-list" role="tablist">
+    <button type="button" class="tab" role="tab" data-tab="applications">Dossiers <span class="badge badge-muted"><%= fmt.number(total) %></span></button>
+    <button type="button" class="tab" role="tab" data-tab="config">Configuration</button>
+  </div>
+
+  <!-- ─── Dossiers ─── -->
+  <section class="tab-panel" data-tab-panel="applications" role="tabpanel">
+    <% if (selected) { %>
+    <div class="card">
+      <div class="card-head">
+        <h3 class="card-title">Dossier #<%= selected.id %> · <span class="badge badge-status-<%= selected.status %>"><%= statusLabels[selected.status] %></span></h3>
+        <a class="link" href="/guilds/<%= guild.id %>/whitelist?status=<%= filters.status %>">Fermer</a>
+      </div>
+      <div class="grid-2 grid-2-aside">
+        <aside class="stack">
+          <dl class="dl">
+            <dt>Candidat</dt><dd><a class="link" href="/guilds/<%= guild.id %>/members/<%= selected.userId %>"><%= names[selected.userId] || selected.userId %></a><br><span class="mono muted"><%= selected.userId %></span></dd>
+            <dt>Déposé le</dt><dd><%= fmt.dateTime(selected.createdAt) %></dd>
+            <dt>Identifiant FiveM</dt><dd><%= selected.identifier ? selected.identifier : '—' %></dd>
+            <% if (selected.reviewedById) { %><dt>Traité par</dt><dd><%= names[selected.reviewedById] || selected.reviewedById %> · <%= fmt.dateTime(selected.reviewedAt) %></dd><% } %>
+            <% if (selected.note) { %><dt>Note</dt><dd class="pre-wrap"><%= selected.note %></dd><% } %>
+          </dl>
+          <form method="post" action="/guilds/<%= guild.id %>/whitelist/applications/<%= selected.id %>/identifier" class="inline-fields">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="field"><label for="wl-ident">Lier un identifiant FiveM</label><input id="wl-ident" name="identifier" class="input input-sm input-mono" required maxlength="128" placeholder="license:abcd1234…" value="<%= selected.identifier || '' %>"></div>
+            <div class="field field-fixed"><button type="submit" class="btn btn-ghost btn-sm">Lier</button></div>
+          </form>
+        </aside>
+        <div>
+          <h4 class="card-subtitle">Réponses</h4>
+          <% if (!selected.answers.length) { %><p class="muted">Aucune réponse enregistrée.</p><% } else { %>
+          <div class="qa-list"><% for (const a of selected.answers) { %><div class="qa-item"><div class="qa-q"><%= a.question %></div><div class="qa-a"><%= a.answer || '—' %></div></div><% } %></div>
+          <% } %>
+          <% if (selected.status === 'PENDING') { %>
+          <h4 class="card-subtitle">Décision</h4>
+          <% if (!botReady) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le bot n'est pas connecté : les rôles et le DM ne seront pas appliqués immédiatement.</span></div><% } %>
+          <form method="post" action="/guilds/<%= guild.id %>/whitelist/applications/<%= selected.id %>/review" class="form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="field"><label for="wl-note">Note transmise au candidat (optionnelle)</label><textarea id="wl-note" name="note" class="textarea textarea-sm" maxlength="1000" rows="3" placeholder="Bienvenue ! / Merci de compléter votre candidature…"></textarea></div>
+            <div class="form-actions">
+              <button type="submit" name="decision" value="REJECTED" class="btn btn-danger" data-confirm="Refuser le dossier #<%= selected.id %> ?">⛔ Refuser</button>
+              <button type="submit" name="decision" value="ACCEPTED" class="btn btn-primary" data-confirm="Accepter le dossier #<%= selected.id %> et attribuer le rôle whitelist ?">✅ Accepter</button>
+            </div>
+          </form>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <% } %>
+
+    <form method="get" action="/guilds/<%= guild.id %>/whitelist" class="card filter-bar">
+      <input type="hidden" name="tab" value="applications">
+      <div class="field"><label for="f-status">Statut</label>
+        <select id="f-status" name="status" class="select">
+          <option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>Tous</option>
+          <% for (const s of Object.keys(statusLabels)) { %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= statusLabels[s] %> (<%= counts[s] %>)</option><% } %>
+        </select>
+      </div>
+      <div class="field"><label for="f-q">Recherche</label><input id="f-q" name="q" class="input" value="<%= filters.q %>" placeholder="numéro, ID, pseudo, identifiant, réponse…"></div>
+      <div class="field field-actions"><button type="submit" class="btn btn-primary">Filtrer</button><a class="btn btn-ghost" href="/guilds/<%= guild.id %>/whitelist">Réinitialiser</a></div>
+    </form>
+
+    <div class="card">
+      <% if (!applications.length) { %><p class="muted">Aucun dossier ne correspond à ces filtres.</p><% } else { %>
+      <div class="table-wrap"><table class="table">
+        <thead><tr><th>#</th><th>Statut</th><th>Candidat</th><th>Identifiant</th><th>Déposé</th><th>Traité par</th><th></th></tr></thead>
+        <tbody>
+          <% for (const r of applications) { %>
+            <tr>
+              <td><a class="link" href="/guilds/<%= guild.id %>/whitelist?status=<%= filters.status %>&id=<%= r.id %>">#<%= r.id %></a></td>
+              <td><span class="badge badge-status-<%= r.status %>"><%= statusLabels[r.status] %></span></td>
+              <td><a class="link" href="/guilds/<%= guild.id %>/members/<%= r.userId %>"><%= names[r.userId] || r.userId %></a></td>
+              <td class="mono"><%= r.identifier ? fmt.truncate(r.identifier, 30) : '—' %></td>
+              <td class="nowrap"><%= fmt.dateTime(r.createdAt) %><br><small class="muted"><%= fmt.relative(r.createdAt) %></small></td>
+              <td><%= r.reviewedById ? (names[r.reviewedById] || r.reviewedById) : '—' %></td>
+              <td class="right"><a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/whitelist?status=<%= filters.status %>&id=<%= r.id %>"><%= r.status === 'PENDING' ? 'Traiter' : 'Voir' %></a></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table></div>
+      <% if (applications.length >= 200) { %><p class="hint">Seuls les 200 dossiers les plus récents sont affichés : affinez par statut ou recherche.</p><% } %>
+      <% } %>
+    </div>
+  </section>
+
+  <!-- ─── Configuration ─── -->
+  <section class="tab-panel" data-tab-panel="config" role="tabpanel">
+    <form method="post" action="/guilds/<%= guild.id %>/whitelist/config" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card">
+        <div class="card-head"><h3 class="card-title">Questions du formulaire</h3><span class="muted">max <%= maxQuestions %> · vide = questions par défaut traduites</span></div>
+        <%- include('../partials/repeater', { kind: 'question', rows: settings.questions, name: 'questionsJson', id: 'wl-questions-json', max: maxQuestions, addLabel: 'Ajouter une question' }) %>
+        <% if (!settings.questions.length) { %><p class="hint">Questions actuellement posées (par défaut) : <%= effectiveQuestions.map((q) => q.label).join(' · ') %></p><% } %>
+      </div>
+      <div class="card">
+        <h3 class="card-title">Review &amp; rôles</h3>
+        <div class="grid-3 grid-tight">
+          <div class="field"><label for="wl-channel">Salon de review</label><select id="wl-channel" name="reviewChannelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: settings.reviewChannelId || '', allowEmpty: true, emptyLabel: '— Aucun (dashboard uniquement) —' }) %></select></div>
+          <div class="field"><label for="wl-accepted">Rôle accepté</label><select id="wl-accepted" name="acceptedRoleId" class="select"><option value="">— Aucun —</option><%- include('../partials/role-options', { roles: guild.roles, selected: settings.acceptedRoleId || '' }) %></select></div>
+          <div class="field"><label for="wl-pending">Rôle en attente</label><select id="wl-pending" name="pendingRoleId" class="select"><option value="">— Aucun —</option><%- include('../partials/role-options', { roles: guild.roles, selected: settings.pendingRoleId || '' }) %></select></div>
+        </div>
+        <div class="check-grid">
+          <label class="check"><input type="checkbox" name="dmOnDecision" <%= settings.dmOnDecision ? 'checked' : '' %>><span>Envoyer un DM au candidat à la décision</span></label>
+          <label class="check"><input type="checkbox" name="enabled" <%= settings.enabled ? 'checked' : '' %>><span>Candidatures ouvertes</span></label>
+        </div>
+        <div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+      </div>
+    </form>
+  </section>
+</div>

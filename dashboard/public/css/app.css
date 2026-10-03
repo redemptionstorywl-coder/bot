@@ -437,6 +437,7 @@ body.error-fallback { display: flex; align-items: center; justify-content: cente
 .repeater-threshold { grid-template-columns: auto minmax(200px, 1fr) auto auto; }
 .repeater-option { grid-template-columns: minmax(160px, 1.3fr) minmax(140px, 1fr) 90px minmax(150px, 1.2fr) 130px auto; }
 .repeater-polloption { grid-template-columns: minmax(200px, 2fr) 120px auto; }
+.repeater-tier { grid-template-columns: auto auto minmax(140px, 1fr) minmax(140px, 1fr) auto; }
 .repeater-inline { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; }
 .repeater-inline .input { width: 90px; }
 .repeater-actions { display: flex; gap: 2px; justify-content: flex-end; }
@@ -493,3 +494,32 @@ body.error-fallback { display: flex; align-items: center; justify-content: cente
 .dbtn.disabled { opacity: 0.5; }
 .dbtn-emoji { font-size: 1rem; }
 @media (max-width: 640px) { .dembed-fields { grid-template-columns: 1fr; } .dembed-field.inline { grid-column: 1 / -1; } .grid-3 { grid-template-columns: 1fr; } .status-columns { grid-template-columns: 1fr; } }
+
+/* ───── Modules FiveM / Whitelist / Battle Royale / School / Shop ───── */
+.server-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.server-card { display: flex; flex-direction: column; gap: 10px; }
+.server-card.is-selected { border-color: var(--primary); }
+.server-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.server-state { font-size: 1.1rem; }
+.server-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; font-size: 0.85rem; }
+.server-meta span:nth-child(odd) { color: var(--muted); }
+.endpoint-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 0.85rem; }
+.endpoint-list li { display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.endpoint-list code, .code-block code { word-break: break-all; }
+.method { font-weight: 700; font-size: 0.72rem; letter-spacing: 0.05em; color: var(--primary-hover); }
+.rank-table .rank { width: 48px; font-weight: 700; color: var(--muted); }
+.rank-table .rank-top { color: #fcd34d; }
+.user-cell { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.user-cell .avatar { width: 28px; height: 28px; }
+.progress { display: flex; flex-direction: column; gap: 6px; }
+.progress .bar-track { height: 12px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); }
+.house-bars .bar-row { grid-template-columns: 180px minmax(0, 1fr) 110px; }
+.house-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; background: var(--muted); flex-shrink: 0; }
+.product-card { display: flex; flex-direction: column; gap: 8px; }
+.product-image { width: 100%; height: 140px; object-fit: cover; border-radius: var(--radius-sm); background: var(--surface-2); }
+.product-price { font-size: 1.15rem; font-weight: 700; }
+.badge-status-PAID, .badge-status-ACCEPTED { background: rgba(124,58,237,0.22); border-color: rgba(124,58,237,0.5); color: #ddd6fe; }
+.badge-status-DELIVERED { background: var(--primary-soft); border-color: rgba(124,58,237,0.4); color: #c4b5fd; }
+.badge-status-REFUNDED, .badge-status-REJECTED { background: var(--danger-soft); border-color: rgba(239,68,68,0.35); color: #fca5a5; }
+@media (max-width: 900px) { .house-bars .bar-row { grid-template-columns: 110px minmax(0, 1fr) 90px; } .endpoint-list li { grid-template-columns: 1fr; } }

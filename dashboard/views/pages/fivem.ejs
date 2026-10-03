@@ -1,0 +1,122 @@
+<section class="page-header">
+  <div><h2 class="page-title">🎮 FiveM</h2><p class="muted">Serveurs de jeu reliés au bot : statut, joueurs en ligne, maintenance et intégration API.</p></div>
+  <div class="page-actions"><a class="btn btn-primary" href="#fivem-add">+ Ajouter un serveur</a></div>
+</section>
+
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module FiveM est désactivé sur ce serveur : les commandes <code>/fivem</code> ne répondent pas (l'API reste joignable). <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Gérer les modules</a></span></div><% } %>
+
+<div class="stat-grid">
+  <div class="stat-card"><span class="stat-label">Serveurs</span><span class="stat-value"><%= servers.length %></span></div>
+  <div class="stat-card"><span class="stat-label">En ligne</span><span class="stat-value"><%= servers.filter((s) => s.state === 'online').length %></span></div>
+  <div class="stat-card"><span class="stat-label">Joueurs connectés</span><span class="stat-value"><%= fmt.number(servers.reduce((n, s) => n + s.players, 0)) %></span></div>
+  <div class="stat-card"><span class="stat-label">En maintenance</span><span class="stat-value"><%= servers.filter((s) => s.maintenance).length %></span></div>
+</div>
+
+<% if (!servers.length) { %>
+<div class="card empty-state"><p class="muted">Aucun serveur FiveM déclaré. Ajoutez-en un ci-dessous (ou avec <code>/fivem add</code>).</p></div>
+<% } else { %>
+<div class="server-grid">
+  <% for (const s of servers) { %>
+    <article class="card server-card <%= selected && selected.key === s.key ? 'is-selected' : '' %> <%= s.enabled ? '' : 'row-disabled' %>">
+      <div class="server-head">
+        <div><span class="server-state" aria-hidden="true"><%= s.icon %></span> <strong><%= s.name %></strong> <code><%= s.key %></code></div>
+        <span class="badge <%= s.state === 'online' ? 'badge-primary' : s.state === 'maintenance' ? 'badge-warning' : 'badge-danger' %>"><%= s.stateLabel %></span>
+      </div>
+      <div class="server-meta">
+        <span>Joueurs</span><span><%= s.state === 'online' ? `${s.players} / ${s.maxPlayers || '—'}` : '—' %></span>
+        <span>Version</span><span><%= s.version ? s.version : '—' %></span>
+        <span>Framework</span><span><%= s.frameworkLabel %></span>
+        <span>Dernière mise à jour</span><span><%= s.lastSeenAt ? fmt.relative(s.lastSeenAt) : 'jamais' %></span>
+        <span>Hôte</span><span class="mono truncate" title="<%= s.host || '' %>"><%= s.host || '— (push uniquement)' %></span>
+        <span>Clé API</span><span class="mono"><%= s.apiKeyMasked || 'clé globale' %></span>
+        <span>Socket</span><span><%= s.connectedSockets ? `${s.connectedSockets} connecté(s)` : 'non connecté' %></span>
+        <span>État</span><span><%= s.enabled ? 'activé' : 'désactivé' %><%= s.maintenance ? ' · maintenance' : '' %></span>
+      </div>
+      <div class="actions-cell">
+        <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/fivem?server=<%= s.key %>">Détails &amp; joueurs</a>
+        <form method="post" action="/guilds/<%= guild.id %>/fivem/servers/<%= s.key %>/maintenance"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><% if (!s.maintenance) { %><input type="hidden" name="enabled" value="on"><% } %><button type="submit" class="btn btn-sm <%= s.maintenance ? 'btn-primary' : 'btn-ghost' %>"><%= s.maintenance ? 'Fin de maintenance' : 'Maintenance' %></button></form>
+        <form method="post" action="/guilds/<%= guild.id %>/fivem/servers/<%= s.key %>/test"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost btn-sm" <%= s.host ? '' : 'disabled title="Aucun hôte configuré"' %>>Tester la connexion</button></form>
+        <form method="post" action="/guilds/<%= guild.id %>/fivem/servers/<%= s.key %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer le serveur « <%= s.name %> » ? Les clients Socket.IO connectés seront déconnectés.">Supprimer</button></form>
+      </div>
+    </article>
+  <% } %>
+</div>
+<% } %>
+
+<% if (selected) { %>
+<div class="grid-2">
+  <section class="card">
+    <div class="card-head"><h3 class="card-title">Joueurs en ligne — <%= selected.name %></h3><span class="badge badge-muted"><%= players.length %></span></div>
+    <% if (!players.length) { %><p class="muted"><%= selected.state === 'online' ? 'Aucun joueur connecté.' : 'Serveur hors ligne ou aucune donnée récente.' %></p><% } else { %>
+    <div class="table-wrap"><table class="table table-compact">
+      <thead><tr><th>ID</th><th>Nom</th><th>Ping</th><th>Identifiants</th></tr></thead>
+      <tbody>
+        <% for (const p of players) { %>
+          <tr><td class="muted"><%= p.id %></td><td><strong><%= p.name %></strong></td><td><%= p.ping !== undefined ? `${p.ping} ms` : '—' %></td><td><div class="badges"><% for (const id of p.identifiers.slice(0, 6)) { %><span class="badge badge-muted mono"><%= fmt.truncate(id, 40) %></span><% } %></div></td></tr>
+        <% } %>
+      </tbody>
+    </table></div>
+    <% } %>
+    <% if (selected.onlineSince) { %><p class="hint">En ligne depuis le <%= fmt.dateTime(selected.onlineSince) %> (<%= fmt.relative(selected.onlineSince) %>).</p><% } %>
+  </section>
+
+  <form method="post" action="/guilds/<%= guild.id %>/fivem/servers/<%= selected.key %>" class="card form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="card-head"><h3 class="card-title">Modifier « <%= selected.name %> »</h3><code><%= selected.key %></code></div>
+    <div class="grid-2 grid-tight">
+      <div class="field"><label for="e-name">Nom</label><input id="e-name" name="name" class="input" required maxlength="100" value="<%= selected.name %>"></div>
+      <div class="field"><label for="e-framework">Framework</label><select id="e-framework" name="framework" class="select"><% for (const f of frameworks) { %><option value="<%= f.value %>" <%= selected.framework === f.value ? 'selected' : '' %>><%= f.label %></option><% } %></select></div>
+    </div>
+    <div class="field"><label for="e-host">Hôte (URL de base, optionnel — active le polling)</label><input id="e-host" name="host" type="url" class="input input-mono" maxlength="200" placeholder="http://1.2.3.4:30120" value="<%= selected.host || '' %>"></div>
+    <div class="grid-2 grid-tight">
+      <div class="field"><label for="e-apikey">Clé API spécifique (laisser vide pour conserver)</label><input id="e-apikey" name="apiKey" type="password" class="input input-mono" maxlength="200" autocomplete="new-password" placeholder="<%= selected.apiKeyMasked ? 'actuelle : ' + selected.apiKeyMasked : 'clé globale FIVEM_API_KEY' %>"><% if (selected.apiKeyMasked) { %><label class="check check-sm"><input type="checkbox" name="clearApiKey"><span>Supprimer la clé spécifique (retour à la clé globale)</span></label><% } %></div>
+      <div class="field"><label for="e-channel">Salon du message de statut</label><select id="e-channel" name="statusChannelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: selected.statusChannelId || '', allowEmpty: true, emptyLabel: '— Aucun message de statut —' }) %></select><% if (selected.statusMessageId && selected.statusChannelId) { %><small class="hint"><a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= selected.statusChannelId %>/<%= selected.statusMessageId %>" target="_blank" rel="noopener noreferrer">Voir le message de statut ↗</a></small><% } %></div>
+    </div>
+    <label class="check"><input type="checkbox" name="enabled" <%= selected.enabled ? 'checked' : '' %>><span>Serveur activé (accepte les requêtes API et le polling)</span></label>
+    <div class="form-actions"><a class="btn btn-ghost" href="/guilds/<%= guild.id %>/fivem">Annuler</a><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+  </form>
+</div>
+<% } %>
+
+<div class="grid-2">
+  <form method="post" action="/guilds/<%= guild.id %>/fivem/servers" class="card form" id="fivem-add">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <h3 class="card-title">Ajouter un serveur</h3>
+    <div class="grid-2 grid-tight">
+      <div class="field"><label for="a-key">Clé (identifiant court, utilisé dans les URLs)</label><input id="a-key" name="key" class="input input-mono" required pattern="^[a-z0-9_-]{2,64}$" maxlength="64" placeholder="main"></div>
+      <div class="field"><label for="a-name">Nom</label><input id="a-name" name="name" class="input" required maxlength="100" placeholder="Redemption Prison"></div>
+    </div>
+    <div class="grid-2 grid-tight">
+      <div class="field"><label for="a-framework">Framework</label><select id="a-framework" name="framework" class="select"><% for (const f of frameworks) { %><option value="<%= f.value %>"><%= f.label %></option><% } %></select></div>
+      <div class="field"><label for="a-host">Hôte (optionnel)</label><input id="a-host" name="host" type="url" class="input input-mono" maxlength="200" placeholder="http://1.2.3.4:30120"></div>
+    </div>
+    <div class="grid-2 grid-tight">
+      <div class="field"><label for="a-apikey">Clé API spécifique (optionnel)</label><input id="a-apikey" name="apiKey" type="password" class="input input-mono" maxlength="200" autocomplete="new-password" placeholder="sinon clé globale FIVEM_API_KEY"></div>
+      <div class="field"><label for="a-channel">Salon du message de statut</label><select id="a-channel" name="statusChannelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: '', allowEmpty: true, emptyLabel: '— Aucun —' }) %></select></div>
+    </div>
+    <label class="check"><input type="checkbox" name="enabled" checked><span>Serveur activé</span></label>
+    <div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter</button></div>
+  </form>
+
+  <section class="card">
+    <h3 class="card-title">Intégration — API REST</h3>
+    <p class="muted">Base : <code class="code-block"><%= integration.base %></code></p>
+    <p class="muted">Authentification : en-tête <code>x-api-key</code> (clé spécifique du serveur ou clé globale <code>FIVEM_API_KEY</code>)<%= integration.globalKeyConfigured ? '' : ' — ⚠ la clé globale est encore la valeur par défaut : définissez FIVEM_API_KEY dans le .env' %>.</p>
+    <ul class="endpoint-list">
+      <li><span class="method">POST</span><code><%= integration.serverBase %>/status</code></li>
+      <li><span class="method">GET</span><code><%= integration.serverBase %>/status</code></li>
+      <li><span class="method">POST</span><code><%= integration.serverBase %>/stats</code></li>
+      <li><span class="method">GET</span><code><%= integration.serverBase %>/whitelist/:identifier</code></li>
+      <li><span class="method">GET</span><code><%= integration.serverBase %>/whitelist</code></li>
+      <li><span class="method">POST</span><code><%= integration.serverBase %>/sanctions</code></li>
+      <li><span class="method">GET</span><code><%= integration.serverBase %>/players</code></li>
+      <li><span class="method">POST</span><code><%= integration.serverBase %>/maintenance</code></li>
+      <li><span class="method">GET</span><code><%= integration.base %>/health</code></li>
+    </ul>
+    <h4 class="card-subtitle">Exemple (heartbeat)</h4>
+<pre class="json">curl -X POST "<%= integration.serverBase %>/status" \
+  -H "x-api-key: VOTRE_CLE" -H "Content-Type: application/json" \
+  -d '{"online":true,"players":12,"maxPlayers":64,"version":"1.0.0","playerList":[]}'</pre>
+    <p class="hint">Socket.IO temps réel (optionnel) : namespace <code><%= integration.socketUrl %></code> avec <code>auth: { apiKey, serverKey: "<%= integration.exampleKey %>", guildId: "<%= guild.id %>" }</code>. Détails : <code>docs/FIVEM.md</code>.</p>
+  </section>
+</div>
