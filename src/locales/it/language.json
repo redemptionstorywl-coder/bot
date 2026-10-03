@@ -4,7 +4,7 @@
     "description": "Seleziona la tua lingua per ricevere messaggi e annunci tradotti.\nSelect your language to receive translated messages and announcements.",
     "published": "Pannello lingua pubblicato in {channel} — [apri]({url})",
     "refreshed": "Pannello lingua aggiornato.",
-    "not_published": "Nessun pannello pubblicato. Usa `/language-panel publish`.",
+    "not_published": "Nessun pannello pubblicato. Usa `/language-setup`.",
     "preview_note": "Anteprima del pannello (i pulsanti sono funzionanti):"
   },
   "select": {
@@ -21,7 +21,7 @@
     "set": "{flag} **{language}** → {role}",
     "removed": "Associazione rimossa per {flag} **{language}**.",
     "reset_title": "🌍 Ruoli lingua reimpostati",
-    "none_default": "Nessun ruolo predefinito esiste su questo server. Usa `/language-roles set`.",
+    "none_default": "Nessun ruolo predefinito esiste su questo server. Usa `/language-setup`.",
     "missing": "Ruoli predefiniti non trovati",
     "list_title": "🌍 Ruoli lingua",
     "using_defaults": "Ruoli predefiniti (Battle Royale) — nessuna configurazione personalizzata"

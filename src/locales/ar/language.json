@@ -4,7 +4,7 @@
     "description": "اختر لغتك لتلقي الرسائل والإعلانات مترجمة.\nSelect your language to receive translated messages and announcements.",
     "published": "تم نشر لوحة اللغات في {channel} — [فتح]({url})",
     "refreshed": "تم تحديث لوحة اللغات.",
-    "not_published": "لم تُنشر أي لوحة. استخدم `/language-panel publish`.",
+    "not_published": "لم تُنشر أي لوحة. استخدم `/language-setup`.",
     "preview_note": "معاينة اللوحة (الأزرار تعمل):"
   },
   "select": {
@@ -21,7 +21,7 @@
     "set": "{flag} **{language}** → {role}",
     "removed": "تمت إزالة الربط لـ {flag} **{language}**.",
     "reset_title": "🌍 تمت إعادة تعيين رتب اللغات",
-    "none_default": "لا توجد رتب افتراضية في هذا السيرفر. استخدم `/language-roles set`.",
+    "none_default": "لا توجد رتب افتراضية في هذا السيرفر. استخدم `/language-setup`.",
     "missing": "الرتب الافتراضية غير موجودة",
     "list_title": "🌍 رتب اللغات",
     "using_defaults": "الرتب الافتراضية (Battle Royale) — لا توجد إعدادات مخصصة"

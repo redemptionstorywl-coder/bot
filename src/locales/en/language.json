@@ -4,7 +4,7 @@
     "description": "Select your language to receive translated messages and announcements.\nSélectionnez votre langue pour recevoir les messages et annonces traduits.",
     "published": "Language panel published in {channel} — [open]({url})",
     "refreshed": "Language panel updated.",
-    "not_published": "No panel published yet. Use `/language-panel publish`.",
+    "not_published": "No panel published yet. Use `/language-setup`.",
     "preview_note": "Panel preview (buttons are functional):"
   },
   "select": {
@@ -21,7 +21,7 @@
     "set": "{flag} **{language}** → {role}",
     "removed": "Mapping removed for {flag} **{language}**.",
     "reset_title": "🌍 Language roles reset",
-    "none_default": "No default role exists on this server. Use `/language-roles set`.",
+    "none_default": "No default role exists on this server. Use `/language-setup`.",
     "missing": "Default roles not found",
     "list_title": "🌍 Language roles",
     "using_defaults": "Default roles (Battle Royale) — no custom configuration"

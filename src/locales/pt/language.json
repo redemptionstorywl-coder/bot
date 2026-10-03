@@ -4,7 +4,7 @@
     "description": "Selecione seu idioma para receber as mensagens e os anúncios traduzidos.\nSelect your language to receive translated messages and announcements.",
     "published": "Painel de idioma publicado em {channel} — [abrir]({url})",
     "refreshed": "Painel de idioma atualizado.",
-    "not_published": "Nenhum painel publicado. Use `/language-panel publish`.",
+    "not_published": "Nenhum painel publicado. Use `/language-setup`.",
     "preview_note": "Pré-visualização do painel (os botões são funcionais):"
   },
   "select": {
@@ -21,7 +21,7 @@
     "set": "{flag} **{language}** → {role}",
     "removed": "Associação removida para {flag} **{language}**.",
     "reset_title": "🌍 Cargos de idioma redefinidos",
-    "none_default": "Nenhum cargo padrão existe neste servidor. Use `/language-roles set`.",
+    "none_default": "Nenhum cargo padrão existe neste servidor. Use `/language-setup`.",
     "missing": "Cargos padrão não encontrados",
     "list_title": "🌍 Cargos de idioma",
     "using_defaults": "Cargos padrão (Battle Royale) — nenhuma configuração personalizada"

@@ -4,7 +4,7 @@
     "description": "Wähle deine Sprache, um übersetzte Nachrichten und Ankündigungen zu erhalten.\nSelect your language to receive translated messages and announcements.",
     "published": "Sprachpanel veröffentlicht in {channel} — [öffnen]({url})",
     "refreshed": "Sprachpanel aktualisiert.",
-    "not_published": "Kein Panel veröffentlicht. Nutze `/language-panel publish`.",
+    "not_published": "Kein Panel veröffentlicht. Nutze `/language-setup`.",
     "preview_note": "Vorschau des Panels (die Buttons sind funktionsfähig):"
   },
   "select": {
@@ -21,7 +21,7 @@
     "set": "{flag} **{language}** → {role}",
     "removed": "Zuordnung für {flag} **{language}** entfernt.",
     "reset_title": "🌍 Sprachrollen zurückgesetzt",
-    "none_default": "Auf diesem Server existiert keine Standardrolle. Nutze `/language-roles set`.",
+    "none_default": "Auf diesem Server existiert keine Standardrolle. Nutze `/language-setup`.",
     "missing": "Standardrollen nicht gefunden",
     "list_title": "🌍 Sprachrollen",
     "using_defaults": "Standardrollen (Battle Royale) — keine eigene Konfiguration"

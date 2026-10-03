@@ -4,7 +4,7 @@
     "description": "Wybierz swój język, aby otrzymywać przetłumaczone wiadomości i ogłoszenia.\nSelect your language to receive translated messages and announcements.",
     "published": "Panel języka opublikowany w {channel} — [otwórz]({url})",
     "refreshed": "Panel języka zaktualizowany.",
-    "not_published": "Brak opublikowanego panelu. Użyj `/language-panel publish`.",
+    "not_published": "Brak opublikowanego panelu. Użyj `/language-setup`.",
     "preview_note": "Podgląd panelu (przyciski działają):"
   },
   "select": {
@@ -21,7 +21,7 @@
     "set": "{flag} **{language}** → {role}",
     "removed": "Powiązanie usunięte dla {flag} **{language}**.",
     "reset_title": "🌍 Role językowe zresetowane",
-    "none_default": "Na tym serwerze nie ma domyślnej roli. Użyj `/language-roles set`.",
+    "none_default": "Na tym serwerze nie ma domyślnej roli. Użyj `/language-setup`.",
     "missing": "Nie znaleziono domyślnych ról",
     "list_title": "🌍 Role językowe",
     "using_defaults": "Domyślne role (Battle Royale) — brak własnej konfiguracji"

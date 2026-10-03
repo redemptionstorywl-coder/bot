@@ -4,7 +4,7 @@
     "description": "Çevrilmiş mesajları ve duyuruları almak için dilini seç.\nSelect your language to receive translated messages and announcements.",
     "published": "Dil paneli {channel} kanalında yayınlandı — [aç]({url})",
     "refreshed": "Dil paneli güncellendi.",
-    "not_published": "Yayınlanmış panel yok. `/language-panel publish` komutunu kullan.",
+    "not_published": "Yayınlanmış panel yok. `/language-setup` komutunu kullan.",
     "preview_note": "Panel önizlemesi (butonlar çalışır durumda):"
   },
   "select": {
@@ -21,7 +21,7 @@
     "set": "{flag} **{language}** → {role}",
     "removed": "{flag} **{language}** için eşleme kaldırıldı.",
     "reset_title": "🌍 Dil rolleri sıfırlandı",
-    "none_default": "Bu sunucuda varsayılan rol yok. `/language-roles set` komutunu kullan.",
+    "none_default": "Bu sunucuda varsayılan rol yok. `/language-setup` komutunu kullan.",
     "missing": "Varsayılan roller bulunamadı",
     "list_title": "🌍 Dil rolleri",
     "using_defaults": "Varsayılan roller (Battle Royale) — özel yapılandırma yok"
