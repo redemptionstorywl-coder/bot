@@ -1,7 +1,7 @@
 import type { RequestHandler } from 'express';
 import type { RedemptionClient } from '../../src/core/Client';
 import { env } from '../../src/config/env';
-import { BRAND, LANGUAGES, MODULE_LABELS, GUILD_KIND_LABELS, LOG_CATEGORY_LABELS, TEMPLATE_VARIABLES } from '../../src/config/constants';
+import { BRAND, LANGUAGES, MODULE_LABELS, GUILD_KIND_LABELS, LOG_CATEGORY_LABELS, TEMPLATE_VARIABLES, EMBED_COLOR_PALETTE } from '../../src/config/constants';
 import { NAVIGATION, NAV_GROUP_LABELS, navHref } from '../lib/navigation';
 import { fmt, avatarUrl, guildIconUrl } from '../lib/format';
 import { takeFlash } from '../lib/flash';
@@ -43,7 +43,7 @@ export function viewLocals(client: RedemptionClient): RequestHandler {
       inviteUrl: buildBotInviteUrl(cfg.CLIENT_ID),
       oauthConfigured: Boolean(cfg.DISCORD_CLIENT_SECRET),
       currentPath: req.path,
-      constants: { LANGUAGES, MODULE_LABELS, GUILD_KIND_LABELS, LOG_CATEGORY_LABELS, TEMPLATE_VARIABLES },
+      constants: { LANGUAGES, MODULE_LABELS, GUILD_KIND_LABELS, LOG_CATEGORY_LABELS, TEMPLATE_VARIABLES, EMBED_COLOR_PALETTE },
       guild: res.locals.guild ?? null,
       config: res.locals.config ?? null,
       page: res.locals.page ?? null,

@@ -113,6 +113,18 @@
       previewHost.innerHTML = renderEmbedPreview(readSpec(), readButtons(), contentEl ? contentEl.value : '', { botName: botName, avatarHtml: avatarHtml, defaultColor: defaultColor });
       applyColors(previewHost);
     }
+    // Pastilles de la palette : clic → couleur appliquée au champ texte + au sélecteur + aperçu
+    $$('[data-swatch]', editor).forEach(function (sw) {
+      var hex = sw.getAttribute('data-color');
+      if (hex) sw.style.backgroundColor = hex;
+      sw.addEventListener('click', function () {
+        var txt = $('[data-color-text]', editor), picker = $('[data-color-input]', editor);
+        var value = sw.getAttribute('data-swatch') || '';
+        if (txt) { txt.value = value; txt.dispatchEvent(new Event('input', { bubbles: true })); }
+        if (picker && value) picker.value = value.toLowerCase();
+        $$('[data-swatch]', editor).forEach(function (o) { o.classList.toggle('is-active', o === sw); });
+      });
+    });
     function setVal(key, v) { var el = input(key); if (!el) return; if (el.type === 'checkbox') el.checked = Boolean(v); else el.value = v === undefined || v === null ? '' : String(v); if (key === 'color') { var picker = el.parentElement && $('[data-color-input]', el.parentElement); if (picker && /^#?[0-9a-fA-F]{6}$/.test(String(v || ''))) picker.value = (String(v)[0] === '#' ? String(v) : '#' + v).toLowerCase(); } }
 
     /** Remplit le formulaire depuis un EmbedSpec (+ boutons optionnels). Exposé via editor.embedEditor.load(). */

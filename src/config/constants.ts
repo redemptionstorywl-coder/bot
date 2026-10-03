@@ -175,3 +175,34 @@ export const TEMPLATE_VARIABLES: Record<string, string> = {
 export const COOLDOWN_DEFAULT_SECONDS = 3;
 export const SCHEDULER_INTERVAL_MS = 15_000;
 export const CACHE_TTL_MS = 5 * 60_000;
+
+/** Palette de couleurs proposée dans le créateur d'embeds (Discord + dashboard). */
+export interface PaletteColor {
+  key: string;
+  hex: string;
+  emoji: string;
+}
+export const EMBED_COLOR_PALETTE: PaletteColor[] = [
+  { key: 'violet', hex: '#7C3AED', emoji: '🟣' },
+  { key: 'purple_dark', hex: '#5B21B6', emoji: '🟣' },
+  { key: 'lavender', hex: '#A78BFA', emoji: '🟣' },
+  { key: 'blurple', hex: '#5865F2', emoji: '🔵' },
+  { key: 'blue', hex: '#3B82F6', emoji: '🔵' },
+  { key: 'cyan', hex: '#06B6D4', emoji: '🔵' },
+  { key: 'teal', hex: '#14B8A6', emoji: '🟢' },
+  { key: 'green', hex: '#22C55E', emoji: '🟢' },
+  { key: 'lime', hex: '#84CC16', emoji: '🟢' },
+  { key: 'yellow', hex: '#EAB308', emoji: '🟡' },
+  { key: 'amber', hex: '#F59E0B', emoji: '🟠' },
+  { key: 'orange', hex: '#F97316', emoji: '🟠' },
+  { key: 'red', hex: '#EF4444', emoji: '🔴' },
+  { key: 'crimson', hex: '#B91C1C', emoji: '🔴' },
+  { key: 'pink', hex: '#EC4899', emoji: '🩷' },
+  { key: 'rose', hex: '#F43F5E', emoji: '🩷' },
+  { key: 'brown', hex: '#92400E', emoji: '🟤' },
+  { key: 'gold', hex: '#D4AF37', emoji: '🟡' },
+  { key: 'silver', hex: '#A1A1AA', emoji: '⚪' },
+  { key: 'white', hex: '#F5F5F7', emoji: '⚪' },
+  { key: 'anthracite', hex: '#2A2A2E', emoji: '⚫' },
+  { key: 'black', hex: '#111113', emoji: '⚫' },
+];

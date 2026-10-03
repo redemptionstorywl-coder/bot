@@ -40,7 +40,12 @@
     "template_updated": "تم تحديث القالب **{name}**.",
     "imported": "تم استيراد JSON بنجاح.",
     "export_file": "📤 تصدير JSON (ملف مرفق).",
-    "cancelled": "تم إلغاء الجلسة. لم يُرسل أي شيء."
+    "cancelled": "تم إلغاء الجلسة. لم يُرسل أي شيء.",
+    "palette_placeholder": "🎨 اختر لونًا من اللوحة",
+    "btn_color_hex": "رمز hex مخصص",
+    "btn_color_brand": "لون الخادم ({hex})",
+    "color_set": "تم تطبيق اللون: `{hex}`",
+    "color_reset": "تمت استعادة لون الخادم الافتراضي."
   },
   "cmd": {
     "sent": "تم إرسال القالب إلى {channel} → {url}",
@@ -51,15 +56,57 @@
     "variables_desc": "تُستبدل هذه المتغيرات تلقائيًا في العناوين والأوصاف والحقول والتذييلات والمحتويات."
   },
   "modal": {
-    "title": { "title": "العنوان والوصف", "field_title": "العنوان", "field_url": "رابط العنوان (اختياري)", "field_description": "الوصف", "description_placeholder": "النص الرئيسي. المتغيرات: {server}، {date}، {user}…" },
-    "color": { "title": "اللون", "field_hex": "لون hex أو اسم علامة تجارية" },
-    "images": { "title": "الصورة والمصغّرة", "field_image": "رابط الصورة", "field_thumbnail": "رابط الصورة المصغّرة" },
-    "footer": { "title": "التذييل والكاتب", "field_footer": "نص التذييل", "field_footer_icon": "أيقونة التذييل (رابط)", "field_author": "اسم الكاتب", "field_author_icon": "أيقونة الكاتب (رابط)", "field_author_url": "رابط الكاتب (URL)" },
-    "field": { "title": "إضافة حقل", "field_name": "الاسم", "field_value": "القيمة", "field_inline": "في السطر؟ (نعم / لا)", "inline_placeholder": "نعم" },
-    "content": { "title": "محتوى الرسالة", "field_content": "النص فوق الـ embed", "placeholder": "إشارات، نص حر… مثال: @everyone تحديث جديد!" },
-    "link": { "title": "زر رابط", "field_label": "التسمية", "field_url": "الرابط", "field_emoji": "إيموجي (اختياري)" },
-    "template": { "title": "حفظ كقالب", "field_name": "اسم القالب", "field_description": "الوصف (اختياري)" },
-    "import": { "title": "استيراد JSON", "field_json": "JSON (EmbedSpec أو رسالة)" }
+    "title": {
+      "title": "العنوان والوصف",
+      "field_title": "العنوان",
+      "field_url": "رابط العنوان (اختياري)",
+      "field_description": "الوصف",
+      "description_placeholder": "النص الرئيسي. المتغيرات: {server}، {date}، {user}…"
+    },
+    "color": {
+      "title": "اللون",
+      "field_hex": "لون hex أو اسم علامة تجارية"
+    },
+    "images": {
+      "title": "الصورة والمصغّرة",
+      "field_image": "رابط الصورة",
+      "field_thumbnail": "رابط الصورة المصغّرة"
+    },
+    "footer": {
+      "title": "التذييل والكاتب",
+      "field_footer": "نص التذييل",
+      "field_footer_icon": "أيقونة التذييل (رابط)",
+      "field_author": "اسم الكاتب",
+      "field_author_icon": "أيقونة الكاتب (رابط)",
+      "field_author_url": "رابط الكاتب (URL)"
+    },
+    "field": {
+      "title": "إضافة حقل",
+      "field_name": "الاسم",
+      "field_value": "القيمة",
+      "field_inline": "في السطر؟ (نعم / لا)",
+      "inline_placeholder": "نعم"
+    },
+    "content": {
+      "title": "محتوى الرسالة",
+      "field_content": "النص فوق الـ embed",
+      "placeholder": "إشارات، نص حر… مثال: @everyone تحديث جديد!"
+    },
+    "link": {
+      "title": "زر رابط",
+      "field_label": "التسمية",
+      "field_url": "الرابط",
+      "field_emoji": "إيموجي (اختياري)"
+    },
+    "template": {
+      "title": "حفظ كقالب",
+      "field_name": "اسم القالب",
+      "field_description": "الوصف (اختياري)"
+    },
+    "import": {
+      "title": "استيراد JSON",
+      "field_json": "JSON (EmbedSpec أو رسالة)"
+    }
   },
   "errors": {
     "not_found": "القالب غير موجود: `{details}`",
@@ -84,28 +131,64 @@
       "description": "إعلان صيانة مجدولة",
       "title": "صيانة مجدولة",
       "body": "هناك صيانة مقررة على **{server}**. ستكون الخدمات غير متاحة مؤقتًا.\n\nشكرًا لصبركم.",
-      "fields": { "start": { "name": "البداية", "value": "{date}" }, "duration": { "name": "المدة المتوقعة", "value": "~1h" } }
+      "fields": {
+        "start": {
+          "name": "البداية",
+          "value": "{date}"
+        },
+        "duration": {
+          "name": "المدة المتوقعة",
+          "value": "~1h"
+        }
+      }
     },
     "patch_note": {
       "name": "Patch Note",
       "description": "ملاحظات التحديث",
       "title": "Patch Note — {date}",
       "body": "تحديث جديد متاح على **{server}**.",
-      "fields": { "new": { "name": "الجديد", "value": "• …" }, "fixes": { "name": "الإصلاحات", "value": "• …" } }
+      "fields": {
+        "new": {
+          "name": "الجديد",
+          "value": "• …"
+        },
+        "fixes": {
+          "name": "الإصلاحات",
+          "value": "• …"
+        }
+      }
     },
     "new_season": {
       "name": "موسم جديد",
       "description": "إطلاق موسم جديد",
       "title": "موسم جديد",
       "body": "يبدأ الموسم الجديد في **{server}**! تحديات جديدة ومكافآت جديدة.",
-      "fields": { "start": { "name": "البداية", "value": "{date}" }, "rewards": { "name": "المكافآت", "value": "• …" } }
+      "fields": {
+        "start": {
+          "name": "البداية",
+          "value": "{date}"
+        },
+        "rewards": {
+          "name": "المكافآت",
+          "value": "• …"
+        }
+      }
     },
     "tournament": {
       "name": "بطولة",
       "description": "إعلان بطولة",
       "title": "بطولة",
       "body": "تُقام بطولة على **{server}**. سجّل وواجه الأفضل!",
-      "fields": { "date": { "name": "التاريخ", "value": "{date}" }, "registration": { "name": "التسجيل", "value": "مفتوح" } }
+      "fields": {
+        "date": {
+          "name": "التاريخ",
+          "value": "{date}"
+        },
+        "registration": {
+          "name": "التسجيل",
+          "value": "مفتوح"
+        }
+      }
     },
     "important": {
       "name": "إعلان مهم",
@@ -118,21 +201,72 @@
       "description": "مسابقة / سحب",
       "title": "Giveaway",
       "body": "هناك سحب جارٍ على **{server}**! شارك لتحظى بفرصة الفوز.",
-      "fields": { "prize": { "name": "الجائزة", "value": "…" }, "end": { "name": "النهاية", "value": "{date}" } }
+      "fields": {
+        "prize": {
+          "name": "الجائزة",
+          "value": "…"
+        },
+        "end": {
+          "name": "النهاية",
+          "value": "{date}"
+        }
+      }
     },
     "event": {
       "name": "Event",
       "description": "إعلان فعالية",
       "title": "فعالية",
       "body": "فعالية قادمة على **{server}**. كونوا على الموعد!",
-      "fields": { "date": { "name": "التاريخ", "value": "{date}" }, "location": { "name": "المكان", "value": "…" } }
+      "fields": {
+        "date": {
+          "name": "التاريخ",
+          "value": "{date}"
+        },
+        "location": {
+          "name": "المكان",
+          "value": "…"
+        }
+      }
     },
     "recruitment": {
       "name": "توظيف",
       "description": "توظيف طاقم / فريق",
       "title": "توظيف",
       "body": "**{server}** يوظّف! انضم إلى الفريق وشارك في المغامرة.",
-      "fields": { "positions": { "name": "المناصب", "value": "• …" }, "apply": { "name": "التقديم", "value": "افتح تذكرة" } }
+      "fields": {
+        "positions": {
+          "name": "المناصب",
+          "value": "• …"
+        },
+        "apply": {
+          "name": "التقديم",
+          "value": "افتح تذكرة"
+        }
+      }
     }
+  },
+  "palette": {
+    "violet": "بنفسجي (العلامة)",
+    "purple_dark": "بنفسجي داكن",
+    "lavender": "لافندر",
+    "blurple": "أزرق ديسكورد",
+    "blue": "أزرق",
+    "cyan": "سماوي",
+    "teal": "أزرق مخضر",
+    "green": "أخضر",
+    "lime": "أخضر ليموني",
+    "yellow": "أصفر",
+    "amber": "كهرماني",
+    "orange": "برتقالي",
+    "red": "أحمر (تنبيه)",
+    "crimson": "قرمزي",
+    "pink": "وردي",
+    "rose": "وردي غامق",
+    "brown": "بني",
+    "gold": "ذهبي",
+    "silver": "فضي",
+    "white": "أبيض",
+    "anthracite": "فحمي",
+    "black": "أسود"
   }
 }

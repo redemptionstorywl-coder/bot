@@ -43,6 +43,14 @@ export default defineButton({
         session.spec.timestamp = !session.spec.timestamp;
         await refresh(interaction, session, ctx);
         return;
+      case 'colorview':
+        session.view = 'color';
+        break;
+      case 'colorbrand':
+        session.spec = { ...session.spec, color: undefined };
+        session.view = parentView(session);
+        session.notice = { type: 'success', text: t('embeds.builder.color_reset') };
+        break;
       case 'buttons':
         session.view = 'buttons';
         await refresh(interaction, session, ctx);

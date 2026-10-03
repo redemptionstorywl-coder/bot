@@ -40,7 +40,12 @@
     "template_updated": "Template **{name}** updated.",
     "imported": "JSON imported successfully.",
     "export_file": "📤 JSON export (attached file).",
-    "cancelled": "Session cancelled. Nothing was sent."
+    "cancelled": "Session cancelled. Nothing was sent.",
+    "palette_placeholder": "🎨 Pick a color from the palette",
+    "btn_color_hex": "Custom hex code",
+    "btn_color_brand": "Server color ({hex})",
+    "color_set": "Color applied: `{hex}`",
+    "color_reset": "Server default color restored."
   },
   "cmd": {
     "sent": "Template sent to {channel} → {url}",
@@ -51,15 +56,57 @@
     "variables_desc": "These variables are replaced automatically in titles, descriptions, fields, footers and content."
   },
   "modal": {
-    "title": { "title": "Title & description", "field_title": "Title", "field_url": "Title URL (optional)", "field_description": "Description", "description_placeholder": "Main text. Variables: {server}, {date}, {user}…" },
-    "color": { "title": "Color", "field_hex": "Hex color or brand color name" },
-    "images": { "title": "Image & thumbnail", "field_image": "Image URL", "field_thumbnail": "Thumbnail URL" },
-    "footer": { "title": "Footer & author", "field_footer": "Footer text", "field_footer_icon": "Footer icon (URL)", "field_author": "Author name", "field_author_icon": "Author icon (URL)", "field_author_url": "Author link (URL)" },
-    "field": { "title": "Add a field", "field_name": "Name", "field_value": "Value", "field_inline": "Inline? (yes / no)", "inline_placeholder": "yes" },
-    "content": { "title": "Message content", "field_content": "Text above the embed", "placeholder": "Mentions, free text… e.g. @everyone New update!" },
-    "link": { "title": "Link button", "field_label": "Label", "field_url": "URL", "field_emoji": "Emoji (optional)" },
-    "template": { "title": "Save as template", "field_name": "Template name", "field_description": "Description (optional)" },
-    "import": { "title": "Import JSON", "field_json": "JSON (EmbedSpec or message)" }
+    "title": {
+      "title": "Title & description",
+      "field_title": "Title",
+      "field_url": "Title URL (optional)",
+      "field_description": "Description",
+      "description_placeholder": "Main text. Variables: {server}, {date}, {user}…"
+    },
+    "color": {
+      "title": "Color",
+      "field_hex": "Hex color or brand color name"
+    },
+    "images": {
+      "title": "Image & thumbnail",
+      "field_image": "Image URL",
+      "field_thumbnail": "Thumbnail URL"
+    },
+    "footer": {
+      "title": "Footer & author",
+      "field_footer": "Footer text",
+      "field_footer_icon": "Footer icon (URL)",
+      "field_author": "Author name",
+      "field_author_icon": "Author icon (URL)",
+      "field_author_url": "Author link (URL)"
+    },
+    "field": {
+      "title": "Add a field",
+      "field_name": "Name",
+      "field_value": "Value",
+      "field_inline": "Inline? (yes / no)",
+      "inline_placeholder": "yes"
+    },
+    "content": {
+      "title": "Message content",
+      "field_content": "Text above the embed",
+      "placeholder": "Mentions, free text… e.g. @everyone New update!"
+    },
+    "link": {
+      "title": "Link button",
+      "field_label": "Label",
+      "field_url": "URL",
+      "field_emoji": "Emoji (optional)"
+    },
+    "template": {
+      "title": "Save as template",
+      "field_name": "Template name",
+      "field_description": "Description (optional)"
+    },
+    "import": {
+      "title": "Import JSON",
+      "field_json": "JSON (EmbedSpec or message)"
+    }
   },
   "errors": {
     "not_found": "Template not found: `{details}`",
@@ -84,28 +131,64 @@
       "description": "Scheduled maintenance notice",
       "title": "Scheduled maintenance",
       "body": "Maintenance is scheduled on **{server}**. Services will be temporarily unavailable.\n\nThank you for your patience.",
-      "fields": { "start": { "name": "Start", "value": "{date}" }, "duration": { "name": "Estimated duration", "value": "~1h" } }
+      "fields": {
+        "start": {
+          "name": "Start",
+          "value": "{date}"
+        },
+        "duration": {
+          "name": "Estimated duration",
+          "value": "~1h"
+        }
+      }
     },
     "patch_note": {
       "name": "Patch Note",
       "description": "Update notes",
       "title": "Patch Note — {date}",
       "body": "A new update is available on **{server}**.",
-      "fields": { "new": { "name": "New", "value": "• …" }, "fixes": { "name": "Fixes", "value": "• …" } }
+      "fields": {
+        "new": {
+          "name": "New",
+          "value": "• …"
+        },
+        "fixes": {
+          "name": "Fixes",
+          "value": "• …"
+        }
+      }
     },
     "new_season": {
       "name": "New Season",
       "description": "New season launch",
       "title": "New season",
       "body": "The new season of **{server}** begins! New challenges, new rewards.",
-      "fields": { "start": { "name": "Start", "value": "{date}" }, "rewards": { "name": "Rewards", "value": "• …" } }
+      "fields": {
+        "start": {
+          "name": "Start",
+          "value": "{date}"
+        },
+        "rewards": {
+          "name": "Rewards",
+          "value": "• …"
+        }
+      }
     },
     "tournament": {
       "name": "Tournament",
       "description": "Tournament announcement",
       "title": "Tournament",
       "body": "A tournament is organized on **{server}**. Sign up and face the best!",
-      "fields": { "date": { "name": "Date", "value": "{date}" }, "registration": { "name": "Registration", "value": "Open" } }
+      "fields": {
+        "date": {
+          "name": "Date",
+          "value": "{date}"
+        },
+        "registration": {
+          "name": "Registration",
+          "value": "Open"
+        }
+      }
     },
     "important": {
       "name": "Important announcement",
@@ -118,21 +201,72 @@
       "description": "Contest / prize draw",
       "title": "Giveaway",
       "body": "A giveaway is running on **{server}**! Enter for a chance to win.",
-      "fields": { "prize": { "name": "Prize", "value": "…" }, "end": { "name": "Ends", "value": "{date}" } }
+      "fields": {
+        "prize": {
+          "name": "Prize",
+          "value": "…"
+        },
+        "end": {
+          "name": "Ends",
+          "value": "{date}"
+        }
+      }
     },
     "event": {
       "name": "Event",
       "description": "Event announcement",
       "title": "Event",
       "body": "An event is coming on **{server}**. Don't miss it!",
-      "fields": { "date": { "name": "Date", "value": "{date}" }, "location": { "name": "Location", "value": "…" } }
+      "fields": {
+        "date": {
+          "name": "Date",
+          "value": "{date}"
+        },
+        "location": {
+          "name": "Location",
+          "value": "…"
+        }
+      }
     },
     "recruitment": {
       "name": "Recruitment",
       "description": "Staff / team recruitment",
       "title": "Recruitment",
       "body": "**{server}** is recruiting! Join the team and be part of the adventure.",
-      "fields": { "positions": { "name": "Positions", "value": "• …" }, "apply": { "name": "Apply", "value": "Open a ticket" } }
+      "fields": {
+        "positions": {
+          "name": "Positions",
+          "value": "• …"
+        },
+        "apply": {
+          "name": "Apply",
+          "value": "Open a ticket"
+        }
+      }
     }
+  },
+  "palette": {
+    "violet": "Violet (brand)",
+    "purple_dark": "Dark purple",
+    "lavender": "Lavender",
+    "blurple": "Discord blurple",
+    "blue": "Blue",
+    "cyan": "Cyan",
+    "teal": "Teal",
+    "green": "Green",
+    "lime": "Lime",
+    "yellow": "Yellow",
+    "amber": "Amber",
+    "orange": "Orange",
+    "red": "Red (alert)",
+    "crimson": "Crimson",
+    "pink": "Pink",
+    "rose": "Rose",
+    "brown": "Brown",
+    "gold": "Gold",
+    "silver": "Silver",
+    "white": "White",
+    "anthracite": "Anthracite",
+    "black": "Black"
   }
 }

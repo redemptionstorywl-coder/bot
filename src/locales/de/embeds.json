@@ -40,7 +40,12 @@
     "template_updated": "Vorlage **{name}** aktualisiert.",
     "imported": "JSON erfolgreich importiert.",
     "export_file": "📤 JSON-Export (angehängte Datei).",
-    "cancelled": "Sitzung abgebrochen. Es wurde nichts gesendet."
+    "cancelled": "Sitzung abgebrochen. Es wurde nichts gesendet.",
+    "palette_placeholder": "🎨 Farbe aus der Palette wählen",
+    "btn_color_hex": "Eigener Hex-Code",
+    "btn_color_brand": "Serverfarbe ({hex})",
+    "color_set": "Farbe übernommen: `{hex}`",
+    "color_reset": "Standardfarbe des Servers wiederhergestellt."
   },
   "cmd": {
     "sent": "Vorlage gesendet in {channel} → {url}",
@@ -51,15 +56,57 @@
     "variables_desc": "Diese Variablen werden in Titeln, Beschreibungen, Feldern, Footern und Inhalten automatisch ersetzt."
   },
   "modal": {
-    "title": { "title": "Titel & Beschreibung", "field_title": "Titel", "field_url": "URL des Titels (optional)", "field_description": "Beschreibung", "description_placeholder": "Haupttext. Variablen: {server}, {date}, {user}…" },
-    "color": { "title": "Farbe", "field_hex": "Hex-Farbe oder Markenfarbname" },
-    "images": { "title": "Bild & Thumbnail", "field_image": "Bild-URL", "field_thumbnail": "Thumbnail-URL" },
-    "footer": { "title": "Footer & Autor", "field_footer": "Footer-Text", "field_footer_icon": "Footer-Icon (URL)", "field_author": "Name des Autors", "field_author_icon": "Autor-Icon (URL)", "field_author_url": "Autor-Link (URL)" },
-    "field": { "title": "Feld hinzufügen", "field_name": "Name", "field_value": "Wert", "field_inline": "Inline? (ja / nein)", "inline_placeholder": "ja" },
-    "content": { "title": "Nachrichteninhalt", "field_content": "Text über dem Embed", "placeholder": "Erwähnungen, Freitext… z. B.: @everyone Neues Update!" },
-    "link": { "title": "Link-Button", "field_label": "Beschriftung", "field_url": "URL", "field_emoji": "Emoji (optional)" },
-    "template": { "title": "Als Vorlage speichern", "field_name": "Name der Vorlage", "field_description": "Beschreibung (optional)" },
-    "import": { "title": "JSON importieren", "field_json": "JSON (EmbedSpec oder Nachricht)" }
+    "title": {
+      "title": "Titel & Beschreibung",
+      "field_title": "Titel",
+      "field_url": "URL des Titels (optional)",
+      "field_description": "Beschreibung",
+      "description_placeholder": "Haupttext. Variablen: {server}, {date}, {user}…"
+    },
+    "color": {
+      "title": "Farbe",
+      "field_hex": "Hex-Farbe oder Markenfarbname"
+    },
+    "images": {
+      "title": "Bild & Thumbnail",
+      "field_image": "Bild-URL",
+      "field_thumbnail": "Thumbnail-URL"
+    },
+    "footer": {
+      "title": "Footer & Autor",
+      "field_footer": "Footer-Text",
+      "field_footer_icon": "Footer-Icon (URL)",
+      "field_author": "Name des Autors",
+      "field_author_icon": "Autor-Icon (URL)",
+      "field_author_url": "Autor-Link (URL)"
+    },
+    "field": {
+      "title": "Feld hinzufügen",
+      "field_name": "Name",
+      "field_value": "Wert",
+      "field_inline": "Inline? (ja / nein)",
+      "inline_placeholder": "ja"
+    },
+    "content": {
+      "title": "Nachrichteninhalt",
+      "field_content": "Text über dem Embed",
+      "placeholder": "Erwähnungen, Freitext… z. B.: @everyone Neues Update!"
+    },
+    "link": {
+      "title": "Link-Button",
+      "field_label": "Beschriftung",
+      "field_url": "URL",
+      "field_emoji": "Emoji (optional)"
+    },
+    "template": {
+      "title": "Als Vorlage speichern",
+      "field_name": "Name der Vorlage",
+      "field_description": "Beschreibung (optional)"
+    },
+    "import": {
+      "title": "JSON importieren",
+      "field_json": "JSON (EmbedSpec oder Nachricht)"
+    }
   },
   "errors": {
     "not_found": "Vorlage nicht gefunden: `{details}`",
@@ -84,28 +131,64 @@
       "description": "Ankündigung einer geplanten Wartung",
       "title": "Geplante Wartung",
       "body": "Auf **{server}** ist eine Wartung geplant. Die Dienste werden vorübergehend nicht verfügbar sein.\n\nDanke für deine Geduld.",
-      "fields": { "start": { "name": "Beginn", "value": "{date}" }, "duration": { "name": "Geschätzte Dauer", "value": "~1h" } }
+      "fields": {
+        "start": {
+          "name": "Beginn",
+          "value": "{date}"
+        },
+        "duration": {
+          "name": "Geschätzte Dauer",
+          "value": "~1h"
+        }
+      }
     },
     "patch_note": {
       "name": "Patch Note",
       "description": "Update-Hinweise",
       "title": "Patch Note — {date}",
       "body": "Ein neues Update ist auf **{server}** verfügbar.",
-      "fields": { "new": { "name": "Neuheiten", "value": "• …" }, "fixes": { "name": "Fehlerbehebungen", "value": "• …" } }
+      "fields": {
+        "new": {
+          "name": "Neuheiten",
+          "value": "• …"
+        },
+        "fixes": {
+          "name": "Fehlerbehebungen",
+          "value": "• …"
+        }
+      }
     },
     "new_season": {
       "name": "Neue Season",
       "description": "Start einer neuen Season",
       "title": "Neue Season",
       "body": "Die neue Season von **{server}** beginnt! Neue Herausforderungen, neue Belohnungen.",
-      "fields": { "start": { "name": "Beginn", "value": "{date}" }, "rewards": { "name": "Belohnungen", "value": "• …" } }
+      "fields": {
+        "start": {
+          "name": "Beginn",
+          "value": "{date}"
+        },
+        "rewards": {
+          "name": "Belohnungen",
+          "value": "• …"
+        }
+      }
     },
     "tournament": {
       "name": "Turnier",
       "description": "Turnierankündigung",
       "title": "Turnier",
       "body": "Auf **{server}** wird ein Turnier veranstaltet. Melde dich an und tritt gegen die Besten an!",
-      "fields": { "date": { "name": "Datum", "value": "{date}" }, "registration": { "name": "Anmeldungen", "value": "Geöffnet" } }
+      "fields": {
+        "date": {
+          "name": "Datum",
+          "value": "{date}"
+        },
+        "registration": {
+          "name": "Anmeldungen",
+          "value": "Geöffnet"
+        }
+      }
     },
     "important": {
       "name": "Wichtige Ankündigung",
@@ -118,21 +201,72 @@
       "description": "Gewinnspiel / Verlosung",
       "title": "Giveaway",
       "body": "Auf **{server}** läuft ein Giveaway! Mach mit und versuche dein Glück.",
-      "fields": { "prize": { "name": "Preis", "value": "…" }, "end": { "name": "Ende", "value": "{date}" } }
+      "fields": {
+        "prize": {
+          "name": "Preis",
+          "value": "…"
+        },
+        "end": {
+          "name": "Ende",
+          "value": "{date}"
+        }
+      }
     },
     "event": {
       "name": "Event",
       "description": "Event-Ankündigung",
       "title": "Event",
       "body": "Auf **{server}** steht ein Event bevor. Sei dabei!",
-      "fields": { "date": { "name": "Datum", "value": "{date}" }, "location": { "name": "Ort", "value": "…" } }
+      "fields": {
+        "date": {
+          "name": "Datum",
+          "value": "{date}"
+        },
+        "location": {
+          "name": "Ort",
+          "value": "…"
+        }
+      }
     },
     "recruitment": {
       "name": "Rekrutierung",
       "description": "Staff- / Team-Rekrutierung",
       "title": "Rekrutierung",
       "body": "**{server}** rekrutiert! Tritt dem Team bei und werde Teil des Abenteuers.",
-      "fields": { "positions": { "name": "Positionen", "value": "• …" }, "apply": { "name": "Bewerben", "value": "Öffne ein Ticket" } }
+      "fields": {
+        "positions": {
+          "name": "Positionen",
+          "value": "• …"
+        },
+        "apply": {
+          "name": "Bewerben",
+          "value": "Öffne ein Ticket"
+        }
+      }
     }
+  },
+  "palette": {
+    "violet": "Violett (Marke)",
+    "purple_dark": "Dunkellila",
+    "lavender": "Lavendel",
+    "blurple": "Discord-Blurple",
+    "blue": "Blau",
+    "cyan": "Cyan",
+    "teal": "Türkis",
+    "green": "Grün",
+    "lime": "Limette",
+    "yellow": "Gelb",
+    "amber": "Bernstein",
+    "orange": "Orange",
+    "red": "Rot (Warnung)",
+    "crimson": "Karmesinrot",
+    "pink": "Pink",
+    "rose": "Rosé",
+    "brown": "Braun",
+    "gold": "Gold",
+    "silver": "Silber",
+    "white": "Weiß",
+    "anthracite": "Anthrazit",
+    "black": "Schwarz"
   }
 }

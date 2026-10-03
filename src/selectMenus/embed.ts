@@ -3,7 +3,7 @@ import { defineSelectMenu } from '../structures';
 import type { InteractionContext } from '../structures/types';
 import { embedService, type ButtonSpec } from '../services/EmbedService';
 import { EmbedTemplateError, embedTemplateService } from '../services/EmbedTemplateService';
-import { embedBuilderSessions, isEmbedEmpty, renderBuilder, renderContextFromInteraction, MAX_BUTTONS, type BuilderSession } from '../services/EmbedBuilderSession';
+import { embedBuilderSessions, isEmbedEmpty, parentView, renderBuilder, renderContextFromInteraction, MAX_BUTTONS, type BuilderSession } from '../services/EmbedBuilderSession';
 import { buildEmbedModal } from '../modals/embed';
 import { buildCustomId } from '../utils/customId';
 
@@ -36,6 +36,17 @@ export default defineSelectMenu({
     }
 
     switch (action) {
+      case 'palette': {
+        if (!interaction.isStringSelectMenu()) return;
+        const hex = (interaction.values[0] ?? '').toUpperCase();
+        if (/^#[0-9A-F]{6}$/.test(hex)) {
+          session.spec = { ...session.spec, color: hex };
+          session.view = parentView(session);
+          session.notice = { type: 'success', text: t('embeds.builder.color_set', { hex }) };
+        }
+        await refresh(interaction, session, ctx);
+        return;
+      }
       case 'fields': {
         if (!interaction.isStringSelectMenu()) return;
         const value = interaction.values[0] ?? '';

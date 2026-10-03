@@ -18,6 +18,8 @@ import type { AnnouncementStatus } from '@prisma/client';
 import { embedService, type ButtonSpec, type EmbedSpec } from './EmbedService';
 import type { AnnouncementTranslations } from './AnnouncementService';
 import { hasTranslation, resolveTargetLanguages, withDefaultColor } from './AnnouncementService';
+import { EMBED_COLOR_PALETTE } from '../config/constants';
+import { colorToHex } from './EmbedService';
 import type { Translator } from './TranslationService';
 import type { ResolvedGuildConfig } from './GuildConfigService';
 import { TTLCache } from '../utils/cache';
@@ -37,7 +39,7 @@ export type BuilderMode = 'embed' | 'announce';
  *  - buttons     : gestion des boutons
  *  - languages / translations / mentions / channel : étapes propres aux annonces
  */
-export type BuilderView = 'main' | 'embed' | 'buttons' | 'languages' | 'translations' | 'mentions' | 'channel';
+export type BuilderView = 'main' | 'embed' | 'buttons' | 'color' | 'languages' | 'translations' | 'mentions' | 'channel';
 
 export interface AnnouncementDraft {
   id?: number;
@@ -281,6 +283,32 @@ function fieldsSelect(session: BuilderSession, t: Translator): StringSelectMenuB
   return new StringSelectMenuBuilder().setCustomId(buildCustomId('embed', 'fields', session.id)).setPlaceholder(t('embeds.builder.fields_placeholder', { count: fields.length, max: MAX_EMBED_FIELDS })).addOptions(options);
 }
 
+
+/** Vue « Couleur » : palette de couleurs nommées + hex personnalisé + couleur du serveur. */
+function colorViewRows(session: BuilderSession, rc: BuilderRenderContext): Row[] {
+  const { t } = rc;
+  const sid = session.id;
+  const current = (session.spec.color ?? '').toUpperCase();
+  const options = EMBED_COLOR_PALETTE.slice(0, 25).map((c) =>
+    new StringSelectMenuOptionBuilder()
+      .setLabel(truncate(t(`embeds.palette.${c.key}`), 100))
+      .setValue(c.hex)
+      .setEmoji(c.emoji)
+      .setDescription(c.hex)
+      .setDefault(current === c.hex),
+  );
+  const select = new StringSelectMenuBuilder().setCustomId(buildCustomId('embed', 'palette', sid)).setPlaceholder(t('embeds.builder.palette_placeholder')).addOptions(options);
+  const brandHex = colorToHex(rc.config.brandColor);
+  return [
+    row(select),
+    row(
+      button('embed', 'color', sid, t('embeds.builder.btn_color_hex'), ButtonStyle.Secondary, '🔢'),
+      button('embed', 'colorbrand', sid, t('embeds.builder.btn_color_brand', { hex: brandHex }), current === '' || current === brandHex ? ButtonStyle.Success : ButtonStyle.Secondary, '🏷️'),
+      button('embed', 'back', sid, t('core.back'), ButtonStyle.Secondary, '↩️'),
+    ),
+  ];
+}
+
 function embedEditRows(session: BuilderSession, rc: BuilderRenderContext): Row[] {
   const { t } = rc;
   const sid = session.id;
@@ -288,7 +316,7 @@ function embedEditRows(session: BuilderSession, rc: BuilderRenderContext): Row[]
   rows.push(
     row(
       button('embed', 'title', sid, t('embeds.builder.btn_title'), ButtonStyle.Primary, '✏️'),
-      button('embed', 'color', sid, t('embeds.builder.btn_color'), ButtonStyle.Secondary, '🎨'),
+      button('embed', 'colorview', sid, t('embeds.builder.btn_color'), ButtonStyle.Secondary, '🎨'),
       button('embed', 'images', sid, t('embeds.builder.btn_images'), ButtonStyle.Secondary, '🖼️'),
       button('embed', 'footer', sid, t('embeds.builder.btn_footer'), ButtonStyle.Secondary, '📎'),
       button('embed', 'timestamp', sid, t('embeds.builder.btn_timestamp'), session.spec.timestamp ? ButtonStyle.Success : ButtonStyle.Secondary, '🕒'),
@@ -429,6 +457,9 @@ export function renderBuilder(session: BuilderSession, rc: BuilderRenderContext)
       case 'buttons':
         components = buttonsViewRows(session, rc);
         break;
+      case 'color':
+        components = colorViewRows(session, rc);
+        break;
       case 'languages':
         components = announceLanguagesRows(session, rc);
         break;
@@ -446,7 +477,7 @@ export function renderBuilder(session: BuilderSession, rc: BuilderRenderContext)
     }
   } else {
     embeds.push(embedStatusEmbed(session, rc));
-    components = session.view === 'buttons' ? buttonsViewRows(session, rc) : embedEditRows(session, rc);
+    components = session.view === 'buttons' ? buttonsViewRows(session, rc) : session.view === 'color' ? colorViewRows(session, rc) : embedEditRows(session, rc);
   }
   embeds.push(previewEmbed(session, rc));
   return { embeds, components, allowedMentions: { parse: [] } };
@@ -454,7 +485,7 @@ export function renderBuilder(session: BuilderSession, rc: BuilderRenderContext)
 
 /** Vue à afficher quand on quitte une sous-vue. */
 export function parentView(session: BuilderSession): BuilderView {
-  if (session.mode === 'announce') return session.view === 'buttons' ? 'embed' : 'main';
+  if (session.mode === 'announce') return session.view === 'buttons' || session.view === 'color' ? 'embed' : 'main';
   return 'main';
 }
 

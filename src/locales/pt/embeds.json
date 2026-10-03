@@ -40,7 +40,12 @@
     "template_updated": "Template **{name}** atualizado.",
     "imported": "JSON importado com sucesso.",
     "export_file": "📤 Exportação JSON (arquivo anexado).",
-    "cancelled": "Sessão cancelada. Nada foi enviado."
+    "cancelled": "Sessão cancelada. Nada foi enviado.",
+    "palette_placeholder": "🎨 Escolha uma cor da paleta",
+    "btn_color_hex": "Código hex personalizado",
+    "btn_color_brand": "Cor do servidor ({hex})",
+    "color_set": "Cor aplicada: `{hex}`",
+    "color_reset": "Cor padrão do servidor restaurada."
   },
   "cmd": {
     "sent": "Template enviado em {channel} → {url}",
@@ -51,15 +56,57 @@
     "variables_desc": "Estas variáveis são substituídas automaticamente em títulos, descrições, campos, footers e conteúdos."
   },
   "modal": {
-    "title": { "title": "Título e descrição", "field_title": "Título", "field_url": "URL do título (opcional)", "field_description": "Descrição", "description_placeholder": "Texto principal. Variáveis: {server}, {date}, {user}…" },
-    "color": { "title": "Cor", "field_hex": "Cor hex ou nome da marca" },
-    "images": { "title": "Imagem e thumbnail", "field_image": "URL da imagem", "field_thumbnail": "URL da miniatura" },
-    "footer": { "title": "Footer e autor", "field_footer": "Texto do footer", "field_footer_icon": "Ícone do footer (URL)", "field_author": "Nome do autor", "field_author_icon": "Ícone do autor (URL)", "field_author_url": "Link do autor (URL)" },
-    "field": { "title": "Adicionar um campo", "field_name": "Nome", "field_value": "Valor", "field_inline": "Em linha? (sim / não)", "inline_placeholder": "sim" },
-    "content": { "title": "Conteúdo da mensagem", "field_content": "Texto acima do embed", "placeholder": "Menções, texto livre… ex.: @everyone Nova atualização!" },
-    "link": { "title": "Botão de link", "field_label": "Rótulo", "field_url": "URL", "field_emoji": "Emoji (opcional)" },
-    "template": { "title": "Salvar como template", "field_name": "Nome do template", "field_description": "Descrição (opcional)" },
-    "import": { "title": "Importar um JSON", "field_json": "JSON (EmbedSpec ou mensagem)" }
+    "title": {
+      "title": "Título e descrição",
+      "field_title": "Título",
+      "field_url": "URL do título (opcional)",
+      "field_description": "Descrição",
+      "description_placeholder": "Texto principal. Variáveis: {server}, {date}, {user}…"
+    },
+    "color": {
+      "title": "Cor",
+      "field_hex": "Cor hex ou nome da marca"
+    },
+    "images": {
+      "title": "Imagem e thumbnail",
+      "field_image": "URL da imagem",
+      "field_thumbnail": "URL da miniatura"
+    },
+    "footer": {
+      "title": "Footer e autor",
+      "field_footer": "Texto do footer",
+      "field_footer_icon": "Ícone do footer (URL)",
+      "field_author": "Nome do autor",
+      "field_author_icon": "Ícone do autor (URL)",
+      "field_author_url": "Link do autor (URL)"
+    },
+    "field": {
+      "title": "Adicionar um campo",
+      "field_name": "Nome",
+      "field_value": "Valor",
+      "field_inline": "Em linha? (sim / não)",
+      "inline_placeholder": "sim"
+    },
+    "content": {
+      "title": "Conteúdo da mensagem",
+      "field_content": "Texto acima do embed",
+      "placeholder": "Menções, texto livre… ex.: @everyone Nova atualização!"
+    },
+    "link": {
+      "title": "Botão de link",
+      "field_label": "Rótulo",
+      "field_url": "URL",
+      "field_emoji": "Emoji (opcional)"
+    },
+    "template": {
+      "title": "Salvar como template",
+      "field_name": "Nome do template",
+      "field_description": "Descrição (opcional)"
+    },
+    "import": {
+      "title": "Importar um JSON",
+      "field_json": "JSON (EmbedSpec ou mensagem)"
+    }
   },
   "errors": {
     "not_found": "Template não encontrado: `{details}`",
@@ -84,28 +131,64 @@
       "description": "Anúncio de manutenção programada",
       "title": "Manutenção programada",
       "body": "Uma manutenção está prevista em **{server}**. Os serviços ficarão temporariamente indisponíveis.\n\nObrigado pela paciência.",
-      "fields": { "start": { "name": "Início", "value": "{date}" }, "duration": { "name": "Duração estimada", "value": "~1h" } }
+      "fields": {
+        "start": {
+          "name": "Início",
+          "value": "{date}"
+        },
+        "duration": {
+          "name": "Duração estimada",
+          "value": "~1h"
+        }
+      }
     },
     "patch_note": {
       "name": "Patch Note",
       "description": "Notas de atualização",
       "title": "Patch Note — {date}",
       "body": "Uma nova atualização está disponível em **{server}**.",
-      "fields": { "new": { "name": "Novidades", "value": "• …" }, "fixes": { "name": "Correções", "value": "• …" } }
+      "fields": {
+        "new": {
+          "name": "Novidades",
+          "value": "• …"
+        },
+        "fixes": {
+          "name": "Correções",
+          "value": "• …"
+        }
+      }
     },
     "new_season": {
       "name": "Nova Temporada",
       "description": "Lançamento de uma nova temporada",
       "title": "Nova temporada",
       "body": "A nova temporada de **{server}** começa! Novos desafios, novas recompensas.",
-      "fields": { "start": { "name": "Início", "value": "{date}" }, "rewards": { "name": "Recompensas", "value": "• …" } }
+      "fields": {
+        "start": {
+          "name": "Início",
+          "value": "{date}"
+        },
+        "rewards": {
+          "name": "Recompensas",
+          "value": "• …"
+        }
+      }
     },
     "tournament": {
       "name": "Torneio",
       "description": "Anúncio de torneio",
       "title": "Torneio",
       "body": "Um torneio está sendo organizado em **{server}**. Inscreva-se e enfrente os melhores!",
-      "fields": { "date": { "name": "Data", "value": "{date}" }, "registration": { "name": "Inscrições", "value": "Abertas" } }
+      "fields": {
+        "date": {
+          "name": "Data",
+          "value": "{date}"
+        },
+        "registration": {
+          "name": "Inscrições",
+          "value": "Abertas"
+        }
+      }
     },
     "important": {
       "name": "Anúncio importante",
@@ -118,21 +201,72 @@
       "description": "Concurso / sorteio",
       "title": "Giveaway",
       "body": "Um giveaway está rolando em **{server}**! Participe para tentar ganhar.",
-      "fields": { "prize": { "name": "Prêmio", "value": "…" }, "end": { "name": "Fim", "value": "{date}" } }
+      "fields": {
+        "prize": {
+          "name": "Prêmio",
+          "value": "…"
+        },
+        "end": {
+          "name": "Fim",
+          "value": "{date}"
+        }
+      }
     },
     "event": {
       "name": "Evento",
       "description": "Anúncio de evento",
       "title": "Evento",
       "body": "Um evento está sendo preparado em **{server}**. Não perca!",
-      "fields": { "date": { "name": "Data", "value": "{date}" }, "location": { "name": "Local", "value": "…" } }
+      "fields": {
+        "date": {
+          "name": "Data",
+          "value": "{date}"
+        },
+        "location": {
+          "name": "Local",
+          "value": "…"
+        }
+      }
     },
     "recruitment": {
       "name": "Recrutamento",
       "description": "Recrutamento de staff / equipe",
       "title": "Recrutamento",
       "body": "**{server}** está recrutando! Junte-se à equipe e participe da aventura.",
-      "fields": { "positions": { "name": "Vagas", "value": "• …" }, "apply": { "name": "Candidatar-se", "value": "Abra um ticket" } }
+      "fields": {
+        "positions": {
+          "name": "Vagas",
+          "value": "• …"
+        },
+        "apply": {
+          "name": "Candidatar-se",
+          "value": "Abra um ticket"
+        }
+      }
     }
+  },
+  "palette": {
+    "violet": "Violeta (marca)",
+    "purple_dark": "Roxo escuro",
+    "lavender": "Lavanda",
+    "blurple": "Blurple do Discord",
+    "blue": "Azul",
+    "cyan": "Ciano",
+    "teal": "Verde-azulado",
+    "green": "Verde",
+    "lime": "Lima",
+    "yellow": "Amarelo",
+    "amber": "Âmbar",
+    "orange": "Laranja",
+    "red": "Vermelho (alerta)",
+    "crimson": "Carmesim",
+    "pink": "Rosa",
+    "rose": "Rosa forte",
+    "brown": "Marrom",
+    "gold": "Dourado",
+    "silver": "Prata",
+    "white": "Branco",
+    "anthracite": "Antracite",
+    "black": "Preto"
   }
 }

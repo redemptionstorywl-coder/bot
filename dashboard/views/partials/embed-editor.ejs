@@ -27,6 +27,10 @@
           <input type="color" value="<%= _spec.color ? (_spec.color.startsWith('#') ? _spec.color : '#' + _spec.color) : (config && config.brandColor !== undefined ? fmt.hex(config.brandColor) : '#7C3AED') %>" data-color-input aria-label="Choisir une couleur">
           <input id="<%= _id %>-color" type="text" class="input input-mono" name="<%= n('color') %>" data-embed-key="color" data-color-text value="<%= _spec.color || '' %>" placeholder="défaut (marque)" pattern="^#?[0-9a-fA-F]{6}$">
         </div>
+        <div class="swatches" role="group" aria-label="Palette de couleurs">
+          <button type="button" class="swatch swatch-reset" data-swatch="" title="Couleur par défaut du serveur">✕</button>
+          <% (constants.EMBED_COLOR_PALETTE || []).forEach(function (c) { %><button type="button" class="swatch" data-swatch="<%= c.hex %>" data-color="<%= c.hex %>" title="<%= c.key.replace('_', ' ') %> · <%= c.hex %>"></button><% }); %>
+        </div>
       </div>
       <div class="field"><label class="check check-sm check-tall"><input type="checkbox" name="<%= n('timestamp') %>" data-embed-key="timestamp" <%= _spec.timestamp ? 'checked' : '' %>><span>Afficher l'horodatage</span></label></div>
     </div>

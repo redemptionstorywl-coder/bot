@@ -523,3 +523,10 @@ body.error-fallback { display: flex; align-items: center; justify-content: cente
 .badge-status-DELIVERED { background: var(--primary-soft); border-color: rgba(124,58,237,0.4); color: #c4b5fd; }
 .badge-status-REFUNDED, .badge-status-REJECTED { background: var(--danger-soft); border-color: rgba(239,68,68,0.35); color: #fca5a5; }
 @media (max-width: 900px) { .house-bars .bar-row { grid-template-columns: 110px minmax(0, 1fr) 90px; } .endpoint-list li { grid-template-columns: 1fr; } }
+
+/* Palette de couleurs (éditeur d'embed) */
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.swatch { width: 26px; height: 26px; border-radius: 7px; border: 2px solid var(--border, #2a2a2e); cursor: pointer; padding: 0; transition: transform .1s, border-color .1s; }
+.swatch:hover { transform: scale(1.12); border-color: #f5f5f7; }
+.swatch.is-active { border-color: #f5f5f7; box-shadow: 0 0 0 2px #7c3aed; }
+.swatch-reset { background: transparent; color: #a1a1aa; font-size: 13px; line-height: 1; }

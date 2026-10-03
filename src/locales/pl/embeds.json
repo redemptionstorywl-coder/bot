@@ -40,7 +40,12 @@
     "template_updated": "Szablon **{name}** zaktualizowany.",
     "imported": "JSON zaimportowany pomyślnie.",
     "export_file": "📤 Eksport JSON (załączony plik).",
-    "cancelled": "Sesja anulowana. Nic nie zostało wysłane."
+    "cancelled": "Sesja anulowana. Nic nie zostało wysłane.",
+    "palette_placeholder": "🎨 Wybierz kolor z palety",
+    "btn_color_hex": "Własny kod hex",
+    "btn_color_brand": "Kolor serwera ({hex})",
+    "color_set": "Zastosowano kolor: `{hex}`",
+    "color_reset": "Przywrócono domyślny kolor serwera."
   },
   "cmd": {
     "sent": "Szablon wysłany na {channel} → {url}",
@@ -51,15 +56,57 @@
     "variables_desc": "Te zmienne są automatycznie zastępowane w tytułach, opisach, polach, stopkach i treści."
   },
   "modal": {
-    "title": { "title": "Tytuł i opis", "field_title": "Tytuł", "field_url": "URL tytułu (opcjonalnie)", "field_description": "Opis", "description_placeholder": "Tekst główny. Zmienne: {server}, {date}, {user}…" },
-    "color": { "title": "Kolor", "field_hex": "Kolor hex lub nazwa koloru marki" },
-    "images": { "title": "Obraz i miniatura", "field_image": "URL obrazu", "field_thumbnail": "URL miniatury" },
-    "footer": { "title": "Stopka i autor", "field_footer": "Tekst stopki", "field_footer_icon": "Ikona stopki (URL)", "field_author": "Nazwa autora", "field_author_icon": "Ikona autora (URL)", "field_author_url": "Link autora (URL)" },
-    "field": { "title": "Dodaj pole", "field_name": "Nazwa", "field_value": "Wartość", "field_inline": "W linii? (tak / nie)", "inline_placeholder": "tak" },
-    "content": { "title": "Treść wiadomości", "field_content": "Tekst nad embedem", "placeholder": "Wzmianki, dowolny tekst… np. @everyone Nowa aktualizacja!" },
-    "link": { "title": "Przycisk z linkiem", "field_label": "Etykieta", "field_url": "URL", "field_emoji": "Emoji (opcjonalnie)" },
-    "template": { "title": "Zapisz jako szablon", "field_name": "Nazwa szablonu", "field_description": "Opis (opcjonalnie)" },
-    "import": { "title": "Importuj JSON", "field_json": "JSON (EmbedSpec lub wiadomość)" }
+    "title": {
+      "title": "Tytuł i opis",
+      "field_title": "Tytuł",
+      "field_url": "URL tytułu (opcjonalnie)",
+      "field_description": "Opis",
+      "description_placeholder": "Tekst główny. Zmienne: {server}, {date}, {user}…"
+    },
+    "color": {
+      "title": "Kolor",
+      "field_hex": "Kolor hex lub nazwa koloru marki"
+    },
+    "images": {
+      "title": "Obraz i miniatura",
+      "field_image": "URL obrazu",
+      "field_thumbnail": "URL miniatury"
+    },
+    "footer": {
+      "title": "Stopka i autor",
+      "field_footer": "Tekst stopki",
+      "field_footer_icon": "Ikona stopki (URL)",
+      "field_author": "Nazwa autora",
+      "field_author_icon": "Ikona autora (URL)",
+      "field_author_url": "Link autora (URL)"
+    },
+    "field": {
+      "title": "Dodaj pole",
+      "field_name": "Nazwa",
+      "field_value": "Wartość",
+      "field_inline": "W linii? (tak / nie)",
+      "inline_placeholder": "tak"
+    },
+    "content": {
+      "title": "Treść wiadomości",
+      "field_content": "Tekst nad embedem",
+      "placeholder": "Wzmianki, dowolny tekst… np. @everyone Nowa aktualizacja!"
+    },
+    "link": {
+      "title": "Przycisk z linkiem",
+      "field_label": "Etykieta",
+      "field_url": "URL",
+      "field_emoji": "Emoji (opcjonalnie)"
+    },
+    "template": {
+      "title": "Zapisz jako szablon",
+      "field_name": "Nazwa szablonu",
+      "field_description": "Opis (opcjonalnie)"
+    },
+    "import": {
+      "title": "Importuj JSON",
+      "field_json": "JSON (EmbedSpec lub wiadomość)"
+    }
   },
   "errors": {
     "not_found": "Nie znaleziono szablonu: `{details}`",
@@ -84,28 +131,64 @@
       "description": "Ogłoszenie o planowanej konserwacji",
       "title": "Planowana konserwacja",
       "body": "Na **{server}** zaplanowano konserwację. Usługi będą tymczasowo niedostępne.\n\nDziękujemy za cierpliwość.",
-      "fields": { "start": { "name": "Początek", "value": "{date}" }, "duration": { "name": "Szacowany czas", "value": "~1h" } }
+      "fields": {
+        "start": {
+          "name": "Początek",
+          "value": "{date}"
+        },
+        "duration": {
+          "name": "Szacowany czas",
+          "value": "~1h"
+        }
+      }
     },
     "patch_note": {
       "name": "Patch Note",
       "description": "Notatki aktualizacji",
       "title": "Patch Note — {date}",
       "body": "Nowa aktualizacja jest dostępna na **{server}**.",
-      "fields": { "new": { "name": "Nowości", "value": "• …" }, "fixes": { "name": "Poprawki", "value": "• …" } }
+      "fields": {
+        "new": {
+          "name": "Nowości",
+          "value": "• …"
+        },
+        "fixes": {
+          "name": "Poprawki",
+          "value": "• …"
+        }
+      }
     },
     "new_season": {
       "name": "Nowy Sezon",
       "description": "Start nowego sezonu",
       "title": "Nowy sezon",
       "body": "Nowy sezon **{server}** się zaczyna! Nowe wyzwania, nowe nagrody.",
-      "fields": { "start": { "name": "Początek", "value": "{date}" }, "rewards": { "name": "Nagrody", "value": "• …" } }
+      "fields": {
+        "start": {
+          "name": "Początek",
+          "value": "{date}"
+        },
+        "rewards": {
+          "name": "Nagrody",
+          "value": "• …"
+        }
+      }
     },
     "tournament": {
       "name": "Turniej",
       "description": "Ogłoszenie turnieju",
       "title": "Turniej",
       "body": "Na **{server}** organizowany jest turniej. Zapisz się i zmierz z najlepszymi!",
-      "fields": { "date": { "name": "Data", "value": "{date}" }, "registration": { "name": "Zapisy", "value": "Otwarte" } }
+      "fields": {
+        "date": {
+          "name": "Data",
+          "value": "{date}"
+        },
+        "registration": {
+          "name": "Zapisy",
+          "value": "Otwarte"
+        }
+      }
     },
     "important": {
       "name": "Ważne ogłoszenie",
@@ -118,21 +201,72 @@
       "description": "Konkurs / losowanie",
       "title": "Giveaway",
       "body": "Na **{server}** trwa giveaway! Weź udział, aby spróbować wygrać.",
-      "fields": { "prize": { "name": "Nagroda", "value": "…" }, "end": { "name": "Koniec", "value": "{date}" } }
+      "fields": {
+        "prize": {
+          "name": "Nagroda",
+          "value": "…"
+        },
+        "end": {
+          "name": "Koniec",
+          "value": "{date}"
+        }
+      }
     },
     "event": {
       "name": "Event",
       "description": "Ogłoszenie wydarzenia",
       "title": "Wydarzenie",
       "body": "Na **{server}** szykuje się wydarzenie. Nie przegap!",
-      "fields": { "date": { "name": "Data", "value": "{date}" }, "location": { "name": "Miejsce", "value": "…" } }
+      "fields": {
+        "date": {
+          "name": "Data",
+          "value": "{date}"
+        },
+        "location": {
+          "name": "Miejsce",
+          "value": "…"
+        }
+      }
     },
     "recruitment": {
       "name": "Rekrutacja",
       "description": "Rekrutacja staffu / ekipy",
       "title": "Rekrutacja",
       "body": "**{server}** rekrutuje! Dołącz do ekipy i weź udział w przygodzie.",
-      "fields": { "positions": { "name": "Stanowiska", "value": "• …" }, "apply": { "name": "Aplikuj", "value": "Otwórz ticket" } }
+      "fields": {
+        "positions": {
+          "name": "Stanowiska",
+          "value": "• …"
+        },
+        "apply": {
+          "name": "Aplikuj",
+          "value": "Otwórz ticket"
+        }
+      }
     }
+  },
+  "palette": {
+    "violet": "Fiolet (marka)",
+    "purple_dark": "Ciemny fiolet",
+    "lavender": "Lawenda",
+    "blurple": "Blurple Discord",
+    "blue": "Niebieski",
+    "cyan": "Cyjan",
+    "teal": "Morski",
+    "green": "Zielony",
+    "lime": "Limonkowy",
+    "yellow": "Żółty",
+    "amber": "Bursztynowy",
+    "orange": "Pomarańczowy",
+    "red": "Czerwony (alert)",
+    "crimson": "Karmazyn",
+    "pink": "Różowy",
+    "rose": "Ciemny róż",
+    "brown": "Brązowy",
+    "gold": "Złoty",
+    "silver": "Srebrny",
+    "white": "Biały",
+    "anthracite": "Antracyt",
+    "black": "Czarny"
   }
 }

@@ -5,6 +5,7 @@ import type { Translator } from '../services/TranslationService';
 import { embedService, type ButtonSpec, type EmbedSpec } from '../services/EmbedService';
 import { EmbedTemplateError, embedTemplateService } from '../services/EmbedTemplateService';
 import { embedBuilderSessions, optionalText, renderBuilder, renderContextFromInteraction, MAX_BUTTONS, MAX_EMBED_FIELDS, type BuilderSession } from '../services/EmbedBuilderSession';
+import { parentView } from '../services/EmbedBuilderSession';
 import { buildCustomId } from '../utils/customId';
 import { BRAND } from '../config/constants';
 
@@ -134,7 +135,10 @@ export default defineModal({
           const named = (BRAND.colors as Record<string, number>)[raw.toLowerCase()];
           color = named !== undefined ? `#${named.toString(16).padStart(6, '0').toUpperCase()}` : raw.startsWith('#') ? raw : `#${raw}`;
         }
-        applySpec(session, { ...spec, color }, t);
+        if (applySpec(session, { ...spec, color }, t)) {
+          session.view = parentView(session);
+          if (color) session.notice = { type: 'success', text: t('embeds.builder.color_set', { hex: color.toUpperCase() }) };
+        }
         break;
       }
       case 'images':
