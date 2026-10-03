@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 import { Events } from 'discord.js';
 import { env, maskSecret } from './config/env';
 import { logger } from './utils/logger';
@@ -15,6 +16,17 @@ import { startDashboard } from '../dashboard/server';
 async function main(): Promise<void> {
   const config = env();
   logger.info({ env: config.NODE_ENV, clientId: config.CLIENT_ID, token: maskSecret(config.DISCORD_TOKEN) }, 'Démarrage de Redemption Story Bot');
+
+  if (process.env.RUN_MIGRATIONS !== '0') {
+    try {
+      logger.info('Application des migrations Prisma…');
+      execSync('npx prisma migrate deploy', { stdio: 'pipe', cwd: path.resolve(__dirname, '..', '..'), env: process.env });
+      logger.info('Migrations à jour');
+    } catch (err) {
+      const out = (err as { stdout?: Buffer; stderr?: Buffer }).stderr?.toString() || (err as Error).message;
+      logger.error({ details: out.split('\n').slice(-5).join(' ') }, 'Migrations non appliquées (RUN_MIGRATIONS=0 pour désactiver)');
+    }
+  }
 
   await connectDatabase();
 
