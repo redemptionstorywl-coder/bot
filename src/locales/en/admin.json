@@ -57,13 +57,15 @@
   },
   "template": {
     "list_title": "🧩 Server templates",
-    "list_description": "A template detects your existing channels and roles by name, configures the bot in one go (type, roles, logs, welcome, tickets, languages, notifications) and posts the first messages (rules, panels, info). Can be re-run without duplicates.",
+    "list_description": "A template deploys a complete, ready-to-use structure: missing categories and channels are created (permissions included), existing channels and roles are detected by name, the bot is configured in one go (type, roles, logs, welcome, tickets, languages, notifications) and the default messages are posted (rules, guides, payment, panels). Can be re-run without duplicates.",
     "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
     "unknown": "Unknown template: `{key}`.",
     "plan_title": "📋 Plan — {emoji} {name}",
     "plan_description": "**{ready}** step(s) ready · **{skipped}** skipped. A skipped step could not find its channel or role: rename or create it, then run again.",
     "dry_run_footer": "Dry run: nothing was changed.",
     "confirm": "Apply the **{name}** template to **{server}**? Existing configuration is updated; messages already posted by the bot are not posted again.",
+    "confirm_structure": "🏗️ **{created}** category(ies) / channel(s) will be created with their permissions; **{reused}** existing one(s) reused without changes.",
+    "confirm_no_structure": "No channel will be created (`create_missing:false`): only existing channels are used.",
     "confirm_button": "Apply",
     "cancel_button": "Cancel",
     "cancelled": "Application cancelled.",
@@ -77,6 +79,9 @@
     "recommended_polls": "📊 Polls",
     "recommended_events": "📅 Events",
     "recommended_hint": "Use them in the `channel` option of `/giveaway create`, `/poll create` and `/event create`.",
+    "structure_summary": "🆕 **{created}** to create · ♻️ **{reused}** existing",
+    "structure_report": "🆕 **{created}** created · ♻️ **{reused}** reused",
+    "structure_legend": "🆕 will be created · ♻️ existing (left untouched)",
     "templates": {
       "shop": {
         "name": "Redemption Story Shop",
@@ -97,6 +102,7 @@
     },
     "steps": {
       "kind": "Server type and languages",
+      "structure": "Structure (missing categories and channels)",
       "roles": "Admin / staff roles",
       "autorole": "Auto-roles (members / bots)",
       "logs": "Log channels",

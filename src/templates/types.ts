@@ -43,6 +43,52 @@ export interface TemplateInfoMessage {
   key: string;
   channelNames: string[];
   embeds: BilingualEmbed;
+  /** Si vrai et qu'aucun salon ne correspond, l'étape est omise du plan (au lieu d'être ignorée). */
+  optional?: boolean;
+}
+
+/** Type Discord du salon à créer. `announcement` et `forum` retombent sur un salon texte hors serveur communautaire. */
+export type StructureChannelType = 'text' | 'announcement' | 'voice' | 'forum';
+
+/**
+ * Permissions appliquées à un salon créé par la structure :
+ *  - `readonly` : @everyone lit mais n'écrit pas (le bot et le staff écrivent) ;
+ *  - `chat` : tout le monde écrit (hérite de la catégorie) ;
+ *  - `staff` : visible uniquement par les rôles staff / admin résolus et 🛡️ RS Team ;
+ *  - `voice` : vocal (hérite de la catégorie) ;
+ *  - `support-voice` : vocal public limité à quelques utilisateurs (support en direct).
+ */
+export type StructurePreset = 'readonly' | 'chat' | 'staff' | 'voice' | 'support-voice';
+
+/**
+ * Accès d'une catégorie : `public` (hérite), `staff` (rôles staff uniquement), `tickets` (staff uniquement ; les
+ * tickets ajoutent leurs créateurs individuellement), `languages` (catégorie créée vide, salons gérés par LanguageService).
+ */
+export type StructureCategoryAccess = 'public' | 'staff' | 'tickets' | 'languages';
+
+export interface StructureChannel {
+  /** Clé stable (`welcome`, `rules`, `payment`, `ticket`, `staffChat`…), reprise dans les rapports. */
+  key: string;
+  /** Nom créé si aucun salon ne correspond (ex. `💳・payment-methods`). */
+  name: string;
+  type: StructureChannelType;
+  preset: StructurePreset;
+  /** Synonymes reconnus (normalisés) pour réutiliser un salon existant plutôt que d'en créer un. */
+  aliases?: string[];
+  topic?: Bilingual;
+}
+
+export interface StructureCategory {
+  key: string;
+  name: string;
+  roleAccess: StructureCategoryAccess;
+  aliases?: string[];
+  channels: StructureChannel[];
+}
+
+/** Structure complète (catégories + salons) déployée en premier par l'étape `structure`. */
+export interface TemplateStructure {
+  categories: StructureCategory[];
 }
 
 /**
@@ -101,4 +147,6 @@ export interface ServerTemplate {
   };
   fivem?: { statusChannelNames: string[] };
   infoMessages: TemplateInfoMessage[];
+  /** Catégories et salons créés s'ils manquent (option `create_missing`), avant toutes les autres étapes. */
+  structure: TemplateStructure;
 }

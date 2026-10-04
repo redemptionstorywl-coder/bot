@@ -1,7 +1,7 @@
-import { ChannelType, PermissionFlagsBits, type Guild, type GuildTextBasedChannel, type Message, type NewsChannel, type Role, type TextChannel } from 'discord.js';
+import { ChannelType, PermissionFlagsBits, type Guild, type GuildTextBasedChannel, type Message, type NewsChannel, type OverwriteResolvable, type Role, type TextChannel } from 'discord.js';
 import { AutoRoleType, PanelStyle, type LogCategory } from '@prisma/client';
-import { BRAND, LANGUAGE_CODES, getLanguage } from '../config/constants';
-import { SERVER_TEMPLATES, getTemplate, type Bilingual, type BilingualEmbed, type ServerTemplate, type TemplateInfoMessage, type TemplateQuestion, type TemplateTicketType } from '../templates';
+import { BRAND, DEFAULT_TEAM_ROLE_NAMES, LANGUAGE_CODES, getLanguage } from '../config/constants';
+import { SERVER_TEMPLATES, getTemplate, type Bilingual, type BilingualEmbed, type ServerTemplate, type StructureCategory, type StructureCategoryAccess, type StructureChannel, type StructurePreset, type TemplateInfoMessage, type TemplateQuestion, type TemplateTicketType } from '../templates';
 import { childLogger } from '../utils/logger';
 import { embedService, type EmbedSpec } from './EmbedService';
 import { embedTemplateService } from './EmbedTemplateService';
@@ -49,6 +49,19 @@ export interface StepTarget {
   kind: 'channel' | 'category' | 'role';
   id: string;
   name: string;
+  /** Salon qui n'existe pas encore (sera créé par l'étape `structure`). */
+  pending?: boolean;
+}
+
+/** Élément de la structure : salon ou catégorie à créer (`create`) ou déjà présent (`reuse`). */
+export interface StructureItem {
+  category: string;
+  key: string;
+  name: string;
+  kind: 'channel' | 'category';
+  status: 'create' | 'reuse';
+  /** ID Discord si existant. */
+  id?: string;
 }
 
 export interface PlanStep {
@@ -59,6 +72,8 @@ export interface PlanStep {
   targets: StepTarget[];
   /** Informations complémentaires (déjà traduites ou mentions Discord). */
   detail?: string;
+  /** Étape `structure` : détail par salon. */
+  items?: StructureItem[];
 }
 
 export interface ReportStep {
@@ -68,6 +83,7 @@ export interface ReportStep {
   reason?: StepMessage;
   detail?: string;
   targets: StepTarget[];
+  items?: StructureItem[];
 }
 
 export interface TemplateReport {
@@ -107,6 +123,33 @@ interface Resolution {
   recommended: { key: string; channel: ChannelLike | null }[];
 }
 
+/** Catégorie de la structure résolue : existante ou à créer, avec ses salons. */
+export interface ResolvedStructureCategory {
+  spec: StructureCategory;
+  existing: ChannelLike | null;
+  /** Catégorie existante ou virtuelle (`pending:…`). */
+  channel: ChannelLike;
+  channels: { spec: StructureChannel; existing: ChannelLike | null; channel: ChannelLike }[];
+}
+
+export interface ResolvedStructure {
+  categories: ResolvedStructureCategory[];
+  items: StructureItem[];
+  /** Salons et catégories virtuels (créés par l'étape `structure`) ajoutés à la vue du serveur pour la résolution. */
+  pending: ChannelLike[];
+  /** Rôles (staff, admin, 🛡️ RS Team) autorisés sur les salons `staff` / `tickets`. */
+  staffRoles: RoleLike[];
+}
+
+export interface PlanOptions {
+  /** Créer les catégories et salons manquants de la structure (défaut : true). */
+  createMissing?: boolean;
+}
+
+export interface ApplyOptions extends PlanOptions {
+  dryRun?: boolean;
+}
+
 const TEXT_TYPES = [ChannelType.GuildText, ChannelType.GuildAnnouncement];
 const KIND_TYPES: Record<ChannelKind, number[]> = {
   text: TEXT_TYPES,
@@ -115,6 +158,15 @@ const KIND_TYPES: Record<ChannelKind, number[]> = {
   voice: [ChannelType.GuildVoice, ChannelType.GuildStageVoice],
 };
 const HISTORY_SCAN = 20;
+const PENDING_PREFIX = 'pending:';
+/** Vocaux « support » : visibles par tous mais limités à quelques participants. */
+export const SUPPORT_VOICE_USER_LIMIT = 3;
+const STRUCTURE_TYPES: Record<StructureChannel['type'], number> = {
+  text: ChannelType.GuildText,
+  announcement: ChannelType.GuildAnnouncement,
+  voice: ChannelType.GuildVoice,
+  forum: ChannelType.GuildForum,
+};
 
 // ───────────────────────── Fonctions pures ─────────────────────────
 
@@ -177,6 +229,114 @@ export function substituteObject<T>(value: T, channels: Record<string, ChannelLi
   return value;
 }
 
+/** Vrai pour un salon virtuel (pas encore créé). */
+export function isPending(channel: Pick<ChannelLike, 'id'>): boolean {
+  return channel.id.startsWith(PENDING_PREFIX);
+}
+
+const P = PermissionFlagsBits;
+const READ = [P.ViewChannel, P.ReadMessageHistory];
+const WRITE = [...READ, P.SendMessages, P.SendMessagesInThreads, P.AttachFiles, P.EmbedLinks, P.AddReactions];
+const STAFF_WRITE = [...WRITE, P.ManageMessages, P.ManageThreads];
+const BOT_WRITE = [...STAFF_WRITE, P.MentionEveryone, P.ManageChannels];
+const VOICE = [P.ViewChannel, P.Connect, P.Speak, P.Stream, P.UseVAD];
+
+export interface OverwriteContext {
+  everyoneId: string;
+  botId: string;
+  staffRoleIds: string[];
+}
+
+/**
+ * Overwrites d'un salon créé par la structure, à partir de l'accès de sa catégorie et de son preset (fonction pure).
+ *  - catégorie `staff` / `tickets` : @everyone ne voit rien, staff + bot voient et écrivent ;
+ *  - `readonly` : @everyone lit, n'écrit pas ; staff et bot écrivent ;
+ *  - `staff` : comme une catégorie staff ;
+ *  - `chat` / `voice` : héritent (aucun overwrite hors catégorie staff) ;
+ *  - `support-voice` : vocal visible par tous (la limite d'utilisateurs est posée à la création).
+ */
+export function presetOverwrites(preset: StructurePreset, access: StructureCategoryAccess, ctx: OverwriteContext): OverwriteResolvable[] {
+  const staff = [...new Set(ctx.staffRoleIds)];
+  const restricted = access === 'staff' || access === 'tickets' || preset === 'staff';
+  if (restricted) {
+    return [
+      { id: ctx.everyoneId, deny: [P.ViewChannel] },
+      ...staff.map((id) => ({ id, allow: preset === 'voice' || preset === 'support-voice' ? [...VOICE, ...STAFF_WRITE] : STAFF_WRITE })),
+      { id: ctx.botId, allow: [...BOT_WRITE, P.Connect] },
+    ];
+  }
+  switch (preset) {
+    case 'readonly':
+      return [
+        { id: ctx.everyoneId, allow: READ, deny: [P.SendMessages, P.SendMessagesInThreads, P.CreatePublicThreads, P.CreatePrivateThreads] },
+        ...staff.map((id) => ({ id, allow: STAFF_WRITE })),
+        { id: ctx.botId, allow: BOT_WRITE },
+      ];
+    case 'support-voice':
+      return [{ id: ctx.everyoneId, allow: VOICE }, ...staff.map((id) => ({ id, allow: [...VOICE, P.MuteMembers, P.MoveMembers] }))];
+    case 'chat':
+    case 'voice':
+    default:
+      return [];
+  }
+}
+
+/** Overwrites d'une catégorie de la structure (publique : aucun ; staff / tickets : staff + bot uniquement). */
+export function categoryOverwrites(access: StructureCategoryAccess, ctx: OverwriteContext): OverwriteResolvable[] {
+  if (access !== 'staff' && access !== 'tickets') return [];
+  return presetOverwrites('staff', access, ctx);
+}
+
+function structureKind(type: StructureChannel['type']): ChannelKind[] {
+  return type === 'voice' ? ['voice'] : ['text', 'forum'];
+}
+
+/** Salon existant correspondant à un salon de la structure (nom + synonymes, texte et forum interchangeables). */
+export function matchStructureChannel<T extends ChannelLike>(channels: Iterable<T>, spec: StructureChannel): T | null {
+  const list = [...channels].filter((c) => structureKind(spec.type).some((k) => KIND_TYPES[k].includes(c.type)));
+  return matchChannel(list, [spec.name, ...(spec.aliases ?? [])]);
+}
+
+/**
+ * Résout la structure d'un modèle : pour chaque catégorie / salon, l'existant (par nom) ou un salon virtuel
+ * `pending:<catégorie>/<clé>` qui sera créé par l'étape `structure`. Fonction pure.
+ */
+export function resolveStructure(guild: GuildLike, tpl: ServerTemplate): ResolvedStructure {
+  const channels = [...guild.channels.cache.values()];
+  const roles = [...guild.roles.cache.values()];
+  const items: StructureItem[] = [];
+  const pending: ChannelLike[] = [];
+  const categories: ResolvedStructureCategory[] = tpl.structure.categories.map((spec) => {
+    const existing = matchChannel(channels, [spec.name, ...(spec.aliases ?? [])], 'category');
+    const channel: ChannelLike = existing ?? { id: `${PENDING_PREFIX}cat:${spec.key}`, name: spec.name, type: ChannelType.GuildCategory };
+    if (!existing) pending.push(channel);
+    items.push({ category: spec.name, key: spec.key, name: spec.name, kind: 'category', status: existing ? 'reuse' : 'create', id: existing?.id });
+    const list = spec.roleAccess === 'languages' ? [] : spec.channels;
+    return {
+      spec,
+      existing,
+      channel,
+      channels: list.map((c) => {
+        const found = matchStructureChannel(channels, c);
+        const ch: ChannelLike = found ?? { id: `${PENDING_PREFIX}${spec.key}/${c.key}`, name: c.name, type: c.type === 'announcement' ? ChannelType.GuildText : STRUCTURE_TYPES[c.type], parentId: channel.id };
+        if (!found) pending.push(ch);
+        items.push({ category: spec.name, key: c.key, name: c.name, kind: 'channel', status: found ? 'reuse' : 'create', id: found?.id });
+        return { spec: c, existing: found, channel: ch };
+      }),
+    };
+  });
+  const staffRoles = [...matchRoles(roles, tpl.adminRoleNames), ...matchRoles(roles, tpl.staffRoleNames), ...matchRoles(roles, DEFAULT_TEAM_ROLE_NAMES)].filter((r, i, arr) => arr.indexOf(r) === i);
+  return { categories, items, pending, staffRoles };
+}
+
+/** Vue du serveur enrichie des salons virtuels de la structure (pour résoudre les étapes suivantes). */
+export function withPendingChannels(guild: GuildLike, pending: ChannelLike[]): GuildLike {
+  if (!pending.length) return guild;
+  const cache = new Map<string, ChannelLike>(guild.channels.cache);
+  for (const c of pending) cache.set(c.id, c);
+  return { ...guild, channels: { cache } };
+}
+
 function pick(b: Bilingual, lang: string): string {
   return lang === 'en' ? b.en : b.fr;
 }
@@ -193,11 +353,13 @@ function toTicketQuestions(questions: TemplateQuestion[], lang: string): TicketQ
 }
 
 function target(kind: StepTarget['kind'], x: ChannelLike | RoleLike): StepTarget {
-  return { kind, id: x.id, name: x.name };
+  return isPending(x) ? { kind, id: x.id, name: x.name, pending: true } : { kind, id: x.id, name: x.name };
 }
 
-function channelMention(c: ChannelLike | null): string {
-  return c ? `<#${c.id}>` : '—';
+/** Mention d'un salon (`<#id>`), ou `🆕 #nom` pour un salon virtuel. */
+export function channelMention(c: ChannelLike | null | undefined): string {
+  if (!c) return '—';
+  return isPending(c) ? `🆕 #${c.name}` : `<#${c.id}>`;
 }
 
 // ───────────────────────── Service ─────────────────────────
@@ -271,24 +433,39 @@ export class TemplateService {
       tickets,
       languageChannels,
       placeholders,
-      info: tpl.infoMessages.map((message) => ({ message, channel: text(message.channelNames) })),
+      info: tpl.infoMessages.map((message) => ({ message, channel: text(message.channelNames) })).filter((i) => i.channel || !i.message.optional),
       recommended: Object.entries(tpl.recommended).map(([key, names]) => ({ key, channel: text(names) })),
     };
   }
 
   // ───── Plan ─────
 
-  /** Liste les étapes résolues (✅ prête / ⚠️ ignorée + raison) sans rien modifier. */
-  async plan(guild: GuildLike, templateKey: string): Promise<{ template: ServerTemplate; steps: PlanStep[]; resolution: Resolution }> {
+  /**
+   * Liste les étapes résolues (✅ prête / ⚠️ ignorée + raison) sans rien modifier.
+   * Avec `createMissing` (défaut), la structure du modèle est résolue en premier et les salons manquants sont
+   * ajoutés comme salons virtuels (`🆕`) à la résolution : les étapes suivantes les trouvent.
+   */
+  async plan(guild: GuildLike, templateKey: string, opts: PlanOptions = {}): Promise<{ template: ServerTemplate; steps: PlanStep[]; resolution: Resolution; structure: ResolvedStructure | null }> {
     const tpl = getTemplate(templateKey);
     if (!tpl) throw new Error(`Unknown template: ${templateKey}`);
-    const r = this.resolve(guild, tpl);
+    const createMissing = opts.createMissing ?? true;
+    const structure = createMissing ? resolveStructure(guild, tpl) : null;
+    const r = this.resolve(structure ? withPendingChannels(guild, structure.pending) : guild, tpl);
     const steps: PlanStep[] = [];
     const notFound = (names: readonly string[]): StepMessage => ({ key: 'channel_not_found', vars: { names: names.slice(0, 3).join(', ') } });
     const channelStep = (id: string, label: StepMessage, channel: ChannelLike | null, names: readonly string[], detail?: string): PlanStep =>
       channel ? { id, label, status: 'ready', targets: [target('channel', channel)], detail } : { id, label, status: 'skipped', reason: notFound(names), targets: [] };
 
     steps.push({ id: 'kind', label: { key: 'kind' }, status: 'ready', targets: [], detail: `${tpl.kind} · ${tpl.enabledLanguages.map((c) => getLanguage(c)?.flag ?? c).join(' ')}` });
+    if (structure) {
+      steps.push({
+        id: 'structure',
+        label: { key: 'structure' },
+        status: 'ready',
+        targets: structure.items.filter((i) => i.status === 'reuse' && i.id).map((i) => ({ kind: i.kind, id: i.id!, name: i.name })),
+        items: structure.items,
+      });
+    }
 
     const teamRoles = [...r.adminRoles, ...r.staffRoles.filter((x) => !r.adminRoles.includes(x))];
     steps.push(
@@ -306,7 +483,7 @@ export class TemplateService {
 
     steps.push(
       r.logs.length
-        ? { id: 'logs', label: { key: 'logs' }, status: 'ready', targets: r.logs.map((l) => target('channel', l.channel)), detail: r.logs.map((l) => `${l.category} → <#${l.channel.id}>`).join('\n') + (r.logsMissing.length ? `\n⚠️ ${r.logsMissing.join(', ')}` : '') }
+        ? { id: 'logs', label: { key: 'logs' }, status: 'ready', targets: r.logs.map((l) => target('channel', l.channel)), detail: r.logs.map((l) => `${l.category} → ${channelMention(l.channel)}`).join('\n') + (r.logsMissing.length ? `\n⚠️ ${r.logsMissing.join(', ')}` : '') }
         : { id: 'logs', label: { key: 'logs' }, status: 'skipped', reason: { key: 'channel_not_found', vars: { names: 'staff-chat, logs' } }, targets: [] },
     );
 
@@ -321,11 +498,11 @@ export class TemplateService {
       label: { key: 'tickets' },
       status: 'ready',
       targets: r.tickets.filter((t) => t.category).map((t) => target('category', t.category!)),
-      detail: r.tickets.map((t) => `${t.type.emoji} ${t.type.label.fr} → ${t.category ? `<#${t.category.id}>` : t.type.createCategoryName ? `➕ ${t.type.createCategoryName}` : '—'}`).join('\n'),
+      detail: r.tickets.map((t) => `${t.type.emoji} ${t.type.label.fr} → ${t.category ? channelMention(t.category) : t.type.createCategoryName ? `➕ ${t.type.createCategoryName}` : '—'}`).join('\n'),
     });
     steps.push(channelStep('ticket_panel', { key: 'ticket_panel' }, r.ticketPanelChannel, tpl.tickets.panel.channelNames));
 
-    const langDetail = Object.entries(r.languageChannels).map(([code, ch]) => `${getLanguage(code)?.flag ?? code} <#${ch.id}>`).join(' ');
+    const langDetail = Object.entries(r.languageChannels).map(([code, ch]) => `${getLanguage(code)?.flag ?? code} ${channelMention(ch)}`).join(' ');
     steps.push({ id: 'language', label: { key: 'language' }, status: 'ready', targets: Object.values(r.languageChannels).map((c) => target('channel', c)), detail: langDetail || undefined });
     steps.push(channelStep('language_panel', { key: 'language_panel' }, r.languagePanelChannel, [...tpl.language.panelChannelNames, ...tpl.welcome.channelNames]));
 
@@ -341,35 +518,108 @@ export class TemplateService {
     for (const { message, channel } of r.info) {
       steps.push(channelStep(`info:${message.key}`, { key: 'info', vars: { name: message.key } }, channel, message.channelNames));
     }
-    return { template: tpl, steps, resolution: r };
+    return { template: tpl, steps, resolution: r, structure };
   }
 
   // ───── Application ─────
 
-  async apply(guild: Guild, templateKey: string, actorId: string, opts: { dryRun?: boolean } = {}): Promise<TemplateReport> {
-    const { template: tpl, steps, resolution: r } = await this.plan(guild, templateKey);
-    const report: TemplateReport = { template: tpl, dryRun: !!opts.dryRun, steps: [], recommended: r.recommended };
+  /**
+   * Applique un modèle. Ordre : `kind`, puis `structure` (création des salons manquants, si `createMissing`),
+   * puis re-résolution sur les salons réels et exécution des autres étapes. Une étape en échec n'interrompt pas les suivantes.
+   */
+  async apply(guild: Guild, templateKey: string, actorId: string, opts: ApplyOptions = {}): Promise<TemplateReport> {
+    const createMissing = opts.createMissing ?? true;
+    const planned = await this.plan(guild, templateKey, { createMissing });
+    const tpl = planned.template;
+    const report: TemplateReport = { template: tpl, dryRun: !!opts.dryRun, steps: [], recommended: planned.resolution.recommended };
+    const toReport = (s: PlanStep): ReportStep => ({ id: s.id, label: s.label, status: s.status === 'ready' ? 'done' : 'skipped', reason: s.reason, detail: s.detail, targets: s.targets, items: s.items });
     if (opts.dryRun) {
-      report.steps = steps.map((s) => ({ id: s.id, label: s.label, status: s.status === 'ready' ? 'done' : 'skipped', reason: s.reason, detail: s.detail, targets: s.targets }));
+      report.steps = planned.steps.map(toReport);
       return report;
     }
     await guildConfigService.getOrCreate(guild);
-    for (const step of steps) {
-      if (step.status === 'skipped') {
-        report.steps.push({ id: step.id, label: step.label, status: 'skipped', reason: step.reason, targets: step.targets });
-        continue;
-      }
-      try {
-        const detail = await this.run(step.id, guild, tpl, r, actorId);
-        report.steps.push({ id: step.id, label: step.label, status: 'done', detail: detail ?? step.detail, targets: step.targets });
-      } catch (err) {
-        log.warn({ err, guild: guild.id, step: step.id, template: tpl.key }, 'Étape de template en échec');
-        const code = (err as { code?: number }).code;
-        report.steps.push({ id: step.id, label: step.label, status: 'failed', reason: { key: code === 50013 ? 'missing_permissions' : 'error', vars: { message: (err as Error).message?.slice(0, 200) ?? '' } }, targets: step.targets });
-      }
+
+    let steps = planned.steps;
+    let r = planned.resolution;
+    const head = steps.filter((s) => s.id === 'kind' || s.id === 'structure');
+    for (const step of head) await this.execute(report, step, guild, tpl, r, actorId, planned.structure);
+    if (planned.structure) {
+      // Les salons créés (ou non, faute de permissions) sont désormais dans le cache : re-résolution sur l'existant.
+      const replanned = await this.plan(guild, templateKey, { createMissing: false });
+      steps = replanned.steps;
+      r = replanned.resolution;
+      report.recommended = r.recommended;
     }
+    for (const step of steps.filter((s) => s.id !== 'kind' && s.id !== 'structure')) await this.execute(report, step, guild, tpl, r, actorId, null);
     log.info({ guild: guild.id, template: tpl.key, actorId, done: report.steps.filter((s) => s.status === 'done').length, failed: report.steps.filter((s) => s.status === 'failed').length }, 'Template appliqué');
     return report;
+  }
+
+  private async execute(report: TemplateReport, step: PlanStep, guild: Guild, tpl: ServerTemplate, r: Resolution, actorId: string, structure: ResolvedStructure | null): Promise<void> {
+    if (step.status === 'skipped') {
+      report.steps.push({ id: step.id, label: step.label, status: 'skipped', reason: step.reason, targets: step.targets });
+      return;
+    }
+    try {
+      if (step.id === 'structure') {
+        const result = await this.applyStructure(guild, tpl, structure!);
+        report.steps.push({ id: step.id, label: step.label, status: 'done', targets: result.items.filter((i) => i.id).map((i) => ({ kind: i.kind, id: i.id!, name: i.name })), items: result.items });
+        return;
+      }
+      const detail = await this.run(step.id, guild, tpl, r, actorId);
+      report.steps.push({ id: step.id, label: step.label, status: 'done', detail: detail ?? step.detail, targets: step.targets });
+    } catch (err) {
+      log.warn({ err, guild: guild.id, step: step.id, template: tpl.key }, 'Étape de template en échec');
+      const code = (err as { code?: number }).code;
+      report.steps.push({ id: step.id, label: step.label, status: 'failed', reason: { key: code === 50013 ? 'missing_permissions' : 'error', vars: { message: (err as Error).message?.slice(0, 200) ?? '' } }, targets: step.targets, items: step.items });
+    }
+  }
+
+  /**
+   * Étape `structure` : crée les catégories et salons manquants (overwrites du preset, topic FR/EN, limite des vocaux support).
+   * Les salons existants sont réutilisés tels quels (ni déplacés ni modifiés). Exige ManageChannels pour le bot.
+   */
+  private async applyStructure(guild: Guild, tpl: ServerTemplate, structure: ResolvedStructure): Promise<{ items: StructureItem[]; created: number; reused: number }> {
+    const me = guild.members.me;
+    if (!me?.permissions.has(PermissionFlagsBits.ManageChannels)) {
+      const err = new Error('Manage Channels') as Error & { code: number };
+      err.code = 50013;
+      throw err;
+    }
+    const community = guild.features.includes('COMMUNITY');
+    const ctx: OverwriteContext = { everyoneId: guild.roles.everyone.id, botId: me.id, staffRoleIds: structure.staffRoles.map((x) => x.id).filter((id) => guild.roles.cache.has(id)) };
+    const reason = `Redemption Story — template ${tpl.key}`;
+    const items: StructureItem[] = [];
+    let created = 0;
+    let reused = 0;
+    for (const cat of structure.categories) {
+      let categoryId = cat.existing?.id ?? null;
+      if (!categoryId) {
+        const category = await guild.channels.create({ name: cat.spec.name, type: ChannelType.GuildCategory, permissionOverwrites: categoryOverwrites(cat.spec.roleAccess, ctx), reason });
+        categoryId = category.id;
+        created++;
+      } else reused++;
+      items.push({ category: cat.spec.name, key: cat.spec.key, name: cat.spec.name, kind: 'category', status: cat.existing ? 'reuse' : 'create', id: categoryId });
+      for (const { spec, existing } of cat.channels) {
+        if (existing) {
+          reused++;
+          items.push({ category: cat.spec.name, key: spec.key, name: spec.name, kind: 'channel', status: 'reuse', id: existing.id });
+          continue;
+        }
+        const topic = spec.topic ? [spec.topic.fr, spec.topic.en].filter((x, i, a) => x && a.indexOf(x) === i).join(' | ').slice(0, 1024) : undefined;
+        const overwrites = presetOverwrites(spec.preset, cat.spec.roleAccess, ctx);
+        const base = { name: spec.name, parent: categoryId, permissionOverwrites: overwrites, reason };
+        let channel;
+        if (spec.type === 'voice') channel = await guild.channels.create({ ...base, type: ChannelType.GuildVoice, ...(spec.preset === 'support-voice' ? { userLimit: SUPPORT_VOICE_USER_LIMIT } : {}) });
+        else if (spec.type === 'forum' && community) channel = await guild.channels.create({ ...base, type: ChannelType.GuildForum, topic });
+        else if (spec.type === 'announcement' && community) channel = await guild.channels.create({ ...base, type: ChannelType.GuildAnnouncement, topic });
+        else channel = await guild.channels.create({ ...base, type: ChannelType.GuildText, topic });
+        created++;
+        items.push({ category: cat.spec.name, key: spec.key, name: spec.name, kind: 'channel', status: 'create', id: channel.id });
+      }
+    }
+    log.info({ guild: guild.id, template: tpl.key, created, reused }, 'Structure du template déployée');
+    return { items, created, reused };
   }
 
   private async run(stepId: string, guild: Guild, tpl: ServerTemplate, r: Resolution, actorId: string): Promise<string | undefined> {

@@ -57,13 +57,15 @@
   },
   "template": {
     "list_title": "🧩 Sunucu şablonları",
-    "list_description": "Bir şablon mevcut kanal ve rollerinizi ada göre algılar, botu tek seferde yapılandırır (tür, roller, loglar, karşılama, destek talepleri, diller, bildirimler) ve ilk mesajları yayınlar (kurallar, paneller, bilgiler). Kopya oluşturmadan tekrar çalıştırılabilir.",
+    "list_description": "Bir şablon kullanıma hazır eksiksiz bir yapı kurar: eksik kategoriler ve kanallar (izinler dahil) oluşturulur, mevcut kanallar ve roller ada göre algılanır, bot tek seferde yapılandırılır (tür, roller, loglar, karşılama, biletler, diller, bildirimler) ve varsayılan mesajlar yayınlanır (kurallar, rehberler, ödeme, paneller). Kopya oluşturmadan yeniden çalıştırılabilir.",
     "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
     "unknown": "Bilinmeyen şablon: `{key}`.",
     "plan_title": "📋 Plan — {emoji} {name}",
     "plan_description": "**{ready}** adım hazır · **{skipped}** atlandı. Atlanan bir adım kanalını veya rolünü bulamadı: yeniden adlandırın ya da oluşturun, sonra tekrar çalıştırın.",
     "dry_run_footer": "Simülasyon: hiçbir şey değiştirilmedi.",
     "confirm": "**{name}** şablonu **{server}** sunucusuna uygulansın mı? Mevcut yapılandırma güncellenir; botun zaten yayınladığı mesajlar tekrar gönderilmez.",
+    "confirm_structure": "🏗️ **{created}** kategori / kanal izinleriyle birlikte oluşturulacak; **{reused}** mevcut olan değiştirilmeden yeniden kullanılacak.",
+    "confirm_no_structure": "Hiçbir kanal oluşturulmayacak (`create_missing:false`): yalnızca mevcut kanallar kullanılır.",
     "confirm_button": "Uygula",
     "cancel_button": "İptal",
     "cancelled": "Uygulama iptal edildi.",
@@ -77,6 +79,9 @@
     "recommended_polls": "📊 Anketler",
     "recommended_events": "📅 Etkinlikler",
     "recommended_hint": "`/giveaway create`, `/poll create` ve `/event create` komutlarının `channel` seçeneğinde kullanın.",
+    "structure_summary": "🆕 **{created}** oluşturulacak · ♻️ **{reused}** mevcut",
+    "structure_report": "🆕 **{created}** oluşturuldu · ♻️ **{reused}** yeniden kullanıldı",
+    "structure_legend": "🆕 oluşturulacak · ♻️ mevcut (değiştirilmez)",
     "templates": {
       "shop": {
         "name": "Redemption Story Shop",
@@ -97,6 +102,7 @@
     },
     "steps": {
       "kind": "Sunucu türü ve diller",
+      "structure": "Yapı (eksik kategoriler ve kanallar)",
       "roles": "Yönetici / yetkili rolleri",
       "autorole": "Otomatik roller (üyeler / botlar)",
       "logs": "Log kanalları",

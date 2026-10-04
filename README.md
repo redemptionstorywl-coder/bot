@@ -193,36 +193,48 @@ Le dashboard écoute automatiquement sur le port `PORT` fourni par l'hébergeur.
 
 `/guild-config show` affiche l'état complet. Chaque module s'active/désactive avec `/guild-config module` ou depuis la page **Paramètres** du dashboard.
 
-> Raccourci : `/template apply` fait les étapes 1 à 6 en une fois à partir de vos salons et rôles existants (voir ci-dessous).
+> Raccourci : `/template apply` crée la structure manquante et fait les étapes 1 à 6 en une fois à partir de vos salons et rôles (voir ci-dessous).
 
 ---
 
 ## Templates de serveur
 
-`/template apply template:<shop|battle-royale|prison|school> [dry_run]` pré-configure **tout le serveur en une commande** à partir des salons et rôles **déjà présents** : rien n'est renommé, et aucun salon n'est créé en dehors des catégories de tickets manquantes et des salons d'annonces par langue (Battle Royale).
+`/template apply template:<shop|battle-royale|prison|school> [dry_run] [create_missing]` déploie **un serveur complet prêt à l'emploi en une commande** : la structure du modèle (catégories, salons, permissions) est créée si elle manque, les salons et rôles **déjà présents** sont réutilisés tels quels (rien n'est renommé ni déplacé), le bot est configuré et les messages par défaut sont publiés.
 
+- **Structure déclarative** (`structure` dans `src/templates/<nom>.ts`) : chaque catégorie déclare son accès (`public`, `staff`, `tickets`, `languages`) et chaque salon son type (`text`, `announcement`, `voice`, `forum`), son preset de permissions et un topic FR/EN. Presets : `readonly` (@everyone lit, le bot et le staff écrivent), `chat` (tout le monde), `staff` (rôles staff / admin résolus + 🛡️ RS Team uniquement), `voice`, `support-voice` (vocal public limité à 3 participants). Les catégories `tickets` sont visibles du staff seulement (les tickets ajoutent leurs créateurs individuellement).
+- **Création des salons manquants** : l'étape `structure` s'exécute en premier (`create_missing`, **activée par défaut**). Pour chaque catégorie / salon, un existant est reconnu par nom ou synonyme (`paiements` ≈ `💳・payment-methods`, un forum `suggestions` vaut un salon texte) et laissé intact — ses permissions ne sont pas touchées ; sinon il est créé dans la bonne catégorie avec les overwrites du preset. Les salons créés sont ensuite résolus par les étapes suivantes (bienvenue, règlement, infos, tickets, logs, panneaux…). `create_missing:false` revient au comportement « existant uniquement ». Sans permission **Gérer les salons**, l'étape est ❌ et les autres continuent avec l'existant. Les salons `announcement` et `forum` sont créés en texte si le serveur n'est pas communautaire.
 - **Détection par nom** : les noms sont normalisés (minuscules, sans emoji, sans `・ - _`, sans accents) et chaque cible accepte plusieurs synonymes — `👋・welcome`, `bienvenue` ou `arrivées` désignent le même salon de bienvenue ; `🛡️ RS Team`, `Support`, `Manager`… les rôles d'équipe.
-- **Plan avant action** : `dry_run:true` affiche chaque étape ✅ prête / ⚠️ ignorée (avec la raison et les noms cherchés). Sans `dry_run`, le plan est affiché puis un bouton **Appliquer** confirme ; le rapport final liste chaque étape ✅ / ⚠️ / ❌ avec le détail.
-- **Idempotent** : relancer la commande met à jour la configuration mais ne republie pas les messages déjà postés par le bot (règlement, infos, panneaux : marqueur `template:<étape>` cherché dans les 20 derniers messages du salon).
+- **Plan avant action** : `dry_run:true` affiche chaque étape ✅ prête / ⚠️ ignorée (avec la raison) ; l'étape structure liste par catégorie 🆕 *sera créé* / ♻️ *existant*. Sans `dry_run`, le résumé indique le nombre de salons qui seront créés puis un bouton **Appliquer** confirme ; le rapport final liste chaque étape ✅ / ⚠️ / ❌ avec le détail (créés / réutilisés).
+- **Idempotent** : relancer la commande ne recrée rien (noms reconnus), met à jour la configuration mais ne republie pas les messages déjà postés par le bot (règlement, infos, panneaux : marqueur `template:<étape>` cherché dans les 20 derniers messages du salon).
 - **Tout passe par les services existants** (`/guild-config`, `/welcome-config`, `/ticket-config`, `/language-setup`, `/notifications`… restent utilisables ensuite pour ajuster).
 
 | Étape | Ce qui est fait |
 | --- | --- |
 | Type & langues | `kind` du serveur, langue par défaut, langues activées |
+| Structure | catégories et salons manquants créés avec permissions et topic FR/EN ; existants réutilisés |
 | Rôles | rôles admin / staff ajoutés à la config ; auto-rôle JOIN (Member / Player…) et BOT |
-| Logs | une catégorie de logs par salon staff (`orders` → SHOP, `bug-management` → SYSTEM, `player-reports` → MODERATION, `staff-chat` → le reste…) |
+| Logs | une catégorie de logs par salon staff (`orders` → SHOP, `bug-management` → SYSTEM, `player-reports` → MODERATION, `logs` → membres / messages / rôles / salons / vocal, `staff-chat` → le reste…) |
 | Modération | DM des sanctions activé, rôle mute si un rôle `Muted` existe ; templates d'embeds par défaut |
 | Bienvenue / départ | message + embed FR/EN (`{user}`, `{memberCount}`, liens vers règlement et tickets), image générée |
-| Règlement | 9–10 règles numérotées (FR puis EN) publiées dans `rules` |
-| Tickets | types par modèle (Shop : Support / Commande / Paiement / Bug / Partenariat ; BR : General Support / Bug Report / Player Report / Ban Appeal / Payment Support mappés sur les catégories existantes…), rôles staff, questions ; panneau publié dans `create-ticket` |
-| Langues | rôles de langue, panneau (salon `langues` ou à défaut `welcome`) ; BR : les salons `🇫🇷・french`… existants deviennent les salons d'annonces par langue (mode CHANNELS), les langues manquantes sont créées dans 📢 Annonces |
+| Règlement | 9–10 règles numérotées (FR puis EN) publiées dans `rules` (+ règlement RP détaillé pour Prison et School) |
+| Tickets | types par modèle avec leur catégorie (Shop : Support / Commande / Paiement / Bug / Partenariat ; BR : General Support / Bug Report / Player Report / Ban Appeal / Payment Support ; School : Inscription / Support / Signalement / Candidature ; Prison : Whitelist / Support / Signalement / Unban), rôles staff, questions ; panneau publié dans `create-ticket` |
+| Langues | rôles de langue, panneau (salon `langues` ou à défaut `welcome`) ; BR : les salons `🇫🇷・french`… (créés si absents) deviennent les salons par langue (mode CHANNELS) |
 | Notifications | rôles de notification (annonces, giveaways, mises à jour, shop / events, tournois, streams…) + panneau |
 | FiveM | salon de statut (`stats` / `server-status`) si un serveur est configuré avec `/fivem add` |
-| Infos | messages FR/EN : moyens de paiement, feedback (Shop) ; how-to-play, leaderboards, tournament-info, streamers (BR) ; whitelist / inscription (Prison, School) |
+| Infos | messages FR/EN par défaut (voir ci-dessous) |
+
+**Structure et messages par défaut de chaque modèle**
+
+| Modèle | Catégories | Messages par défaut |
+| --- | --- | --- |
+| 🛒 Shop | 📢 INFORMATION (welcome, rules, announcements, payment-methods, giveaways, polls, feedback) · 👀 SHOWCASE (previews, wip, updates, spoilers) · 🛒 RS SHOP (how-to-buy, forums paid-scripts / free-scripts) · 💬 COMMUNITY (general-chat, suggestions, support-chat, bug-reports, create-ticket) · 👑 STAFF (staff-chat, bug-management, staff-tasks, orders, vocal) · 🎫 Tickets | moyens de paiement (PayPal / carte via Tebex / crypto sur demande, délais, remboursements, ticket Paiement), comment acheter, feedback, wip, updates |
+| ⚔️ Battle Royale | 📢 INFORMATION (welcome, rules, announcements, how-to-play, leaderboards, events) · 🛒 STORE (store, payment-methods, giveaways) · 💬 COMMUNITY (general-chat, boosts, clips-and-screenshots, stats, streamers, polls, 10 salons langue) · 🏆 COMPETITION (tournament-info, tournament-results, vocal Tournament) · 🛠️ SUPPORT (create-ticket, bug-reports, suggestions, vocaux Support 1–3, Private Support) · 👑 STAFF (staff-chat, staff-announcements, staff-tasks, player-reports, tournament-management, event-management, bug-management, staff-templates, vocal) · 5 catégories de tickets | how-to-play (guide complet : FiveM, `/br-link`, lobby, loot, zone, XP / niveaux, Battle Pass, commandes), leaderboards (`/leaderboard metric:wins\|kills\|level\|kd`), store (Battle Pass premium, cosmétiques, lien Tebex à remplacer), moyens de paiement, tournament-info (format, inscription via `/event`), streamers, stats (statut FiveM) |
+| 🎓 School RP | 📢 INFORMATION (bienvenue, règlement, annonces, horaires, inscriptions) · 🏫 ÉCOLE (classes, maisons, clubs, vie-scolaire, salle-des-professeurs = staff) · 💬 COMMUNAUTÉ (général, suggestions, screenshots, sondages, giveaways) · 🛠️ SUPPORT (create-ticket, bug-reports) · 👑 STAFF (staff-chat, staff-tasks, candidatures, logs) · tickets Inscription / Support / Signalement / Candidature | inscriptions (`/school register`, `/whitelist apply`, rôles élève / professeur, maisons), règlement RP (10 règles), horaires (semaine type), classes, maisons (`/school house leaderboard`), candidatures (`/school apply`), moyens de paiement seulement si un salon `store` existe |
+| 🔒 Prison RP | 📢 INFORMATION (welcome, rules, announcements, whitelist-info, patch-notes, server-status) · 🔒 ROLEPLAY (lore, règles-rp, screenshots, général) · 🛠️ SUPPORT (create-ticket, bug-reports, suggestions) · 👑 STAFF (staff-chat, staff-tasks, whitelist-review, reports, logs) · tickets Whitelist / Support / Signalement / Unban | whitelist-info (`/whitelist apply`, critères, délai 48 h), règlement RP prison (10 règles : micro, RDM, VDM, metagaming…), lore (présentation du pénitencier, modifiable), statut FiveM, moyens de paiement seulement si un salon `store` existe |
 
 Les salons `giveaways`, `polls` et `events` ne sont pas persistés : ils sont rappelés en fin de rapport comme salons à indiquer dans `/giveaway create`, `/poll create` et `/event create`.
 
-Pour ajouter un modèle : créer `src/templates/<nom>.ts` (type `ServerTemplate`), l'enregistrer dans `src/templates/index.ts` et ajouter `admin.template.templates.<clé>` dans les locales.
+Pour ajouter un modèle : créer `src/templates/<nom>.ts` (type `ServerTemplate`, avec sa `structure` et ses `infoMessages`), l'enregistrer dans `src/templates/index.ts` et ajouter `admin.template.templates.<clé>` dans les locales.
 
 ---
 

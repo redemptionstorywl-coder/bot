@@ -7,8 +7,8 @@ import { renderReportPages, templateName } from '../commands/admin/_template';
 
 /**
  * Confirmation de `/template apply` (namespace `tpl`, admin) :
- *  - `tpl:apply:<key>:<userId>`  → applique le modèle puis affiche le rapport paginé
- *  - `tpl:cancel:<key>:<userId>` → annule
+ *  - `tpl:apply:<key>:<userId>:<createMissing 1|0>` → applique le modèle puis affiche le rapport paginé
+ *  - `tpl:cancel:<key>:<userId>`                    → annule
  */
 export default defineButton({
   id: 'tpl',
@@ -16,7 +16,7 @@ export default defineButton({
   cooldown: 3,
   async execute(interaction, args, { t }) {
     if (!interaction.inCachedGuild()) return;
-    const [action = '', key = '', userId = ''] = args;
+    const [action = '', key = '', userId = '', createMissingFlag = '1'] = args;
     if (userId && userId !== interaction.user.id) {
       await interaction.reply({ embeds: [embedService.error(t('admin.template.not_author'))], flags: MessageFlags.Ephemeral });
       return;
@@ -30,7 +30,7 @@ export default defineButton({
     await interaction.editReply({ content: t('admin.template.applying', { name: templateName(t, tpl) }), embeds: [], components: [] });
     await interaction.guild.channels.fetch();
     await interaction.guild.roles.fetch();
-    const report = await templateService.apply(interaction.guild, key, interaction.user.id);
+    const report = await templateService.apply(interaction.guild, key, interaction.user.id, { createMissing: createMissingFlag !== '0' });
     await interaction.editReply({ content: null });
     await paginate(interaction, { pages: renderReportPages(t, report), userId: interaction.user.id, ephemeral: true });
   },

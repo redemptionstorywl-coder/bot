@@ -57,13 +57,15 @@
   },
   "template": {
     "list_title": "🧩 Server-Vorlagen",
-    "list_description": "Eine Vorlage erkennt deine vorhandenen Kanäle und Rollen anhand ihres Namens, konfiguriert den Bot auf einmal (Typ, Rollen, Logs, Willkommen, Tickets, Sprachen, Benachrichtigungen) und veröffentlicht die ersten Nachrichten (Regeln, Panels, Infos). Ohne Duplikate wiederholbar.",
+    "list_description": "Eine Vorlage stellt eine komplette, sofort nutzbare Struktur bereit: fehlende Kategorien und Kanäle werden erstellt (inklusive Berechtigungen), vorhandene Kanäle und Rollen werden anhand des Namens erkannt, der Bot wird in einem Durchgang konfiguriert (Typ, Rollen, Logs, Willkommen, Tickets, Sprachen, Benachrichtigungen) und die Standardnachrichten werden veröffentlicht (Regeln, Anleitungen, Zahlung, Panels). Ohne Duplikate erneut ausführbar.",
     "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
     "unknown": "Unbekannte Vorlage: `{key}`.",
     "plan_title": "📋 Plan — {emoji} {name}",
     "plan_description": "**{ready}** Schritt(e) bereit · **{skipped}** übersprungen. Ein übersprungener Schritt hat seinen Kanal oder seine Rolle nicht gefunden: umbenennen oder erstellen, dann erneut ausführen.",
     "dry_run_footer": "Simulation: nichts wurde geändert.",
     "confirm": "Vorlage **{name}** auf **{server}** anwenden? Die bestehende Konfiguration wird aktualisiert; bereits vom Bot veröffentlichte Nachrichten werden nicht erneut gesendet.",
+    "confirm_structure": "🏗️ **{created}** Kategorie(n) / Kanal(e) werden mit ihren Berechtigungen erstellt; **{reused}** vorhandene werden unverändert wiederverwendet.",
+    "confirm_no_structure": "Es wird kein Kanal erstellt (`create_missing:false`): nur vorhandene Kanäle werden verwendet.",
     "confirm_button": "Anwenden",
     "cancel_button": "Abbrechen",
     "cancelled": "Anwendung abgebrochen.",
@@ -77,6 +79,9 @@
     "recommended_polls": "📊 Umfragen",
     "recommended_events": "📅 Events",
     "recommended_hint": "In der Option `channel` von `/giveaway create`, `/poll create` und `/event create` verwenden.",
+    "structure_summary": "🆕 **{created}** zu erstellen · ♻️ **{reused}** vorhanden",
+    "structure_report": "🆕 **{created}** erstellt · ♻️ **{reused}** wiederverwendet",
+    "structure_legend": "🆕 wird erstellt · ♻️ vorhanden (unverändert)",
     "templates": {
       "shop": {
         "name": "Redemption Story Shop",
@@ -97,6 +102,7 @@
     },
     "steps": {
       "kind": "Servertyp und Sprachen",
+      "structure": "Struktur (fehlende Kategorien und Kanäle)",
       "roles": "Admin- / Staff-Rollen",
       "autorole": "Auto-Rollen (Mitglieder / Bots)",
       "logs": "Log-Kanäle",

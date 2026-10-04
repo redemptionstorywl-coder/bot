@@ -8,7 +8,8 @@ import { confirmRow, renderPlanPages, renderPlanSummary, templateName } from './
 
 /**
  * /template — pré-configure tout le serveur à partir d'un modèle (shop, battle-royale, prison, school) :
- * détection des salons et rôles existants par nom, configuration via les services, publication des premiers messages.
+ * création des catégories / salons manquants (option `create_missing`, défaut oui), détection des salons et rôles
+ * existants par nom, configuration via les services, publication des messages par défaut.
  */
 export default defineCommand({
   data: new SlashCommandBuilder()
@@ -26,7 +27,8 @@ export default defineCommand({
             .setRequired(true)
             .addChoices(...SERVER_TEMPLATES.map((tpl) => ({ name: `${tpl.emoji} ${tpl.key}`, value: tpl.key }))),
         )
-        .addBooleanOption((o) => o.setName('dry_run').setDescription('Afficher le plan sans rien modifier')),
+        .addBooleanOption((o) => o.setName('dry_run').setDescription('Afficher le plan sans rien modifier'))
+        .addBooleanOption((o) => o.setName('create_missing').setDescription('Créer les catégories et salons manquants du modèle (défaut : oui)')),
     ),
   permissions: { internal: 'admin', bot: [PermissionFlagsBits.ManageRoles, PermissionFlagsBits.ManageChannels] },
   cooldown: 10,
@@ -53,9 +55,10 @@ export default defineCommand({
       return;
     }
     const dryRun = interaction.options.getBoolean('dry_run') ?? false;
+    const createMissing = interaction.options.getBoolean('create_missing') ?? true;
     await interaction.guild.channels.fetch();
     await interaction.guild.roles.fetch();
-    const { steps } = await templateService.plan(interaction.guild, key);
+    const { steps } = await templateService.plan(interaction.guild, key, { createMissing });
     if (dryRun) {
       await paginate(interaction, { pages: renderPlanPages(t, tpl, steps, { dryRun }), userId: interaction.user.id, ephemeral: true });
       return;
@@ -63,7 +66,7 @@ export default defineCommand({
     await interaction.editReply({
       content: t('admin.template.confirm', { name: templateName(t, tpl), server: interaction.guild.name }),
       embeds: [renderPlanSummary(t, tpl, steps)],
-      components: [confirmRow(t, key, interaction.user.id)],
+      components: [confirmRow(t, key, interaction.user.id, createMissing)],
     });
   },
 });

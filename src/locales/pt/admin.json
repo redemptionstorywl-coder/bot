@@ -57,13 +57,15 @@
   },
   "template": {
     "list_title": "🧩 Modelos de servidor",
-    "list_description": "Um modelo detecta seus canais e cargos existentes pelo nome, configura o bot de uma vez (tipo, cargos, logs, boas-vindas, tickets, idiomas, notificações) e publica as primeiras mensagens (regras, painéis, informações). Pode ser repetido sem duplicados.",
+    "list_description": "Um modelo implementa uma estrutura completa pronta a usar: as categorias e canais em falta são criados (permissões incluídas), os canais e cargos existentes são detetados pelo nome, o bot é configurado de uma vez (tipo, cargos, logs, boas-vindas, tickets, idiomas, notificações) e as mensagens padrão são publicadas (regras, guias, pagamento, painéis). Pode ser executado novamente sem duplicados.",
     "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
     "unknown": "Modelo desconhecido: `{key}`.",
     "plan_title": "📋 Plano — {emoji} {name}",
     "plan_description": "**{ready}** etapa(s) pronta(s) · **{skipped}** ignorada(s). Uma etapa ignorada não encontrou seu canal ou cargo: renomeie ou crie, depois execute novamente.",
     "dry_run_footer": "Simulação: nada foi alterado.",
     "confirm": "Aplicar o modelo **{name}** a **{server}**? A configuração existente é atualizada; mensagens já publicadas pelo bot não são republicadas.",
+    "confirm_structure": "🏗️ Serão criados **{created}** categoria(s) / canal(is) com as suas permissões; **{reused}** existente(s) reutilizado(s) sem alterações.",
+    "confirm_no_structure": "Nenhum canal será criado (`create_missing:false`): apenas os canais existentes são usados.",
     "confirm_button": "Aplicar",
     "cancel_button": "Cancelar",
     "cancelled": "Aplicação cancelada.",
@@ -77,6 +79,9 @@
     "recommended_polls": "📊 Enquetes",
     "recommended_events": "📅 Eventos",
     "recommended_hint": "Use-os na opção `channel` de `/giveaway create`, `/poll create` e `/event create`.",
+    "structure_summary": "🆕 **{created}** a criar · ♻️ **{reused}** existente(s)",
+    "structure_report": "🆕 **{created}** criado(s) · ♻️ **{reused}** reutilizado(s)",
+    "structure_legend": "🆕 será criado · ♻️ existente (sem alterações)",
     "templates": {
       "shop": {
         "name": "Redemption Story Shop",
@@ -97,6 +102,7 @@
     },
     "steps": {
       "kind": "Tipo de servidor e idiomas",
+      "structure": "Estrutura (categorias e canais em falta)",
       "roles": "Cargos admin / staff",
       "autorole": "Auto-cargos (membros / bots)",
       "logs": "Canais de logs",

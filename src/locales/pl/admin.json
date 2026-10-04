@@ -57,13 +57,15 @@
   },
   "template": {
     "list_title": "🧩 Szablony serwera",
-    "list_description": "Szablon wykrywa istniejące kanały i role po nazwie, konfiguruje bota za jednym razem (typ, role, logi, powitanie, zgłoszenia, języki, powiadomienia) i publikuje pierwsze wiadomości (regulamin, panele, informacje). Można uruchamiać ponownie bez duplikatów.",
+    "list_description": "Szablon wdraża kompletną, gotową do użycia strukturę: brakujące kategorie i kanały są tworzone (wraz z uprawnieniami), istniejące kanały i role są wykrywane po nazwie, bot jest konfigurowany za jednym razem (typ, role, logi, powitanie, tickety, języki, powiadomienia), a domyślne wiadomości są publikowane (regulamin, poradniki, płatności, panele). Można uruchomić ponownie bez duplikatów.",
     "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
     "unknown": "Nieznany szablon: `{key}`.",
     "plan_title": "📋 Plan — {emoji} {name}",
     "plan_description": "**{ready}** krok(ów) gotowych · **{skipped}** pominiętych. Pominięty krok nie znalazł swojego kanału lub roli: zmień nazwę lub utwórz, a następnie uruchom ponownie.",
     "dry_run_footer": "Symulacja: nic nie zostało zmienione.",
     "confirm": "Zastosować szablon **{name}** na **{server}**? Istniejąca konfiguracja zostanie zaktualizowana; wiadomości już opublikowane przez bota nie są publikowane ponownie.",
+    "confirm_structure": "🏗️ Zostanie utworzonych **{created}** kategorii / kanałów z uprawnieniami; **{reused}** istniejących zostanie użytych ponownie bez zmian.",
+    "confirm_no_structure": "Żaden kanał nie zostanie utworzony (`create_missing:false`): używane są tylko istniejące kanały.",
     "confirm_button": "Zastosuj",
     "cancel_button": "Anuluj",
     "cancelled": "Zastosowanie anulowane.",
@@ -77,6 +79,9 @@
     "recommended_polls": "📊 Ankiety",
     "recommended_events": "📅 Wydarzenia",
     "recommended_hint": "Użyj ich w opcji `channel` komend `/giveaway create`, `/poll create` i `/event create`.",
+    "structure_summary": "🆕 **{created}** do utworzenia · ♻️ **{reused}** istniejące",
+    "structure_report": "🆕 **{created}** utworzono · ♻️ **{reused}** użyto ponownie",
+    "structure_legend": "🆕 zostanie utworzony · ♻️ istniejący (bez zmian)",
     "templates": {
       "shop": {
         "name": "Redemption Story Shop",
@@ -97,6 +102,7 @@
     },
     "steps": {
       "kind": "Typ serwera i języki",
+      "structure": "Struktura (brakujące kategorie i kanały)",
       "roles": "Role admin / ekipa",
       "autorole": "Auto-role (członkowie / boty)",
       "logs": "Kanały logów",

@@ -1,7 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, type EmbedBuilder } from 'discord.js';
 import { BRAND } from '../../config/constants';
 import { embedService } from '../../services/EmbedService';
-import type { PlanStep, ReportStep, StepMessage, TemplateReport } from '../../services/TemplateService';
+import type { PlanStep, ReportStep, StepMessage, StructureItem, TemplateReport } from '../../services/TemplateService';
 import type { ServerTemplate } from '../../templates';
 import type { Translator } from '../../services/TranslationService';
 import { buildCustomId } from '../../utils/customId';
@@ -25,16 +25,41 @@ function stepReason(t: Translator, msg: StepMessage | undefined): string {
 function targetsLine(step: Pick<PlanStep, 'targets'>): string {
   return step.targets
     .slice(0, 8)
-    .map((x) => (x.kind === 'role' ? `<@&${x.id}>` : `<#${x.id}>`))
+    .map((x) => (x.kind === 'role' ? `<@&${x.id}>` : x.pending ? `🆕 #${x.name}` : `<#${x.id}>`))
     .join(' ');
+}
+
+/** Compte des salons / catégories à créer et existants d'une étape `structure`. */
+export function structureCounts(items: StructureItem[] | undefined): { created: number; reused: number } {
+  return { created: items?.filter((i) => i.status === 'create').length ?? 0, reused: items?.filter((i) => i.status === 'reuse').length ?? 0 };
+}
+
+/** Détail de l'étape `structure` : résumé, puis une ligne par catégorie (🆕 à créer / ♻️ existant). */
+function structureLines(t: Translator, items: StructureItem[], done: boolean): string[] {
+  const { created, reused } = structureCounts(items);
+  const lines = [t(done ? 'admin.template.structure_report' : 'admin.template.structure_summary', { created, reused }), t('admin.template.structure_legend')];
+  const categories = [...new Set(items.map((i) => i.category))];
+  for (const category of categories) {
+    const header = items.find((i) => i.kind === 'category' && i.category === category)!;
+    const channels = items.filter((i) => i.kind === 'channel' && i.category === category);
+    // Après application, les salons créés ont un ID : on les mentionne mais ils restent marqués 🆕.
+    const label = (i: StructureItem, bold = false) => (done && i.id ? `<#${i.id}>` : bold ? `**${i.name}**` : i.name);
+    const render = (i: StructureItem) => `${i.status === 'create' ? '🆕' : '♻️'} ${label(i)}`;
+    const prefix = `${header.status === 'create' ? '🆕' : '♻️'} ${label(header, true)}`;
+    lines.push(channels.length ? `${prefix} — ${channels.map(render).join(' · ')}` : prefix);
+  }
+  return lines;
 }
 
 function stepField(t: Translator, step: PlanStep | ReportStep): { name: string; value: string } {
   const lines: string[] = [];
   if (step.status === 'skipped' || step.status === 'failed') lines.push(stepReason(t, step.reason));
-  if (step.detail) lines.push(step.detail);
-  const targets = targetsLine(step);
-  if (targets && !step.detail?.includes('<#') && !step.detail?.includes('<@&')) lines.push(targets);
+  if (step.items) lines.push(...structureLines(t, step.items, step.status === 'done'));
+  else {
+    if (step.detail) lines.push(step.detail);
+    const targets = targetsLine(step);
+    if (targets && !step.detail?.includes('<#') && !step.detail?.includes('<@&') && !step.detail?.includes('🆕')) lines.push(targets);
+  }
   return { name: `${STATUS_ICON[step.status]} ${stepLabel(t, step.label)}`, value: lines.filter(Boolean).join('\n').slice(0, 1024) || '—' };
 }
 
@@ -78,18 +103,23 @@ export function renderReportPages(t: Translator, report: TemplateReport): EmbedB
   });
 }
 
-export function confirmRow(t: Translator, templateKey: string, userId: string): ActionRowBuilder<ButtonBuilder> {
+export function confirmRow(t: Translator, templateKey: string, userId: string, createMissing = true): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    new ButtonBuilder().setCustomId(buildCustomId('tpl', 'apply', templateKey, userId)).setLabel(t('admin.template.confirm_button')).setEmoji('🧩').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId(buildCustomId('tpl', 'apply', templateKey, userId, createMissing ? '1' : '0')).setLabel(t('admin.template.confirm_button')).setEmoji('🧩').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId(buildCustomId('tpl', 'cancel', templateKey, userId)).setLabel(t('admin.template.cancel_button')).setStyle(ButtonStyle.Secondary),
   );
 }
 
-/** Résumé compact du plan (une ligne par étape) pour l'écran de confirmation. */
+/** Résumé compact du plan (une ligne par étape, nombre de salons à créer) pour l'écran de confirmation. */
 export function renderPlanSummary(t: Translator, tpl: ServerTemplate, steps: PlanStep[]): EmbedBuilder {
   const ready = steps.filter((s) => s.status === 'ready').length;
-  const lines = steps.map((s) => `${STATUS_ICON[s.status]} ${stepLabel(t, s.label)}${s.status === 'skipped' ? ` — ${stepReason(t, s.reason)}` : ''}`);
+  const structure = steps.find((s) => s.id === 'structure');
+  const lines = steps.map((s) => {
+    const suffix = s.status === 'skipped' ? ` — ${stepReason(t, s.reason)}` : s.id === 'structure' ? ` — ${t('admin.template.structure_summary', structureCounts(s.items))}` : '';
+    return `${STATUS_ICON[s.status]} ${stepLabel(t, s.label)}${suffix}`;
+  });
+  const intro = [t('admin.template.plan_description', { ready, skipped: steps.length - ready }), structure ? t('admin.template.confirm_structure', structureCounts(structure.items)) : t('admin.template.confirm_no_structure')];
   return embedService
-    .brand(t('admin.template.plan_title', { emoji: tpl.emoji, name: templateName(t, tpl) }), `${t('admin.template.plan_description', { ready, skipped: steps.length - ready })}\n\n${lines.join('\n')}`.slice(0, 4096))
+    .brand(t('admin.template.plan_title', { emoji: tpl.emoji, name: templateName(t, tpl) }), `${intro.join('\n')}\n\n${lines.join('\n')}`.slice(0, 4096))
     .setFooter({ text: BRAND.footer });
 }
