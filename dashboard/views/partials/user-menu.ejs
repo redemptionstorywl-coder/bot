@@ -1,0 +1,18 @@
+<%# Menu utilisateur (avatar + déconnexion). Attend : menuClass (classes du menu déroulant). %>
+<div class="dropdown" data-dropdown>
+  <button type="button" class="user-switch" data-dropdown-toggle aria-haspopup="menu" aria-expanded="false" aria-label="Menu du compte">
+    <img class="avatar avatar-sm" src="<%= userAvatarUrl %>" alt="">
+    <span class="user-switch-text"><span class="user-switch-name truncate"><%= user.globalName || user.username %></span><span class="user-switch-sub truncate">@<%= user.username %></span></span>
+    <%- icon('chevrons-up-down', { size: 16, cls: 'text-3' }) %>
+  </button>
+  <div class="dropdown-menu <%= typeof menuClass === 'string' ? menuClass : '' %>" role="menu">
+    <div class="dropdown-label">Connecté en tant que @<%= user.username %></div>
+    <a class="dropdown-item" role="menuitem" href="/guilds"><%- icon('server', { size: 16 }) %>Mes serveurs</a>
+    <% if (isOwner) { %><a class="dropdown-item" role="menuitem" href="/admin"><%- icon('wrench', { size: 16 }) %>Administration</a><% } %>
+    <div class="dropdown-sep"></div>
+    <form method="post" action="/auth/logout">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="dropdown-item is-danger" role="menuitem"><%- icon('log-out', { size: 16 }) %>Se déconnecter</button>
+    </form>
+  </div>
+</div>

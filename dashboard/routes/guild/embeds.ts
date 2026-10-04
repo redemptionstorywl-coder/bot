@@ -59,7 +59,7 @@ export function createEmbedsRouter(client: RedemptionClient): Router {
   router.get(
     '/embeds/new',
     wrap(async (_req, res) => {
-      render(res, 'embed-form', { title: 'Nouveau template', page: 'embeds', template: null, spec: {}, buttons: [] });
+      render(res, 'embed-form', { title: 'Nouveau template', page: 'embeds', layout: 'wide', crumbs: [{ label: 'Nouveau template' }], template: null, spec: {}, buttons: [] });
     }),
   );
 
@@ -70,7 +70,15 @@ export function createEmbedsRouter(client: RedemptionClient): Router {
       const guild = res.locals.guild!;
       const { params } = valid<unknown, unknown, z.infer<typeof idParams>>(req);
       const template = await loadTemplate(guild.id, params.templateId);
-      render(res, 'embed-form', { title: `Template · ${template.name}`, page: 'embeds', template, spec: safeEmbedSpec(template.spec), buttons: safeButtons(template.buttons) });
+      render(res, 'embed-form', {
+        title: `Template · ${template.name}`,
+        page: 'embeds',
+        layout: 'wide',
+        crumbs: [{ label: template.name }],
+        template,
+        spec: safeEmbedSpec(template.spec),
+        buttons: safeButtons(template.buttons),
+      });
     }),
   );
 

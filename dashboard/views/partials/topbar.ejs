@@ -1,0 +1,15 @@
+<% const _crumbs = buildBreadcrumbs(guild, page, Array.isArray(crumbs) ? crumbs : []); %>
+<header class="topbar">
+  <button type="button" class="icon-btn topbar-menu" data-sidebar-toggle aria-label="Ouvrir le menu" aria-controls="sidebar" aria-expanded="false"><%- icon('menu') %></button>
+  <nav class="breadcrumbs" aria-label="Fil d'Ariane">
+    <ol>
+      <% _crumbs.forEach((c, i) => { %>
+        <li><% if (c.href && i < _crumbs.length - 1) { %><a href="<%= c.href %>"><%= c.label %></a><% } else { %><span aria-current="page"><%= c.label %></span><% } %></li>
+      <% }) %>
+    </ol>
+  </nav>
+  <div class="topbar-actions">
+    <% if (!botReady) { %><span class="badge badge-warning badge-dot">Bot en démarrage</span><% } %>
+    <span class="live" data-live data-tooltip="Connexion temps réel" data-tooltip-pos="bottom" role="status" aria-live="polite"><span class="live-dot" aria-hidden="true"></span><span class="live-label" data-live-label>Connexion…</span></span>
+  </div>
+</header>

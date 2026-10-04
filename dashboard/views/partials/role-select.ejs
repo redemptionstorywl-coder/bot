@@ -1,0 +1,13 @@
+<%#
+  Sélecteur de rôles (pastille de couleur + recherche + multi). Le <select multiple> natif reste la source de vérité du POST.
+  Attend : name, id, selected (string[]), multiple (défaut true), placeholder, roles (défaut guild.roles), includeManaged (défaut false), required.
+%>
+<%
+  const _roles = (typeof roles !== 'undefined' && roles ? roles : guild.roles).filter((r) => (typeof includeManaged !== 'undefined' && includeManaged) || !r.managed);
+  const _multi = typeof multiple === 'undefined' ? true : multiple;
+  const _sel = Array.isArray(selected) ? selected : selected ? [selected] : [];
+%>
+<select class="select" name="<%= name %>" id="<%= id %>" <%= _multi ? 'multiple' : '' %> data-role-picker data-placeholder="<%= typeof placeholder === 'string' ? placeholder : (_multi ? 'Ajouter des rôles…' : 'Choisir un rôle…') %>"<%- typeof required !== 'undefined' && required ? ' required' : '' %>>
+  <% if (!_multi) { %><option value=""><%= typeof emptyLabel === 'string' ? emptyLabel : '— Aucun —' %></option><% } %>
+  <%- include('role-options', { roles: _roles, selected: _sel }) %>
+</select>

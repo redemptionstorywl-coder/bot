@@ -1,0 +1,95 @@
+<%
+  const b = `/guilds/${guild.id}/tickets`;
+  const vars = { server: guild.name };
+  const panelComponents = (style, list, open) => style === 'SELECT'
+    ? [{ type: 'select', placeholder: texts.panel.placeholder, open, options: list.map((r) => ({ label: r.label, emoji: r.emoji || undefined, description: r.description || undefined })) }]
+    : [{ type: 'buttons', buttons: [{ label: texts.panel.open, emoji: '🎫', style: 'primary' }] }];
+  const d = defaultEmbed;
+%>
+<%- include('../partials/tickets-header', { tab: 'panels' }) %>
+
+<% if (!reasons.length) { %>
+  <section class="card"><%- include('../partials/empty', { glyph: 'send', title: 'Créez d’abord une raison', text: 'Un panneau propose aux membres d’ouvrir un ticket pour l’une de vos raisons activées.', actionHref: b + '/reasons/new', actionLabel: 'Nouvelle raison' }) %></section>
+<% } else { %>
+<section class="card">
+  <div class="card-head"><div><h2 class="card-title"><%- icon('send') %>Nouveau panneau</h2><p class="card-desc">Message publié dans un salon, avec un bouton ou un menu pour ouvrir un ticket.</p></div></div>
+  <form method="post" action="<%= b %>/panels" class="form" id="panel-form" data-no-live-reload>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="split">
+      <div class="stack-4">
+        <div class="field-row">
+          <div class="field"><label for="p-channel" class="field-required">Salon</label><%- include('../partials/channel-select', { name: 'channelId', id: 'p-channel', selected: '', emptyLabel: '— Choisir un salon —', required: true }) %></div>
+          <div class="field">
+            <span class="field-label" id="p-style-label">Style</span>
+            <div class="segmented segmented-block" role="radiogroup" aria-labelledby="p-style-label">
+              <label><input type="radio" name="style" value="BUTTONS" checked data-panel-style><span><%- icon('mouse-pointer') %>Bouton</span></label>
+              <label><input type="radio" name="style" value="SELECT" data-panel-style><span><%- icon('square-chevron-down') %>Menu déroulant</span></label>
+            </div>
+          </div>
+        </div>
+        <fieldset class="field">
+          <legend>Raisons proposées <span class="field-optional">aucune cochée = toutes les raisons activées</span></legend>
+          <div class="choice-grid">
+            <% for (const r of reasons) { %>
+              <label class="choice"><input type="checkbox" name="typeIds" value="<%= r.id %>" data-panel-reason data-label="<%= r.label %>" data-emoji="<%= r.emoji || '' %>" data-description="<%= r.description || '' %>"><span><span class="choice-title"><%= r.emoji || '🎫' %> <%= r.label %></span><% if (r.description) { %><span class="choice-desc"><%= r.description %></span><% } %></span></label>
+            <% } %>
+          </div>
+        </fieldset>
+        <div class="field"><label for="p-title">Titre</label><input id="p-title" name="embed[title]" class="input" maxlength="256" value="<%= d.title || '' %>" data-panel-key="title"></div>
+        <div class="field"><label for="p-description">Description</label><textarea id="p-description" name="embed[description]" class="textarea" rows="4" maxlength="4096" data-panel-key="description"><%= d.description || '' %></textarea><small class="hint">Variables : <code>{server}</code>. Markdown Discord accepté.</small></div>
+        <div class="field-row">
+          <div class="field"><label for="p-color">Couleur</label><%- include('../partials/color-field', { name: 'embed[color]', id: 'p-color', value: '', allowEmpty: true, placeholder: 'Par défaut' }) %></div>
+          <div class="field"><label for="p-image">Image <span class="field-optional">URL</span></label><input id="p-image" name="embed[image]" type="url" class="input" maxlength="2048" placeholder="https://…" data-panel-key="image"></div>
+        </div>
+        <div class="field"><label for="p-footer">Pied de page</label><input id="p-footer" name="embed[footerText]" class="input" maxlength="2048" value="<%= d.footer ? d.footer.text : '' %>" data-panel-key="footerText"></div>
+        <div class="form-footer"><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>><%- icon('send', { size: 16 }) %>Publier le panneau</button></div>
+      </div>
+      <aside class="split-preview">
+        <div class="preview-panel">
+          <div class="preview-panel-head"><span class="row"><%- icon('hash', { size: 15 }) %><span data-panel-channel>salon</span></span><span class="badge badge-muted">Aperçu</span></div>
+          <div class="preview-panel-body" data-panel-preview>
+            <%- include('../partials/embed-preview', { embed: discordPreview.applyVarsDeep(d, vars), components: panelComponents('BUTTONS', reasons, false) }) %>
+          </div>
+          <div data-panel-after>
+            <div class="preview-divider">Après un clic sur le bouton</div>
+            <div class="preview-panel-body" data-panel-picker>
+              <%- include('../partials/embed-preview', { content: texts.panel.pick, components: [{ type: 'select', placeholder: texts.panel.placeholder, open: true, options: reasons.map((r) => ({ label: r.label, emoji: r.emoji || undefined, description: r.description || undefined })) }], ephemeral: true }) %>
+            </div>
+          </div>
+          <div class="preview-panel-note" data-panel-note>Le bouton ouvre directement le ticket s'il n'y a qu'une raison ; sinon le membre choisit dans un menu visible de lui seul.</div>
+        </div>
+      </aside>
+    </div>
+  </form>
+</section>
+<% } %>
+
+<section class="section mt-5">
+  <h2 class="section-title">Panneaux publiés <span class="tab-count"><%= panels.length %></span></h2>
+  <% if (!panels.length) { %>
+    <div class="card"><%- include('../partials/empty', { glyph: 'inbox', title: 'Aucun panneau publié', text: 'Publiez un panneau pour que les membres puissent ouvrir des tickets depuis Discord.', compact: true }) %></div>
+  <% } else { %>
+  <div class="panel-list">
+    <% for (const p of panels) { %>
+      <article class="card panel-card mb-0">
+        <div class="row justify-between wrap">
+          <span class="channel-tag"><%- icon('hash') %><%= p.channelName || 'salon supprimé' %></span>
+          <span class="badge <%= p.style === 'SELECT' ? 'badge-info' : 'badge-accent' %>"><%= p.style === 'SELECT' ? 'Menu déroulant' : 'Bouton' %></span>
+        </div>
+        <div class="preview-panel"><div class="preview-panel-body"><%- include('../partials/embed-preview', { embed: discordPreview.applyVarsDeep(p.spec || d, vars), components: panelComponents(p.style, p.reasons, false), compact: true }) %></div></div>
+        <div class="panel-meta">
+          <span><%= p.allReasons ? 'Toutes les raisons activées' : p.reasons.map((r) => r.label).join(', ') %></span>
+          <span>· publié <%= fmt.relative(p.createdAt) %></span>
+          <% if (p.messageId) { %><a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= p.channelId %>/<%= p.messageId %>" target="_blank" rel="noopener noreferrer">Voir sur Discord<%- icon('external-link', { size: 12 }) %></a><% } %>
+        </div>
+        <div class="row">
+          <form method="post" action="<%= b %>/panels/<%= p.id %>/republish" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-sm" <%= botReady ? '' : 'disabled' %> data-tooltip="Remplace le message par une version à jour"><%- icon('refresh', { size: 14 }) %>Republier</button></form>
+          <form method="post" action="<%= b %>/panels/<%= p.id %>/delete" class="inline-form ml-auto"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer ce panneau et son message Discord ?" data-confirm-title="Supprimer le panneau" data-confirm-label="Supprimer"><%- icon('trash', { size: 14 }) %>Supprimer</button></form>
+        </div>
+      </article>
+    <% } %>
+  </div>
+  <% } %>
+</section>
+
+<script type="application/json" id="ticket-preview-data"><%- jsonScript({ texts, reasons, defaultEmbed }) %></script>

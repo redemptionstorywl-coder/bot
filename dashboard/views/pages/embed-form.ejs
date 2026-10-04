@@ -1,45 +1,62 @@
-<section class="page-header">
-  <div>
-    <a class="link" href="/guilds/<%= guild.id %>/embeds">← Retour aux templates</a>
-    <h2 class="page-title"><%= template ? 'Template « ' + template.name + ' »' : 'Nouveau template' %></h2>
-    <p class="muted">L'aperçu se met à jour en direct. Les variables sont remplacées à l'envoi.</p>
-  </div>
-  <% if (template) { %>
-  <div class="page-actions">
-    <a class="btn btn-ghost" href="/guilds/<%= guild.id %>/embeds/<%= template.id %>/export">Exporter JSON</a>
-    <form method="post" action="/guilds/<%= guild.id %>/embeds/<%= template.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger" data-confirm="Supprimer le template « <%= template.name %> » ?">Supprimer</button></form>
-  </div>
-  <% } %>
-</section>
-
-<form method="post" action="/guilds/<%= guild.id %>/embeds<%= template ? '/' + template.id : '' %>" class="form">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-  <div class="card">
-    <div class="grid-2 grid-tight">
-      <div class="field"><label for="tpl-name">Nom</label><input id="tpl-name" name="name" class="input" maxlength="100" required value="<%= template ? template.name : '' %>" placeholder="Maintenance"></div>
-      <div class="field"><label for="tpl-description">Description interne</label><input id="tpl-description" name="description" class="input" maxlength="200" value="<%= template && template.description ? template.description : '' %>" placeholder="Utilisé pour…"></div>
+<% const b = `/guilds/${guild.id}/embeds`; const t = template; %>
+<a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Embeds</a>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('layout-template') %></span>
+    <div>
+      <h1 class="page-title"><%= t ? t.name : 'Nouveau template' %></h1>
+      <p class="page-subtitle"><%= t ? (t.description ? t.description + ' · ' : '') + 'modifié ' + fmt.relative(t.updatedAt) : "Composez l'embed : l'aperçu se met à jour en direct." %></p>
     </div>
   </div>
-  <div class="card">
-    <h3 class="card-title">Contenu de l'embed</h3>
-    <%- include('../partials/embed-editor', { prefix: 'embed', spec, id: 'tpl-embed', buttons, buttonsName: 'buttonsJson', withPreview: true, withJson: true }) %>
+  <% if (t) { %>
+  <div class="page-actions">
+    <a class="btn" href="<%= b %>/<%= t.id %>/export"><%- icon('download', { size: 16 }) %>Exporter JSON</a>
+    <form method="post" action="<%= b %>/<%= t.id %>/delete" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger" data-confirm="Supprimer le template « <%= t.name %> » ?" data-confirm-label="Supprimer"><%- icon('trash', { size: 16 }) %>Supprimer</button></form>
   </div>
-  <div class="form-actions sticky-actions">
-    <a class="btn btn-ghost" href="/guilds/<%= guild.id %>/embeds">Annuler</a>
-    <button type="submit" class="btn btn-primary"><%= template ? 'Enregistrer' : 'Créer le template' %></button>
-  </div>
-</form>
+  <% } %>
+</header>
 
-<% if (template) { %>
-<form method="post" action="/guilds/<%= guild.id %>/embeds/<%= template.id %>/send" class="card form">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-  <h3 class="card-title">Envoyer dans un salon</h3>
-  <% if (!botReady) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le bot n'est pas connecté : l'envoi est indisponible pour le moment.</span></div><% } %>
-  <p class="muted">Envoie la version <strong>enregistrée</strong> du template (enregistrez vos modifications d'abord).</p>
-  <div class="inline-fields">
-    <div class="field"><label for="send-channel">Salon</label><select id="send-channel" name="channelId" class="select" required><%- include('../partials/channel-options', { channels: guild.textChannels, selected: '', allowEmpty: true, emptyLabel: '— Choisir un salon —' }) %></select></div>
-    <div class="field"><label for="send-content">Texte au-dessus de l'embed (optionnel)</label><input id="send-content" name="content" class="input" maxlength="2000" placeholder="@everyone, {server}…"></div>
-    <div class="field field-fixed"><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>>Envoyer</button></div>
-  </div>
-</form>
-<% } %>
+<div class="split" data-no-live-reload>
+  <form method="post" action="<%= b %><%= t ? '/' + t.id : '' %>" class="form stack" id="embed-form" <%- t ? 'data-dirty-form' : '' %>>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <section class="card">
+      <div class="field-row">
+        <div class="field"><label for="tpl-name" class="field-required">Nom</label><input id="tpl-name" name="name" class="input" maxlength="100" required value="<%= t ? t.name : '' %>" placeholder="Maintenance"></div>
+        <div class="field"><label for="tpl-description">Description interne <span class="field-optional">optionnel</span></label><input id="tpl-description" name="description" class="input" maxlength="200" value="<%= t && t.description ? t.description : '' %>" placeholder="Utilisé pour…"></div>
+      </div>
+    </section>
+    <section class="card">
+      <h2 class="card-title">Embed &amp; boutons</h2>
+      <%- include('../partials/embed-editor', { prefix: 'embed', spec, id: 'tpl-embed', buttons, buttonsName: 'buttonsJson', withPreview: false, previewTarget: '#embed-live-preview', contentSource: '#send-content', withJson: true }) %>
+    </section>
+    <% if (!t) { %>
+      <div class="sticky-actions row justify-between"><span class="text-sm text-2">Vous pourrez l'envoyer dans un salon après création.</span><div class="btn-group"><a class="btn btn-ghost" href="<%= b %>">Annuler</a><button type="submit" class="btn btn-primary">Créer le template</button></div></div>
+    <% } else { %>
+      <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+    <% } %>
+  </form>
+
+  <aside class="split-preview">
+    <div class="preview-panel">
+      <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 15 }) %>Aperçu en direct</span><span class="badge badge-muted">Discord</span></div>
+      <div class="preview-panel-body" id="embed-live-preview"><%- include('../partials/embed-preview', { embed: spec, buttons, content: '' }) %></div>
+    </div>
+
+    <% if (t) { %>
+    <form method="post" action="<%= b %>/<%= t.id %>/send" class="card form" id="send">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <h2 class="card-title"><%- icon('send') %>Envoyer dans un salon</h2>
+      <% if (!botReady) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Bot hors ligne : envoi indisponible.</span></div><% } %>
+      <div class="field"><label for="send-channel" class="field-required">Salon</label><%- include('../partials/channel-select', { name: 'channelId', id: 'send-channel', selected: '', emptyLabel: '— Choisir un salon —', required: true }) %></div>
+      <div class="field"><label for="send-content">Texte au-dessus <span class="field-optional">optionnel</span></label><input id="send-content" name="content" class="input" maxlength="2000" placeholder="@everyone, {server}…"></div>
+      <p class="hint mb-3">La version <strong>enregistrée</strong> est envoyée : enregistrez vos modifications d'abord.</p>
+      <button type="submit" class="btn btn-primary btn-block" <%= botReady ? '' : 'disabled' %>><%- icon('send', { size: 16 }) %>Envoyer</button>
+    </form>
+    <% } %>
+
+    <details class="card card-collapsible">
+      <summary><span class="row"><%- icon('sparkles', { size: 16 }) %><strong>Variables disponibles</strong></span></summary>
+      <div class="var-list mt-4"><% for (const [k, v] of Object.entries(constants.TEMPLATE_VARIABLES)) { %><div><code><%= k %></code><span class="text-3"><%= v %></span></div><% } %></div>
+    </details>
+  </aside>
+</div>

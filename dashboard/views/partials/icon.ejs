@@ -1,0 +1,4 @@
+<%#
+  Icône SVG inline (lib/icons.ts). Usage : include('../partials/icon', { name: 'ticket', size: 16, cls: 'text-3' })
+  Équivalent direct : icon('ticket', { size: 16 }).
+%><%- icon(name, { size: typeof size === 'number' ? size : 20, cls: typeof cls === 'string' ? cls : '', label: typeof label === 'string' ? label : undefined }) %>

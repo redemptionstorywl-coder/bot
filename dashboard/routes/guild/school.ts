@@ -14,7 +14,8 @@ import { resolveUserNames } from '../../lib/names';
 import { broadcastToGuild } from '../../sockets';
 
 const PAGE_SIZE = 25;
-const TABS = ['config', 'students', 'classes', 'houses', 'clubs', 'applications'] as const;
+const TABS = ['students', 'classes', 'houses', 'clubs', 'applications', 'config'] as const;
+const TAB_LABELS: Record<(typeof TABS)[number], string> = { students: 'Élèves & profils', classes: 'Classes', houses: 'Maisons', clubs: 'Clubs', applications: 'Candidatures', config: 'Configuration' };
 
 export const SCHOOL_ROLE_LABELS: Record<SchoolRole, string> = { STUDENT: 'Élève', TEACHER: 'Professeur', STAFF: 'Staff' };
 export const REVIEW_STATUS_LABELS: Record<ReviewStatus, string> = { PENDING: 'En attente', ACCEPTED: 'Acceptée', REJECTED: 'Refusée' };
@@ -24,7 +25,7 @@ const optionalIdQuery = z.preprocess((v) => (v === '' || v === undefined ? undef
 const optionalCapacity = z.preprocess((v) => (v === '' || v === undefined ? null : Number(v)), z.number().int().min(1).max(10_000).nullable());
 
 const pageQuerySchema = z.object({
-  tab: z.preprocess((v) => (typeof v === 'string' && (TABS as readonly string[]).includes(v) ? v : 'config'), z.enum(TABS)),
+  tab: z.preprocess((v) => (typeof v === 'string' && (TABS as readonly string[]).includes(v) ? v : 'students'), z.enum(TABS)),
   role: z.preprocess((v) => (v === '' ? undefined : v), z.nativeEnum(SchoolRole).optional()),
   class: optionalIdQuery,
   house: optionalIdQuery,
@@ -133,6 +134,7 @@ export function createSchoolRouter(client: RedemptionClient): Router {
       render(res, 'school', {
         title: 'School RP',
         page: 'school',
+        crumbs: query.tab === 'students' ? [] : [{ label: TAB_LABELS[query.tab] }],
         tab: query.tab,
         filters: { role: query.role ?? '', class: query.class ?? '', house: query.house ?? '', q: query.q, user: query.user ?? '', status: query.status ?? 'all' },
         settings,

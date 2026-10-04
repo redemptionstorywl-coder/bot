@@ -1,94 +1,69 @@
-<section class="page-header">
-  <div><h2 class="page-title">Événements &amp; sondages</h2><p class="muted">Événements avec inscriptions et rappels automatiques ; sondages avec résultats en direct.</p></div>
-  <div class="page-actions"><a class="btn btn-primary" href="/guilds/<%= guild.id %>/events/new">+ Nouvel événement</a></div>
-</section>
+<%
+  const b = `/guilds/${guild.id}/events`;
+  const isPolls = tab === 'polls';
+  const moduleOff = isPolls
+    ? (!modules.polls ? 'Le module Sondages est désactivé : les votes ne sont plus pris en compte.' : '')
+    : (!modules.events ? 'Le module Événements est désactivé : inscriptions et rappels sont suspendus.' : '');
+  const statusIcon = { SCHEDULED: 'clock', ONGOING: 'activity', ENDED: 'check-circle', CANCELLED: 'x-circle' };
+  const sq = (s) => (s ? `${b}?status=${s}` : b);
+%>
+<%- include('../partials/events-header', { etab: isPolls ? 'polls' : 'events', counts, moduleOff }) %>
 
-<div class="tabs" data-tabs data-active="<%= tab %>">
-  <div class="tab-list" role="tablist">
-    <button type="button" class="tab" role="tab" data-tab="events">Événements <span class="badge badge-muted"><%= events.length %></span></button>
-    <button type="button" class="tab" role="tab" data-tab="polls">Sondages <span class="badge badge-muted"><%= polls.length %></span></button>
-  </div>
+<% if (!isPolls) { %>
+  <nav class="segmented mb-4" aria-label="Filtrer par statut">
+    <a href="<%= sq('') %>"<%- !filters.status ? ' aria-current="page"' : '' %>>Tous</a>
+    <% for (const s of Object.keys(statusLabels)) { %><a href="<%= sq(s) %>"<%- filters.status === s ? ' aria-current="page"' : '' %>><%= statusLabels[s] %><% if (statusCounts[s]) { %><span class="seg-count"><%= statusCounts[s] %></span><% } %></a><% } %>
+  </nav>
 
-  <!-- ─── Événements ─── -->
-  <section class="tab-panel" data-tab-panel="events" role="tabpanel">
-    <% if (!modules.events) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Événements est désactivé : inscriptions et rappels sont suspendus.</span></div><% } %>
-    <form method="get" action="/guilds/<%= guild.id %>/events" class="card filter-bar">
-      <input type="hidden" name="tab" value="events">
-      <div class="field"><label for="e-status">Statut</label><select id="e-status" name="status" class="select" data-submit-on-change><option value="">Tous</option><% for (const s of Object.keys(statusLabels)) { %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= statusLabels[s] %></option><% } %></select></div>
-      <div class="field field-actions"><button type="submit" class="btn btn-primary">Filtrer</button></div>
-    </form>
-    <div class="card">
-      <% if (!events.length) { %><p class="muted">Aucun événement.</p><% } else { %>
-      <div class="table-wrap"><table class="table">
-        <thead><tr><th>Événement</th><th>Statut</th><th>Début</th><th>Lieu</th><th>Salon</th><th>Participants</th><th></th></tr></thead>
+  <section class="card card-flush" data-live-reload>
+    <% if (!events.length) { %>
+      <%- include('../partials/empty', filters.status
+        ? { glyph: 'calendar', title: 'Aucun événement', text: 'Aucun événement avec ce statut.' }
+        : { glyph: 'calendar', title: 'Aucun événement', text: 'Créez un événement : il est publié avec un bouton d’inscription et des rappels automatiques.', actionHref: b + '/new', actionLabel: 'Nouvel événement', actionIcon: 'plus' }) %>
+    <% } else { %>
+    <div class="table-wrap">
+      <table class="table table-responsive table-clickable">
+        <thead><tr><th>Événement</th><th>Statut</th><th>Début</th><th>Salon</th><th class="right">Participants</th></tr></thead>
         <tbody>
-          <% for (const e of events) { %>
-            <tr>
-              <td><a class="link" href="/guilds/<%= guild.id %>/events/<%= e.id %>"><strong><%= e.name %></strong></a><br><small class="muted">par <%= names[e.createdById] || e.createdById %></small></td>
-              <td><span class="badge badge-status-<%= e.status %>"><%= statusLabels[e.status] %></span></td>
-              <td class="nowrap"><%= fmt.dateTime(e.startsAt) %><br><small class="muted"><%= fmt.relative(e.startsAt) %></small></td>
-              <td><%= e.location || '—' %></td>
-              <td>#<%= channelName(e.channelId) %></td>
-              <td><%= e.participants.length %><%= e.maxParticipants ? ' / ' + e.maxParticipants : '' %></td>
-              <td class="right"><div class="actions-cell">
-                <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/events/<%= e.id %>">Détails</a>
-                <% if (e.status === 'SCHEDULED' || e.status === 'ONGOING') { %>
-                  <form method="post" action="/guilds/<%= guild.id %>/events/<%= e.id %>/remind"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost btn-sm" <%= botReady ? '' : 'disabled' %>>Rappel</button></form>
-                  <form method="post" action="/guilds/<%= guild.id %>/events/<%= e.id %>/cancel"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Annuler « <%= e.name %> » ? Les participants seront prévenus.">Annuler</button></form>
-                <% } %>
-              </div></td>
+          <% for (const e of events) { const n = e.participants.length; %>
+            <tr data-href="<%= b %>/<%= e.id %>">
+              <td class="cell-primary"><div class="cell-stack"><a class="link strong truncate" href="<%= b %>/<%= e.id %>"><%= e.name %></a><span class="text-xs text-3 truncate"><%= e.location ? e.location + ' · ' : '' %>par <%= names[e.createdById] || e.createdById %></span></div></td>
+              <td data-label="Statut"><span class="badge badge-status-<%= e.status %>"><%= statusLabels[e.status] %></span></td>
+              <td data-label="Début" class="nowrap"><div class="cell-stack"><span><%= fmt.dateTime(e.startsAt) %></span><span class="text-xs text-3"><%= fmt.relative(e.startsAt) %></span></div></td>
+              <td data-label="Salon"><span class="channel-tag"><%- icon('hash') %><%= channelName(e.channelId) %></span></td>
+              <td data-label="Participants" class="right nowrap">
+                <% if (e.maxParticipants) { %>
+                  <span class="meter" title="<%= n %> / <%= e.maxParticipants %>"><span class="meter-track"><span class="bar-fill" data-pct="<%= Math.min(100, Math.round((n / e.maxParticipants) * 100)) %>"></span></span><span><%= n %>/<%= e.maxParticipants %></span></span>
+                <% } else { %><%= n %><% } %>
+              </td>
             </tr>
           <% } %>
         </tbody>
-      </table></div>
-      <% } %>
+      </table>
     </div>
+    <% } %>
   </section>
-
-  <!-- ─── Sondages ─── -->
-  <section class="tab-panel" data-tab-panel="polls" role="tabpanel">
-    <% if (!modules.polls) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Sondages est désactivé : les votes ne sont plus pris en compte.</span></div><% } %>
-    <div class="grid-2 grid-2-aside">
-      <form method="post" action="/guilds/<%= guild.id %>/events/polls" class="card form">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <h3 class="card-title">Créer un sondage</h3>
-        <% if (!botReady) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le bot n'est pas connecté : la création est indisponible.</span></div><% } %>
-        <div class="field"><label for="p-question">Question</label><textarea id="p-question" name="question" class="textarea textarea-sm" rows="2" maxlength="1000" required placeholder="Quelle map pour la prochaine session ?"></textarea></div>
-        <div class="field"><label for="p-type">Type</label><select id="p-type" name="type" class="select" data-toggle-target="#p-options" data-toggle-value="MULTIPLE"><% for (const t of pollTypes) { %><option value="<%= t.value %>"><%= t.label %></option><% } %></select></div>
-        <fieldset class="field" id="p-options"><legend>Options (2 à 10)</legend><%- include('../partials/repeater', { kind: 'polloption', rows: [{ label: '' }, { label: '' }], name: 'optionsJson', id: 'poll-options', max: 10, addLabel: 'Ajouter une option' }) %></fieldset>
-        <div class="check-grid">
-          <label class="check"><input type="checkbox" name="anonymous"><span>Votes anonymes</span></label>
-          <label class="check"><input type="checkbox" name="multiSelect"><span>Choix multiples autorisés</span></label>
-        </div>
-        <div class="grid-2 grid-tight">
-          <div class="field"><label for="p-duration">Durée (vide = sans fin automatique)</label><input id="p-duration" name="duration" class="input" maxlength="32" placeholder="1h, 2j…"></div>
-          <div class="field"><label for="p-channel">Salon</label><select id="p-channel" name="channelId" class="select" required><%- include('../partials/channel-options', { channels: guild.textChannels, selected: '', allowEmpty: true, emptyLabel: '— Choisir —' }) %></select></div>
-        </div>
-        <div class="form-actions"><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>>Publier le sondage</button></div>
-      </form>
-      <div class="card">
-        <h3 class="card-title">Sondages</h3>
-        <% if (!polls.length) { %><p class="muted">Aucun sondage.</p><% } else { %>
-        <div class="table-wrap"><table class="table">
-          <thead><tr><th>Question</th><th>Type</th><th>Votants</th><th>Fin</th><th>État</th><th></th></tr></thead>
-          <tbody>
-            <% for (const p of polls) { %>
-              <tr>
-                <td><a class="link" href="/guilds/<%= guild.id %>/events/polls/<%= p.id %>"><%= fmt.truncate(p.question, 70) %></a><br><small class="muted"><%= p.optionList.map((o) => o.label).join(' · ') %></small></td>
-                <td><%= p.type === 'YES_NO' ? 'Oui / Non' : 'Choix' %><%= p.multiSelect ? ' (multi)' : '' %><%= p.anonymous ? ' 🔒' : '' %></td>
-                <td><%= p.voters %></td>
-                <td class="nowrap"><%= p.endsAt ? fmt.dateTime(p.endsAt) : '—' %></td>
-                <td><span class="badge <%= p.ended ? 'badge-muted' : 'badge-primary' %>"><%= p.ended ? 'terminé' : 'ouvert' %></span></td>
-                <td class="right"><div class="actions-cell">
-                  <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/events/polls/<%= p.id %>">Résultats</a>
-                  <% if (!p.ended) { %><form method="post" action="/guilds/<%= guild.id %>/events/polls/<%= p.id %>/end"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Terminer ce sondage maintenant ?">Terminer</button></form><% } %>
-                </div></td>
-              </tr>
-            <% } %>
-          </tbody>
-        </table></div>
-        <% } %>
-      </div>
+<% } else { %>
+  <section class="card card-flush" data-live-reload>
+    <% if (!polls.length) { %>
+      <%- include('../partials/empty', { glyph: 'bar-chart', title: 'Aucun sondage', text: 'Posez une question à votre communauté : résultats en direct, vote anonyme ou à choix multiples.', actionHref: b + '/polls/new', actionLabel: 'Nouveau sondage', actionIcon: 'plus' }) %>
+    <% } else { %>
+    <div class="table-wrap">
+      <table class="table table-responsive table-clickable">
+        <thead><tr><th>Question</th><th>Type</th><th>État</th><th>Fin</th><th class="right">Votants</th></tr></thead>
+        <tbody>
+          <% for (const p of polls) { %>
+            <tr data-href="<%= b %>/polls/<%= p.id %>">
+              <td class="cell-primary"><div class="cell-stack"><a class="link strong truncate" href="<%= b %>/polls/<%= p.id %>"><%= p.question %></a><span class="text-xs text-3 truncate"><%= p.optionList.map((o) => (o.emoji ? o.emoji + ' ' : '') + o.label).join(' · ') %></span></div></td>
+              <td data-label="Type"><div class="row-wrap"><span class="badge badge-muted"><%= p.type === 'YES_NO' ? 'Oui / Non' : 'Choix' %></span><% if (p.multiSelect) { %><span class="badge badge-muted">Multi</span><% } %><% if (p.anonymous) { %><span class="badge badge-muted" data-tooltip="Votes anonymes"><%- icon('lock', { size: 12 }) %></span><% } %></div></td>
+              <td data-label="État"><span class="badge <%= p.ended ? 'badge-status-ENDED' : 'badge-status-ONGOING' %>"><%= p.ended ? 'Terminé' : 'Ouvert' %></span></td>
+              <td data-label="Fin" class="nowrap text-2"><%= p.endsAt ? (p.ended ? fmt.dateTime(p.endsAt) : fmt.relative(p.endsAt)) : '—' %></td>
+              <td data-label="Votants" class="right"><%= fmt.number(p.voters) %></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
     </div>
+    <% } %>
   </section>
-</div>
+<% } %>

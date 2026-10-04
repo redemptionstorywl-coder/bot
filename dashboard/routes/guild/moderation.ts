@@ -5,6 +5,10 @@ import type { RedemptionClient } from '../../../src/core/Client';
 import { moderationService, warnThresholdSchema, type AntiRaidConfigInput } from '../../../src/services/ModerationService';
 import { antiRaidService } from '../../../src/services/AntiRaidService';
 import { antiNukeService, ANTI_NUKE_ACTIONS, ANTI_NUKE_PUNISHMENTS, type AntiNukeAction } from '../../../src/services/AntiNukeService';
+import { honeypotService, HONEYPOT_TITLE, HONEYPOT_DESCRIPTION, HONEYPOT_DEFAULT_NAME } from '../../../src/services/HoneypotService';
+import { BRAND } from '../../../src/config/constants';
+import { fmt } from '../../lib/format';
+import { requireBotGuild } from '../../lib/names';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
 import { flash } from '../../lib/flash';
@@ -12,11 +16,12 @@ import { HttpError } from '../../lib/errors';
 import { validate, valid, discordIdSchema, discordIdArray, optionalDiscordId, optionalText, checkbox, pageQuery } from '../../lib/validate';
 import { jsonArray } from '../../lib/embedForm';
 import { formAction } from '../../lib/serviceErrors';
-import { resolveUserNames } from '../../lib/names';
+import { resolveUserProfiles } from '../../lib/names';
+import { wantsJson } from '../../lib/rateLimit';
 import { broadcastToGuild } from '../../sockets';
 
 const PAGE_SIZE = 20;
-const TABS = ['config', 'antiraid', 'lockdown', 'sanctions', 'warnings', 'stats'] as const;
+const TABS = ['sanctions', 'warnings', 'config', 'antiraid', 'honeypot', 'lockdown', 'stats'] as const;
 
 export const SANCTION_TYPE_LABELS: Record<SanctionType, string> = {
   BAN: 'Bannissement',
@@ -39,7 +44,7 @@ export const SANCTION_TYPE_LABELS: Record<SanctionType, string> = {
 const NEGATIVE_TYPES = new Set<SanctionType>(['BAN', 'TEMPBAN', 'KICK', 'WARN', 'TIMEOUT', 'MUTE', 'LOCKDOWN', 'LOCK']);
 
 const pageQuerySchema = z.object({
-  tab: z.preprocess((v) => (typeof v === 'string' && (TABS as readonly string[]).includes(v) ? v : 'config'), z.enum(TABS)),
+  tab: z.preprocess((v) => (typeof v === 'string' && (TABS as readonly string[]).includes(v) ? v : 'sanctions'), z.enum(TABS)),
   type: z.preprocess((v) => (v === '' ? undefined : v), z.nativeEnum(SanctionType).optional()),
   user: z.preprocess((v) => (v === '' ? undefined : v), discordIdSchema.optional()),
   case: z.preprocess((v) => (v === '' || v === undefined ? undefined : Number(v)), z.number().int().positive().optional()),
@@ -106,6 +111,16 @@ const antiRaidBody = z.object({
   antiMassJoinLockdown: checkbox,
 });
 
+export const TAB_LABELS: Record<(typeof TABS)[number], string> = {
+  sanctions: 'Sanctions',
+  warnings: 'Avertissements',
+  config: 'Escalade',
+  antiraid: 'Protections',
+  honeypot: 'Salon piège',
+  lockdown: 'Lockdown',
+  stats: 'Statistiques',
+};
+
 const ANTI_NUKE_ACTION_LABELS: { key: AntiNukeAction; label: string }[] = [
   { key: 'ban', label: 'Bannissements' },
   { key: 'kick', label: 'Expulsions' },
@@ -119,6 +134,14 @@ const ANTI_NUKE_ACTION_LABELS: { key: AntiNukeAction; label: string }[] = [
 ];
 
 const lockdownBody = z.object({ enabled: checkbox, reason: optionalText(300) });
+const honeypotSetupBody = z.object({
+  mode: z.enum(['create', 'existing']).default('create'),
+  channelId: optionalDiscordId,
+  name: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? undefined : v), z.string().trim().toLowerCase().regex(/^[a-z0-9_-]{1,90}$/, 'nom : lettres minuscules, chiffres, - ou _').optional()),
+  windowMinutes: num(1, 1440, 60),
+});
+const honeypotToggleBody = z.object({ enabled: checkbox });
+const honeypotRemoveBody = z.object({ deleteChannel: checkbox });
 const warningParams = z.object({ warningId: z.coerce.number().int().positive() });
 const reasonBody = z.object({ reason: optionalText(300) });
 const clearBody = z.object({ userId: discordIdSchema, reason: optionalText(300) });
@@ -135,21 +158,26 @@ export function createModerationRouter(client: RedemptionClient): Router {
       const guild = res.locals.guild!;
       const config = res.locals.config!;
       const { query } = valid<unknown, z.infer<typeof pageQuerySchema>>(req);
-      const [modConfig, sanctions, stats, selectedCase, warnings] = await Promise.all([
+      const tab = query.tab;
+      const [modConfig, sanctions, stats, selectedCase, warnings, honeypot] = await Promise.all([
         moderationService.getConfig(guild.id),
-        moderationService.listSanctions(guild.id, { type: query.type, userId: query.user, page: query.page, pageSize: PAGE_SIZE }),
+        tab === 'sanctions' ? moderationService.listSanctions(guild.id, { type: query.type, userId: query.user, page: query.page, pageSize: PAGE_SIZE }) : Promise.resolve({ items: [], page: 1, pages: 1, total: 0 }),
         moderationService.stats(guild.id, 30),
-        query.case ? moderationService.getCase(guild.id, query.case) : Promise.resolve(null),
-        query.warnUser ? moderationService.getWarnings(guild.id, query.warnUser, { activeOnly: false }) : Promise.resolve([]),
+        tab === 'sanctions' && query.case ? moderationService.getCase(guild.id, query.case) : Promise.resolve(null),
+        tab === 'warnings' && query.warnUser ? moderationService.getWarnings(guild.id, query.warnUser, { activeOnly: false }) : Promise.resolve([]),
+        tab === 'honeypot' ? honeypotService.getConfig(guild.id) : Promise.resolve(null),
       ]);
-      const names = await resolveUserNames(client, guild.id, [...sanctions.items.flatMap((s) => [s.userId, s.moderatorId]), selectedCase?.userId, selectedCase?.moderatorId, query.warnUser, ...warnings.map((w) => w.moderatorId), modConfig.lockdownState?.actorId]);
+      const profiles = await resolveUserProfiles(client, guild.id, [...sanctions.items.flatMap((s) => [s.userId, s.moderatorId]), selectedCase?.userId, selectedCase?.moderatorId, query.warnUser, ...warnings.map((w) => w.moderatorId), modConfig.lockdownState?.actorId]);
+      const names = Object.fromEntries(Object.entries(profiles).map(([id, p]) => [id, p.name]));
       const baseQuery = new URLSearchParams({ tab: 'sanctions', ...(query.type ? { type: query.type } : {}), ...(query.user ? { user: query.user } : {}) }).toString();
       const types = Object.values(SanctionType);
       const statTotal = Math.max(...types.map((t) => stats.byType[t] ?? 0), 1);
       render(res, 'moderation', {
         title: 'Modération',
         page: 'moderation',
-        tab: query.tab,
+        tab,
+        tabLabels: TAB_LABELS,
+        crumbs: tab === 'sanctions' ? [] : [{ label: TAB_LABELS[tab] }],
         filters: query,
         modConfig,
         antiRaid: modConfig.antiRaid,
@@ -162,12 +190,70 @@ export function createModerationRouter(client: RedemptionClient): Router {
         stats,
         statRows: types.filter((t) => (stats.byType[t] ?? 0) > 0).map((t) => ({ type: t, label: SANCTION_TYPE_LABELS[t], count: stats.byType[t] ?? 0, pct: Math.round(((stats.byType[t] ?? 0) / statTotal) * 1000) / 10 })),
         names,
+        profiles,
         sanctionTypes: types.map((t) => ({ value: t, label: SANCTION_TYPE_LABELS[t], negative: NEGATIVE_TYPES.has(t) })),
         typeLabels: SANCTION_TYPE_LABELS,
         negativeTypes: [...NEGATIVE_TYPES],
+        honeypot,
+        honeypotChannelName: honeypot ? guild.textChannels.find((c) => c.id === honeypot.channelId)?.name ?? null : null,
+        honeypotEmbed: { title: HONEYPOT_TITLE, description: HONEYPOT_DESCRIPTION, color: fmt.hex(BRAND.colors.danger) },
+        honeypotDefaultName: HONEYPOT_DEFAULT_NAME,
         modules: { moderation: config.modules.moderation, antiraid: config.modules.antiraid },
       });
     }),
+  );
+
+  router.post(
+    '/moderation/honeypot/setup',
+    validate({ body: honeypotSetupBody }),
+    formAction(
+      (_req, res) => `${base(res.locals.guild!.id)}?tab=honeypot`,
+      async (req, res) => {
+        const guildView = res.locals.guild!;
+        const { body } = valid<z.infer<typeof honeypotSetupBody>>(req);
+        const guild = requireBotGuild(client, guildView.id);
+        if (body.mode === 'existing' && (!body.channelId || !guildView.textChannels.some((c) => c.id === body.channelId && c.type === 'text'))) throw new HttpError(400, 'Choisissez un salon texte existant.');
+        const result = await honeypotService.setup(guild, { channelId: body.mode === 'existing' ? body.channelId ?? undefined : undefined, name: body.name, windowMinutes: body.windowMinutes });
+        broadcastToGuild(guildView.id, 'moderation:update', { guildId: guildView.id, kind: 'honeypot' });
+        flash(req, 'success', result.created ? 'Salon piège créé et avertissement épinglé.' : 'Salon piège configuré (avertissement republié).');
+      },
+    ),
+  );
+
+  router.post(
+    '/moderation/honeypot/toggle',
+    validate({ body: honeypotToggleBody }),
+    formAction(
+      (_req, res) => `${base(res.locals.guild!.id)}?tab=honeypot`,
+      async (req, res) => {
+        const guild = res.locals.guild!;
+        const { body } = valid<z.infer<typeof honeypotToggleBody>>(req);
+        if (!(await honeypotService.getConfig(guild.id))) throw new HttpError(400, 'Aucun salon piège configuré.');
+        await honeypotService.setEnabled(guild.id, body.enabled);
+        broadcastToGuild(guild.id, 'moderation:update', { guildId: guild.id, kind: 'honeypot' });
+        if (wantsJson(req)) {
+          res.json({ ok: true, enabled: body.enabled });
+          return;
+        }
+        flash(req, 'success', body.enabled ? 'Salon piège activé.' : 'Salon piège désactivé (le salon est conservé).');
+      },
+    ),
+  );
+
+  router.post(
+    '/moderation/honeypot/remove',
+    validate({ body: honeypotRemoveBody }),
+    formAction(
+      (_req, res) => `${base(res.locals.guild!.id)}?tab=honeypot`,
+      async (req, res) => {
+        const guildView = res.locals.guild!;
+        const { body } = valid<z.infer<typeof honeypotRemoveBody>>(req);
+        const guild = requireBotGuild(client, guildView.id);
+        await honeypotService.remove(guild, body.deleteChannel);
+        broadcastToGuild(guildView.id, 'moderation:update', { guildId: guildView.id, kind: 'honeypot' });
+        flash(req, 'success', body.deleteChannel ? 'Salon piège retiré et salon supprimé.' : 'Salon piège retiré (le salon Discord est conservé).');
+      },
+    ),
   );
 
   router.post(

@@ -1,0 +1,153 @@
+<%
+  const s = server;
+  const b = `/guilds/${guild.id}/fivem`;
+  const sb = `${b}?server=${s.key}`;
+  const stateDot = { online: 'dot-success', maintenance: 'dot-warning', offline: 'dot-danger' };
+  const counterName = s.maintenance ? counterTexts.maintenance : s.state === 'online' ? counterTexts.online.replace('{players}', s.players).replace('{max}', s.maxPlayers || '?') : counterTexts.offline;
+  const toggle = (name, label, hint) => `<label class="toggle-row"><span class="toggle-row-text"><span class="toggle-row-title">${label}</span>${hint ? `<span class="toggle-row-hint">${hint}</span>` : ''}</span><span class="toggle"><input type="checkbox" name="${name}" ${sync[name] ? 'checked' : ''}><span class="toggle-track"></span></span></label>`;
+%>
+<a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Serveurs FiveM</a>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('server') %></span>
+    <div>
+      <h1 class="page-title row-wrap"><span><%= s.name %></span><span class="badge <%= s.state === 'online' ? 'badge-success' : s.state === 'maintenance' ? 'badge-warning' : 'badge-danger' %>"><span class="dot <%= stateDot[s.state] %>"></span><%= s.stateLabel %></span></h1>
+      <p class="page-subtitle"><code><%= s.key %></code> · <%= s.frameworkLabel %><%= s.version ? ' · v' + s.version : '' %> · dernier signal <%= s.lastSeenAt ? fmt.relative(s.lastSeenAt) : 'jamais' %></p>
+    </div>
+  </div>
+  <div class="page-actions">
+    <form method="post" action="<%= b %>/servers/<%= s.key %>/test" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn" <%= s.host ? '' : 'disabled' %> <%- s.host ? '' : 'data-tooltip="Aucun hôte configuré : le serveur pousse son statut"' %>><%- icon('activity', { size: 16 }) %>Tester</button></form>
+    <form method="post" action="<%= b %>/servers/<%= s.key %>/maintenance" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><% if (!s.maintenance) { %><input type="hidden" name="enabled" value="on"><% } %><button type="submit" class="btn<%= s.maintenance ? ' btn-primary' : '' %>" <%- s.maintenance ? '' : 'data-confirm="Passer le serveur en maintenance ? Le statut et le compteur Discord l\'indiqueront." data-confirm-label="Activer la maintenance" data-confirm-variant="primary"' %>><%- icon('wrench', { size: 16 }) %><%= s.maintenance ? 'Terminer la maintenance' : 'Maintenance' %></button></form>
+  </div>
+</header>
+
+<%- include('../partials/tabs', { active: stab, label: 'Sections du serveur', tabs: [
+  { key: 'overview', label: 'Joueurs', href: sb, icon: 'users', count: s.state === 'online' ? s.players : null },
+  { key: 'settings', label: 'Réglages', href: sb + '&stab=settings', icon: 'settings' },
+  { key: 'sync', label: 'Synchronisation', href: sb + '&stab=sync', icon: 'refresh' },
+] }) %>
+
+<% if (stab === 'overview') { %>
+  <div class="stat-grid">
+    <div class="stat"><span class="stat-label">Joueurs</span><span class="stat-value"><%= s.state === 'online' ? `${s.players} / ${s.maxPlayers || '—'}` : '—' %></span></div>
+    <div class="stat"><span class="stat-label">En ligne depuis</span><span class="stat-value stat-value-sm"><%= s.onlineSince ? fmt.relative(s.onlineSince).replace(/^il y a /, '') : '—' %></span></div>
+    <div class="stat"><span class="stat-label">Socket temps réel</span><span class="stat-value stat-value-sm"><%= s.connectedSockets ? s.connectedSockets + ' connecté(s)' : 'REST uniquement' %></span></div>
+    <div class="stat"><span class="stat-label">Message de statut</span><span class="stat-value stat-value-sm"><% if (s.statusChannelId && s.statusMessageId) { %><a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= s.statusChannelId %>/<%= s.statusMessageId %>" target="_blank" rel="noopener noreferrer">Voir <%- icon('external-link', { size: 12 }) %></a><% } else { %><a class="link" href="<%= sb %>&stab=settings">Configurer</a><% } %></span></div>
+  </div>
+
+  <section class="card card-flush" data-live-reload>
+    <div class="card-head"><div><h2 class="card-title">Joueurs en ligne</h2><p class="card-desc">Liaison Discord détectée via l'identifiant <code>discord:</code> ou une liaison manuelle.</p></div><span class="badge badge-muted"><%= players.length %></span></div>
+    <% if (!players.length) { %>
+      <%- include('../partials/empty', { glyph: 'users', title: s.state === 'online' ? 'Aucun joueur connecté' : 'Serveur hors ligne', text: s.state === 'online' ? 'Les joueurs apparaîtront ici en temps réel.' : 'Aucune donnée récente : vérifiez que rs_bridge est démarré.', compact: true }) %>
+    <% } else { %>
+    <div class="table-wrap">
+      <table class="table table-responsive">
+        <thead><tr><th class="shrink">ID</th><th>Joueur</th><th>Compte Discord</th><th class="right">Ping</th><th>Identifiants</th></tr></thead>
+        <tbody>
+          <% for (const p of players) { const prof = p.discordId ? profiles[p.discordId] : null; const lic = p.identifiers.find((i) => i.startsWith('license:')) || p.identifiers[0]; %>
+            <tr>
+              <td data-label="ID" class="text-3 tabular"><%= p.id %></td>
+              <td class="cell-primary"><strong><%= p.name %></strong></td>
+              <td data-label="Discord"><% if (p.discordId) { %><a class="user-cell link" href="/guilds/<%= guild.id %>/members/<%= p.discordId %>"><% if (prof) { %><img class="avatar avatar-xs" src="<%= prof.avatarUrl %>" alt=""><% } %><span class="truncate"><%= prof ? prof.name : p.discordId %></span></a><% } else { %><span class="badge badge-muted">Non lié</span><% } %></td>
+              <td data-label="Ping" class="right tabular"><%= p.ping !== undefined ? p.ping + ' ms' : '—' %></td>
+              <td data-label="Identifiants"><% if (lic) { %><span class="mono text-xs truncate" title="<%= p.identifiers.join('\n') %>"><%= fmt.truncate(lic, 36) %></span><% if (p.identifiers.length > 1) { %> <span class="badge badge-muted" data-tooltip="<%= p.identifiers.slice(1).join(' · ') %>">+<%= p.identifiers.length - 1 %></span><% } %><% } else { %>—<% } %></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </section>
+<% } else if (stab === 'settings') { %>
+  <div class="grid-2 grid-aside-right">
+    <form method="post" action="<%= b %>/servers/<%= s.key %>" class="card form" data-dirty-form>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <h2 class="card-title">Modifier « <%= s.name %> »</h2>
+      <div class="field-row">
+        <div class="field"><label for="e-name" class="field-required">Nom</label><input id="e-name" name="name" class="input" required maxlength="100" value="<%= s.name %>"></div>
+        <div class="field"><label for="e-framework">Framework</label><select id="e-framework" name="framework" class="select"><% for (const f of frameworks) { %><option value="<%= f.value %>" <%= s.framework === f.value ? 'selected' : '' %>><%= f.label %></option><% } %></select></div>
+      </div>
+      <div class="field mt-4"><label for="e-host">Hôte <span class="field-optional">optionnel — active l'interrogation périodique</span></label><input id="e-host" name="host" type="url" class="input input-mono" maxlength="200" placeholder="http://1.2.3.4:30120" value="<%= s.host || '' %>"></div>
+      <div class="field-row mt-4">
+        <div class="field">
+          <label for="e-apikey">Clé API propre au serveur</label>
+          <input id="e-apikey" name="apiKey" type="password" class="input input-mono" maxlength="200" autocomplete="new-password" placeholder="<%= s.apiKeyMasked ? 'Actuelle : ' + s.apiKeyMasked : 'Clé globale FIVEM_API_KEY' %>">
+          <small class="hint">Laisser vide pour conserver la clé actuelle.</small>
+          <% if (s.apiKeyMasked) { %><label class="check check-sm mt-2"><input type="checkbox" name="clearApiKey"><span>Revenir à la clé globale</span></label><% } %>
+        </div>
+        <div class="field"><label for="e-channel">Salon du message de statut</label><%- include('../partials/channel-select', { name: 'statusChannelId', id: 'e-channel', selected: s.statusChannelId || '', emptyLabel: '— Aucun message de statut —' }) %></div>
+      </div>
+      <label class="toggle mt-4"><input type="checkbox" name="enabled" <%= s.enabled ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Serveur activé <span class="text-3">— accepte les requêtes API</span></span></label>
+      <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+    </form>
+    <aside class="stack">
+      <section class="card card-muted">
+        <h2 class="card-title">Clé API</h2>
+        <p class="text-sm text-2">Actuelle : <code><%= s.apiKeyMasked || 'clé globale' %></code>. Elle n'est jamais affichée en entier.</p>
+      </section>
+      <section class="card card-danger">
+        <h2 class="card-title">Supprimer le serveur</h2>
+        <p class="text-sm text-2 mb-3">Les clients connectés sont déconnectés. Les joueurs et statistiques connus sont conservés.</p>
+        <form method="post" action="<%= b %>/servers/<%= s.key %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-block" data-confirm="Supprimer le serveur « <%= s.name %> » ?" data-confirm-label="Supprimer"><%- icon('trash', { size: 16 }) %>Supprimer</button></form>
+      </section>
+    </aside>
+  </div>
+<% } else { %>
+  <div class="split" data-no-live-reload>
+    <form method="post" action="<%= b %>/servers/<%= s.key %>/sync" class="form stack" id="fivem-sync-form" data-dirty-form>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <section class="card">
+        <div class="card-head"><div><h2 class="card-title">Sanctions</h2><p class="card-desc">Bans, débans et expulsions dans les deux sens.</p></div></div>
+        <div class="toggle-list">
+          <%- toggle('syncBansToDiscord', 'Ban en jeu → ban Discord', 'Ban, tempban et déban pris en jeu (txAdmin, menu admin) appliqués sur Discord.') %>
+          <%- toggle('syncBansToGame', 'Ban Discord → ban en jeu', 'Les bans du serveur Discord sont envoyés au serveur de jeu.') %>
+          <%- toggle('syncKicks', 'Kick en jeu → expulsion Discord', 'Rarement souhaité : un kick en jeu expulse aussi du Discord.') %>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><h2 class="card-title">Pseudos</h2><p class="card-desc">Le surnom Discord suit le pseudo en jeu (32 caractères max).</p></div></div>
+        <div class="toggle-list"><%- toggle('syncNicknames', 'Synchroniser les pseudos', 'Le bot renomme les membres liés à leur connexion.') %></div>
+        <div class="field mt-4">
+          <label for="f-format" class="field-required">Format du surnom</label>
+          <input id="f-format" name="nicknameFormat" class="input input-mono" required maxlength="64" value="<%= sync.nicknameFormat %>" placeholder="{name}" data-nickname-format>
+          <div class="var-chips mt-2" data-insert-target="#f-format"><% for (const v of ['{name}', '{id}', '{level}']) { %><button type="button" class="var-chip" data-insert="<%= v %>"><%= v %></button><% } %></div>
+          <small class="hint"><code>{name}</code> pseudo en jeu, <code>{id}</code> ID serveur, <code>{level}</code> niveau Battle Royale. Si c'est trop long, le pseudo est raccourci en premier.</small>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><h2 class="card-title">Rôles &amp; compteur</h2></div></div>
+        <div class="field-row">
+          <div class="field"><label for="f-linked">Rôle « compte lié »</label><%- include('../partials/role-select', { name: 'linkedRoleId', id: 'f-linked', selected: sync.linkedRoleId || '', multiple: false, emptyLabel: '— Aucun —' }) %></div>
+          <div class="field"><label for="f-online">Rôle « en jeu »</label><%- include('../partials/role-select', { name: 'onlineRoleId', id: 'f-online', selected: sync.onlineRoleId || '', multiple: false, emptyLabel: '— Aucun —' }) %></div>
+        </div>
+        <div class="field mt-4"><label for="f-counter">Salon compteur de joueurs</label><%- include('../partials/channel-select', { name: 'playerCountChannelId', id: 'f-counter', selected: sync.playerCountChannelId || '', kind: 'all', emptyLabel: '— Aucun —' }) %><small class="hint">Renommé automatiquement (au plus toutes les 6 minutes, limite Discord). Un salon vocal est idéal.</small></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><h2 class="card-title">Accès au serveur de jeu</h2><p class="card-desc">Vérifié à chaque connexion par rs_bridge.</p></div></div>
+        <div class="toggle-list">
+          <%- toggle('requireDiscord', 'Compte Discord obligatoire', 'Refuse les joueurs sans compte lié ou absents du serveur Discord.') %>
+          <%- toggle('requireWhitelist', 'Whitelist obligatoire', 'Exige une candidature whitelist acceptée.') %>
+        </div>
+        <div class="field mt-4"><label for="f-require-role">Rôle Discord requis</label><%- include('../partials/role-select', { name: 'requireRoleId', id: 'f-require-role', selected: sync.requireRoleId || '', multiple: false, emptyLabel: '— Aucun —' }) %></div>
+      </section>
+
+      <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+    </form>
+
+    <aside class="split-preview">
+      <div class="preview-panel">
+        <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 15 }) %>Aperçu des surnoms</span><span class="badge badge-muted">Discord</span></div>
+        <div class="preview-panel-body"><div class="dpreview dmember-list" data-nickname-preview></div></div>
+        <div class="preview-panel-note" data-nickname-note>Exemples rendus avec le format ci-contre.</div>
+      </div>
+      <div class="preview-panel">
+        <div class="preview-panel-head"><span class="row"><%- icon('volume', { size: 15 }) %>Salon compteur</span></div>
+        <div class="preview-panel-body"><div class="dpreview dchannel-list"><div class="dchannel-row"><%- icon('volume', { size: 18 }) %><span><%= counterName %></span></div></div></div>
+        <div class="preview-panel-note">Nom actuel calculé depuis le dernier statut reçu.</div>
+      </div>
+    </aside>
+  </div>
+<% } %>

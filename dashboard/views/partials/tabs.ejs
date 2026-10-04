@@ -1,0 +1,11 @@
+<%#
+  Onglets en liens (une URL par onglet). Attend : tabs ([{ key, label, href, icon?, count? }]), active (clé), label (aria).
+%>
+<nav class="tabs-nav" aria-label="<%= typeof label === 'string' ? label : 'Sections' %>">
+  <% for (const t of tabs) { %>
+    <a href="<%= t.href %>"<%- t.key === active ? ' aria-current="page"' : '' %>>
+      <% if (t.icon) { %><%- icon(t.icon, { size: 16 }) %><% } %><%= t.label %>
+      <% if (t.count !== undefined && t.count !== null) { %><span class="tab-count"><%= t.count %></span><% } %>
+    </a>
+  <% } %>
+</nav>

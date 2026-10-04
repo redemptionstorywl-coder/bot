@@ -6,7 +6,8 @@ import { prisma } from '../../../src/database/client';
 import { guildConfigService } from '../../../src/services/GuildConfigService';
 import { loggingService } from '../../../src/services/LoggingService';
 import { invalidateCommandPermissions } from '../../../src/events/interactionCreate';
-import { LANGUAGE_CODES, MODULE_KEYS, MODULE_LABELS, GUILD_KIND_LABELS, LANGUAGES } from '../../../src/config/constants';
+import { LANGUAGE_CODES, MODULE_LABELS, LANGUAGES } from '../../../src/config/constants';
+import { groupedModules, GUILD_KIND_INFO, MODULE_INFO, timezoneList } from '../../lib/modules';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
 import { flash } from '../../lib/flash';
@@ -56,7 +57,7 @@ export function createSettingsRouter(client: RedemptionClient): Router {
           description: cmd.data.description,
           category: cmd.category ?? 'autre',
           module: cmd.module ?? null,
-          moduleLabel: cmd.module ? MODULE_LABELS[cmd.module] : null,
+          moduleLabel: cmd.module ? MODULE_INFO[cmd.module]?.label ?? MODULE_LABELS[cmd.module] : null,
           internal: cmd.permissions?.internal ?? 'everyone',
           enabled: permMap.get(cmd.data.name)?.enabled ?? true,
           roleIds: permMap.get(cmd.data.name)?.roleIds ?? [],
@@ -67,11 +68,16 @@ export function createSettingsRouter(client: RedemptionClient): Router {
         title: 'Paramètres',
         page: 'settings',
         tab,
-        kinds: Object.entries(GUILD_KIND_LABELS).map(([value, label]) => ({ value, label })),
+        crumbs: tab === 'general' ? [] : [{ label: tab === 'modules' ? 'Modules' : 'Permissions' }],
+        kinds: Object.entries(GUILD_KIND_INFO).map(([value, info]) => ({ value, ...info })),
         languages: LANGUAGES,
-        modules: MODULE_KEYS.map((key) => ({ key, label: MODULE_LABELS[key], enabled: config.modules[key] })),
+        moduleGroups: groupedModules(config.modules),
+        modulesActive: Object.values(config.modules).filter(Boolean).length,
+        modulesTotal: Object.keys(MODULE_INFO).length,
         commands,
+        timezones: tab === 'general' ? timezoneList() : [],
         settings: config.raw.settings,
+        scripts: tab === 'general' ? ['settings'] : [],
       });
     }),
   );

@@ -50,6 +50,7 @@ vi.mock('../../src/services/TicketService', async (importOriginal) => {
   svc.deleteTicket = vi.fn(async (input: { ticketId: number }) => ({ id: input.ticketId, number: 7 })) as never;
   svc.createPanel = vi.fn(async (opts: { channel: { id: string }; style: string; typeIds: number[] }) => ({ id: 3, guildId: GUILD_ID, channelId: opts.channel.id, messageId: '600000000000000001', embed: {}, typeIds: opts.typeIds, style: opts.style, createdAt: new Date() })) as never;
   svc.deletePanel = vi.fn(async (_guildId: string, id: number) => ({ id })) as never;
+  svc.republishPanel = vi.fn(async (id: number) => ({ id, guildId: GUILD_ID, channelId: TEXT_CHANNEL_ID, messageId: '600000000000000002', embed: {}, typeIds: [1], style: 'BUTTONS', createdAt: new Date() })) as never;
   return mod;
 });
 
@@ -77,6 +78,14 @@ vi.mock('../../src/services/ModerationService', async (importOriginal) => {
   svc.setLockdown = vi.fn(async (_g: string, enabled: boolean) => ({ changed: true, channels: enabled ? 3 : 3, failed: 0 })) as never;
   svc.removeWarning = vi.fn(async (id: number) => ({ warning: { id, userId: USER_ID }, sanction: { caseNumber: 12 } })) as never;
   svc.clearWarnings = vi.fn(async () => ({ cleared: 2, sanction: { caseNumber: 13 } })) as never;
+  return mod;
+});
+
+vi.mock('../../src/services/HoneypotService', async (importOriginal) => {
+  const mod = await importOriginal<typeof import('../../src/services/HoneypotService')>();
+  const svc = mod.honeypotService;
+  svc.setup = vi.fn(async () => ({ channelId: TEXT_CHANNEL_ID, created: false })) as never;
+  svc.remove = vi.fn(async () => undefined) as never;
   return mod;
 });
 
@@ -125,11 +134,12 @@ import { announcementService } from '../../src/services/AnnouncementService';
 import { roleService } from '../../src/services/RoleService';
 import { moderationService } from '../../src/services/ModerationService';
 import { giveawayService } from '../../src/services/GiveawayService';
+import { honeypotService } from '../../src/services/HoneypotService';
 import { eventService } from '../../src/services/EventService';
 import { pollService } from '../../src/services/PollService';
 import { welcomeService } from '../../src/services/WelcomeService';
 import { parseLocalDateTime, toLocalInputValue } from '../../dashboard/lib/dates';
-import { PENDING_MODULE_PAGES } from '../../dashboard/lib/navigation';
+import { NAVIGATION } from '../../dashboard/lib/navigation';
 
 setTestEnv();
 const prisma = mockedPrisma as unknown as ReturnType<typeof createPrismaMock>;
@@ -172,7 +182,7 @@ async function follow(r: { location: string | null }) {
 
 const MODELS = [
   'dashboardSession', 'guild', 'guildSettings', 'logChannel', 'log', 'commandPermission', 'user',
-  'ticket', 'ticketType', 'ticketPanel', 'ticketTranscript', 'ticketMessage', 'warning', 'sanction', 'ban', 'mute', 'moderationConfig',
+  'ticket', 'ticketType', 'ticketPanel', 'ticketTranscript', 'ticketMessage', 'ticketSettings', 'fiveMPlayer', 'fiveMServer', 'honeypotChannel', 'warning', 'sanction', 'ban', 'mute', 'moderationConfig',
   'embedTemplate', 'announcement', 'scheduledAnnouncement', 'welcomeConfig', 'leaveConfig', 'autoRole', 'roleMenu', 'reactionRole',
   'notificationRole', 'giveaway', 'giveawayEntry', 'event', 'eventParticipant', 'poll', 'pollVote',
 ];
@@ -264,67 +274,140 @@ afterAll(async () => {
   fs.rmSync(transcriptDir, { recursive: true, force: true });
 });
 
-describe('Pages génériques restantes', () => {
-  it('aucune page de module ne reste « en cours d’intégration » (FiveM / Whitelist / Battle Royale / School / Shop : voir modules2.test.ts)', async () => {
-    expect(PENDING_MODULE_PAGES).toEqual([]);
-    const tickets = await get(`/guilds/${GUILD_ID}/tickets`);
-    expect(tickets.status).toBe(200);
-    expect(tickets.text).not.toContain("en cours d'intégration");
+describe('Navigation', () => {
+  it('chaque entrée du menu latéral répond 200 (pages de jeu : voir modules2.test.ts)', async () => {
+    for (const entry of NAVIGATION.filter((e) => e.group !== 'game')) {
+      const r = await get(`/guilds/${GUILD_ID}${entry.path ? '/' + entry.path : ''}`);
+      expect(r.status, entry.key).toBe(200);
+      expect(r.text, entry.key).toContain('aria-current="page"');
+    }
   });
 });
 
 describe('Tickets', () => {
-  it('GET /tickets rend liste, types, panneaux et statistiques', async () => {
-    const r = await get(`/guilds/${GUILD_ID}/tickets?tab=tickets&status=open&type=1&q=7`);
-    expect(r.status).toBe(200);
-    expect(r.text).toContain('#7');
-    expect(r.text).toContain('Support');
-    expect(r.text).toContain('Panneaux publiés');
-    expect(r.text).toContain('Répartition par type');
-    expect(r.text).toContain('data-pct="100"');
+  it('GET des onglets : raisons, panneaux, relances, liste, statistiques', async () => {
+    const reasons = await get(`/guilds/${GUILD_ID}/tickets`);
+    expect(reasons.status).toBe(200);
+    expect(reasons.text).toContain('data-sortable-url="/guilds/' + GUILD_ID + '/tickets/reasons/order"');
+    expect(reasons.text).toContain('Support');
+    expect(reasons.text).toContain('Nouvelle raison');
+    const panels = await get(`/guilds/${GUILD_ID}/tickets/panels`);
+    expect(panels.status).toBe(200);
+    expect(panels.text).toContain('Panneaux publiés');
+    expect(panels.text).toContain('data-panel-preview');
+    expect(panels.text).toContain('class="dpreview');
+    const reminders = await get(`/guilds/${GUILD_ID}/tickets/reminders`);
+    expect(reminders.status).toBe(200);
+    expect(reminders.text).toContain('Ticket permanent');
+    expect(reminders.text).toContain('data-reminder-preview');
+    const list = await get(`/guilds/${GUILD_ID}/tickets/list?status=open&type=1&q=7`);
+    expect(list.status).toBe(200);
+    expect(list.text).toContain('#7');
+    const stats = await get(`/guilds/${GUILD_ID}/tickets/stats`);
+    expect(stats.status).toBe(200);
+    expect(stats.text).toContain('Par raison');
+    expect(stats.text).toContain('data-pct="100"');
+  });
+  it('GET éditeur de raison (création et modification) avec aperçus', async () => {
+    const created = await get(`/guilds/${GUILD_ID}/tickets/reasons/new`);
+    expect(created.status).toBe(200);
+    expect(created.text).toContain('Nouvelle raison');
+    expect(created.text).toContain('data-modal-preview');
+    const edit = await get(`/guilds/${GUILD_ID}/tickets/reasons/1`);
+    expect(edit.status).toBe(200);
+    expect(edit.text).toContain('data-dirty-form');
+    expect(edit.text).toContain('data-opening-preview');
+    expect(edit.text).toContain('dmodal');
+    expect(edit.text).toContain('Détails');
+    expect(edit.text).toContain('/js/tickets.js');
+    prisma.ticketType.findUnique.mockResolvedValue({ ...ticketType, guildId: '100000000000000002' });
+    const other = await get(`/guilds/${GUILD_ID}/tickets/reasons/1`);
+    expect(other.status).toBe(404);
   });
   it('GET /tickets/:id rend la fiche avec les réponses', async () => {
     const r = await get(`/guilds/${GUILD_ID}/tickets/10`);
     expect(r.status).toBe(200);
     expect(r.text).toContain('Mon souci');
     expect(r.text).toContain('Fermer le ticket');
+    expect(r.text).toContain('Ticket permanent');
   });
-  it('crée un type avec questions et embed JSON', async () => {
-    prisma.ticketType.findUnique.mockResolvedValue(null);
-    const r = await post(`/guilds/${GUILD_ID}/tickets/types`, {
-      key: 'bug', label: 'Bug', emoji: '🐛', description: '', categoryId: CATEGORY_ID, archiveCategoryId: '', staffRoleIds: STAFF_ROLE_ID,
-      questionsJson: JSON.stringify([{ label: 'Décrivez le bug', style: 'paragraph', required: true, maxLength: 500 }]),
-      embedJson: '{"title":"🐛 Bug","color":"#EF4444"}', welcomeMessage: 'Merci {user}', language: 'fr', nameFormat: 'bug-{number}', maxPerUser: '2', enabled: 'on', order: '1',
+  it('crée une raison (clé générée, questions, embed personnalisé)', async () => {
+    prisma.ticketType.findMany.mockResolvedValue([ticketType]);
+    prisma.ticketType.upsert.mockResolvedValue({ ...ticketType, id: 2, key: 'bug', label: 'Bug' });
+    const r = await post(`/guilds/${GUILD_ID}/tickets/reasons`, {
+      label: 'Bug', emoji: '🐛', description: '', categoryId: CATEGORY_ID, archiveCategoryId: '', staffRoleIds: STAFF_ROLE_ID,
+      questionsJson: JSON.stringify([{ label: 'Décrivez le bug', style: 'paragraph', required: true, maxLength: 500 }, { label: 'Décrivez le bug', style: 'short' }]),
+      embedMode: 'custom', 'embed[title]': '🐛 Bug #{number}', 'embed[color]': '#EF4444', 'embed[fieldsJson]': '[]', welcomeMessage: 'Merci {user}', nameFormat: 'bug-{number}', maxPerUser: '2', enabled: 'on',
     });
     expect(r.status).toBe(302);
-    expect(r.location).toBe(`/guilds/${GUILD_ID}/tickets?tab=types`);
-    expect(prisma.ticketType.upsert).toHaveBeenCalled();
-    const call = prisma.ticketType.upsert.mock.calls[0][0] as { create: { questions: { id: string; label: string }[]; embed: { title: string } } };
-    expect(call.create.questions[0].id).toBe('decrivez-le-bug');
-    expect(call.create.embed.title).toBe('🐛 Bug');
+    expect(r.location).toBe(`/guilds/${GUILD_ID}/tickets/reasons/2`);
+    const call = prisma.ticketType.upsert.mock.calls[0][0] as { where: { guildId_key: { key: string } }; create: { questions: { id: string; label: string; required: boolean }[]; embed: { title: string; color: string }; order: number; maxPerUser: number } };
+    expect(call.where.guildId_key.key).toBe('bug');
+    expect(call.create.questions.map((q) => q.id)).toEqual(['decrivez-le-bug', 'decrivez-le-bug-2']);
+    expect(call.create.questions[1].required).toBe(false);
+    expect(call.create.embed).toEqual({ title: '🐛 Bug #{number}', color: '#EF4444' });
+    expect(call.create.order).toBe(1);
+    expect(call.create.maxPerUser).toBe(2);
   });
-  it('refuse un type invalide avec un flash lisible', async () => {
-    const r = await post(`/guilds/${GUILD_ID}/tickets/types`, { key: 'BUG!', label: '', questionsJson: '[]', embedJson: '', nameFormat: 'x', maxPerUser: '1', order: '0' });
+  it('refuse une raison invalide (400 lisible)', async () => {
+    const r = await post(`/guilds/${GUILD_ID}/tickets/reasons`, { label: '', questionsJson: '[]', nameFormat: 'x', maxPerUser: '99' });
     expect(r.status).toBe(400);
-    expect(r.text).toContain('clé');
+    expect(r.text).toContain('Données invalides');
   });
-  it('met à jour et supprime un type', async () => {
-    const upd = await post(`/guilds/${GUILD_ID}/tickets/types/1`, { key: 'support', label: 'Support+', questionsJson: '[]', embedJson: '', nameFormat: 'ticket-{number}', maxPerUser: '3', order: '0', enabled: 'on', language: '' });
+  it('met à jour (embed par défaut), active/désactive, réordonne et supprime une raison', async () => {
+    const upd = await post(`/guilds/${GUILD_ID}/tickets/reasons/1`, { label: 'Support+', questionsJson: '[]', embedMode: 'default', 'embed[title]': 'ignoré', nameFormat: 'ticket-{number}', maxPerUser: '3', enabled: 'on' });
     expect(upd.status).toBe(302);
-    expect(prisma.ticketType.update).toHaveBeenCalled();
-    const del = await post(`/guilds/${GUILD_ID}/tickets/types/1/delete`, {});
+    expect(upd.location).toBe(`/guilds/${GUILD_ID}/tickets/reasons/1`);
+    const data = prisma.ticketType.update.mock.calls[0][0] as { data: { label: string; embed: unknown; maxPerUser: number; questions: unknown[] } };
+    expect(data.data.label).toBe('Support+');
+    expect(data.data.maxPerUser).toBe(3);
+    expect(data.data.questions).toEqual([]);
+    const toggle = await post(`/guilds/${GUILD_ID}/tickets/reasons/1/toggle`, { enabled: false }, { json: true });
+    expect(toggle.status).toBe(200);
+    expect(JSON.parse(toggle.text).ok).toBe(true);
+    prisma.ticketType.findMany.mockResolvedValue([ticketType, { ...ticketType, id: 2, key: 'bug', order: 1 }]);
+    prisma.ticketType.update.mockClear();
+    const order = await post(`/guilds/${GUILD_ID}/tickets/reasons/order`, { order: [2, 1] }, { json: true });
+    expect(order.status).toBe(200);
+    expect(JSON.parse(order.text)).toMatchObject({ ok: true, order: [2, 1], changed: 2 });
+    expect(prisma.ticketType.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 2 }, data: expect.objectContaining({ order: 0 }) }));
+    const bad = await post(`/guilds/${GUILD_ID}/tickets/reasons/order`, { order: 'x' }, { json: true });
+    expect(bad.status).toBe(400);
+    const del = await post(`/guilds/${GUILD_ID}/tickets/reasons/1/delete`, {});
     expect(del.status).toBe(302);
     expect(prisma.ticketType.delete).toHaveBeenCalledWith({ where: { id: 1 } });
   });
-  it('publie et supprime un panneau', async () => {
-    const r = await post(`/guilds/${GUILD_ID}/tickets/panels`, { channelId: TEXT_CHANNEL_ID, style: 'SELECT', typeIds: '1', embedJson: '' });
+  it('publie, republie et supprime un panneau', async () => {
+    const r = await post(`/guilds/${GUILD_ID}/tickets/panels`, { channelId: TEXT_CHANNEL_ID, style: 'SELECT', typeIds: '1', 'embed[title]': '🎫 Support {server}', 'embed[description]': 'Choisissez', 'embed[color]': '', 'embed[image]': '', 'embed[footerText]': 'Merci' });
     expect(r.status).toBe(302);
-    expect(ticketService.createPanel).toHaveBeenCalledWith(expect.objectContaining({ style: 'SELECT', typeIds: [1] }));
+    expect(ticketService.createPanel).toHaveBeenCalledWith(expect.objectContaining({ style: 'SELECT', typeIds: [1], embed: { title: '🎫 Support {server}', description: 'Choisissez', footer: { text: 'Merci' } } }));
     const page = await follow(r);
     expect(page.text).toContain('Panneau publié');
+    prisma.ticketPanel.findUnique.mockResolvedValue({ id: 3, guildId: GUILD_ID, channelId: TEXT_CHANNEL_ID, messageId: '600000000000000001', embed: {}, typeIds: [1], style: 'BUTTONS', createdAt: new Date() });
+    const rep = await post(`/guilds/${GUILD_ID}/tickets/panels/3/republish`, {});
+    expect(rep.status).toBe(302);
+    expect(ticketService.republishPanel).toHaveBeenCalledWith(3);
     const del = await post(`/guilds/${GUILD_ID}/tickets/panels/3/delete`, {});
     expect(del.status).toBe(302);
     expect(ticketService.deletePanel).toHaveBeenCalledWith(GUILD_ID, 3);
+  });
+  it('enregistre les relances et bascule un ticket permanent', async () => {
+    prisma.ticketSettings.upsert.mockImplementation(async (args: { create: Record<string, unknown> }) => ({ ...args.create, updatedAt: new Date() }));
+    const r = await post(`/guilds/${GUILD_ID}/tickets/reminders`, { remindersEnabled: 'on', reminderHours: '48', reminderPing: 'staff' });
+    expect(r.status).toBe(302);
+    expect(r.location).toBe(`/guilds/${GUILD_ID}/tickets/reminders`);
+    expect(prisma.ticketSettings.upsert).toHaveBeenCalledWith(expect.objectContaining({ update: { remindersEnabled: true, reminderHours: 48, reminderPing: 'staff' } }));
+    const invalid = await post(`/guilds/${GUILD_ID}/tickets/reminders`, { remindersEnabled: 'on', reminderHours: '500', reminderPing: 'staff' });
+    expect(invalid.status).toBe(400);
+    const perm = await post(`/guilds/${GUILD_ID}/tickets/10/permanent`, { enabled: 'on' });
+    expect(perm.status).toBe(302);
+    expect(perm.location).toBe(`/guilds/${GUILD_ID}/tickets/10`);
+    expect(prisma.ticket.update).toHaveBeenCalledWith({ where: { id: 10 }, data: { remindersMuted: true } });
+    const back = await post(`/guilds/${GUILD_ID}/tickets/10/permanent?back=reminders`, { enabled: '' });
+    expect(back.location).toBe(`/guilds/${GUILD_ID}/tickets/reminders`);
+    prisma.ticket.findMany.mockResolvedValue([{ ...ticketRow, remindersMuted: true }]);
+    const page = await get(`/guilds/${GUILD_ID}/tickets/reminders`);
+    expect(page.text).toContain('Réactiver les relances');
   });
   it('ferme, prend en charge et supprime un ticket', async () => {
     const close = await post(`/guilds/${GUILD_ID}/tickets/10/close`, { reason: 'Résolu' });
@@ -334,7 +417,7 @@ describe('Tickets', () => {
     expect(claim.status).toBe(302);
     expect(ticketService.claimTicket).toHaveBeenCalledWith({ ticketId: 10, staffId: USER_ID });
     const del = await post(`/guilds/${GUILD_ID}/tickets/10/delete`, {});
-    expect(del.location).toBe(`/guilds/${GUILD_ID}/tickets?tab=tickets`);
+    expect(del.location).toBe(`/guilds/${GUILD_ID}/tickets/list`);
     expect(ticketService.deleteTicket).toHaveBeenCalledWith({ ticketId: 10, byId: USER_ID });
   });
   it('convertit une TicketError en flash lisible', async () => {
@@ -344,17 +427,22 @@ describe('Tickets', () => {
     const page = await follow(r);
     expect(page.text).toContain('Ce ticket est déjà fermé.');
   });
-  it('sert les transcripts depuis uploads/transcripts en vérifiant le chemin', async () => {
+  it('sert les transcripts (iframe même origine) en vérifiant le chemin', async () => {
     const dir = path.join(transcriptDir, GUILD_ID);
     fs.mkdirSync(dir, { recursive: true });
     const htmlPath = path.join(dir, 'ticket-7.html');
     fs.writeFileSync(htmlPath, '<!doctype html><html><body>Transcript 7</body></html>');
-    const transcript = { id: 1, ticketId: 10, htmlPath, txtPath: path.join(dir, 'ticket-7.txt'), pdfPath: path.join(transcriptDir, '100000000000000002', 'ticket-7.pdf'), messageCount: 4, durationSeconds: 120, staffIds: [], closeReason: null, createdAt: new Date() };
+    const transcript = { id: 1, ticketId: 10, htmlPath, txtPath: path.join(dir, 'ticket-7.txt'), pdfPath: path.join(transcriptDir, '100000000000000002', 'ticket-7.pdf'), messageCount: 4, durationSeconds: 120, staffIds: [STAFF_ROLE_ID], closeReason: null, createdAt: new Date() };
     prisma.ticket.findUnique.mockResolvedValue({ ...ticketRow, status: 'CLOSED', transcript });
+    const sheet = await get(`/guilds/${GUILD_ID}/tickets/10`);
+    expect(sheet.text).toContain('<iframe class="transcript-frame"');
+    expect(sheet.text).toContain('sandbox=""');
     const html = await get(`/guilds/${GUILD_ID}/tickets/10/transcript/html`);
     expect(html.status).toBe(200);
     expect(html.text).toContain('Transcript 7');
     expect(html.headers['content-security-policy']).toContain("default-src 'none'");
+    expect(html.headers['content-security-policy']).toContain("frame-ancestors 'self'");
+    expect(html.headers['x-frame-options']).toBe('SAMEORIGIN');
     const missing = await get(`/guilds/${GUILD_ID}/tickets/10/transcript/txt`);
     expect(missing.status).toBe(404);
     const traversal = await get(`/guilds/${GUILD_ID}/tickets/10/transcript/pdf`);
@@ -423,11 +511,13 @@ describe('Embeds', () => {
 describe('Formulaires de création', () => {
   it('les pages « nouveau » se rendent', async () => {
     for (const [p, needle] of [
-      ['/tickets/types/new', 'Nouveau type de ticket'],
+      ['/tickets/reasons/new', 'Nouvelle raison'],
       ['/embeds/new', 'Nouveau template'],
       ['/announcements/new', 'Nouvelle annonce'],
-      ['/roles/menus/new', 'Nouveau role menu'],
+      ['/roles/menus/new', 'Nouveau menu de rôles'],
       ['/events/new', 'Nouvel événement'],
+      ['/events/polls/new', 'Nouveau sondage'],
+      ['/giveaways/new', 'Nouveau giveaway'],
     ] as const) {
       const r = await get(`/guilds/${GUILD_ID}${p}`);
       expect(r.status, p).toBe(200);
@@ -547,8 +637,11 @@ describe('Rôles', () => {
     const r = await get(`/guilds/${GUILD_ID}/roles?tab=menus`);
     expect(r.status).toBe(200);
     expect(r.text).toContain('Couleurs');
-    expect(r.text).toContain('Annonces');
-    expect(r.text).toContain('arrivée');
+    expect(r.text).toContain('class="dpreview');
+    const autoroles = await get(`/guilds/${GUILD_ID}/roles`);
+    expect(autoroles.text).toContain('arrivée');
+    const notifs = await get(`/guilds/${GUILD_ID}/roles?tab=notifications`);
+    expect(notifs.text).toContain('Annonces');
   });
   it('ajoute et retire un auto-role', async () => {
     const add = await post(`/guilds/${GUILD_ID}/roles/autoroles`, { roleId: STAFF_ROLE_ID, type: 'VERIFIED', delayMinutes: '5' });
@@ -619,14 +712,37 @@ describe('Reaction Roles', () => {
 });
 
 describe('Modération', () => {
-  it('GET /moderation rend tous les onglets', async () => {
-    const r = await get(`/guilds/${GUILD_ID}/moderation?tab=sanctions&case=12&warnUser=${USER_ID}`);
-    expect(r.status).toBe(200);
-    expect(r.text).toContain('Cas #12');
-    expect(r.text).toContain('Anti-spam');
-    expect(r.text).toContain('Serveur ouvert');
-    expect(r.text).toContain('Spam');
-    expect(r.text).toContain('Avertissement</span>');
+  it('GET /moderation rend chaque onglet', async () => {
+    for (const [query, needle] of [
+      ['?tab=sanctions&case=12', 'Cas #12'],
+      ['', 'Avertissement</span>'],
+      [`?tab=warnings&warnUser=${USER_ID}`, 'Spam'],
+      ['?tab=config', 'Escalade automatique'],
+      ['?tab=antiraid', 'Anti-spam'],
+      ['?tab=antiraid', 'Anti-nuke'],
+      ['?tab=honeypot', 'Mettre en place un salon piège'],
+      ['?tab=lockdown', 'Serveur ouvert'],
+      ['?tab=stats', 'Sanctions des 30 derniers jours'],
+    ] as const) {
+      const r = await get(`/guilds/${GUILD_ID}/moderation${query}`);
+      expect(r.status, query).toBe(200);
+      expect(r.text, query).toContain(needle);
+    }
+  });
+  it('configure, bascule et retire le salon piège', async () => {
+    prisma.honeypotChannel.findUnique.mockResolvedValue({ guildId: GUILD_ID, channelId: TEXT_CHANNEL_ID, messageId: '600000000000000001', enabled: true, deleteWindowMinutes: 30, createdAt: new Date(), updatedAt: new Date() });
+    const page = await get(`/guilds/${GUILD_ID}/moderation?tab=honeypot`);
+    expect(page.text).toContain('30 dernières minutes');
+    expect(page.text).toContain('DO NOT SEND MESSAGES HERE');
+    const setup = await post(`/guilds/${GUILD_ID}/moderation/honeypot/setup`, { mode: 'existing', channelId: TEXT_CHANNEL_ID, windowMinutes: '45' });
+    expect(setup.status).toBe(302);
+    expect(honeypotService.setup).toHaveBeenCalledWith(expect.anything(), { channelId: TEXT_CHANNEL_ID, name: undefined, windowMinutes: 45 });
+    const toggle = await post(`/guilds/${GUILD_ID}/moderation/honeypot/toggle`, { enabled: false }, { json: true });
+    expect(toggle.status).toBe(200);
+    expect(prisma.honeypotChannel.update).toHaveBeenCalledWith({ where: { guildId: GUILD_ID }, data: { enabled: false } });
+    const remove = await post(`/guilds/${GUILD_ID}/moderation/honeypot/remove`, { deleteChannel: 'on' });
+    expect(remove.status).toBe(302);
+    expect(honeypotService.remove).toHaveBeenCalledWith(expect.anything(), true);
   });
   it('enregistre la configuration (seuils en minutes → secondes)', async () => {
     const r = await post(`/guilds/${GUILD_ID}/moderation/config`, { thresholdsJson: JSON.stringify([{ count: 3, action: 'TIMEOUT', durationMinutes: 30 }, { count: 5, action: 'KICK', durationMinutes: '' }]), muteRoleId: STAFF_ROLE_ID, dmOnSanction: 'on' });
@@ -694,19 +810,50 @@ describe('Giveaways', () => {
 });
 
 describe('Événements & sondages', () => {
+  it('les aperçus (événement, sondage, giveaway) utilisent les constructeurs du bot sans rien enregistrer', async () => {
+    const ev = await post(`/guilds/${GUILD_ID}/events/preview`, { name: 'Tournoi', description: 'Grand **tournoi**', startsAt: '2099-03-01T20:00', maxParticipants: '16', mentionRoleId: STAFF_ROLE_ID, location: 'Arène' }, { json: true });
+    expect(ev.status).toBe(200);
+    const evHtml = JSON.parse(ev.text).html as string;
+    expect(evHtml).toContain('Tournoi');
+    expect(evHtml).toContain('0/16');
+    expect(evHtml).toContain('Arène');
+    expect(evHtml).toContain('dbtn');
+    const existing = await post(`/guilds/${GUILD_ID}/events/preview`, { eventId: '9', name: 'Soirée RP renommée', description: 'x', startsAt: '' }, { json: true });
+    expect(JSON.parse(existing.text).html).toContain('Soirée RP renommée');
+    const poll = await post(`/guilds/${GUILD_ID}/events/polls/preview`, { question: 'Map ?', type: 'MULTIPLE', optionsJson: JSON.stringify([{ label: 'Désert' }, { label: 'Ville', emoji: '🏙️' }]), anonymous: 'on' }, { json: true });
+    const pollHtml = JSON.parse(poll.text).html as string;
+    expect(pollHtml).toContain('📊 Map ?');
+    expect(pollHtml).toContain('Désert');
+    const yesNo = await post(`/guilds/${GUILD_ID}/events/polls/preview`, { question: 'Ok ?', type: 'YES_NO' }, { json: true });
+    expect(JSON.parse(yesNo.text).html).toContain('Oui');
+    const gw = await post(`/guilds/${GUILD_ID}/giveaways/preview`, { prize: 'Nitro', endMode: 'duration', duration: '2h', winnersCount: '3', minMessages: '5' }, { json: true });
+    const gwHtml = JSON.parse(gw.text).html as string;
+    expect(gwHtml).toContain('🎁 Nitro');
+    expect(gwHtml).toContain('Participer');
+    expect(prisma.event.create).not.toHaveBeenCalled();
+    expect(prisma.poll.create).not.toHaveBeenCalled();
+    expect(prisma.giveaway.create).not.toHaveBeenCalled();
+  });
   it('GET /events, la fiche et les résultats de sondage se rendent', async () => {
     const list = await get(`/guilds/${GUILD_ID}/events?status=SCHEDULED`);
     expect(list.status).toBe(200);
     expect(list.text).toContain('Soirée RP');
-    expect(list.text).toContain('Quelle map ?');
+    const polls = await get(`/guilds/${GUILD_ID}/events?tab=polls`);
+    expect(polls.status).toBe(200);
+    expect(polls.text).toContain('Quelle map ?');
     const form = await get(`/guilds/${GUILD_ID}/events/9`);
     expect(form.status).toBe(200);
     expect(form.text).toContain('value="Soirée RP"');
-    expect(form.text).toContain('60, 10');
+    expect(form.text).toContain('name="reminderOffsets" value="60" checked');
+    expect(form.text).toContain('name="reminderOffsets" value="10" checked');
+    // Aperçu construit par EventService.buildEmbed (titre préfixé de l'emoji de statut, boutons d'inscription)
+    expect(form.text).toContain('id="event-preview"');
+    expect(form.text).toContain('Soirée RP</div>');
     const poll = await get(`/guilds/${GUILD_ID}/events/polls/3`);
     expect(poll.status).toBe(200);
     expect(poll.text).toContain('data-pct="100"');
     expect(poll.text).toContain('Désert');
+    expect(poll.text).toContain('📊 Quelle map ?');
   });
   it('crée, met à jour, rappelle et annule un événement', async () => {
     const create = await post(`/guilds/${GUILD_ID}/events`, { name: 'Tournoi', description: 'Grand tournoi', startsAt: '2099-03-01T20:00', endsAt: '2099-03-01T22:00', location: 'Arène', imageUrl: '', mentionRoleId: STAFF_ROLE_ID, maxParticipants: '16', channelId: TEXT_CHANNEL_ID, language: '', reminderOffsets: '60, 10, 60' });
@@ -718,9 +865,11 @@ describe('Événements & sondages', () => {
     const bad = await post(`/guilds/${GUILD_ID}/events`, { name: 'X', description: 'Y', startsAt: '2099-03-01T20:00', endsAt: '2099-03-01T19:00', channelId: TEXT_CHANNEL_ID, reminderOffsets: '' });
     const page = await follow(bad);
     expect(page.text).toContain('postérieure au début');
-    const update = await post(`/guilds/${GUILD_ID}/events/9`, { name: 'Soirée RP 2', description: 'Encore', startsAt: '2099-04-01T20:00', endsAt: '', location: '', imageUrl: '', mentionRoleId: '', maxParticipants: '', language: 'en', reminderOffsets: '30' });
+    const update = await post(`/guilds/${GUILD_ID}/events/9`, { name: 'Soirée RP 2', description: 'Encore', startsAt: '2099-04-01T20:00', endsAt: '', location: '', imageUrl: '', mentionRoleId: '', maxParticipants: '', language: 'en', reminderOffsets: ['1440', '30', '45, 120'] });
     expect(update.status).toBe(302);
     expect(prisma.event.update).toHaveBeenCalled();
+    const updData = (prisma.event.update.mock.calls.at(-1)![0] as { data: { reminderOffsets?: number[] } }).data;
+    expect(updData.reminderOffsets).toEqual([1440, 120, 45, 30]);
     const remind = await post(`/guilds/${GUILD_ID}/events/9/remind`, {});
     expect(remind.status).toBe(302);
     expect(eventService.remind).toHaveBeenCalledWith(9);

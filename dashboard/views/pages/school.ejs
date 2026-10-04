@@ -1,376 +1,352 @@
-<section class="page-header">
-  <div><h2 class="page-title">🎓 School RP</h2><p class="muted">Profils des élèves et professeurs, classes, maisons, clubs et candidatures.</p></div>
-</section>
+<%
+  const b = `/guilds/${guild.id}/school`;
+  const channelOf = (id) => guild.textChannels.find((x) => x.id === id);
+  const roleOf = (id) => guild.roles.find((x) => x.id === id);
+  const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const userLink = (id) => id ? `<a class="link" href="/guilds/${guild.id}/members/${id}">${esc(names[id] || id)}</a>` : '<span class="text-3">—</span>';
+  const rolePill = (id) => { if (!id) return '<span class="text-3">—</span>'; const r = roleOf(id); return `<span class="role-pill" data-role-color="${esc(r ? r.color : '#71717a')}"><span class="role-dot"></span><span>${esc(r ? r.name : id)}</span></span>`; };
+  const channelTag = (id) => { if (!id) return '<span class="text-3">—</span>'; const c = channelOf(id); return `<span class="channel-tag">${icon('hash')}${esc(c ? c.name : id)}</span>`; };
+  const houseLabel = (h) => h ? (h.emoji ? h.emoji + ' ' : '') + h.name : '—';
+  const sq = (extra) => `${b}?${baseQuery}${extra ? '&' + extra : ''}`;
+  const roleBadge = { STUDENT: 'badge-muted', TEACHER: 'badge-accent', STAFF: 'badge-info' };
+  const appQ = (extra) => `${b}?tab=applications&status=${filters.status}${extra ? '&' + extra : ''}`;
+%>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('graduation-cap') %></span>
+    <div><h1 class="page-title">School RP</h1><p class="page-subtitle">Profils des élèves et professeurs, classes, maisons, clubs et candidatures.</p></div>
+  </div>
+</header>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module School RP est désactivé sur ce serveur : la commande <code>/school</code> ne répond pas. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Gérer les modules</a></span></div><% } %>
-
-<% const channelName = (id) => { const c = guild.textChannels.find((x) => x.id === id); return c ? '#' + c.name : null; }; %>
-<% const roleName = (id) => { const r = guild.roles.find((x) => x.id === id); return r ? r.name : null; }; %>
-<% const userLink = (id) => id ? `<a class="link" href="/guilds/${guild.id}/members/${id}">${(names[id] || id).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])}</a>` : '—'; %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module School RP est désactivé : la commande <code>/school</code> ne répond pas. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
 
 <div class="stat-grid">
-  <div class="stat-card"><span class="stat-label">Élèves</span><span class="stat-value"><%= fmt.number(counts.STUDENT) %></span></div>
-  <div class="stat-card"><span class="stat-label">Professeurs</span><span class="stat-value"><%= fmt.number(counts.TEACHER) %></span></div>
-  <div class="stat-card"><span class="stat-label">Classes</span><span class="stat-value"><%= classes.length %></span></div>
-  <div class="stat-card"><span class="stat-label">Maisons</span><span class="stat-value"><%= houses.length %></span></div>
-  <div class="stat-card"><span class="stat-label">Candidatures en attente</span><span class="stat-value"><%= fmt.number(pendingCount) %></span></div>
+  <div class="stat"><span class="stat-label"><%- icon('users', { size: 14 }) %>Élèves</span><span class="stat-value"><%= fmt.number(counts.STUDENT) %></span></div>
+  <div class="stat"><span class="stat-label"><%- icon('graduation-cap', { size: 14 }) %>Professeurs</span><span class="stat-value"><%= fmt.number(counts.TEACHER) %></span></div>
+  <div class="stat"><span class="stat-label"><%- icon('layers', { size: 14 }) %>Classes</span><span class="stat-value"><%= classes.length %></span></div>
+  <div class="stat"><span class="stat-label"><%- icon('crown', { size: 14 }) %>Maisons</span><span class="stat-value"><%= houses.length %></span></div>
 </div>
 
-<div class="tabs" data-tabs data-active="<%= tab %>">
-  <div class="tab-list" role="tablist">
-    <button type="button" class="tab" role="tab" data-tab="config">Configuration</button>
-    <button type="button" class="tab" role="tab" data-tab="students">Élèves &amp; profils <span class="badge badge-muted"><%= fmt.number(totalProfiles) %></span></button>
-    <button type="button" class="tab" role="tab" data-tab="classes">Classes <span class="badge badge-muted"><%= classes.length %></span></button>
-    <button type="button" class="tab" role="tab" data-tab="houses">Maisons <span class="badge badge-muted"><%= houses.length %></span></button>
-    <button type="button" class="tab" role="tab" data-tab="clubs">Clubs <span class="badge badge-muted"><%= clubs.length %></span></button>
-    <button type="button" class="tab" role="tab" data-tab="applications">Candidatures <% if (pendingCount) { %><span class="badge badge-primary"><%= pendingCount %></span><% } %></button>
-  </div>
+<%- include('../partials/tabs', { active: tab, label: 'Sections School RP', tabs: [
+  { key: 'students', label: 'Élèves & profils', href: b, icon: 'users', count: totalProfiles || null },
+  { key: 'classes', label: 'Classes', href: b + '?tab=classes', icon: 'layers', count: classes.length || null },
+  { key: 'houses', label: 'Maisons', href: b + '?tab=houses', icon: 'crown', count: houses.length || null },
+  { key: 'clubs', label: 'Clubs', href: b + '?tab=clubs', icon: 'sparkles', count: clubs.length || null },
+  { key: 'applications', label: 'Candidatures', href: b + '?tab=applications', icon: 'inbox', count: pendingCount ? pendingCount + ' en attente' : null },
+  { key: 'config', label: 'Configuration', href: b + '?tab=config', icon: 'settings' },
+] }) %>
 
-  <!-- ─── Configuration ─── -->
-  <section class="tab-panel" data-tab-panel="config" role="tabpanel">
-    <form method="post" action="/guilds/<%= guild.id %>/school/config" class="card form">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <h3 class="card-title">Salons</h3>
-      <div class="grid-2 grid-tight">
-        <div class="field"><label for="sc-app">Salon des candidatures (review)</label><select id="sc-app" name="applicationChannelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: settings.applicationChannelId || '', allowEmpty: true, emptyLabel: '— Aucun (dashboard uniquement) —' }) %></select></div>
-        <div class="field"><label for="sc-ann">Salon d'annonces scolaires</label><select id="sc-ann" name="announceChannelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: settings.announceChannelId || '', allowEmpty: true, emptyLabel: '— Aucun —' }) %></select></div>
-      </div>
-      <h3 class="card-title">Rôles attribués selon le profil</h3>
-      <div class="grid-3 grid-tight">
-        <div class="field"><label for="sc-student">Rôle élève</label><select id="sc-student" name="studentRoleId" class="select"><option value="">— Aucun —</option><%- include('../partials/role-options', { roles: guild.roles, selected: settings.roles.STUDENT || '' }) %></select></div>
-        <div class="field"><label for="sc-teacher">Rôle professeur</label><select id="sc-teacher" name="teacherRoleId" class="select"><option value="">— Aucun —</option><%- include('../partials/role-options', { roles: guild.roles, selected: settings.roles.TEACHER || '' }) %></select></div>
-        <div class="field"><label for="sc-staff">Rôle staff</label><select id="sc-staff" name="staffRoleId" class="select"><option value="">— Aucun —</option><%- include('../partials/role-options', { roles: guild.roles, selected: settings.roles.STAFF || '' }) %></select></div>
-      </div>
-      <div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
-    </form>
-  </section>
+<% if (tab === 'students') { %>
+  <form method="get" action="<%= b %>" class="toolbar mb-4" role="search">
+    <input type="hidden" name="tab" value="students">
+    <div class="row-wrap">
+      <select name="role" class="select select-sm" aria-label="Rôle" data-submit-on-change><option value="">Tous les rôles</option><% for (const r of roles) { %><option value="<%= r.value %>" <%= filters.role === r.value ? 'selected' : '' %>><%= r.label %> (<%= counts[r.value] %>)</option><% } %></select>
+      <select name="class" class="select select-sm" aria-label="Classe" data-submit-on-change><option value="">Toutes les classes</option><% for (const c of classes) { %><option value="<%= c.id %>" <%= filters.class === c.id ? 'selected' : '' %>><%= c.name %></option><% } %></select>
+      <select name="house" class="select select-sm" aria-label="Maison" data-submit-on-change><option value="">Toutes les maisons</option><% for (const h of houses) { %><option value="<%= h.id %>" <%= filters.house === h.id ? 'selected' : '' %>><%= houseLabel(h) %></option><% } %></select>
+    </div>
+    <div class="row-wrap">
+      <label class="search"><%- icon('search', { size: 16 }) %><input type="search" name="q" class="input input-sm" value="<%= filters.q %>" placeholder="Prénom, nom, ID…" aria-label="Rechercher un profil"></label>
+      <button type="submit" class="btn btn-sm">Rechercher</button>
+      <% if (filters.role || filters.class || filters.house || filters.q) { %><a class="btn btn-sm btn-ghost" href="<%= b %>">Effacer</a><% } %>
+    </div>
+  </form>
 
-  <!-- ─── Élèves & profils ─── -->
-  <section class="tab-panel" data-tab-panel="students" role="tabpanel">
-    <% if (filters.user) { %>
-      <% if (profileMissing) { %>
-        <div class="alert alert-info"><span class="alert-icon" aria-hidden="true">i</span><span class="alert-text">Aucun profil School pour <%- userLink(filters.user) %>. Créez-le avec le formulaire « Nouveau profil » ci-dessous.</span></div>
-      <% } else { %>
-      <% const p = profile; %>
-      <div class="card">
-        <div class="card-head">
-          <h3 class="card-title"><%= p.firstName %> <%= p.lastName %> <span class="badge badge-primary"><%= roleLabels[p.role] %></span></h3>
-          <div class="actions-cell">
-            <a class="link" href="/guilds/<%= guild.id %>/members/<%= p.userId %>"><%= names[p.userId] || p.userId %></a>
-            <a class="link" href="/guilds/<%= guild.id %>/school?<%= baseQuery %>">Fermer</a>
+  <% if (profileMissing) { %><div class="alert alert-info"><%- icon('info') %><span class="alert-text">Aucun profil School pour <%- userLink(filters.user) %> : créez-le ci-dessous.</span></div><% } %>
+
+  <div class="<%= profile ? 'grid-2 grid-aside-wide' : '' %>">
+    <div class="stack">
+      <section class="card card-flush" data-live-reload>
+        <% if (!students.length) { %>
+          <%- include('../partials/empty', { glyph: 'users', title: filters.q || filters.role || filters.class || filters.house ? 'Aucun profil trouvé' : 'Aucun profil', text: filters.q || filters.role || filters.class || filters.house ? 'Modifiez les filtres.' : 'Les profils sont créés quand une candidature est acceptée, ou manuellement ci-dessous.', compact: true }) %>
+        <% } else { %>
+        <div class="table-wrap">
+          <table class="table table-responsive table-clickable">
+            <thead><tr><th>Nom</th><th>Rôle</th><th>Classe</th><th>Maison</th><th class="right">Points</th></tr></thead>
+            <tbody>
+              <% for (const s of students) { const href = sq('user=' + s.userId); %>
+                <tr data-href="<%= href %>"<%- profile && profile.userId === s.userId ? ' class="is-selected"' : '' %>>
+                  <td class="cell-primary"><div class="cell-stack"><a class="link strong" href="<%= href %>"><%= s.firstName %> <%= s.lastName %></a><span class="text-xs text-3 truncate"><%= names[s.userId] || s.userId %></span></div></td>
+                  <td data-label="Rôle"><span class="badge <%= roleBadge[s.role] %>"><%= roleLabels[s.role] %></span></td>
+                  <td data-label="Classe"><%= s.class ? s.class.name : '—' %></td>
+                  <td data-label="Maison"><%= houseLabel(s.house) %></td>
+                  <td data-label="Points" class="right tabular"><%= fmt.number(s.points) %></td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+      <%- include('../partials/pagination', { pagination, baseQuery, baseUrl: b }) %>
+
+      <details class="card card-collapsible" <%= profileMissing || (!students.length && !filters.q && !filters.role) ? 'open' : '' %>>
+        <summary><span class="row"><%- icon('user-plus', { size: 16 }) %><strong>Nouveau profil</strong></span><span class="text-xs text-3">Élève, professeur ou staff</span></summary>
+        <form method="post" action="<%= b %>/students" class="form mt-4">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="field-row">
+            <div class="field"><label for="np-user" class="field-required">ID Discord</label><input id="np-user" name="userId" class="input input-mono" required pattern="^\d{15,22}$" value="<%= profileMissing ? filters.user : '' %>" placeholder="123456789012345678"></div>
+            <div class="field"><label for="np-first" class="field-required">Prénom</label><input id="np-first" name="firstName" class="input" required maxlength="50"></div>
+            <div class="field"><label for="np-last" class="field-required">Nom</label><input id="np-last" name="lastName" class="input" required maxlength="50"></div>
           </div>
-        </div>
-        <div class="grid-2 grid-2-aside">
-          <aside>
-            <dl class="dl">
-              <dt>Classe</dt><dd><%= p.class ? p.class.name : '—' %></dd>
-              <dt>Maison</dt><dd><%= p.house ? (p.house.emoji ? p.house.emoji + ' ' : '') + p.house.name : '—' %></dd>
-              <dt>Points</dt><dd><%= fmt.number(p.points) %></dd>
-              <dt>Clubs</dt><dd><%= p.clubs.length ? p.clubs.map((m) => m.club.name).join(', ') : '—' %></dd>
-              <dt>Inscrit le</dt><dd><%= fmt.date(p.createdAt) %></dd>
-            </dl>
-            <% if (p.bio) { %><p class="pre-wrap muted"><%= p.bio %></p><% } %>
-            <form method="post" action="/guilds/<%= guild.id %>/school/students/<%= p.userId %>/delete" class="card-actions"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer le profil de <%= p.firstName %> <%= p.lastName %> ? Ses adhésions aux clubs seront retirées (les rôles Discord sont conservés).">Supprimer le profil</button></form>
-          </aside>
-          <form method="post" action="/guilds/<%= guild.id %>/school/students/<%= p.userId %>" class="form">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <h4 class="card-subtitle">Modifier le profil</h4>
-            <div class="grid-3 grid-tight">
-              <div class="field"><label for="ep-first">Prénom</label><input id="ep-first" name="firstName" class="input" required maxlength="50" value="<%= p.firstName %>"></div>
-              <div class="field"><label for="ep-last">Nom</label><input id="ep-last" name="lastName" class="input" required maxlength="50" value="<%= p.lastName %>"></div>
-              <div class="field"><label for="ep-role">Rôle</label><select id="ep-role" name="role" class="select"><% for (const r of roles) { %><option value="<%= r.value %>" <%= p.role === r.value ? 'selected' : '' %>><%= r.label %></option><% } %></select></div>
-            </div>
-            <div class="grid-3 grid-tight">
-              <div class="field"><label for="ep-class">Classe</label><select id="ep-class" name="classId" class="select"><option value="">— Aucune —</option><% for (const c of classes) { %><option value="<%= c.id %>" <%= p.classId === c.id ? 'selected' : '' %>><%= c.name %> (<%= c._count.students %><%= c.capacity ? '/' + c.capacity : '' %>)</option><% } %></select></div>
-              <div class="field"><label for="ep-house">Maison</label><select id="ep-house" name="houseId" class="select"><option value="">— Aucune —</option><% for (const h of houses) { %><option value="<%= h.id %>" <%= p.houseId === h.id ? 'selected' : '' %>><%= h.emoji ? h.emoji + ' ' : '' %><%= h.name %></option><% } %></select></div>
-              <div class="field"><label for="ep-points">Points</label><input id="ep-points" name="points" type="number" class="input" min="0" max="1000000" value="<%= p.points %>"></div>
-            </div>
-            <div class="field"><label for="ep-bio">Bio</label><textarea id="ep-bio" name="bio" class="textarea textarea-sm" maxlength="500" rows="2"><%= p.bio || '' %></textarea></div>
-            <div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
-          </form>
-        </div>
+          <div class="field-row mt-4">
+            <div class="field"><label for="np-role">Rôle</label><select id="np-role" name="role" class="select"><% for (const r of roles) { %><option value="<%= r.value %>"><%= r.label %></option><% } %></select></div>
+            <div class="field"><label for="np-class">Classe</label><select id="np-class" name="classId" class="select"><option value="">— Aucune —</option><% for (const c of classes) { %><option value="<%= c.id %>"><%= c.name %></option><% } %></select></div>
+            <div class="field"><label for="np-house">Maison</label><select id="np-house" name="houseId" class="select"><option value="">— Aucune —</option><% for (const h of houses) { %><option value="<%= h.id %>"><%= houseLabel(h) %></option><% } %></select></div>
+          </div>
+          <div class="field mt-4"><label for="np-bio">Bio <span class="field-optional">optionnel</span></label><textarea id="np-bio" name="bio" class="textarea" maxlength="500" rows="2"></textarea></div>
+          <div class="form-actions"><button type="submit" class="btn btn-primary"><%- icon('plus', { size: 16 }) %>Créer le profil</button></div>
+        </form>
+      </details>
+    </div>
+
+    <% if (profile) { const p = profile; %>
+    <aside class="card sheet" aria-label="Profil de <%= p.firstName %> <%= p.lastName %>">
+      <div class="card-head">
+        <div class="row min-w-0"><span class="avatar avatar-lg avatar-fallback"><%= fmt.initials(p.firstName + ' ' + p.lastName) %></span><div class="min-w-0"><h2 class="card-title truncate"><%= p.firstName %> <%= p.lastName %></h2><p class="card-desc"><%- userLink(p.userId) %></p></div></div>
+        <span class="row"><span class="badge <%= roleBadge[p.role] %>"><%= roleLabels[p.role] %></span><a class="icon-btn" href="<%= sq() %>" aria-label="Fermer la fiche"><%- icon('x', { size: 16 }) %></a></span>
       </div>
-      <% } %>
+      <dl class="dl">
+        <dt>Classe</dt><dd><%= p.class ? p.class.name : '—' %></dd>
+        <dt>Maison</dt><dd><%= houseLabel(p.house) %></dd>
+        <dt>Points</dt><dd class="tabular"><%= fmt.number(p.points) %></dd>
+        <dt>Clubs</dt><dd><%= p.clubs.length ? p.clubs.map((m) => m.club.name).join(', ') : '—' %></dd>
+        <dt>Inscrit le</dt><dd><%= fmt.date(p.createdAt) %></dd>
+      </dl>
+      <% if (p.bio) { %><p class="pre-wrap text-sm text-2 mt-3"><%= p.bio %></p><% } %>
+
+      <h3 class="section-title mt-5">Modifier le profil</h3>
+      <form method="post" action="<%= b %>/students/<%= p.userId %>" class="form" data-dirty-form>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div class="field-row">
+          <div class="field"><label for="ep-first">Prénom</label><input id="ep-first" name="firstName" class="input" required maxlength="50" value="<%= p.firstName %>"></div>
+          <div class="field"><label for="ep-last">Nom</label><input id="ep-last" name="lastName" class="input" required maxlength="50" value="<%= p.lastName %>"></div>
+        </div>
+        <div class="field-row mt-3">
+          <div class="field"><label for="ep-role">Rôle</label><select id="ep-role" name="role" class="select"><% for (const r of roles) { %><option value="<%= r.value %>" <%= p.role === r.value ? 'selected' : '' %>><%= r.label %></option><% } %></select></div>
+          <div class="field"><label for="ep-points">Points</label><input id="ep-points" name="points" type="number" class="input" min="0" max="1000000" value="<%= p.points %>"></div>
+        </div>
+        <div class="field-row mt-3">
+          <div class="field"><label for="ep-class">Classe</label><select id="ep-class" name="classId" class="select"><option value="">— Aucune —</option><% for (const c of classes) { %><option value="<%= c.id %>" <%= p.classId === c.id ? 'selected' : '' %>><%= c.name %> (<%= c._count.students %><%= c.capacity ? '/' + c.capacity : '' %>)</option><% } %></select></div>
+          <div class="field"><label for="ep-house">Maison</label><select id="ep-house" name="houseId" class="select"><option value="">— Aucune —</option><% for (const h of houses) { %><option value="<%= h.id %>" <%= p.houseId === h.id ? 'selected' : '' %>><%= houseLabel(h) %></option><% } %></select></div>
+        </div>
+        <div class="field mt-3"><label for="ep-bio">Bio</label><textarea id="ep-bio" name="bio" class="textarea" maxlength="500" rows="2"><%= p.bio || '' %></textarea></div>
+        <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+      </form>
+      <form method="post" action="<%= b %>/students/<%= p.userId %>/delete" class="mt-4"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-sm btn-ghost btn-danger-text" data-confirm="Supprimer le profil de <%= p.firstName %> <%= p.lastName %> ? Ses adhésions aux clubs seront retirées (les rôles Discord sont conservés)." data-confirm-label="Supprimer"><%- icon('trash', { size: 14 }) %>Supprimer le profil</button></form>
+    </aside>
     <% } %>
-
-    <form method="get" action="/guilds/<%= guild.id %>/school" class="card filter-bar">
-      <input type="hidden" name="tab" value="students">
-      <div class="field"><label for="f-role">Rôle</label><select id="f-role" name="role" class="select"><option value="">Tous</option><% for (const r of roles) { %><option value="<%= r.value %>" <%= filters.role === r.value ? 'selected' : '' %>><%= r.label %></option><% } %></select></div>
-      <div class="field"><label for="f-class">Classe</label><select id="f-class" name="class" class="select"><option value="">Toutes</option><% for (const c of classes) { %><option value="<%= c.id %>" <%= filters.class === c.id ? 'selected' : '' %>><%= c.name %></option><% } %></select></div>
-      <div class="field"><label for="f-house">Maison</label><select id="f-house" name="house" class="select"><option value="">Toutes</option><% for (const h of houses) { %><option value="<%= h.id %>" <%= filters.house === h.id ? 'selected' : '' %>><%= h.name %></option><% } %></select></div>
-      <div class="field"><label for="f-q">Recherche</label><input id="f-q" name="q" class="input" value="<%= filters.q %>" placeholder="prénom, nom, ID…"></div>
-      <div class="field"><label for="f-user">Fiche par ID Discord</label><input id="f-user" name="user" class="input input-mono" value="<%= filters.user %>" pattern="^\d{15,22}$" placeholder="123456789012345678"></div>
-      <div class="field field-actions"><button type="submit" class="btn btn-primary">Filtrer</button><a class="btn btn-ghost" href="/guilds/<%= guild.id %>/school?tab=students">Réinitialiser</a></div>
-    </form>
-
-    <div class="card">
-      <% if (!students.length) { %><p class="muted">Aucun profil ne correspond à ces filtres.</p><% } else { %>
-      <div class="table-wrap"><table class="table table-compact">
-        <thead><tr><th>Nom</th><th>Membre</th><th>Rôle</th><th>Classe</th><th>Maison</th><th>Points</th><th></th></tr></thead>
-        <tbody>
-          <% for (const s of students) { %>
-            <tr>
-              <td><strong><%= s.lastName %></strong> <%= s.firstName %></td>
-              <td><a class="link" href="/guilds/<%= guild.id %>/members/<%= s.userId %>"><%= names[s.userId] || s.userId %></a></td>
-              <td><span class="badge <%= s.role === 'STUDENT' ? 'badge-muted' : 'badge-primary' %>"><%= roleLabels[s.role] %></span></td>
-              <td><%= s.class ? s.class.name : '—' %></td>
-              <td><%= s.house ? (s.house.emoji ? s.house.emoji + ' ' : '') + s.house.name : '—' %></td>
-              <td><%= fmt.number(s.points) %></td>
-              <td class="right"><a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/school?<%= baseQuery %>&user=<%= s.userId %>">Fiche</a></td>
-            </tr>
-          <% } %>
-        </tbody>
-      </table></div>
+  </div>
+<% } else if (tab === 'classes') { %>
+  <div class="grid-2 grid-aside-right">
+    <div>
+      <% if (!classes.length) { %>
+        <div class="card"><%- include('../partials/empty', { glyph: 'layers', title: 'Aucune classe', text: 'Créez une classe : son rôle et son salon sont attribués aux élèves inscrits.', compact: true }) %></div>
+      <% } else { %>
+      <div class="panel-list">
+        <% for (const c of classes) { %>
+          <article class="card panel-card mb-0">
+            <div class="row justify-between"><strong class="truncate"><%= c.name %></strong><span class="badge badge-muted tabular"><%= c._count.students %><%= c.capacity ? ' / ' + c.capacity : '' %></span></div>
+            <% if (c.capacity) { %><div class="bar-track"><span class="bar-fill" data-pct="<%= Math.min(100, Math.round((c._count.students / c.capacity) * 100)) %>"></span></div><% } %>
+            <dl class="dl dl-compact">
+              <dt>Professeur</dt><dd><%- userLink(c.teacherId) %></dd>
+              <dt>Rôle</dt><dd><%- rolePill(c.roleId) %></dd>
+              <dt>Salon</dt><dd><%- channelTag(c.channelId) %></dd>
+            </dl>
+            <div class="row">
+              <a class="btn btn-sm" href="<%= b %>?tab=students&class=<%= c.id %>"><%- icon('users', { size: 14 }) %>Élèves</a>
+              <button type="button" class="btn btn-sm" data-fill-form="#class-form" data-form-title-text="Modifier « <%= c.name %> »" data-set-id="<%= c.id %>" data-set-name="<%= c.name %>" data-set-teacherId="<%= c.teacherId || '' %>" data-set-roleId="<%= c.roleId || '' %>" data-set-channelId="<%= c.channelId || '' %>" data-set-capacity="<%= c.capacity || '' %>"><%- icon('pencil', { size: 14 }) %>Modifier</button>
+              <form method="post" action="<%= b %>/classes/<%= c.id %>/delete" class="inline-form ml-auto"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="icon-btn is-danger" aria-label="Supprimer la classe" data-tooltip="Supprimer" data-confirm="Supprimer la classe « <%= c.name %> » ? Les élèves resteront sans classe." data-confirm-label="Supprimer"><%- icon('trash', { size: 16 }) %></button></form>
+            </div>
+          </article>
+        <% } %>
+      </div>
       <% } %>
-      <%- include('../partials/pagination', { pagination, baseQuery, baseUrl: `/guilds/${guild.id}/school` }) %>
     </div>
-
-    <form method="post" action="/guilds/<%= guild.id %>/school/students" class="card form">
+    <form method="post" action="<%= b %>/classes" class="card form sticky-card" id="class-form" data-id-action="<%= b %>/classes">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <h3 class="card-title">Nouveau profil</h3>
-      <div class="grid-3 grid-tight">
-        <div class="field"><label for="np-user">ID Discord</label><input id="np-user" name="userId" class="input input-mono" required pattern="^\d{15,22}$" value="<%= profileMissing ? filters.user : '' %>" placeholder="123456789012345678"></div>
-        <div class="field"><label for="np-first">Prénom</label><input id="np-first" name="firstName" class="input" required maxlength="50"></div>
-        <div class="field"><label for="np-last">Nom</label><input id="np-last" name="lastName" class="input" required maxlength="50"></div>
-      </div>
-      <div class="grid-3 grid-tight">
-        <div class="field"><label for="np-role">Rôle</label><select id="np-role" name="role" class="select"><% for (const r of roles) { %><option value="<%= r.value %>"><%= r.label %></option><% } %></select></div>
-        <div class="field"><label for="np-class">Classe</label><select id="np-class" name="classId" class="select"><option value="">— Aucune —</option><% for (const c of classes) { %><option value="<%= c.id %>"><%= c.name %></option><% } %></select></div>
-        <div class="field"><label for="np-house">Maison</label><select id="np-house" name="houseId" class="select"><option value="">— Aucune —</option><% for (const h of houses) { %><option value="<%= h.id %>"><%= h.emoji ? h.emoji + ' ' : '' %><%= h.name %></option><% } %></select></div>
-      </div>
-      <div class="field"><label for="np-bio">Bio (optionnelle)</label><textarea id="np-bio" name="bio" class="textarea textarea-sm" maxlength="500" rows="2"></textarea></div>
-      <div class="form-actions"><button type="submit" class="btn btn-primary">Créer le profil</button></div>
+      <input type="hidden" name="id" value="">
+      <h2 class="card-title" data-form-title>Nouvelle classe</h2>
+      <div class="field"><label for="cl-name" class="field-required">Nom</label><input id="cl-name" name="name" class="input" required maxlength="60" placeholder="Terminale A"></div>
+      <div class="field"><label for="cl-teacher">Professeur <span class="field-optional">ID Discord</span></label><input id="cl-teacher" name="teacherId" class="input input-mono" pattern="^\d{15,22}$" placeholder="optionnel"></div>
+      <div class="field"><label for="cl-cap">Capacité <span class="field-optional">vide = illimitée</span></label><input id="cl-cap" name="capacity" type="number" class="input" min="1" max="10000"></div>
+      <div class="field"><label for="cl-role">Rôle Discord</label><%- include('../partials/role-select', { name: 'roleId', id: 'cl-role', selected: '', multiple: false, emptyLabel: '— Aucun —' }) %></div>
+      <div class="field"><label for="cl-channel">Salon de classe</label><%- include('../partials/channel-select', { name: 'channelId', id: 'cl-channel', selected: '', emptyLabel: '— Aucun —' }) %></div>
+      <div class="form-actions"><button type="reset" class="btn btn-ghost" data-form-reset>Nouvelle</button><button type="submit" class="btn btn-primary">Enregistrer</button></div>
     </form>
+  </div>
+<% } else if (tab === 'houses') { %>
+  <section class="card">
+    <div class="card-head"><div><h2 class="card-title">Coupe des maisons</h2></div></div>
+    <% if (!houses.length) { %>
+      <%- include('../partials/empty', { glyph: 'crown', title: 'Aucune maison', text: 'Créez des maisons pour organiser la compétition entre élèves.', compact: true }) %>
+    <% } else { %>
+    <ul class="bars house-bars">
+      <% houses.forEach((h, i) => { %>
+        <li class="bar-row"><span class="bar-label"><span class="role-dot house-dot" data-color="<%= h.color || '#71717a' %>" aria-hidden="true"></span><span class="truncate"><%= i === 0 ? '🏆 ' : '' %><%= houseLabel(h) %></span></span><span class="bar-track"><span class="bar-fill" data-pct="<%= h.pct %>" data-color="<%= h.color || '#8b5cf6' %>" data-color-bg></span></span><span class="bar-value"><%= fmt.number(h.points) %> pts · <%= h._count.members %> membre<%= h._count.members > 1 ? 's' : '' %></span></li>
+      <% }) %>
+    </ul>
+    <% } %>
   </section>
-
-  <!-- ─── Classes ─── -->
-  <section class="tab-panel" data-tab-panel="classes" role="tabpanel">
-    <div class="grid-2">
-      <div class="card">
-        <h3 class="card-title">Classes</h3>
-        <% if (!classes.length) { %><p class="muted">Aucune classe.</p><% } else { %>
-        <div class="table-wrap"><table class="table table-compact">
-          <thead><tr><th>Nom</th><th>Professeur</th><th>Rôle</th><th>Salon</th><th>Effectif</th><th></th></tr></thead>
-          <tbody>
-            <% for (const c of classes) { %>
-              <tr>
-                <td><strong><%= c.name %></strong></td>
-                <td><%- userLink(c.teacherId) %></td>
-                <td><%= c.roleId ? (roleName(c.roleId) || c.roleId) : '—' %></td>
-                <td><%= c.channelId ? (channelName(c.channelId) || c.channelId) : '—' %></td>
-                <td><%= c._count.students %><%= c.capacity ? ' / ' + c.capacity : '' %></td>
-                <td class="right"><div class="actions-cell">
-                  <button type="button" class="btn btn-ghost btn-sm" data-fill-form="#class-form" data-form-title-text="Modifier « <%= c.name %> »" data-set-id="<%= c.id %>" data-set-name="<%= c.name %>" data-set-teacherId="<%= c.teacherId || '' %>" data-set-roleId="<%= c.roleId || '' %>" data-set-channelId="<%= c.channelId || '' %>" data-set-capacity="<%= c.capacity || '' %>">Modifier</button>
-                  <form method="post" action="/guilds/<%= guild.id %>/school/classes/<%= c.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer la classe « <%= c.name %> » ? Les élèves resteront sans classe.">Supprimer</button></form>
-                </div></td>
-              </tr>
-            <% } %>
-          </tbody>
-        </table></div>
-        <% } %>
-      </div>
-      <form method="post" action="/guilds/<%= guild.id %>/school/classes" class="card form" id="class-form" data-id-action="/guilds/<%= guild.id %>/school/classes">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="id" value="">
-        <h3 class="card-title" data-form-title>Nouvelle classe</h3>
-        <div class="field"><label for="cl-name">Nom</label><input id="cl-name" name="name" class="input" required maxlength="60" placeholder="Terminale A"></div>
-        <div class="grid-2 grid-tight">
-          <div class="field"><label for="cl-teacher">Professeur (ID Discord)</label><input id="cl-teacher" name="teacherId" class="input input-mono" pattern="^\d{15,22}$" placeholder="optionnel"></div>
-          <div class="field"><label for="cl-cap">Capacité (vide = illimitée)</label><input id="cl-cap" name="capacity" type="number" class="input" min="1" max="10000"></div>
-        </div>
-        <div class="grid-2 grid-tight">
-          <div class="field"><label for="cl-role">Rôle Discord</label><select id="cl-role" name="roleId" class="select"><option value="">— Aucun —</option><%- include('../partials/role-options', { roles: guild.roles, selected: '' }) %></select></div>
-          <div class="field"><label for="cl-channel">Salon de classe</label><select id="cl-channel" name="channelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: '', allowEmpty: true, emptyLabel: '— Aucun —' }) %></select></div>
-        </div>
-        <div class="form-actions"><button type="reset" class="btn btn-ghost" data-form-reset>Nouveau</button><button type="submit" class="btn btn-primary">Enregistrer</button></div>
-      </form>
-    </div>
-  </section>
-
-  <!-- ─── Maisons ─── -->
-  <section class="tab-panel" data-tab-panel="houses" role="tabpanel">
-    <div class="card">
-      <h3 class="card-title">Classement des maisons</h3>
-      <% if (!houses.length) { %><p class="muted">Aucune maison.</p><% } else { %>
-      <ul class="bars house-bars">
-        <% for (const h of houses) { %>
-          <li class="bar-row"><span class="bar-label"><span data-role-color="<%= h.color || '#6b6b72' %>"><span class="role-dot house-dot" aria-hidden="true"></span></span><span class="truncate"><%= h.emoji ? h.emoji + ' ' : '' %><%= h.name %></span></span><span class="bar-track"><span class="bar-fill" data-pct="<%= h.pct %>"></span></span><span class="bar-value"><%= fmt.number(h.points) %> pts · <%= h._count.members %> membre(s)</span></li>
-        <% } %>
-      </ul>
+  <div class="grid-2 grid-aside-right">
+    <div class="panel-list">
+      <% for (const h of houses) { %>
+        <article class="card panel-card mb-0">
+          <div class="row justify-between"><span class="row min-w-0"><span class="role-dot house-dot" data-color="<%= h.color || '#71717a' %>" aria-hidden="true"></span><strong class="truncate"><%= houseLabel(h) %></strong></span><span class="badge badge-muted tabular"><%= fmt.number(h.points) %> pts</span></div>
+          <dl class="dl dl-compact"><dt>Rôle</dt><dd><%- rolePill(h.roleId) %></dd><dt>Membres</dt><dd><%= h._count.members %></dd></dl>
+          <form method="post" action="<%= b %>/houses/<%= h.id %>/points" class="row">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <input name="delta" type="number" class="input input-sm" data-input-narrow value="10" min="-100000" max="100000" required aria-label="Points (négatif = retrait)">
+            <input name="reason" class="input input-sm grow" maxlength="300" placeholder="Raison (optionnelle)" aria-label="Raison">
+            <button type="submit" class="btn btn-sm">Appliquer</button>
+          </form>
+          <div class="row">
+            <button type="button" class="btn btn-sm" data-fill-form="#house-form" data-form-title-text="Modifier « <%= h.name %> »" data-set-id="<%= h.id %>" data-set-name="<%= h.name %>" data-set-emoji="<%= h.emoji || '' %>" data-set-color="<%= h.color || '' %>" data-set-roleId="<%= h.roleId || '' %>"><%- icon('pencil', { size: 14 }) %>Modifier</button>
+            <form method="post" action="<%= b %>/houses/<%= h.id %>/delete" class="inline-form ml-auto"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="icon-btn is-danger" aria-label="Supprimer la maison" data-tooltip="Supprimer" data-confirm="Supprimer la maison « <%= h.name %> » ? Ses membres resteront sans maison." data-confirm-label="Supprimer"><%- icon('trash', { size: 16 }) %></button></form>
+          </div>
+        </article>
       <% } %>
     </div>
-    <div class="grid-2">
-      <div class="card">
-        <h3 class="card-title">Maisons</h3>
-        <% if (!houses.length) { %><p class="muted">Créez une maison avec le formulaire ci-contre.</p><% } else { %>
-        <div class="table-wrap"><table class="table table-compact">
-          <thead><tr><th>Maison</th><th>Rôle</th><th>Points</th><th>Ajuster</th><th></th></tr></thead>
-          <tbody>
-            <% for (const h of houses) { %>
-              <tr>
-                <td><strong><%= h.emoji ? h.emoji + ' ' : '' %><%= h.name %></strong><% if (h.color) { %> <small class="mono muted"><%= h.color %></small><% } %></td>
-                <td><%= h.roleId ? (roleName(h.roleId) || h.roleId) : '—' %></td>
-                <td><%= fmt.number(h.points) %></td>
-                <td>
-                  <form method="post" action="/guilds/<%= guild.id %>/school/houses/<%= h.id %>/points" class="inline-fields">
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <div class="field field-fixed"><label class="sr-only" for="hp-<%= h.id %>">Points</label><input id="hp-<%= h.id %>" name="delta" type="number" class="input input-sm" value="10" min="-100000" max="100000" required aria-label="Points (négatif = retrait)"></div>
-                    <div class="field"><label class="sr-only" for="hr-<%= h.id %>">Raison</label><input id="hr-<%= h.id %>" name="reason" class="input input-sm" maxlength="300" placeholder="Raison (optionnelle)"></div>
-                    <div class="field field-fixed"><button type="submit" class="btn btn-ghost btn-sm">Appliquer</button></div>
-                  </form>
-                </td>
-                <td class="right"><div class="actions-cell">
-                  <button type="button" class="btn btn-ghost btn-sm" data-fill-form="#house-form" data-form-title-text="Modifier « <%= h.name %> »" data-set-id="<%= h.id %>" data-set-name="<%= h.name %>" data-set-emoji="<%= h.emoji || '' %>" data-set-color="<%= h.color || '' %>" data-set-roleId="<%= h.roleId || '' %>">Modifier</button>
-                  <form method="post" action="/guilds/<%= guild.id %>/school/houses/<%= h.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer la maison « <%= h.name %> » ? Ses membres resteront sans maison.">Supprimer</button></form>
-                </div></td>
-              </tr>
-            <% } %>
-          </tbody>
-        </table></div>
-        <% } %>
+    <form method="post" action="<%= b %>/houses" class="card form sticky-card" id="house-form" data-id-action="<%= b %>/houses">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="id" value="">
+      <h2 class="card-title" data-form-title>Nouvelle maison</h2>
+      <div class="field-row">
+        <div class="field"><label for="ho-name" class="field-required">Nom</label><input id="ho-name" name="name" class="input" required maxlength="60" placeholder="Gryffondor"></div>
+        <div class="field"><label for="ho-emoji">Emoji</label><input id="ho-emoji" name="emoji" class="input" maxlength="64" placeholder="🦁" data-input-narrow></div>
       </div>
-      <form method="post" action="/guilds/<%= guild.id %>/school/houses" class="card form" id="house-form" data-id-action="/guilds/<%= guild.id %>/school/houses">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="id" value="">
-        <h3 class="card-title" data-form-title>Nouvelle maison</h3>
-        <div class="grid-2 grid-tight">
-          <div class="field"><label for="ho-name">Nom</label><input id="ho-name" name="name" class="input" required maxlength="60" placeholder="Gryffondor"></div>
-          <div class="field"><label for="ho-emoji">Emoji</label><input id="ho-emoji" name="emoji" class="input" maxlength="64" placeholder="🦁"></div>
-        </div>
-        <div class="grid-2 grid-tight">
-          <div class="field"><label for="ho-color">Couleur (hex)</label><input id="ho-color" name="color" class="input input-mono" pattern="^#?[0-9a-fA-F]{6}$" maxlength="7" placeholder="#7C3AED"></div>
-          <div class="field"><label for="ho-role">Rôle Discord</label><select id="ho-role" name="roleId" class="select"><option value="">— Aucun —</option><%- include('../partials/role-options', { roles: guild.roles, selected: '' }) %></select></div>
-        </div>
-        <div class="form-actions"><button type="reset" class="btn btn-ghost" data-form-reset>Nouvelle</button><button type="submit" class="btn btn-primary">Enregistrer</button></div>
-      </form>
-    </div>
-  </section>
-
-  <!-- ─── Clubs ─── -->
-  <section class="tab-panel" data-tab-panel="clubs" role="tabpanel">
-    <% if (club) { %>
-    <div class="card">
-      <div class="card-head"><h3 class="card-title">Club « <%= club.name %> » — membres <span class="badge badge-muted"><%= clubMembers.length %><%= club.maxMembers ? ' / ' + club.maxMembers : '' %></span></h3><a class="link" href="/guilds/<%= guild.id %>/school?tab=clubs">Fermer</a></div>
-      <% if (club.description) { %><p class="muted pre-wrap"><%= club.description %></p><% } %>
+      <div class="field mt-3"><label for="ho-color">Couleur</label><%- include('../partials/color-field', { name: 'color', id: 'ho-color', value: '', allowEmpty: true, placeholder: 'Aucune' }) %></div>
+      <div class="field"><label for="ho-role">Rôle Discord</label><%- include('../partials/role-select', { name: 'roleId', id: 'ho-role', selected: '', multiple: false, emptyLabel: '— Aucun —' }) %></div>
+      <div class="form-actions"><button type="reset" class="btn btn-ghost" data-form-reset>Nouvelle</button><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+    </form>
+  </div>
+<% } else if (tab === 'clubs') { %>
+  <% if (club) { %>
+    <section class="card">
+      <div class="card-head"><div><h2 class="card-title">Club « <%= club.name %> » — membres</h2><% if (club.description) { %><p class="card-desc"><%= club.description %></p><% } %></div><span class="row"><span class="badge badge-muted"><%= clubMembers.length %><%= club.maxMembers ? ' / ' + club.maxMembers : '' %></span><a class="icon-btn" href="<%= b %>?tab=clubs" aria-label="Fermer"><%- icon('x', { size: 16 }) %></a></span></div>
       <div class="grid-2">
         <div>
-          <% if (!clubMembers.length) { %><p class="muted">Aucun membre.</p><% } else { %>
-          <ul class="list-plain">
+          <% if (!clubMembers.length) { %><p class="text-sm text-3">Aucun membre pour le moment.</p><% } else { %>
+          <ul class="list list-compact">
             <% for (const m of clubMembers) { %>
-              <li><div><strong><%= m.profile.firstName %> <%= m.profile.lastName %></strong> · <%- userLink(m.profile.userId) %><br><small class="muted">depuis le <%= fmt.date(m.joinedAt) %></small></div>
-                <form method="post" action="/guilds/<%= guild.id %>/school/clubs/<%= club.id %>/members/<%= m.profile.userId %>/remove"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Retirer <%= m.profile.firstName %> du club ?">Retirer</button></form></li>
+              <li class="list-item"><div class="list-item-body"><div class="list-item-title"><%= m.profile.firstName %> <%= m.profile.lastName %></div><div class="list-item-meta"><%= names[m.profile.userId] || m.profile.userId %> · depuis le <%= fmt.date(m.joinedAt) %></div></div>
+                <form method="post" action="<%= b %>/clubs/<%= club.id %>/members/<%= m.profile.userId %>/remove" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="icon-btn is-danger" aria-label="Retirer du club" data-tooltip="Retirer" data-confirm="Retirer <%= m.profile.firstName %> du club ?" data-confirm-label="Retirer"><%- icon('user-x', { size: 16 }) %></button></form></li>
             <% } %>
           </ul>
           <% } %>
         </div>
-        <form method="post" action="/guilds/<%= guild.id %>/school/clubs/<%= club.id %>/members" class="inline-fields">
+        <form method="post" action="<%= b %>/clubs/<%= club.id %>/members" class="subcard">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-          <div class="field"><label for="cm-user">Ajouter un membre (ID Discord, profil requis)</label><input id="cm-user" name="userId" class="input input-mono" required pattern="^\d{15,22}$" placeholder="123456789012345678"></div>
-          <div class="field field-fixed"><button type="submit" class="btn btn-primary btn-sm">Ajouter</button></div>
+          <h3 class="subcard-title"><%- icon('user-plus', { size: 15 }) %>Ajouter un membre</h3>
+          <div class="row"><input name="userId" class="input input-mono grow" required pattern="^\d{15,22}$" placeholder="ID Discord (profil requis)" aria-label="ID Discord"><button type="submit" class="btn btn-sm btn-primary">Ajouter</button></div>
         </form>
       </div>
+    </section>
+  <% } %>
+  <div class="grid-2 grid-aside-right">
+    <div>
+      <% if (!clubs.length) { %>
+        <div class="card"><%- include('../partials/empty', { glyph: 'sparkles', title: 'Aucun club', text: 'Théâtre, sport, échecs… Créez des clubs auxquels les élèves peuvent adhérer.', compact: true }) %></div>
+      <% } else { %>
+      <div class="panel-list">
+        <% for (const c of clubs) { %>
+          <article class="card panel-card mb-0<%= club && club.id === c.id ? ' is-selected' : '' %>">
+            <div class="row justify-between"><strong class="truncate"><%= c.name %></strong><span class="badge badge-muted tabular"><%= c._count.members %><%= c.maxMembers ? ' / ' + c.maxMembers : '' %></span></div>
+            <% if (c.description) { %><p class="text-sm text-2 clamp-2"><%= c.description %></p><% } %>
+            <dl class="dl dl-compact"><dt>Responsable</dt><dd><%- userLink(c.leaderId) %></dd><dt>Rôle</dt><dd><%- rolePill(c.roleId) %></dd></dl>
+            <div class="row">
+              <a class="btn btn-sm" href="<%= b %>?tab=clubs&club=<%= c.id %>"><%- icon('users', { size: 14 }) %>Membres</a>
+              <button type="button" class="btn btn-sm" data-fill-form="#club-form" data-form-title-text="Modifier « <%= c.name %> »" data-set-id="<%= c.id %>" data-set-name="<%= c.name %>" data-set-description="<%= c.description || '' %>" data-set-leaderId="<%= c.leaderId || '' %>" data-set-roleId="<%= c.roleId || '' %>" data-set-maxMembers="<%= c.maxMembers || '' %>"><%- icon('pencil', { size: 14 }) %>Modifier</button>
+              <form method="post" action="<%= b %>/clubs/<%= c.id %>/delete" class="inline-form ml-auto"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="icon-btn is-danger" aria-label="Supprimer le club" data-tooltip="Supprimer" data-confirm="Supprimer le club « <%= c.name %> » et ses adhésions ?" data-confirm-label="Supprimer"><%- icon('trash', { size: 16 }) %></button></form>
+            </div>
+          </article>
+        <% } %>
+      </div>
+      <% } %>
     </div>
-    <% } %>
-    <div class="grid-2">
-      <div class="card">
-        <h3 class="card-title">Clubs</h3>
-        <% if (!clubs.length) { %><p class="muted">Aucun club.</p><% } else { %>
-        <div class="table-wrap"><table class="table table-compact">
-          <thead><tr><th>Nom</th><th>Responsable</th><th>Rôle</th><th>Membres</th><th></th></tr></thead>
+    <form method="post" action="<%= b %>/clubs" class="card form sticky-card" id="club-form" data-id-action="<%= b %>/clubs">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="id" value="">
+      <h2 class="card-title" data-form-title>Nouveau club</h2>
+      <div class="field"><label for="cb-name" class="field-required">Nom</label><input id="cb-name" name="name" class="input" required maxlength="60" placeholder="Club de théâtre"></div>
+      <div class="field"><label for="cb-desc">Description</label><textarea id="cb-desc" name="description" class="textarea" maxlength="1000" rows="2"></textarea></div>
+      <div class="field-row">
+        <div class="field"><label for="cb-leader">Responsable <span class="field-optional">ID</span></label><input id="cb-leader" name="leaderId" class="input input-mono" pattern="^\d{15,22}$" placeholder="optionnel"></div>
+        <div class="field"><label for="cb-max">Membres max</label><input id="cb-max" name="maxMembers" type="number" class="input" min="1" max="10000" placeholder="Illimité"></div>
+      </div>
+      <div class="field mt-3"><label for="cb-role">Rôle Discord</label><%- include('../partials/role-select', { name: 'roleId', id: 'cb-role', selected: '', multiple: false, emptyLabel: '— Aucun —' }) %></div>
+      <div class="form-actions"><button type="reset" class="btn btn-ghost" data-form-reset>Nouveau</button><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+    </form>
+  </div>
+<% } else if (tab === 'applications') { %>
+  <div class="toolbar mb-4">
+    <nav class="segmented" aria-label="Filtrer par statut">
+      <% for (const s of Object.keys(statusLabels)) { %><a href="<%= b %>?tab=applications&status=<%= s %>"<%- filters.status === s ? ' aria-current="page"' : '' %>><%= statusLabels[s] %></a><% } %>
+      <a href="<%= b %>?tab=applications&status=all"<%- filters.status === 'all' ? ' aria-current="page"' : '' %>>Toutes</a>
+    </nav>
+  </div>
+  <div class="<%= application ? 'grid-2 grid-aside-wide' : '' %>">
+    <section class="card card-flush" data-live-reload>
+      <% if (!applications.length) { %>
+        <%- include('../partials/empty', { glyph: 'inbox', title: filters.status === 'PENDING' ? 'Aucune candidature en attente' : 'Aucune candidature', text: 'Les candidatures déposées avec /school apparaîtront ici.' }) %>
+      <% } else { %>
+      <div class="table-wrap">
+        <table class="table table-responsive table-clickable">
+          <thead><tr><th class="shrink">#</th><th>Candidat</th><th>Rôle demandé</th><th>Statut</th><th>Déposée</th></tr></thead>
           <tbody>
-            <% for (const c of clubs) { %>
-              <tr>
-                <td><strong><%= c.name %></strong><% if (c.description) { %><br><small class="muted"><%= fmt.truncate(c.description, 80) %></small><% } %></td>
-                <td><%- userLink(c.leaderId) %></td>
-                <td><%= c.roleId ? (roleName(c.roleId) || c.roleId) : '—' %></td>
-                <td><%= c._count.members %><%= c.maxMembers ? ' / ' + c.maxMembers : '' %></td>
-                <td class="right"><div class="actions-cell">
-                  <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/school?tab=clubs&club=<%= c.id %>">Membres</a>
-                  <button type="button" class="btn btn-ghost btn-sm" data-fill-form="#club-form" data-form-title-text="Modifier « <%= c.name %> »" data-set-id="<%= c.id %>" data-set-name="<%= c.name %>" data-set-description="<%= c.description || '' %>" data-set-leaderId="<%= c.leaderId || '' %>" data-set-roleId="<%= c.roleId || '' %>" data-set-maxMembers="<%= c.maxMembers || '' %>">Modifier</button>
-                  <form method="post" action="/guilds/<%= guild.id %>/school/clubs/<%= c.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer le club « <%= c.name %> » et ses adhésions ?">Supprimer</button></form>
-                </div></td>
+            <% for (const a of applications) { const href = appQ('app=' + a.id); %>
+              <tr data-href="<%= href %>"<%- application && application.id === a.id ? ' class="is-selected"' : '' %>>
+                <td class="cell-primary"><a class="link strong" href="<%= href %>">#<%= a.id %></a></td>
+                <td data-label="Candidat"><%= names[a.userId] || a.userId %></td>
+                <td data-label="Rôle"><span class="badge <%= roleBadge[a.role] %>"><%= roleLabels[a.role] %></span></td>
+                <td data-label="Statut"><span class="badge badge-status-<%= a.status %>"><%= statusLabels[a.status] %></span></td>
+                <td data-label="Déposée" class="nowrap text-2" title="<%= fmt.dateTime(a.createdAt) %>"><%= fmt.relative(a.createdAt) %></td>
               </tr>
             <% } %>
           </tbody>
-        </table></div>
-        <% } %>
+        </table>
       </div>
-      <form method="post" action="/guilds/<%= guild.id %>/school/clubs" class="card form" id="club-form" data-id-action="/guilds/<%= guild.id %>/school/clubs">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="id" value="">
-        <h3 class="card-title" data-form-title>Nouveau club</h3>
-        <div class="field"><label for="cb-name">Nom</label><input id="cb-name" name="name" class="input" required maxlength="60" placeholder="Club de théâtre"></div>
-        <div class="field"><label for="cb-desc">Description</label><textarea id="cb-desc" name="description" class="textarea textarea-sm" maxlength="1000" rows="2"></textarea></div>
-        <div class="grid-3 grid-tight">
-          <div class="field"><label for="cb-leader">Responsable (ID Discord)</label><input id="cb-leader" name="leaderId" class="input input-mono" pattern="^\d{15,22}$" placeholder="optionnel"></div>
-          <div class="field"><label for="cb-role">Rôle Discord</label><select id="cb-role" name="roleId" class="select"><option value="">— Aucun —</option><%- include('../partials/role-options', { roles: guild.roles, selected: '' }) %></select></div>
-          <div class="field"><label for="cb-max">Membres max</label><input id="cb-max" name="maxMembers" type="number" class="input" min="1" max="10000" placeholder="illimité"></div>
-        </div>
-        <div class="form-actions"><button type="reset" class="btn btn-ghost" data-form-reset>Nouveau</button><button type="submit" class="btn btn-primary">Enregistrer</button></div>
-      </form>
-    </div>
-  </section>
-
-  <!-- ─── Candidatures ─── -->
-  <section class="tab-panel" data-tab-panel="applications" role="tabpanel">
-    <% if (application) { %>
-    <% const a = application; %>
-    <div class="card">
-      <div class="card-head"><h3 class="card-title">Candidature #<%= a.id %> · <%= roleLabels[a.role] %> · <span class="badge badge-status-<%= a.status %>"><%= statusLabels[a.status] %></span></h3><a class="link" href="/guilds/<%= guild.id %>/school?tab=applications&status=<%= filters.status %>">Fermer</a></div>
-      <div class="grid-2 grid-2-aside">
-        <aside>
-          <dl class="dl">
-            <dt>Candidat</dt><dd><%- userLink(a.userId) %><br><span class="mono muted"><%= a.userId %></span></dd>
-            <dt>Rôle demandé</dt><dd><%= roleLabels[a.role] %></dd>
-            <dt>Déposée le</dt><dd><%= fmt.dateTime(a.createdAt) %></dd>
-            <% if (a.reviewedById) { %><dt>Traitée par</dt><dd><%= names[a.reviewedById] || a.reviewedById %> · <%= fmt.dateTime(a.reviewedAt) %></dd><% } %>
-            <% if (a.note) { %><dt>Note</dt><dd class="pre-wrap"><%= a.note %></dd><% } %>
-          </dl>
-        </aside>
-        <div>
-          <h4 class="card-subtitle">Réponses</h4>
-          <% if (!a.answers.length) { %><p class="muted">Aucune réponse enregistrée.</p><% } else { %>
-          <div class="qa-list"><% for (const qa of a.answers) { %><div class="qa-item"><div class="qa-q"><%= qa.question %></div><div class="qa-a"><%= qa.answer || '—' %></div></div><% } %></div>
-          <% } %>
-          <% if (a.status === 'PENDING') { %>
-          <h4 class="card-subtitle">Décision</h4>
-          <form method="post" action="/guilds/<%= guild.id %>/school/applications/<%= a.id %>/review" class="form">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <div class="field"><label for="ap-note">Note transmise au candidat (optionnelle)</label><textarea id="ap-note" name="note" class="textarea textarea-sm" maxlength="1000" rows="3"></textarea></div>
-            <div class="form-actions">
-              <button type="submit" name="decision" value="REJECTED" class="btn btn-danger" data-confirm="Refuser la candidature #<%= a.id %> ?">⛔ Refuser</button>
-              <button type="submit" name="decision" value="ACCEPTED" class="btn btn-primary" data-confirm="Accepter la candidature #<%= a.id %> (rôle <%= roleLabels[a.role] %>) ?">✅ Accepter</button>
-            </div>
-          </form>
-          <% } %>
-        </div>
-      </div>
-    </div>
-    <% } %>
-    <form method="get" action="/guilds/<%= guild.id %>/school" class="card filter-bar">
-      <input type="hidden" name="tab" value="applications">
-      <div class="field"><label for="f-status">Statut</label><select id="f-status" name="status" class="select" data-submit-on-change><option value="all" <%= filters.status === 'all' ? 'selected' : '' %>>Tous</option><% for (const s of Object.keys(statusLabels)) { %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= statusLabels[s] %></option><% } %></select></div>
-      <div class="field field-actions"><button type="submit" class="btn btn-primary">Filtrer</button></div>
-    </form>
-    <div class="card">
-      <% if (!applications.length) { %><p class="muted">Aucune candidature.</p><% } else { %>
-      <div class="table-wrap"><table class="table">
-        <thead><tr><th>#</th><th>Statut</th><th>Candidat</th><th>Rôle</th><th>Déposée</th><th>Traitée par</th><th></th></tr></thead>
-        <tbody>
-          <% for (const a of applications) { %>
-            <tr>
-              <td><a class="link" href="/guilds/<%= guild.id %>/school?tab=applications&status=<%= filters.status %>&app=<%= a.id %>">#<%= a.id %></a></td>
-              <td><span class="badge badge-status-<%= a.status %>"><%= statusLabels[a.status] %></span></td>
-              <td><%- userLink(a.userId) %></td>
-              <td><%= roleLabels[a.role] %></td>
-              <td class="nowrap"><%= fmt.dateTime(a.createdAt) %></td>
-              <td><%= a.reviewedById ? (names[a.reviewedById] || a.reviewedById) : '—' %></td>
-              <td class="right"><a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/school?tab=applications&status=<%= filters.status %>&app=<%= a.id %>"><%= a.status === 'PENDING' ? 'Traiter' : 'Voir' %></a></td>
-            </tr>
-          <% } %>
-        </tbody>
-      </table></div>
       <% } %>
+    </section>
+    <% if (application) { const a = application; %>
+    <aside class="card sheet" aria-label="Candidature #<%= a.id %>">
+      <div class="card-head"><div><h2 class="card-title">Candidature #<%= a.id %></h2><p class="card-desc"><%= roleLabels[a.role] %> · déposée <%= fmt.relative(a.createdAt) %></p></div><span class="row"><span class="badge badge-status-<%= a.status %>"><%= statusLabels[a.status] %></span><a class="icon-btn" href="<%= appQ() %>" aria-label="Fermer"><%- icon('x', { size: 16 }) %></a></span></div>
+      <dl class="dl">
+        <dt>Candidat</dt><dd><%- userLink(a.userId) %> <span class="mono text-xs text-3"><%= a.userId %></span></dd>
+        <% if (a.reviewedById) { %><dt>Traitée par</dt><dd><%= names[a.reviewedById] || a.reviewedById %> · <%= fmt.relative(a.reviewedAt) %></dd><% } %>
+        <% if (a.note) { %><dt>Note</dt><dd class="pre-wrap"><%= a.note %></dd><% } %>
+      </dl>
+      <h3 class="section-title mt-5">Réponses</h3>
+      <% if (!a.answers.length) { %><p class="text-sm text-3">Aucune réponse enregistrée.</p><% } else { %>
+        <div class="qa-list"><% for (const qa of a.answers) { %><div class="qa-item"><div class="qa-q"><%= qa.question %></div><div class="qa-a"><%= qa.answer || '—' %></div></div><% } %></div>
+      <% } %>
+      <% if (a.status === 'PENDING') { %>
+        <h3 class="section-title mt-5">Décision</h3>
+        <form method="post" action="<%= b %>/applications/<%= a.id %>/review" class="form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="field"><label for="ap-note">Note au candidat <span class="field-optional">optionnel</span></label><textarea id="ap-note" name="note" class="textarea" maxlength="1000" rows="3"></textarea></div>
+          <div class="btn-row">
+            <button type="submit" name="decision" value="REJECTED" class="btn btn-danger" data-confirm="Refuser la candidature #<%= a.id %> ?" data-confirm-label="Refuser"><%- icon('x-circle', { size: 16 }) %>Refuser</button>
+            <button type="submit" name="decision" value="ACCEPTED" class="btn btn-success" data-confirm="Accepter la candidature #<%= a.id %> (rôle <%= roleLabels[a.role] %>) ?" data-confirm-label="Accepter" data-confirm-variant="primary"><%- icon('check-circle', { size: 16 }) %>Accepter</button>
+          </div>
+        </form>
+      <% } %>
+    </aside>
+    <% } %>
+  </div>
+<% } else { %>
+  <form method="post" action="<%= b %>/config" class="card form" data-dirty-form>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <h2 class="card-title">Salons</h2>
+    <div class="field-row">
+      <div class="field"><label for="sc-app">Salon des candidatures</label><%- include('../partials/channel-select', { name: 'applicationChannelId', id: 'sc-app', selected: settings.applicationChannelId || '', emptyLabel: '— Aucun (panel uniquement) —' }) %><small class="hint">Le staff y reçoit les candidatures à traiter.</small></div>
+      <div class="field"><label for="sc-ann">Salon d'annonces scolaires</label><%- include('../partials/channel-select', { name: 'announceChannelId', id: 'sc-ann', selected: settings.announceChannelId || '', emptyLabel: '— Aucun —' }) %><small class="hint">Points des maisons, nouvelles inscriptions…</small></div>
     </div>
-  </section>
-</div>
+    <h2 class="card-title mt-5">Rôles selon le profil</h2>
+    <div class="field-row">
+      <div class="field"><label for="sc-student">Rôle élève</label><%- include('../partials/role-select', { name: 'studentRoleId', id: 'sc-student', selected: settings.roles.STUDENT || '', multiple: false, emptyLabel: '— Aucun —' }) %></div>
+      <div class="field"><label for="sc-teacher">Rôle professeur</label><%- include('../partials/role-select', { name: 'teacherRoleId', id: 'sc-teacher', selected: settings.roles.TEACHER || '', multiple: false, emptyLabel: '— Aucun —' }) %></div>
+      <div class="field"><label for="sc-staff">Rôle staff</label><%- include('../partials/role-select', { name: 'staffRoleId', id: 'sc-staff', selected: settings.roles.STAFF || '', multiple: false, emptyLabel: '— Aucun —' }) %></div>
+    </div>
+    <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+  </form>
+<% } %>

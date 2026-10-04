@@ -38,7 +38,7 @@ import { createApp } from '../../dashboard/app';
 import { createSessionMiddleware } from '../../dashboard/auth/session';
 import { env } from '../../src/config/env';
 import { fivemService, FiveMError } from '../../src/services/FiveMService';
-import { PENDING_MODULE_PAGES, NAVIGATION } from '../../dashboard/lib/navigation';
+import { NAVIGATION } from '../../dashboard/lib/navigation';
 
 setTestEnv();
 const prisma = mockedPrisma as unknown as ReturnType<typeof createPrismaMock>;
@@ -71,7 +71,7 @@ async function follow(r: { location: string | null }) {
 
 const MODELS = [
   'dashboardSession', 'guild', 'guildSettings', 'logChannel', 'log', 'commandPermission', 'user', 'sanction',
-  'fiveMServer', 'whitelist', 'whitelistConfig', 'battleRoyaleProfile', 'battleRoyaleStats', 'battlePass',
+  'fiveMServer', 'fiveMPlayer', 'whitelist', 'whitelistConfig', 'battleRoyaleProfile', 'battleRoyaleStats', 'battlePass',
   'schoolConfig', 'schoolProfile', 'schoolClass', 'schoolHouse', 'schoolClub', 'schoolClubMember', 'schoolApplication',
   'shopCategory', 'shopProduct', 'shopOrder',
 ];
@@ -186,8 +186,7 @@ afterAll(async () => {
 });
 
 describe('Navigation', () => {
-  it('aucune page de module ne reste « en cours d’intégration »', async () => {
-    expect(PENDING_MODULE_PAGES).toEqual([]);
+  it('chaque entrée de jeu du menu a une page dédiée', async () => {
     expect(NAVIGATION.map((e) => e.key)).toEqual(expect.arrayContaining(['fivem', 'whitelist', 'battleRoyale', 'school', 'shop']));
     for (const entry of NAVIGATION.filter((e) => ['fivem', 'whitelist', 'battleRoyale', 'school', 'shop'].includes(e.key))) {
       const r = await get(`/guilds/${GUILD_ID}/${entry.path}`);
@@ -221,24 +220,65 @@ describe('États vides', () => {
 });
 
 describe('FiveM', () => {
-  it('GET /fivem liste les serveurs avec statut, clé masquée et encart API', async () => {
+  it('GET /fivem liste les serveurs avec statut ; l’onglet Installation donne l’API et rs_bridge', async () => {
     const r = await get(`/guilds/${GUILD_ID}/fivem`);
     expect(r.status).toBe(200);
     expect(r.text).toContain('Prison RP');
-    expect(r.text).toContain('🟢');
+    expect(r.text).toContain('data-state="online"');
     expect(r.text).toContain('3 / 64');
-    expect(r.text).toContain(`http://localhost:3999/api/fivem/servers/${GUILD_ID}/main/status`);
-    expect(r.text).toContain('x-api-key');
-    expect(r.text).toContain('••••••••1234');
     expect(r.text).not.toContain('secret-key-1234');
+    const install = await get(`/guilds/${GUILD_ID}/fivem?tab=integration`);
+    expect(install.status).toBe(200);
+    expect(install.text).toContain(`http://localhost:3999/api/fivem/servers/${GUILD_ID}/main/status`);
+    expect(install.text).toContain('x-api-key');
+    expect(install.text).toContain(`Config.GuildId = &#39;${GUILD_ID}&#39;`);
+    expect(install.text).toContain('ensure rs_bridge');
+    expect(install.text).not.toContain('secret-key-1234');
   });
-  it('GET /fivem?server=main affiche les joueurs et le formulaire d’édition', async () => {
+  it('GET /fivem?server=main affiche les joueurs, les réglages (clé masquée) et la synchronisation', async () => {
     const r = await get(`/guilds/${GUILD_ID}/fivem?server=main`);
     expect(r.status).toBe(200);
     expect(r.text).toContain('Bob');
     expect(r.text).toContain('license:abc');
-    expect(r.text).toContain('Modifier « Prison RP »');
     expect(r.text).not.toContain('secret-key-1234');
+    const settings = await get(`/guilds/${GUILD_ID}/fivem?server=main&stab=settings`);
+    expect(settings.text).toContain('Modifier « Prison RP »');
+    expect(settings.text).toContain('••••••••1234');
+    expect(settings.text).not.toContain('secret-key-1234');
+    const sync = await get(`/guilds/${GUILD_ID}/fivem?server=main&stab=sync`);
+    expect(sync.status).toBe(200);
+    expect(sync.text).toContain('name="nicknameFormat"');
+    expect(sync.text).toContain('data-nickname-preview');
+    expect(sync.text).toContain('/js/fivem.js');
+  });
+  it('enregistre la synchronisation via FiveMSyncService.updateSyncSettings', async () => {
+    const r = await post(`/guilds/${GUILD_ID}/fivem/servers/main/sync`, { syncBansToDiscord: 'on', syncNicknames: 'on', nicknameFormat: '[{id}] {name}', linkedRoleId: STAFF_ROLE_ID, onlineRoleId: '', playerCountChannelId: '', requireDiscord: 'on', requireRoleId: '' });
+    expect(r.status).toBe(302);
+    expect(r.location).toBe(`/guilds/${GUILD_ID}/fivem?server=main&stab=sync`);
+    const upd = prisma.fiveMServer.update.mock.calls.at(-1)![0] as { data: Record<string, unknown> };
+    expect(upd.data).toMatchObject({ syncBansToDiscord: true, syncBansToGame: false, syncKicks: false, syncNicknames: true, nicknameFormat: '[{id}] {name}', linkedRoleId: STAFF_ROLE_ID, onlineRoleId: null, requireDiscord: true, requireWhitelist: false });
+    const bad = await post(`/guilds/${GUILD_ID}/fivem/servers/main/sync`, { nicknameFormat: 'Joueur' });
+    const page = await follow(bad);
+    expect(page.text).toContain('{name}');
+  });
+  it('liste les joueurs connus et lie un compte manuellement', async () => {
+    prisma.fiveMPlayer.findMany.mockResolvedValue([{ id: 1, guildId: GUILD_ID, discordId: USER_ID, license: 'license:abc', steam: null, fivemId: null, name: 'Bob', serverKey: 'main', lastSeenAt: new Date(), sessionStartedAt: null, playtimeMinutes: 125, online: true, createdAt: new Date(), updatedAt: new Date() }]);
+    prisma.fiveMPlayer.count.mockResolvedValue(1);
+    const r = await get(`/guilds/${GUILD_ID}/fivem?tab=players&filter=linked&q=bob`);
+    expect(r.status).toBe(200);
+    expect(r.text).toContain('Bob');
+    expect(r.text).toContain('2 h 5 min');
+    expect(r.text).toContain(`/members/${USER_ID}`);
+    prisma.fiveMPlayer.upsert.mockResolvedValue({ id: 2, guildId: GUILD_ID, discordId: OTHER_USER, license: 'license:0123456789abcdef', name: '—' });
+    const link = await post(`/guilds/${GUILD_ID}/fivem/players/link`, { userId: OTHER_USER, license: 'license:0123456789abcdef' });
+    expect(link.status).toBe(302);
+    expect(prisma.fiveMPlayer.upsert).toHaveBeenCalled();
+  });
+  it('GET /fivem/new rend le formulaire d’ajout', async () => {
+    const r = await get(`/guilds/${GUILD_ID}/fivem/new`);
+    expect(r.status).toBe(200);
+    expect(r.text).toContain('Ajouter un serveur');
+    expect(r.text).toContain('name="key"');
   });
   it('ajoute, modifie, passe en maintenance, teste et supprime un serveur', async () => {
     prisma.fiveMServer.findUnique.mockResolvedValueOnce(null);
@@ -291,8 +331,14 @@ describe('Whitelist', () => {
     expect(r.text).toContain('Dossier #5');
     expect(r.text).toContain('Jean Valjean');
     expect(r.text).toContain('Accepter');
-    expect(r.text).toContain('Questions du formulaire');
-    expect(r.text).toContain('Prénom / Nom de votre personnage');
+    // Message de review rendu avec WhitelistService.buildReviewEmbed
+    expect(r.text).toContain('Candidature whitelist #5');
+    const cfg = await get(`/guilds/${GUILD_ID}/whitelist?tab=config`);
+    expect(cfg.status).toBe(200);
+    expect(cfg.text).toContain('Questions du formulaire');
+    expect(cfg.text).toContain('Prénom / Nom de votre personnage');
+    expect(cfg.text).toContain('data-modal-live="#wl-questions"');
+    expect(cfg.text).toContain('Whitelist acceptée');
   });
   it('enregistre la configuration (questions, salon, rôles)', async () => {
     const r = await post(`/guilds/${GUILD_ID}/whitelist/config`, {
@@ -415,10 +461,15 @@ describe('School RP', () => {
     expect(r.status).toBe(200);
     expect(r.text).toContain('Dupont');
     expect(r.text).toContain('Modifier le profil');
-    expect(r.text).toContain('Rôle professeur');
     expect(r.text).toContain('Gryffondor');
-    expect(r.text).toContain('data-pct="100"');
     expect(r.text).toContain('Terminale A');
+    const config = await get(`/guilds/${GUILD_ID}/school?tab=config`);
+    expect(config.text).toContain('Rôle professeur');
+    const housesTab = await get(`/guilds/${GUILD_ID}/school?tab=houses`);
+    expect(housesTab.text).toContain('data-pct="100"');
+    expect(housesTab.text).toContain('Gryffondor');
+    const classesTab = await get(`/guilds/${GUILD_ID}/school?tab=classes`);
+    expect(classesTab.text).toContain('Terminale A');
     const club = await get(`/guilds/${GUILD_ID}/school?tab=clubs&club=1`);
     expect(club.text).toContain('Club « Théâtre » — membres');
     const app = await get(`/guilds/${GUILD_ID}/school?tab=applications&app=3`);

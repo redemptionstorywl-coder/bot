@@ -1,10 +1,13 @@
-<section class="page-header">
-  <div>
-    <a class="link" href="/guilds/<%= guild.id %>/announcements/<%= announcement.id %>">← Retour à l'annonce</a>
-    <h2 class="page-title">Aperçu · <%= announcement.title %></h2>
-    <p class="muted">Rendu tel qu'il sera envoyé (variables remplacées, couleur de marque appliquée).</p>
+<% const b = `/guilds/${guild.id}/announcements/${announcement.id}`; %>
+<a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Retour à l'éditeur</a>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('eye') %></span>
+    <div><h1 class="page-title">Aperçu final</h1><p class="page-subtitle"><%= announcement.title %> — version enregistrée, variables remplacées et couleur de marque appliquée.</p></div>
   </div>
-</section>
-<div class="card">
-  <%- include('../partials/embed-preview', { embed: preview.embeds && preview.embeds[0] ? preview.embeds[0] : null, buttons: preview.buttons || [], content: preview.content || '' }) %>
+  <div class="page-actions"><a class="btn" href="<%= b %>"><%- icon('pencil', { size: 16 }) %>Modifier</a></div>
+</header>
+<div class="preview-panel preview-panel-page">
+  <div class="preview-panel-head"><span class="row"><%- icon('hash', { size: 15 }) %><%= announcement.channelId ? (guild.textChannels.find((c) => c.id === announcement.channelId) || { name: announcement.channelId }).name : 'aucun salon' %></span><span class="badge badge-muted">Discord</span></div>
+  <div class="preview-panel-body"><%- include('../partials/embed-preview', { embed: preview.embeds && preview.embeds[0] ? preview.embeds[0] : null, buttons: preview.buttons || [], content: preview.content || '' }) %></div>
 </div>

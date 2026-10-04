@@ -3,6 +3,10 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import type { RedemptionClient } from '../../../src/core/Client';
 import { welcomeService, resolveLocalized, type Localized } from '../../../src/services/WelcomeService';
+import { welcomeImageService } from '../../../src/services/WelcomeImageService';
+import { translationService } from '../../../src/services/TranslationService';
+import { renderTemplate } from '../../../src/utils/variables';
+import { BRAND } from '../../../src/config/constants';
 import { embedSpecSchema, type EmbedSpec } from '../../../src/services/EmbedService';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
@@ -52,6 +56,8 @@ const leaveBody = z.object({
   enabled: checkbox,
   channelId: optionalDiscordId,
   message: optionalText(2000),
+  embedMode: z.enum(['none', 'form', 'json']).default('json'),
+  embed: embedFormOptional,
   embedJson,
   imageEnabled: checkbox,
   imageBackgroundUrl: z.preprocess((v) => (typeof v !== 'string' || v.trim() === '' ? null : v.trim()), z.string().url('URL invalide').max(500).nullable()),
@@ -59,6 +65,13 @@ const leaveBody = z.object({
 });
 
 const testBody = z.object({ kind: z.enum(['welcome', 'leave']) });
+
+const imageBody = z.object({
+  kind: z.enum(['welcome', 'leave']).default('welcome'),
+  title: z.string().trim().max(60).optional().default(''),
+  subtitle: z.string().trim().max(80).optional().default(''),
+  backgroundUrl: z.preprocess((v) => (typeof v !== 'string' || v.trim() === '' ? null : v.trim()), z.string().url('URL invalide').max(500).regex(/^https?:\/\//, 'URL http(s) attendue').nullable()),
+});
 
 function textOrNull(value: string | null | undefined): string | typeof Prisma.DbNull {
   return value ? value : Prisma.DbNull;
@@ -99,6 +112,7 @@ export function createWelcomeRouter(client: RedemptionClient): Router {
       const { query } = valid<unknown, z.infer<typeof tabQuery>>(req);
       const [welcome, leave] = await Promise.all([welcomeService.getConfig(guild.id), welcomeService.getLeaveConfig(guild.id)]);
       const lang = config.defaultLanguage;
+      const t = translationService.bind(lang, guild.id);
       render(res, 'welcome', {
         title: 'Bienvenue',
         page: 'welcome',
@@ -111,8 +125,17 @@ export function createWelcomeRouter(client: RedemptionClient): Router {
         welcomeEmbed: describeEmbed(welcome?.embed, lang),
         dmEmbedJson: embedJsonText(welcome?.dmEmbed, lang),
         leaveEmbedJson: embedJsonText(leave?.embed, lang),
+        leaveEmbed: describeEmbed(leave?.embed, lang),
         buttons: safeButtons(welcome?.buttons),
         modules: { welcome: config.modules.welcome, leave: config.modules.leave },
+        crumbs: query.tab === 'leave' ? [{ label: 'Départ' }] : [],
+        texts: {
+          defaultWelcome: t('welcome.default_message', { user: '{user}', server: '{server}' }),
+          defaultLeave: t('welcome.leave.default_message', { username: '{username}', memberCount: '{memberCount}' }),
+          leaveImageTitle: t('welcome.leave.image_title'),
+          leaveImageSubtitle: t('welcome.leave.image_subtitle'),
+        },
+        scripts: ['welcome'],
       });
     }),
   );
@@ -160,7 +183,7 @@ export function createWelcomeRouter(client: RedemptionClient): Router {
           enabled: body.enabled,
           channelId: body.channelId,
           message: textOrNull(body.message),
-          embed: jsonOrNull(body.embedJson),
+          embed: body.embedMode === 'none' ? Prisma.DbNull : body.embedMode === 'form' ? jsonOrNull(toEmbedSpec(body.embed)) : jsonOrNull(body.embedJson),
           imageEnabled: body.imageEnabled,
           imageBackgroundUrl: body.imageBackgroundUrl,
           logEnabled: body.logEnabled,
@@ -193,6 +216,31 @@ export function createWelcomeRouter(client: RedemptionClient): Router {
         flash(req, 'success', `Message de ${body.kind === 'welcome' ? 'bienvenue' : 'départ'} de test envoyé dans #${channel.name}.`);
       },
     ),
+  );
+
+  /** Aperçu de l'image générée (PNG en data URL, POST JSON + CSRF : aucune URL externe récupérée sans jeton). */
+  router.post(
+    '/welcome/image',
+    validate({ body: imageBody }),
+    wrap(async (req, res) => {
+      const guildView = res.locals.guild!;
+      const config = res.locals.config!;
+      const { body } = valid<z.infer<typeof imageBody>>(req);
+      const guild = requireBotGuild(client, guildView.id);
+      const member = await guild.members.fetch(req.session.user!.id).catch(() => null);
+      const ctx = { member, guild, user: member?.user ?? null, language: config.defaultLanguage };
+      const t = translationService.bind(config.defaultLanguage, guildView.id);
+      const title = body.kind === 'leave' ? t('welcome.leave.image_title') : body.title || 'BIENVENUE';
+      const subtitle = body.kind === 'leave' ? t('welcome.leave.image_subtitle') : body.subtitle;
+      const png = await welcomeImageService.generate({
+        title: renderTemplate(title, ctx).slice(0, 60),
+        subtitle: renderTemplate(subtitle, ctx).slice(0, 80),
+        avatarUrl: member?.user.displayAvatarURL({ extension: 'png', size: 256 }) ?? null,
+        backgroundUrl: body.backgroundUrl,
+        accentColor: body.kind === 'leave' ? BRAND.colors.neutral : config.brandColor,
+      });
+      res.json({ ok: true, dataUrl: `data:image/png;base64,${png.toString('base64')}` });
+    }),
   );
 
   return router;

@@ -1,0 +1,17 @@
+<%# En-tête commun Rôles (auto-rôles, menus, notifications, reaction roles). Attend : rtab, counts? { autoroles, menus, notifications, reactions }. %>
+<% const _rb = `/guilds/${guild.id}`; const _c = typeof counts === 'object' && counts ? counts : {}; %>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('tags') %></span>
+    <div><h1 class="page-title">Rôles</h1><p class="page-subtitle">Rôles automatiques, menus de rôles, notifications et reaction roles.</p></div>
+  </div>
+  <div class="page-actions">
+    <% if (rtab === 'menus') { %><a class="btn btn-primary" href="<%= _rb %>/roles/menus/new"><%- icon('plus', { size: 16 }) %>Nouveau menu</a><% } %>
+  </div>
+</header>
+<%- include('tabs', { active: rtab, label: 'Sections des rôles', tabs: [
+  { key: 'autoroles', label: 'Auto-rôles', href: _rb + '/roles', icon: 'user-plus', count: _c.autoroles },
+  { key: 'menus', label: 'Menus de rôles', href: _rb + '/roles?tab=menus', icon: 'tags', count: _c.menus },
+  { key: 'notifications', label: 'Notifications', href: _rb + '/roles?tab=notifications', icon: 'bell', count: _c.notifications },
+  { key: 'reactions', label: 'Reaction roles', href: _rb + '/reaction-roles', icon: 'smile-plus', count: _c.reactions },
+] }) %>

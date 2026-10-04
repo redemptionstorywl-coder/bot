@@ -1,76 +1,33 @@
-/* Éditeur d'embed : aperçu en direct + import/export JSON (reproduit partials/embed-preview.ejs côté client). */
+/* Éditeur d'embed : aperçu Discord en direct + import/export JSON.
+ * Le rendu est délégué à window.DiscordPreview (public/js/discord-preview.js), moteur partagé avec le serveur.
+ * renderEmbedPreview(embed, buttons, content, opts) reste exposé pour les pages modules. */
 (function () {
   'use strict';
 
   function $(sel, root) { return (root || document).querySelector(sel); }
   function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+  var D = window.DiscordPreview;
+  var UI = window.UI;
 
-  function esc(s) { return String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function md(s) {
-    return esc(s)
-      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-      .replace(/__(.+?)__/g, '<u>$1</u>')
-      .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
-      .replace(/`([^`\n]+)`/g, '<code>$1</code>')
-      .replace(/&lt;@&amp;(\d+)&gt;/g, '<span class="dmention">@rôle</span>')
-      .replace(/&lt;@!?(\d+)&gt;/g, '<span class="dmention">@membre</span>')
-      .replace(/&lt;#(\d+)&gt;/g, '<span class="dmention">#salon</span>')
-      .replace(/\n/g, '<br>');
+  function ctx(opts) {
+    var c = UI ? UI.previewContext() : {};
+    if (opts && opts.defaultColor) c.defaultColor = opts.defaultColor;
+    if (opts && opts.botName) c.botName = opts.botName;
+    return c;
   }
-  function imgOk(u) { return typeof u === 'string' && /^https:\/\/(cdn\.discordapp\.com|media\.discordapp\.net)\//.test(u); }
+  function paint(root) { if (UI) UI.paint(root); }
 
-  /** Rend un message Discord (embed + boutons + contenu). Exposé pour les autres pages (aperçus). */
+  /** Rend un message Discord (embed + boutons + contenu) — compatibilité pages modules. */
   function renderEmbedPreview(embed, buttons, content, opts) {
-    opts = opts || {};
-    var e = embed || {};
-    var btns = Array.isArray(buttons) ? buttons : [];
-    var color = e.color ? (e.color[0] === '#' ? e.color : '#' + e.color) : (opts.defaultColor || '#7C3AED');
-    var hasEmbed = Boolean(e.title || e.description || (e.fields && e.fields.length) || e.image || e.thumbnail || (e.author && e.author.name) || (e.footer && e.footer.text));
-    var html = '<div class="dpreview' + (opts.compact ? ' dpreview-compact' : '') + '"><div class="dmsg"><div class="davatar" aria-hidden="true">' + (opts.avatarHtml || '') + '</div><div class="dbody">';
-    html += '<div class="dmeta"><span class="dname">' + esc(opts.botName || 'Redemption Story') + '</span><span class="dbot">BOT</span><span class="dtime">Aujourd\'hui</span></div>';
-    if (content) html += '<div class="dcontent">' + md(content) + '</div>';
-    if (hasEmbed) {
-      html += '<div class="dembed" data-embed-color="' + esc(color) + '">';
-      if (e.thumbnail) html += '<div class="dembed-thumb">' + (imgOk(e.thumbnail) ? '<img src="' + esc(e.thumbnail) + '" alt="">' : '<span class="dimg-ph" title="' + esc(e.thumbnail) + '">🖼</span>') + '</div>';
-      if (e.author && e.author.name) html += '<div class="dembed-author">' + (e.author.iconUrl && imgOk(e.author.iconUrl) ? '<img src="' + esc(e.author.iconUrl) + '" alt="">' : '') + '<span>' + esc(e.author.name) + '</span></div>';
-      if (e.title) html += '<div class="dembed-title">' + (e.url ? '<a href="' + esc(e.url) + '" rel="noopener noreferrer" target="_blank">' + md(e.title) + '</a>' : md(e.title)) + '</div>';
-      if (e.description) html += '<div class="dembed-desc">' + md(e.description) + '</div>';
-      if (e.fields && e.fields.length) {
-        html += '<div class="dembed-fields">';
-        e.fields.forEach(function (f) { html += '<div class="dembed-field' + (f.inline ? ' inline' : '') + '"><div class="dembed-field-name">' + md(f.name) + '</div><div class="dembed-field-value">' + md(f.value) + '</div></div>'; });
-        html += '</div>';
-      }
-      if (e.image) html += '<div class="dembed-image">' + (imgOk(e.image) ? '<img src="' + esc(e.image) + '" alt="">' : '<div class="dimg-ph dimg-ph-wide" title="' + esc(e.image) + '">🖼 <span class="truncate">' + esc(e.image) + '</span></div>') + '</div>';
-      if ((e.footer && e.footer.text) || e.timestamp) {
-        var time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-        html += '<div class="dembed-footer">' + (e.footer && e.footer.iconUrl && imgOk(e.footer.iconUrl) ? '<img src="' + esc(e.footer.iconUrl) + '" alt="">' : '') + '<span>' + esc(e.footer && e.footer.text ? e.footer.text : '') + (e.footer && e.footer.text && e.timestamp ? ' • ' : '') + (e.timestamp ? 'Aujourd\'hui à ' + time : '') + '</span></div>';
-      }
-      html += '</div>';
-    } else if (!content) {
-      html += '<div class="dcontent muted">Message vide — ajoutez un titre, une description ou du texte.</div>';
-    }
-    if (btns.length) {
-      html += '<div class="dbuttons">';
-      btns.forEach(function (b) {
-        html += '<span class="dbtn dbtn-' + esc(b.style || 'secondary') + (b.disabled ? ' disabled' : '') + '">' + (b.emoji ? '<span class="dbtn-emoji">' + (String(b.emoji).indexOf(':') !== -1 ? '◆' : esc(b.emoji)) + '</span>' : '') + esc(b.label || '') + (b.style === 'link' ? ' ↗' : '') + '</span>';
-      });
-      html += '</div>';
-    }
-    html += '</div></div></div>';
-    return html;
+    if (!D) return '';
+    return D.render({ embed: embed || {}, buttons: Array.isArray(buttons) ? buttons : [], content: content || '', compact: Boolean(opts && opts.compact) }, ctx(opts));
   }
   window.renderEmbedPreview = renderEmbedPreview;
-
-  function applyColors(root) {
-    $$('[data-embed-color]', root || document).forEach(function (el) { el.style.borderLeftColor = el.getAttribute('data-embed-color'); });
-  }
-  window.applyEmbedColors = applyColors;
+  window.applyEmbedColors = paint;
 
   function setup(editor) {
-    var previewHost = $('[data-embed-preview]', editor);
-    var initial = previewHost && $('.dpreview', previewHost);
-    var botName = initial && $('.dname', initial) ? $('.dname', initial).textContent : 'Redemption Story';
-    var avatarHtml = initial && $('.davatar', initial) ? $('.davatar', initial).innerHTML : '';
+    // Aperçu intégré, ou hôte externe ([data-preview-target="#id"]) pour les mises en page « split ».
+    var previewHost = $('[data-embed-preview]', editor) || (editor.getAttribute('data-preview-target') ? $(editor.getAttribute('data-preview-target')) : null);
     var defaultColor = editor.getAttribute('data-default-color') || '#7C3AED';
     var contentSource = editor.getAttribute('data-content-source');
     var contentEl = contentSource ? $(contentSource) : null;
@@ -107,27 +64,25 @@
         return out;
       });
     }
+    var raf = 0;
     function render() {
       if (fieldsCount && fieldsRep && fieldsRep.repeater) fieldsCount.textContent = String(fieldsRep.repeater.read().length);
-      if (!previewHost) return;
-      previewHost.innerHTML = renderEmbedPreview(readSpec(), readButtons(), contentEl ? contentEl.value : '', { botName: botName, avatarHtml: avatarHtml, defaultColor: defaultColor });
-      applyColors(previewHost);
-    }
-    // Pastilles de la palette : clic → couleur appliquée au champ texte + au sélecteur + aperçu
-    $$('[data-swatch]', editor).forEach(function (sw) {
-      var hex = sw.getAttribute('data-color');
-      if (hex) sw.style.backgroundColor = hex;
-      sw.addEventListener('click', function () {
-        var txt = $('[data-color-text]', editor), picker = $('[data-color-input]', editor);
-        var value = sw.getAttribute('data-swatch') || '';
-        if (txt) { txt.value = value; txt.dispatchEvent(new Event('input', { bubbles: true })); }
-        if (picker && value) picker.value = value.toLowerCase();
-        $$('[data-swatch]', editor).forEach(function (o) { o.classList.toggle('is-active', o === sw); });
+      editor.dispatchEvent(new CustomEvent('embed:change', { bubbles: true, detail: { spec: readSpec(), buttons: readButtons() } }));
+      if (!previewHost || !D) return;
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(function () {
+        previewHost.innerHTML = D.render({ embed: readSpec(), buttons: readButtons(), content: contentEl ? contentEl.value : '' }, ctx({ defaultColor: defaultColor }));
+        paint(previewHost);
       });
-    });
-    function setVal(key, v) { var el = input(key); if (!el) return; if (el.type === 'checkbox') el.checked = Boolean(v); else el.value = v === undefined || v === null ? '' : String(v); if (key === 'color') { var picker = el.parentElement && $('[data-color-input]', el.parentElement); if (picker && /^#?[0-9a-fA-F]{6}$/.test(String(v || ''))) picker.value = (String(v)[0] === '#' ? String(v) : '#' + v).toLowerCase(); } }
+    }
+    function setVal(key, v) {
+      var el = input(key);
+      if (!el) return;
+      if (el.type === 'checkbox') el.checked = Boolean(v); else el.value = v === undefined || v === null ? '' : String(v);
+      if (key === 'color') el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
 
-    /** Remplit le formulaire depuis un EmbedSpec (+ boutons optionnels). Exposé via editor.embedEditor.load(). */
+    /** Remplit le formulaire depuis un EmbedSpec (+ boutons optionnels). */
     function load(spec, buttons) {
       spec = spec || {};
       setVal('title', spec.title); setVal('url', spec.url); setVal('description', spec.description); setVal('color', spec.color);
@@ -136,6 +91,7 @@
       setVal('authorName', spec.author ? spec.author.name : ''); setVal('authorIconUrl', spec.author ? spec.author.iconUrl : ''); setVal('authorUrl', spec.author ? spec.author.url : '');
       if (fieldsRep && fieldsRep.repeater) fieldsRep.repeater.setRows(spec.fields || []);
       if (buttons !== undefined && buttonsRep && buttonsRep.repeater) buttonsRep.repeater.setRows(buttons || []);
+      editor.dispatchEvent(new Event('input', { bubbles: true }));
       render();
     }
 
@@ -150,7 +106,7 @@
     var exportBtn = $('[data-embed-export]', editor);
     if (importBtn && jsonArea) importBtn.addEventListener('click', function () {
       var raw = jsonArea.value.trim();
-      if (!raw) { if (status) status.textContent = 'Collez un JSON d\'embed (ou un message { content, embeds, buttons }).'; return; }
+      if (!raw) { if (status) status.textContent = 'Collez un JSON d’embed (ou un message { content, embeds, buttons }).'; return; }
       try {
         var json = JSON.parse(raw);
         var spec = json, buttons;
@@ -177,17 +133,16 @@
   }
 
   $$('[data-embed-editor]').forEach(setup);
-  applyColors(document);
+  paint(document);
 
-  /* ───── Aperçus statiques rendus depuis des données JSON (<script type="application/json" data-preview-data>) ───── */
+  /* Aperçus statiques rendus depuis des données JSON : <div data-preview-json="#id"> + <script type="application/json" id="id">{ content, embeds|embed, buttons }</script> */
   $$('[data-preview-json]').forEach(function (host) {
     var script = $(host.getAttribute('data-preview-json'));
-    if (!script) return;
+    if (!script || !D) return;
     try {
       var data = JSON.parse(script.textContent || '{}');
-      var nameEl = $('.dname');
-      host.innerHTML = renderEmbedPreview((data.embeds && data.embeds[0]) || data.embed || {}, data.buttons || [], data.content || '', { botName: nameEl ? nameEl.textContent : undefined, avatarHtml: $('.davatar') ? $('.davatar').innerHTML : '', defaultColor: document.body.getAttribute('data-brand-color') || '#7C3AED' });
-      applyColors(host);
+      host.innerHTML = D.render({ embed: (data.embeds && data.embeds[0]) || data.embed || {}, buttons: data.buttons || [], components: data.components || [], content: data.content || '' }, ctx());
+      paint(host);
     } catch (e) { /* ignoré */ }
   });
 })();

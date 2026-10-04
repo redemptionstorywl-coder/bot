@@ -1,27 +1,64 @@
-<section class="page-header">
-  <div><h2 class="page-title">Annonces</h2><p class="muted">Annonces multilingues : brouillon → programmation → publication (un message par langue / salon), archivage.</p></div>
-  <div class="page-actions"><a class="btn btn-primary" href="/guilds/<%= guild.id %>/announcements/new">+ Nouvelle annonce</a></div>
-</section>
+<%
+  const b = `/guilds/${guild.id}/announcements`;
+  const totals = Object.fromEntries(columns.map((c) => [c.status, c.total]));
+  const allCount = columns.filter((c) => c.status !== 'ARCHIVED').reduce((n, c) => n + c.total, 0);
+  const statusIcon = { DRAFT: 'pencil', SCHEDULED: 'clock', PUBLISHED: 'send', ARCHIVED: 'archive' };
+  const singular = { DRAFT: 'Brouillon', SCHEDULED: 'Programmée', PUBLISHED: 'Publiée', ARCHIVED: 'Archivée' };
+  const excerpt = (a) => {
+    const spec = a.spec || {};
+    const text = [spec.title, spec.description, a.content].filter((x) => typeof x === 'string' && x.trim())[0] || '';
+    const flat = text.replace(/\s+/g, ' ').trim();
+    return flat.length > 110 ? flat.slice(0, 109) + '…' : flat;
+  };
+%>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('megaphone') %></span>
+    <div><h1 class="page-title">Annonces</h1><p class="page-subtitle">Rédigez, programmez et publiez vos annonces ; une annonce publiée se met à jour sur Discord quand vous l'enregistrez.</p></div>
+  </div>
+  <div class="page-actions"><a class="btn btn-primary" href="<%= b %>/new"><%- icon('plus', { size: 16 }) %>Nouvelle annonce</a></div>
+</header>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Annonces est désactivé : les programmations ne seront pas publiées tant qu'il n'est pas réactivé.</span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Annonces est désactivé : les programmations ne seront pas publiées tant qu'il n'est pas réactivé. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
 
-<div class="status-columns">
-  <% for (const col of columns) { %>
-    <div class="status-column">
-      <div class="status-column-title"><span><%= col.label %></span><span><%= fmt.number(col.total) %></span></div>
-      <% if (!col.items.length) { %><p class="muted">Aucune annonce.</p><% } %>
-      <% for (const a of col.items) { %>
-        <a class="status-item" href="/guilds/<%= guild.id %>/announcements/<%= a.id %>">
-          <strong><%= a.title || 'Sans titre' %></strong>
-          <small>
-            <% if (a.channelId) { %>#<%= channelName(a.channelId) %><% } else { %>Aucun salon<% } %>
-            <% if (col.status === 'SCHEDULED' && scheduleMap[a.id]) { %>· 📅 <%= fmt.dateTime(scheduleMap[a.id]) %><% } %>
-            <% if (col.status === 'PUBLISHED') { %>· publiée <%= fmt.relative(a.publishedAt) %><% } %>
-            <% if (col.status === 'ARCHIVED') { %>· archivée <%= fmt.relative(a.archivedAt) %><% } %>
-            <% if (col.status === 'DRAFT') { %>· modifiée <%= fmt.relative(a.updatedAt) %><% } %>
-          </small>
-        </a>
-      <% } %>
-    </div>
+<%- include('../partials/tabs', { active, label: 'Filtrer les annonces', tabs: [
+  { key: 'ALL', label: 'En cours', href: b, icon: 'list', count: allCount },
+  { key: 'DRAFT', label: 'Brouillons', href: b + '?status=draft', icon: 'pencil', count: totals.DRAFT },
+  { key: 'SCHEDULED', label: 'Programmées', href: b + '?status=scheduled', icon: 'clock', count: totals.SCHEDULED },
+  { key: 'PUBLISHED', label: 'Publiées', href: b + '?status=published', icon: 'send', count: totals.PUBLISHED },
+  { key: 'ARCHIVED', label: 'Archivées', href: b + '?status=archived', icon: 'archive', count: totals.ARCHIVED },
+] }) %>
+
+<section class="card card-flush" data-live-reload>
+  <% if (!items.length) { %>
+    <%- include('../partials/empty', active === 'ALL' || active === 'DRAFT'
+      ? { glyph: 'megaphone', title: 'Aucune annonce en cours', text: 'Rédigez une annonce avec un aperçu Discord en direct, puis publiez-la ou programmez-la.', actionHref: b + '/new', actionLabel: 'Nouvelle annonce', actionIcon: 'plus' }
+      : { glyph: statusIcon[active], title: 'Rien ici pour le moment', text: active === 'SCHEDULED' ? 'Programmez une annonce depuis son éditeur.' : active === 'PUBLISHED' ? 'Les annonces publiées apparaîtront ici.' : 'Les annonces archivées sont conservées ici.' }) %>
+  <% } else { %>
+  <div class="table-wrap">
+    <table class="table table-responsive table-clickable">
+      <thead><tr><th>Annonce</th><th>Salon</th><th>Statut</th><th>Date</th></tr></thead>
+      <tbody>
+        <% for (const a of items) { const ex = excerpt(a); const when = a.status === 'SCHEDULED' ? scheduleMap[a.id] : a.status === 'PUBLISHED' ? a.publishedAt : a.status === 'ARCHIVED' ? a.archivedAt : a.updatedAt; %>
+          <tr data-href="<%= b %>/<%= a.id %>">
+            <td class="cell-primary">
+              <div class="cell-stack">
+                <a class="link strong truncate" href="<%= b %>/<%= a.id %>"><%= a.title || 'Sans titre' %></a>
+                <% if (ex) { %><span class="text-3 text-xs truncate"><%= ex %></span><% } %>
+              </div>
+            </td>
+            <td data-label="Salon"><% if (a.channelId) { %><span class="channel-tag"><%- icon('hash') %><%= channelName(a.channelId) %></span><% } else { %><span class="text-3">Aucun salon</span><% } %></td>
+            <td data-label="Statut"><span class="badge badge-status-<%= a.status %>"><%= singular[a.status] || a.status %></span></td>
+            <td data-label="Date" class="nowrap text-2" title="<%= when ? fmt.dateTime(when) : '' %>">
+              <% if (a.status === 'SCHEDULED') { %><%- icon('clock', { size: 14 }) %> <%= when ? fmt.dateTime(when) : '—' %>
+              <% } else if (a.status === 'PUBLISHED') { %>publiée <%= fmt.relative(when) %>
+              <% } else if (a.status === 'ARCHIVED') { %>archivée <%= fmt.relative(when) %>
+              <% } else { %>modifiée <%= fmt.relative(when) %><% } %>
+            </td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
   <% } %>
-</div>
+</section>

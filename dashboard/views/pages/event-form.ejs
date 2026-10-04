@@ -1,61 +1,107 @@
-<% const e = event; const editable = !e || e.status === 'SCHEDULED' || e.status === 'ONGOING'; %>
-<section class="page-header">
-  <div>
-    <a class="link" href="/guilds/<%= guild.id %>/events">← Retour aux événements</a>
-    <h2 class="page-title"><%= e ? e.name : 'Nouvel événement' %> <% if (e) { %><span class="badge badge-status-<%= e.status %>"><%= statusLabels[e.status] %></span><% } %></h2>
-    <p class="muted"><% if (e) { %>Créé par <%= names[e.createdById] || e.createdById %> · #<%= channelName %><% if (e.messageId) { %> · <a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= e.channelId %>/<%= e.messageId %>" target="_blank" rel="noopener noreferrer">message ↗</a><% } %><% if (remindersSent.length) { %> · rappels envoyés : <%= remindersSent.join(', ') %> min<% } %><% } else { %>L'événement est publié immédiatement dans le salon choisi avec un bouton d'inscription.<% } %></p>
+<%
+  const e = event;
+  const b = `/guilds/${guild.id}/events`;
+  const editable = !e || e.status === 'SCHEDULED' || e.status === 'ONGOING';
+  const presets = [10080, 1440, 180, 60, 30, 15, 10, 5];
+  const fmtMin = (m) => (m % 10080 === 0 ? (m / 10080) + ' sem.' : m % 1440 === 0 ? (m / 1440) + ' j' : m % 60 === 0 ? (m / 60) + ' h' : m + ' min');
+  const custom = reminderOffsets.filter((m) => !presets.includes(m));
+  const participants = e ? e.participants : [];
+%>
+<a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Événements</a>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('calendar') %></span>
+    <div>
+      <h1 class="page-title row-wrap"><span><%= e ? e.name : 'Nouvel événement' %></span><% if (e) { %><span class="badge badge-status-<%= e.status %>"><%= statusLabels[e.status] %></span><% } %></h1>
+      <p class="page-subtitle"><% if (e) { %><%= fmt.dateTime(e.startsAt) %> (<%= fmt.relative(e.startsAt) %>) · #<%= channelName %> · créé par <%= names[e.createdById] || e.createdById %><% } else { %>Publié immédiatement avec les boutons d'inscription ; les rappels partent automatiquement.<% } %></p>
+    </div>
   </div>
   <% if (e && editable) { %>
   <div class="page-actions">
-    <form method="post" action="/guilds/<%= guild.id %>/events/<%= e.id %>/remind"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost" data-confirm="Envoyer un rappel maintenant (salon + DM des participants) ?" <%= botReady ? '' : 'disabled' %>>Envoyer un rappel</button></form>
-    <form method="post" action="/guilds/<%= guild.id %>/events/<%= e.id %>/cancel"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger" data-confirm="Annuler cet événement ? Les participants seront prévenus en DM.">Annuler l'événement</button></form>
+    <form method="post" action="<%= b %>/<%= e.id %>/remind" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn" data-confirm="Envoyer un rappel maintenant (salon + DM des participants) ?" data-confirm-label="Envoyer" data-confirm-variant="primary" <%= botReady ? '' : 'disabled' %>><%- icon('bell', { size: 16 }) %>Envoyer un rappel</button></form>
+    <form method="post" action="<%= b %>/<%= e.id %>/cancel" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger" data-confirm="Annuler cet événement ? Les participants seront prévenus en DM." data-confirm-label="Annuler l'événement"><%- icon('x-circle', { size: 16 }) %>Annuler</button></form>
   </div>
   <% } %>
-</section>
+</header>
 
-<div class="grid-2 grid-2-aside">
-  <aside class="stack">
+<% if (!editable) { %><div class="alert alert-info"><%- icon('info') %><span class="alert-text">Événement <%= statusLabels[e.status].toLowerCase() %> : il n'est plus modifiable.</span></div><% } %>
+<% if (!e && !botReady) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Bot hors ligne : la publication est indisponible pour le moment.</span></div><% } %>
+
+<div class="split" data-no-live-reload>
+  <form method="post" action="<%= b %><%= e ? '/' + e.id : '' %>" class="form" id="event-form" <%- e && editable ? 'data-dirty-form' : '' %> <% if (editable) { %>data-live-preview="<%= b %>/preview" data-live-preview-target="#event-preview"<% if (e) { %> data-live-preview-extra="<%= JSON.stringify({ eventId: e.id }) %>"<% } %><% } %>>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <fieldset class="stack" <%= editable ? '' : 'disabled' %>>
+      <section class="card">
+        <h2 class="card-title">Informations</h2>
+        <div class="field"><label for="ev-name" class="field-required">Nom</label><input id="ev-name" name="name" class="input" maxlength="190" required value="<%= e ? e.name : '' %>" placeholder="Soirée RP"></div>
+        <div class="field"><label for="ev-description" class="field-required">Description</label><textarea id="ev-description" name="description" class="textarea" rows="5" maxlength="4000" required placeholder="Programme, règles, récompenses… Markdown Discord accepté."><%= e ? e.description : '' %></textarea></div>
+        <div class="field-row">
+          <div class="field"><label for="ev-location">Lieu <span class="field-optional">optionnel</span></label><input id="ev-location" name="location" class="input" maxlength="200" value="<%= e && e.location ? e.location : '' %>" placeholder="Salon vocal, serveur FiveM…"></div>
+          <div class="field"><label for="ev-image">Image <span class="field-optional">URL</span></label><input id="ev-image" name="imageUrl" type="url" class="input" maxlength="500" value="<%= e && e.imageUrl ? e.imageUrl : '' %>" placeholder="https://…"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Date</h2>
+        <div class="field-row">
+          <div class="field"><label for="ev-starts" class="field-required">Début <span class="field-optional"><%= timezone %></span></label><input id="ev-starts" name="startsAt" type="datetime-local" class="input" required value="<%= startsAtValue %>"></div>
+          <div class="field"><label for="ev-ends">Fin <span class="field-optional">optionnelle</span></label><input id="ev-ends" name="endsAt" type="datetime-local" class="input" value="<%= endsAtValue %>"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Publication &amp; inscriptions</h2>
+        <div class="field-row">
+          <% if (!e) { %><div class="field"><label for="ev-channel" class="field-required">Salon</label><%- include('../partials/channel-select', { name: 'channelId', id: 'ev-channel', selected: '', emptyLabel: '— Choisir un salon —', required: true }) %></div><% } %>
+          <div class="field"><label for="ev-role">Rôle à mentionner <span class="field-optional">optionnel</span></label><%- include('../partials/role-select', { name: 'mentionRoleId', id: 'ev-role', selected: e ? e.mentionRoleId || '' : '', multiple: false, emptyLabel: '— Aucun —' }) %></div>
+        </div>
+        <div class="field-row mt-4">
+          <div class="field"><label for="ev-max">Places</label><input id="ev-max" name="maxParticipants" type="number" class="input" min="1" max="10000" value="<%= e && e.maxParticipants ? e.maxParticipants : '' %>" placeholder="Illimité"></div>
+          <div class="field"><label for="ev-lang">Langue du message</label><select id="ev-lang" name="language" class="select"><option value="">Langue du serveur</option><% for (const l of languages) { %><option value="<%= l.code %>" <%= e && e.language === l.code ? 'selected' : '' %>><%= l.flag %> <%= l.nativeLabel %></option><% } %></select></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><h2 class="card-title">Rappels</h2><p class="card-desc">Envoyés dans le salon et en DM aux inscrits, avant le début.</p></div></div>
+        <div class="chip-group" role="group" aria-label="Rappels avant le début">
+          <% for (const m of presets) { const sent = remindersSent.includes(m); %>
+            <label class="chip-toggle"><input type="checkbox" name="reminderOffsets" value="<%= m %>" <%= reminderOffsets.includes(m) ? 'checked' : '' %>><span><% if (sent) { %><%- icon('check', { size: 14 }) %><% } %><%= fmtMin(m) %></span></label>
+          <% } %>
+        </div>
+        <div class="field mt-4"><label for="ev-reminders">Autres délais <span class="field-optional">minutes, séparées par des virgules</span></label><input id="ev-reminders" name="reminderOffsets" class="input input-mono" value="<%= custom.join(', ') %>" placeholder="ex. 120, 45" data-input-narrow></div>
+        <% if (remindersSent.length) { %><p class="hint">Déjà envoyés : <%= remindersSent.map(fmtMin).join(', ') %> avant.</p><% } %>
+      </section>
+    </fieldset>
+
+    <% if (editable) { %>
+      <% if (!e) { %>
+        <div class="sticky-actions row justify-between"><span class="text-sm text-2">Publié immédiatement dans le salon choisi.</span><div class="btn-group"><a class="btn btn-ghost" href="<%= b %>">Annuler</a><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>><%- icon('send', { size: 16 }) %>Publier l'événement</button></div></div>
+      <% } else { %>
+        <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+      <% } %>
+    <% } %>
+  </form>
+
+  <aside class="split-preview">
+    <div class="preview-panel">
+      <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 15 }) %>Aperçu</span><span class="badge badge-muted">Discord</span></div>
+      <div class="preview-panel-body" id="event-preview"><%- previewHtml %></div>
+      <% if (e && e.messageId) { %><div class="preview-panel-note"><a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= e.channelId %>/<%= e.messageId %>" target="_blank" rel="noopener noreferrer">Voir le message sur Discord <%- icon('external-link', { size: 12 }) %></a></div><% } %>
+    </div>
     <% if (e) { %>
     <section class="card">
-      <div class="card-head"><h3 class="card-title">Participants</h3><span class="badge badge-muted"><%= e.participants.length %><%= e.maxParticipants ? ' / ' + e.maxParticipants : '' %></span></div>
-      <% if (!e.participants.length) { %><p class="muted">Aucun inscrit pour le moment.</p><% } else { %>
-      <div class="participant-grid"><% for (const p of e.participants) { %><a class="badge" href="/guilds/<%= guild.id %>/members/<%= p.userId %>" title="inscrit le <%= fmt.dateTime(p.joinedAt) %>"><%= names[p.userId] || p.userId %></a><% } %></div>
+      <div class="card-head"><div><h2 class="card-title">Participants</h2></div><span class="badge badge-muted"><%= participants.length %><%= e.maxParticipants ? ' / ' + e.maxParticipants : '' %></span></div>
+      <% if (e.maxParticipants) { %><div class="bar-track mb-4"><span class="bar-fill" data-pct="<%= Math.min(100, Math.round((participants.length / e.maxParticipants) * 100)) %>"></span></div><% } %>
+      <% if (!participants.length) { %>
+        <p class="text-sm text-3">Aucun inscrit pour le moment.</p>
+      <% } else { %>
+        <ul class="list list-compact">
+          <% for (const p of participants) { %>
+            <li class="list-item"><a class="link truncate" href="/guilds/<%= guild.id %>/members/<%= p.userId %>"><%= names[p.userId] || p.userId %></a><span class="text-xs text-3 ml-auto nowrap" title="<%= fmt.dateTime(p.joinedAt) %>"><%= fmt.relative(p.joinedAt) %></span></li>
+          <% } %>
+        </ul>
       <% } %>
     </section>
     <% } %>
-    <section class="card card-muted">
-      <h3 class="card-title">Rappels</h3>
-      <p class="muted">Minutes avant le début, séparées par des virgules (ex. <code>1440, 60, 30, 10, 5</code>). Un rappel est envoyé dans le salon et en DM aux inscrits.</p>
-    </section>
   </aside>
-
-  <form method="post" action="/guilds/<%= guild.id %>/events<%= e ? '/' + e.id : '' %>" class="form">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    <div class="card">
-      <% if (!editable) { %><div class="alert alert-info"><span class="alert-icon" aria-hidden="true">i</span><span class="alert-text">Événement <%= statusLabels[e.status].toLowerCase() %> : lecture seule.</span></div><% } %>
-      <% if (!e && !botReady) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le bot n'est pas connecté : la publication est indisponible.</span></div><% } %>
-      <fieldset <%= editable ? '' : 'disabled' %> class="field">
-        <div class="field"><label for="ev-name">Nom</label><input id="ev-name" name="name" class="input" maxlength="190" required value="<%= e ? e.name : '' %>" placeholder="Soirée RP"></div>
-        <div class="field"><label for="ev-description">Description</label><textarea id="ev-description" name="description" class="textarea" rows="5" maxlength="4000" required><%= e ? e.description : '' %></textarea></div>
-        <div class="grid-2 grid-tight">
-          <div class="field"><label for="ev-starts">Début (<%= timezone %>)</label><input id="ev-starts" name="startsAt" type="datetime-local" class="input" required value="<%= startsAtValue %>"></div>
-          <div class="field"><label for="ev-ends">Fin (optionnelle)</label><input id="ev-ends" name="endsAt" type="datetime-local" class="input" value="<%= endsAtValue %>"></div>
-        </div>
-        <div class="grid-2 grid-tight">
-          <div class="field"><label for="ev-location">Lieu</label><input id="ev-location" name="location" class="input" maxlength="200" value="<%= e && e.location ? e.location : '' %>" placeholder="Salon vocal, serveur FiveM…"></div>
-          <div class="field"><label for="ev-image">Image (URL)</label><input id="ev-image" name="imageUrl" type="url" class="input" maxlength="500" value="<%= e && e.imageUrl ? e.imageUrl : '' %>"></div>
-        </div>
-        <div class="grid-3 grid-tight">
-          <div class="field"><label for="ev-role">Rôle à mentionner</label><select id="ev-role" name="mentionRoleId" class="select"><option value="">— Aucun —</option><%- include('../partials/role-options', { roles: guild.roles, selected: e ? e.mentionRoleId || '' : '' }) %></select></div>
-          <div class="field"><label for="ev-max">Participants max</label><input id="ev-max" name="maxParticipants" type="number" class="input" min="1" max="10000" value="<%= e && e.maxParticipants ? e.maxParticipants : '' %>" placeholder="illimité"></div>
-          <div class="field"><label for="ev-lang">Langue</label><select id="ev-lang" name="language" class="select"><option value="">Langue du serveur</option><% for (const l of languages) { %><option value="<%= l.code %>" <%= e && e.language === l.code ? 'selected' : '' %>><%= l.flag %> <%= l.nativeLabel %></option><% } %></select></div>
-        </div>
-        <div class="grid-2 grid-tight">
-          <% if (!e) { %><div class="field"><label for="ev-channel">Salon de publication</label><select id="ev-channel" name="channelId" class="select" required><%- include('../partials/channel-options', { channels: guild.textChannels, selected: '', allowEmpty: true, emptyLabel: '— Choisir —' }) %></select></div><% } %>
-          <div class="field"><label for="ev-reminders">Rappels (minutes avant)</label><input id="ev-reminders" name="reminderOffsets" class="input input-mono" value="<%= reminderValue %>" placeholder="1440, 60, 30, 10, 5"></div>
-        </div>
-      </fieldset>
-      <% if (editable) { %><div class="form-actions"><a class="btn btn-ghost" href="/guilds/<%= guild.id %>/events">Annuler</a><button type="submit" class="btn btn-primary" <%= !e && !botReady ? 'disabled' : '' %>><%= e ? 'Enregistrer' : 'Publier l’événement' %></button></div><% } %>
-    </div>
-  </form>
 </div>

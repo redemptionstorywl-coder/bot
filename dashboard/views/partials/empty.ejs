@@ -1,0 +1,18 @@
+<%#
+  État vide illustré. Attend : glyph (nom d'icône), title, text (optionnel), actionHref + actionLabel (+ actionIcon) optionnels, compact (bool).
+%>
+<div class="empty<%= typeof compact !== 'undefined' && compact ? ' empty-compact' : '' %>">
+  <svg class="empty-art" viewBox="0 0 120 96" fill="none" aria-hidden="true">
+    <rect x="14" y="20" width="92" height="64" rx="14" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".22"/>
+    <rect x="26" y="10" width="68" height="14" rx="7" fill="currentColor" fill-opacity=".05" stroke="currentColor" stroke-opacity=".14"/>
+    <circle cx="60" cy="52" r="20" fill="#0a0a0c" stroke="currentColor" stroke-opacity=".35"/>
+    <path d="M22 36h10M88 36h10M22 70h18M80 70h18" stroke="currentColor" stroke-opacity=".2" stroke-linecap="round"/>
+    <circle cx="104" cy="16" r="3" fill="currentColor" fill-opacity=".4"/><circle cx="12" cy="80" r="2" fill="currentColor" fill-opacity=".3"/>
+    <g transform="translate(48 40)"><%- icon(typeof glyph === 'string' ? glyph : 'inbox', { size: 24 }).replace('<svg ', '<svg x="0" y="0" ') %></g>
+  </svg>
+  <div class="empty-title"><%= typeof title === 'string' ? title : 'Rien à afficher' %></div>
+  <% if (typeof text === 'string' && text) { %><p class="empty-text"><%= text %></p><% } %>
+  <% if (typeof actionHref === 'string' && actionHref) { %>
+    <div class="empty-actions"><a class="btn btn-primary btn-sm" href="<%= actionHref %>"><%- icon(typeof actionIcon === 'string' ? actionIcon : 'plus', { size: 16 }) %><%= actionLabel %></a></div>
+  <% } %>
+</div>

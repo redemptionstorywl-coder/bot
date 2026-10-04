@@ -1,0 +1,12 @@
+<%#
+  Sélecteur de salons (icônes #, haut-parleur, dossier ; groupés par catégorie ; recherche). Le <select> natif reste la source de vérité.
+  Attend : name, id, selected (string), kind ('text' (défaut) | 'voice' | 'category' | 'all'), allowEmpty (défaut true), emptyLabel, placeholder, required.
+%>
+<%
+  const _kind = typeof kind === 'string' ? kind : 'text';
+  const _list = _kind === 'category' ? guild.categories : _kind === 'voice' ? guild.voiceChannels : _kind === 'all' ? guild.channels : guild.textChannels;
+  const _empty = typeof allowEmpty === 'undefined' ? true : allowEmpty;
+%>
+<select class="select" name="<%= name %>" id="<%= id %>" data-channel-picker data-kind="<%= _kind %>" data-placeholder="<%= typeof placeholder === 'string' ? placeholder : (_kind === 'category' ? 'Choisir une catégorie…' : 'Choisir un salon…') %>"<%- typeof required !== 'undefined' && required ? ' required' : '' %>>
+  <%- include('channel-options', { channels: _list, selected: selected || '', allowEmpty: _empty, emptyLabel: typeof emptyLabel === 'string' ? emptyLabel : '— Aucun —' }) %>
+</select>

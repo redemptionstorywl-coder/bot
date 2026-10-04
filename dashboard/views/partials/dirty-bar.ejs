@@ -1,0 +1,8 @@
+<%# Barre « modifications non enregistrées » (formulaires [data-dirty-form], gérée par app.js). %>
+<div class="dirty-bar" id="dirty-bar" role="region" aria-label="Modifications non enregistrées" aria-hidden="true">
+  <div class="dirty-bar-text"><%- icon('alert-triangle') %><span>Attention — il reste des modifications non enregistrées.</span></div>
+  <div class="dirty-bar-actions">
+    <button type="button" class="btn btn-ghost btn-sm" data-dirty-reset tabindex="-1">Annuler</button>
+    <button type="button" class="btn btn-primary btn-sm" data-dirty-save tabindex="-1">Enregistrer les modifications</button>
+  </div>
+</div>

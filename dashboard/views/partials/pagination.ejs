@@ -2,8 +2,10 @@
 <% if (pagination && pagination.pages > 1) { %>
 <nav class="pagination" aria-label="Pagination">
   <% const q = (p) => `${baseUrl}?${baseQuery ? baseQuery + '&' : ''}page=${p}`; %>
-  <a class="btn btn-ghost btn-sm<%= pagination.page <= 1 ? ' disabled' : '' %>" href="<%= q(Math.max(1, pagination.page - 1)) %>" <%- pagination.page <= 1 ? 'aria-disabled="true" tabindex="-1"' : '' %>>← Précédent</a>
-  <span class="pagination-info">Page <%= pagination.page %> / <%= pagination.pages %> · <%= fmt.number(pagination.total) %> éléments</span>
-  <a class="btn btn-ghost btn-sm<%= pagination.page >= pagination.pages ? ' disabled' : '' %>" href="<%= q(Math.min(pagination.pages, pagination.page + 1)) %>" <%- pagination.page >= pagination.pages ? 'aria-disabled="true" tabindex="-1"' : '' %>>Suivant →</a>
+  <span class="pagination-info">Page <%= pagination.page %> sur <%= pagination.pages %> · <%= fmt.number(pagination.total) %> éléments</span>
+  <div class="btn-group">
+    <a class="btn btn-sm<%= pagination.page <= 1 ? ' disabled' : '' %>" href="<%= q(Math.max(1, pagination.page - 1)) %>" <%- pagination.page <= 1 ? 'aria-disabled="true" tabindex="-1"' : '' %>><%- icon('chevron-left', { size: 14 }) %>Précédent</a>
+    <a class="btn btn-sm<%= pagination.page >= pagination.pages ? ' disabled' : '' %>" href="<%= q(Math.min(pagination.pages, pagination.page + 1)) %>" <%- pagination.page >= pagination.pages ? 'aria-disabled="true" tabindex="-1"' : '' %>>Suivant<%- icon('chevron-right', { size: 14 }) %></a>
+  </div>
 </nav>
 <% } %>

@@ -1,0 +1,15 @@
+<%#
+  Champ couleur : sélecteur natif + saisie hexadécimale + palette EMBED_COLOR_PALETTE.
+  Attend : name, id, value (#RRGGBB ou ''), allowEmpty (bool : pastille « défaut »), placeholder, dataKey (data-embed-key optionnel).
+%>
+<% const _val = typeof value === 'string' && value ? (value.startsWith('#') ? value.toUpperCase() : '#' + value.toUpperCase()) : ''; %>
+<div class="color-picker" data-color-picker>
+  <div class="color-field">
+    <input type="color" value="<%= (_val || (config ? fmt.hex(config.brandColor) : '#7C3AED')).toLowerCase() %>" data-color-input aria-label="Choisir une couleur">
+    <input id="<%= id %>" type="text" class="input input-mono" name="<%= name %>" value="<%= _val %>" data-color-text<%- typeof dataKey === 'string' ? ` data-embed-key="${dataKey}"` : '' %> placeholder="<%= typeof placeholder === 'string' ? placeholder : '#7C3AED' %>" pattern="^#?[0-9a-fA-F]{6}$" maxlength="7" autocomplete="off" spellcheck="false">
+  </div>
+  <div class="swatches" role="group" aria-label="Palette de couleurs">
+    <% if (typeof allowEmpty !== 'undefined' && allowEmpty) { %><button type="button" class="swatch swatch-reset" data-swatch="" data-tooltip="Couleur par défaut" aria-label="Couleur par défaut">✕</button><% } %>
+    <% for (const c of constants.EMBED_COLOR_PALETTE) { %><button type="button" class="swatch<%= _val === c.hex ? ' is-active' : '' %>" data-swatch="<%= c.hex %>" data-color="<%= c.hex %>" data-tooltip="<%= c.hex %>" aria-label="Couleur <%= c.key.replace('_', ' ') %> <%= c.hex %>"></button><% } %>
+  </div>
+</div>

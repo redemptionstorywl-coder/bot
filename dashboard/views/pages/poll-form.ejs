@@ -1,0 +1,50 @@
+<% const b = `/guilds/${guild.id}/events`; %>
+<a class="back-link" href="<%= b %>?tab=polls"><%- icon('arrow-left', { size: 16 }) %>Sondages</a>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('bar-chart') %></span>
+    <div><h1 class="page-title">Nouveau sondage</h1><p class="page-subtitle">Publié immédiatement ; les résultats se mettent à jour en direct sur Discord et ici.</p></div>
+  </div>
+</header>
+<% if (!botReady) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Bot hors ligne : la publication est indisponible pour le moment.</span></div><% } %>
+
+<div class="split" data-no-live-reload>
+  <form method="post" action="<%= b %>/polls" class="form stack" id="poll-form" data-live-preview="<%= b %>/polls/preview" data-live-preview-target="#poll-preview">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <section class="card">
+      <h2 class="card-title">Question</h2>
+      <div class="field"><label for="p-question" class="field-required">Question</label><textarea id="p-question" name="question" class="textarea" rows="2" maxlength="1000" required placeholder="Quelle map pour la prochaine session ?"></textarea></div>
+      <div class="field"><span class="field-label">Type</span>
+        <div class="segmented">
+          <label><input type="radio" name="type" value="MULTIPLE" checked data-radio-toggle="#p-options"><span><%- icon('list', { size: 16 }) %>Options personnalisées</span></label>
+          <label><input type="radio" name="type" value="YES_NO" data-radio-toggle="#p-yesno"><span><%- icon('check-circle', { size: 16 }) %>Oui / Non</span></label>
+        </div>
+      </div>
+      <div id="p-options" class="mt-4">
+        <span class="field-label">Options <span class="field-optional">2 à 10 · emoji facultatif</span></span>
+        <%- include('../partials/repeater', { kind: 'polloption', rows: [{ label: '' }, { label: '' }], name: 'optionsJson', id: 'poll-options', max: 10, addLabel: 'Ajouter une option' }) %>
+        <label class="toggle mt-4"><input type="checkbox" name="multiSelect"><span class="toggle-track"></span><span class="toggle-label">Plusieurs réponses par membre</span></label>
+      </div>
+      <div id="p-yesno" hidden><p class="hint mt-3">Deux boutons : ✅ Oui et ❌ Non, dans la langue du serveur.</p></div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Publication</h2>
+      <div class="field-row">
+        <div class="field"><label for="p-channel" class="field-required">Salon</label><%- include('../partials/channel-select', { name: 'channelId', id: 'p-channel', selected: '', emptyLabel: '— Choisir un salon —', required: true }) %></div>
+        <div class="field"><label for="p-duration">Durée <span class="field-optional">vide = sans fin automatique</span></label><input id="p-duration" name="duration" class="input" maxlength="32" placeholder="30m, 2h, 1j…"></div>
+      </div>
+      <label class="toggle mt-4"><input type="checkbox" name="anonymous"><span class="toggle-track"></span><span class="toggle-label">Votes anonymes <span class="text-3">— la liste des votants n'est pas conservée</span></span></label>
+    </section>
+
+    <div class="sticky-actions row justify-between"><span class="text-sm text-2">Les membres votent avec les boutons ou le menu.</span><div class="btn-group"><a class="btn btn-ghost" href="<%= b %>?tab=polls">Annuler</a><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>><%- icon('send', { size: 16 }) %>Publier le sondage</button></div></div>
+  </form>
+
+  <aside class="split-preview">
+    <div class="preview-panel">
+      <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 15 }) %>Aperçu</span><span class="badge badge-muted">Discord</span></div>
+      <div class="preview-panel-body" id="poll-preview"><%- previewHtml %></div>
+      <div class="preview-panel-note">Au-delà de 5 options ou avec plusieurs réponses, le vote se fait par menu déroulant.</div>
+    </div>
+  </aside>
+</div>

@@ -1,45 +1,49 @@
-<section class="page-header">
-  <div><h2 class="page-title">Embeds</h2><p class="muted">Templates réutilisables par <code>/embed</code>, les annonces et le dashboard. Aperçu fidèle au rendu Discord.</p></div>
-  <div class="page-actions">
-    <a class="btn btn-primary" href="/guilds/<%= guild.id %>/embeds/new">+ Nouveau template</a>
+<% const b = `/guilds/${guild.id}/embeds`; %>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('layout-template') %></span>
+    <div><h1 class="page-title">Embeds</h1><p class="page-subtitle">Messages enrichis réutilisables par <code>/embed</code>, les annonces et le panel, avec aperçu fidèle à Discord.</p></div>
   </div>
-</section>
+  <div class="page-actions"><a class="btn btn-primary" href="<%= b %>/new"><%- icon('plus', { size: 16 }) %>Nouveau template</a></div>
+</header>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Embeds est désactivé : la commande <code>/embed</code> ne répond pas, mais les templates restent utilisables par les autres modules.</span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Embeds est désactivé : la commande <code>/embed</code> ne répond pas, mais les templates restent utilisables ici. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
 
-<div class="grid-2 grid-2-aside">
-  <aside class="stack">
-    <form method="post" action="/guilds/<%= guild.id %>/embeds/import" class="card form">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <h3 class="card-title">Importer un JSON</h3>
-      <div class="field"><label for="imp-name">Nom du template</label><input id="imp-name" name="name" class="input" maxlength="100" required placeholder="Patch note"></div>
-      <div class="field"><label for="imp-json">JSON (EmbedSpec ou message { content, embeds, buttons })</label><textarea id="imp-json" name="json" class="textarea input-mono textarea-sm" rows="8" required placeholder='{"title": "…", "description": "…", "color": "#7C3AED"}'></textarea></div>
-      <div class="form-actions"><button type="submit" class="btn btn-primary btn-sm">Importer</button></div>
-    </form>
-    <div class="card card-muted">
-      <h3 class="card-title">Variables</h3>
-      <div class="var-list"><% for (const [k, v] of Object.entries(constants.TEMPLATE_VARIABLES)) { %><div><code><%= k %></code><span class="muted"><%= v %></span></div><% } %></div>
+<details class="card card-collapsible mb-5" <%= templates.length ? '' : 'open' %>>
+  <summary class="card-collapsible-head"><span class="row"><%- icon('upload', { size: 16 }) %><strong>Importer un JSON</strong></span><span class="text-xs text-3">Discohook, export du panel, message { content, embeds, buttons }</span></summary>
+  <form method="post" action="<%= b %>/import" class="form mt-4">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field-row">
+      <div class="field"><label for="imp-name" class="field-required">Nom du template</label><input id="imp-name" name="name" class="input" maxlength="100" required placeholder="Patch note"></div>
     </div>
-  </aside>
+    <div class="field mt-4"><label for="imp-json" class="field-required">JSON</label><textarea id="imp-json" name="json" class="textarea input-mono textarea-sm" rows="6" required placeholder='{"title": "…", "description": "…", "color": "#7C3AED"}'></textarea></div>
+    <div class="form-actions"><button type="submit" class="btn btn-primary"><%- icon('upload', { size: 16 }) %>Importer</button></div>
+  </form>
+</details>
 
-  <div>
-    <div class="card">
-      <div class="card-head"><h3 class="card-title">Templates (<%= templates.length %>)</h3><input type="search" class="input input-sm" placeholder="Filtrer…" data-filter="#template-list" aria-label="Filtrer les templates"></div>
-      <% if (!templates.length) { %><p class="muted">Aucun template. Créez-en un ou importez un JSON.</p><% } %>
-      <div class="card-grid" id="template-list">
-        <% for (const t of templates) { %>
-          <article class="card card-compact" data-filter-item data-filter-text="<%= (t.name + ' ' + (t.description || '')).toLowerCase() %>">
-            <div class="card-head"><h4 class="card-title"><%= t.name %></h4><small class="muted"><%= fmt.relative(t.updatedAt) %></small></div>
-            <% if (t.description) { %><p class="muted"><%= t.description %></p><% } %>
-            <%- include('../partials/embed-preview', { embed: t.spec, buttons: t.buttonList, content: '', compact: true }) %>
-            <div class="card-actions">
-              <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/embeds/<%= t.id %>">Modifier / envoyer</a>
-              <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/embeds/<%= t.id %>/export">Exporter JSON</a>
-              <form method="post" action="/guilds/<%= guild.id %>/embeds/<%= t.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer le template « <%= t.name %> » ?">Supprimer</button></form>
-            </div>
-          </article>
-        <% } %>
-      </div>
-    </div>
+<% if (!templates.length) { %>
+  <div class="card"><%- include('../partials/empty', { glyph: 'layout-template', title: 'Aucun template', text: 'Créez un embed avec l’éditeur visuel ou importez un JSON existant.', actionHref: b + '/new', actionLabel: 'Nouveau template', actionIcon: 'plus' }) %></div>
+<% } else { %>
+  <div class="toolbar mb-4">
+    <h2 class="section-title mb-0">Templates <span class="tab-count"><%= templates.length %></span></h2>
+    <% if (templates.length > 3) { %><label class="search"><%- icon('search', { size: 16 }) %><input type="search" class="input input-sm" placeholder="Rechercher un template…" data-filter="#template-list" data-filter-empty="#template-empty" aria-label="Rechercher un template"></label><% } %>
   </div>
-</div>
+  <div class="panel-list" id="template-list">
+    <% for (const t of templates) { %>
+      <article class="card panel-card mb-0" data-filter-item data-filter-text="<%= (t.name + ' ' + (t.description || '') + ' ' + (t.spec.title || '')).toLowerCase() %>">
+        <div class="preview-panel preview-panel-clip"><div class="preview-panel-body"><%- include('../partials/embed-preview', { embed: t.spec, buttons: t.buttonList, content: '', compact: true }) %></div></div>
+        <div class="stack-1">
+          <a class="link strong" href="<%= b %>/<%= t.id %>"><%= t.name %></a>
+          <span class="text-xs text-3"><%= t.description ? t.description + ' · ' : '' %>modifié <%= fmt.relative(t.updatedAt) %></span>
+        </div>
+        <div class="row">
+          <a class="btn btn-sm" href="<%= b %>/<%= t.id %>"><%- icon('pencil', { size: 14 }) %>Modifier</a>
+          <a class="btn btn-sm" href="<%= b %>/<%= t.id %>#send"><%- icon('send', { size: 14 }) %>Envoyer</a>
+          <a class="icon-btn ml-auto" href="<%= b %>/<%= t.id %>/export" aria-label="Exporter en JSON" data-tooltip="Exporter en JSON"><%- icon('download', { size: 16 }) %></a>
+          <form method="post" action="<%= b %>/<%= t.id %>/delete" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="icon-btn is-danger" aria-label="Supprimer" data-tooltip="Supprimer" data-confirm="Supprimer le template « <%= t.name %> » ? Les messages déjà envoyés ne sont pas touchés." data-confirm-label="Supprimer"><%- icon('trash', { size: 16 }) %></button></form>
+        </div>
+      </article>
+    <% } %>
+  </div>
+  <div id="template-empty" hidden><%- include('../partials/empty', { glyph: 'search', title: 'Aucun résultat', text: 'Aucun template ne correspond à cette recherche.', compact: true }) %></div>
+<% } %>

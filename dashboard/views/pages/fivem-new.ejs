@@ -1,0 +1,37 @@
+<% const b = `/guilds/${guild.id}/fivem`; %>
+<a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Serveurs FiveM</a>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('server') %></span>
+    <div><h1 class="page-title">Ajouter un serveur</h1><p class="page-subtitle">Déclarez le serveur de jeu, puis installez rs_bridge avec la clé choisie.</p></div>
+  </div>
+</header>
+
+<div class="grid-2 grid-aside-right">
+  <form method="post" action="<%= b %>/servers" class="card form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field-row">
+      <div class="field"><label for="a-name" class="field-required">Nom</label><input id="a-name" name="name" class="input" required maxlength="100" placeholder="Redemption Prison"></div>
+      <div class="field"><label for="a-key" class="field-required">Clé</label><input id="a-key" name="key" class="input input-mono" required pattern="^[a-z0-9_\-]{2,64}$" maxlength="64" placeholder="main"><small class="hint">Minuscules, chiffres, - ou _. Utilisée dans les URLs et <code>Config.ServerKey</code>.</small></div>
+    </div>
+    <div class="field-row mt-4">
+      <div class="field"><label for="a-framework">Framework</label><select id="a-framework" name="framework" class="select"><% for (const f of frameworks) { %><option value="<%= f.value %>"><%= f.label %><%= f.value === 'CUSTOM' ? ' (rs_bridge)' : '' %></option><% } %></select></div>
+      <div class="field"><label for="a-host">Hôte <span class="field-optional">optionnel</span></label><input id="a-host" name="host" type="url" class="input input-mono" maxlength="200" placeholder="http://1.2.3.4:30120"></div>
+    </div>
+    <div class="field-row mt-4">
+      <div class="field"><label for="a-apikey">Clé API propre <span class="field-optional">sinon FIVEM_API_KEY</span></label><input id="a-apikey" name="apiKey" type="password" class="input input-mono" maxlength="200" autocomplete="new-password"></div>
+      <div class="field"><label for="a-channel">Salon du message de statut</label><%- include('../partials/channel-select', { name: 'statusChannelId', id: 'a-channel', selected: '', emptyLabel: '— Aucun —' }) %></div>
+    </div>
+    <label class="toggle mt-4"><input type="checkbox" name="enabled" checked><span class="toggle-track"></span><span class="toggle-label">Serveur activé</span></label>
+    <div class="form-actions"><a class="btn btn-ghost" href="<%= b %>">Annuler</a><button type="submit" class="btn btn-primary"><%- icon('plus', { size: 16 }) %>Ajouter le serveur</button></div>
+  </form>
+  <aside class="stack">
+    <section class="card card-muted">
+      <h2 class="card-title">Et ensuite ?</h2>
+      <ol class="steps">
+        <li><strong>Installer rs_bridge</strong><p>Les fichiers de configuration pré-remplis sont dans l'onglet <a class="link" href="<%= b %>?tab=integration">Installation</a>.</p></li>
+        <li><strong>Régler la synchronisation</strong><p>Bans, pseudos, rôles « lié » / « en jeu », compteur de joueurs, accès requis.</p></li>
+      </ol>
+    </section>
+  </aside>
+</div>

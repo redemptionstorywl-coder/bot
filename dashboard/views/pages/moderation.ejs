@@ -1,244 +1,318 @@
-<section class="page-header">
-  <div><h2 class="page-title">Modération</h2><p class="muted">Escalade des avertissements, protections anti-raid, lockdown, historique des sanctions.</p></div>
+<%
+  const base = `/guilds/${guild.id}/moderation`;
+  const ar = antiRaid; const an = ar.antiNuke;
+  const minutes = (s) => Math.max(1, Math.round((s || 0) / 60));
+  const person = (id) => profiles[id];
+  const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const userCell = (id) => { if (!id) return '<span class="text-3">—</span>'; const p = person(id); return `<a class="user-cell" href="/guilds/${guild.id}/members/${esc(id)}">${p ? `<img class="avatar avatar-xs" src="${esc(p.avatarUrl)}" alt="">` : ''}<span class="truncate">${esc(p ? p.name : id)}</span></a>`; };
+  const toggleHead = (name, checked, target, title, desc, iconName) => `<div class="card-head"><div><h2 class="card-title">${icon(iconName)}${title}</h2>${desc ? `<p class="card-desc">${desc}</p>` : ''}</div><label class="toggle"><input type="checkbox" name="${name}" ${checked ? 'checked' : ''} data-check-toggle="${target}"><span class="toggle-track"></span><span class="sr-only">Activer ${title}</span></label></div>`;
+%>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('shield') %></span>
+    <div><h1 class="page-title">Modération</h1><p class="page-subtitle">Sanctions, avertissements, escalade automatique et protections du serveur.</p></div>
+  </div>
+  <div class="page-actions">
+    <% if (modConfig.lockdownActive) { %><a class="btn btn-danger" href="<%= base %>?tab=lockdown"><%- icon('lock', { size: 16 }) %>Lockdown actif</a><% } %>
+  </div>
+</header>
+
+<% if (!modules.moderation) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Modération est désactivé : les commandes de sanction ne répondent pas. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer</a></span></div><% } %>
+
+<section class="stat-grid">
+  <a class="stat" href="<%= base %>?tab=stats"><span class="stat-label"><%- icon('shield', { size: 14 }) %>Sanctions (30 j)</span><strong class="stat-value"><%= fmt.number(stats.total) %></strong></a>
+  <a class="stat" href="<%= base %>?tab=warnings"><span class="stat-label"><%- icon('alert-triangle', { size: 14 }) %>Avertissements actifs</span><strong class="stat-value" data-stat="activeWarnings"><%= fmt.number(stats.activeWarnings) %></strong></a>
+  <div class="stat"><span class="stat-label"><%- icon('ban', { size: 14 }) %>Bans temporaires</span><strong class="stat-value"><%= fmt.number(stats.activeBans) %></strong><span class="stat-sub"><%= fmt.number(stats.activeMutes) %> mute(s) actif(s)</span></div>
+  <a class="stat" href="<%= base %>?tab=antiraid"><span class="stat-label"><%- icon('shield-check', { size: 14 }) %>Protections</span><strong class="stat-value stat-value-sm"><%= [an.enabled, ar.antiSpam.enabled, ar.antiMassMention.enabled, ar.antiLink.enabled, ar.antiNewAccount.enabled, ar.antiBot.enabled, ar.antiMassJoin.enabled].filter(Boolean).length %> / 7 actives</strong><span class="stat-sub"><%= modules.antiraid ? 'module anti-raid actif' : 'module anti-raid désactivé' %></span></a>
 </section>
 
-<% const ar = antiRaid; const minutes = (s) => Math.max(1, Math.round((s || 0) / 60)); %>
-<div class="stat-grid">
-  <div class="stat-card"><span class="stat-label">Sanctions (30 j)</span><span class="stat-value"><%= fmt.number(stats.total) %></span></div>
-  <div class="stat-card"><span class="stat-label">Avertissements actifs</span><span class="stat-value" data-stat="activeWarnings"><%= fmt.number(stats.activeWarnings) %></span></div>
-  <div class="stat-card"><span class="stat-label">Bans temporaires actifs</span><span class="stat-value"><%= fmt.number(stats.activeBans) %></span></div>
-  <div class="stat-card"><span class="stat-label">Mutes actifs</span><span class="stat-value"><%= fmt.number(stats.activeMutes) %></span></div>
-  <div class="stat-card"><span class="stat-label">Lockdown</span><span class="stat-value stat-value-sm <%= modConfig.lockdownActive ? 'text-danger' : '' %>"><%= modConfig.lockdownActive ? 'ACTIF' : 'inactif' %></span></div>
-</div>
+<%- include('../partials/tabs', { active: tab, label: 'Sections de la modération', tabs: [
+  { key: 'sanctions', label: tabLabels.sanctions, href: base, icon: 'list', count: tab === 'sanctions' ? fmt.number(pagination.total) : null },
+  { key: 'warnings', label: tabLabels.warnings, href: base + '?tab=warnings', icon: 'alert-triangle' },
+  { key: 'config', label: tabLabels.config, href: base + '?tab=config', icon: 'zap', count: modConfig.warnThresholds.length || null },
+  { key: 'antiraid', label: tabLabels.antiraid, href: base + '?tab=antiraid', icon: 'shield-check' },
+  { key: 'honeypot', label: tabLabels.honeypot, href: base + '?tab=honeypot', icon: 'ban' },
+  { key: 'lockdown', label: tabLabels.lockdown, href: base + '?tab=lockdown', icon: 'lock', count: modConfig.lockdownActive ? 'actif' : null },
+  { key: 'stats', label: tabLabels.stats, href: base + '?tab=stats', icon: 'bar-chart' },
+] }) %>
 
-<div class="tabs" data-tabs data-active="<%= tab %>">
-  <div class="tab-list" role="tablist">
-    <button type="button" class="tab" role="tab" data-tab="config">Configuration</button>
-    <button type="button" class="tab" role="tab" data-tab="antiraid">Anti-raid</button>
-    <button type="button" class="tab" role="tab" data-tab="lockdown">Lockdown <% if (modConfig.lockdownActive) { %><span class="badge badge-danger">actif</span><% } %></button>
-    <button type="button" class="tab" role="tab" data-tab="sanctions">Sanctions <span class="badge badge-muted"><%= fmt.number(pagination.total) %></span></button>
-    <button type="button" class="tab" role="tab" data-tab="warnings">Avertissements</button>
-    <button type="button" class="tab" role="tab" data-tab="stats">Statistiques</button>
-  </div>
-
-  <!-- ─── Configuration ─── -->
-  <section class="tab-panel" data-tab-panel="config" role="tabpanel">
-    <% if (!modules.moderation) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Modération est désactivé : les commandes de sanction ne répondent pas.</span></div><% } %>
-    <form method="post" action="/guilds/<%= guild.id %>/moderation/config" class="form">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="card">
-        <div class="card-head"><h3 class="card-title">Seuils d'escalade des avertissements</h3><span class="muted">action appliquée quand le nombre de warns actifs atteint exactement le seuil</span></div>
-        <%- include('../partials/repeater', { kind: 'threshold', rows: modConfig.warnThresholds, name: 'thresholdsJson', id: 'thresholds-json', max: 25, addLabel: 'Ajouter un seuil' }) %>
-      </div>
-      <div class="card">
-        <div class="grid-2 grid-tight">
-          <div class="field"><label for="m-mute">Rôle mute (pour <code>/mute</code>)</label><select id="m-mute" name="muteRoleId" class="select"><option value="">— Aucun (timeout Discord uniquement) —</option><%- include('../partials/role-options', { roles: guild.roles, selected: modConfig.muteRoleId || '' }) %></select></div>
-          <div class="field"><label class="check check-tall"><input type="checkbox" name="dmOnSanction" <%= modConfig.dmOnSanction ? 'checked' : '' %>><span>Envoyer un DM au membre sanctionné</span></label></div>
-        </div>
-        <div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
-      </div>
-    </form>
-  </section>
-
-  <!-- ─── Anti-raid ─── -->
-  <section class="tab-panel" data-tab-panel="antiraid" role="tabpanel">
-    <% if (!modules.antiraid) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Anti-Raid est désactivé : aucune protection n'est appliquée.</span></div><% } %>
-    <form method="post" action="/guilds/<%= guild.id %>/moderation/antiraid" class="form">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="grid-2">
-        <div class="card">
-          <h3 class="card-title">Anti-spam</h3>
-          <label class="check"><input type="checkbox" name="antiSpamEnabled" <%= ar.antiSpam.enabled ? 'checked' : '' %>><span>Activer</span></label>
-          <div class="grid-3 grid-tight">
-            <div class="field"><label for="as-max">Messages max</label><input id="as-max" name="antiSpamMaxMessages" type="number" class="input" min="2" max="50" value="<%= ar.antiSpam.maxMessages %>"></div>
-            <div class="field"><label for="as-int">Fenêtre (s)</label><input id="as-int" name="antiSpamIntervalSeconds" type="number" class="input" min="1" max="120" value="<%= ar.antiSpam.intervalSeconds %>"></div>
-            <div class="field"><label for="as-to">Timeout (min)</label><input id="as-to" name="antiSpamTimeoutMinutes" type="number" class="input" min="1" max="40320" value="<%= minutes(ar.antiSpam.timeoutSeconds) %>"></div>
-          </div>
-          <h3 class="card-title">Mentions de masse</h3>
-          <label class="check"><input type="checkbox" name="antiMassMentionEnabled" <%= ar.antiMassMention.enabled ? 'checked' : '' %>><span>Activer</span></label>
-          <div class="grid-2 grid-tight">
-            <div class="field"><label for="am-max">Mentions max par message</label><input id="am-max" name="antiMassMentionMax" type="number" class="input" min="2" max="100" value="<%= ar.antiMassMention.maxMentions %>"></div>
-            <div class="field"><label for="am-to">Timeout (min)</label><input id="am-to" name="antiMassMentionTimeoutMinutes" type="number" class="input" min="1" max="40320" value="<%= minutes(ar.antiMassMention.timeoutSeconds) %>"></div>
-          </div>
-          <h3 class="card-title">Liens &amp; invitations</h3>
-          <label class="check"><input type="checkbox" name="antiLinkEnabled" <%= ar.antiLink.enabled ? 'checked' : '' %>><span>Activer</span></label>
-          <div class="check-grid">
-            <label class="check"><input type="checkbox" name="antiLinkBlockInvites" <%= ar.antiLink.blockInvites ? 'checked' : '' %>><span>Bloquer les invitations Discord</span></label>
-            <label class="check"><input type="checkbox" name="antiLinkBlockLinks" <%= ar.antiLink.blockLinks ? 'checked' : '' %>><span>Bloquer tous les liens hors liste blanche</span></label>
-          </div>
-          <div class="field"><label for="al-wl">Domaines autorisés (un par ligne ou séparés par des virgules)</label><textarea id="al-wl" name="antiLinkWhitelist" class="textarea textarea-sm input-mono" rows="3" placeholder="youtube.com&#10;redemption-story.fr"><%= ar.antiLink.whitelistDomains.join('\n') %></textarea></div>
-          <div class="grid-2 grid-tight">
-            <div class="field"><label for="al-action">Action</label><select id="al-action" name="antiLinkAction" class="select"><option value="DELETE" <%= ar.antiLink.action === 'DELETE' ? 'selected' : '' %>>Supprimer le message</option><option value="TIMEOUT" <%= ar.antiLink.action === 'TIMEOUT' ? 'selected' : '' %>>Supprimer + timeout</option></select></div>
-            <div class="field"><label for="al-to">Timeout (min)</label><input id="al-to" name="antiLinkTimeoutMinutes" type="number" class="input" min="1" max="40320" value="<%= minutes(ar.antiLink.timeoutSeconds) %>"></div>
-          </div>
-        </div>
-        <div class="card">
-          <h3 class="card-title">Comptes récents</h3>
-          <label class="check"><input type="checkbox" name="antiNewAccountEnabled" <%= ar.antiNewAccount.enabled ? 'checked' : '' %>><span>Activer</span></label>
-          <div class="grid-3 grid-tight">
-            <div class="field"><label for="an-age">Âge minimal (jours)</label><input id="an-age" name="antiNewAccountMinAgeDays" type="number" class="input" min="1" max="365" value="<%= ar.antiNewAccount.minAgeDays %>"></div>
-            <div class="field"><label for="an-action">Action</label><select id="an-action" name="antiNewAccountAction" class="select"><option value="KICK" <%= ar.antiNewAccount.action === 'KICK' ? 'selected' : '' %>>Expulser</option><option value="QUARANTINE" <%= ar.antiNewAccount.action === 'QUARANTINE' ? 'selected' : '' %>>Quarantaine (rôle)</option></select></div>
-            <div class="field"><label for="an-role">Rôle de quarantaine</label><select id="an-role" name="antiNewAccountQuarantineRoleId" class="select"><option value="">— Aucun —</option><%- include('../partials/role-options', { roles: guild.roles, selected: ar.antiNewAccount.quarantineRoleId || '' }) %></select></div>
-          </div>
-          <h3 class="card-title">Bots</h3>
-          <label class="check"><input type="checkbox" name="antiBotEnabled" <%= ar.antiBot.enabled ? 'checked' : '' %>><span>Expulser les bots ajoutés sans autorisation</span></label>
-          <div class="field"><label for="ab-ids">IDs de bots autorisés (séparés par des espaces ou virgules)</label><textarea id="ab-ids" name="antiBotAllowedIds" class="textarea textarea-sm input-mono" rows="2"><%= ar.antiBot.allowedBotIds.join(' ') %></textarea></div>
-          <h3 class="card-title">Arrivées massives</h3>
-          <label class="check"><input type="checkbox" name="antiMassJoinEnabled" <%= ar.antiMassJoin.enabled ? 'checked' : '' %>><span>Activer</span></label>
-          <div class="grid-2 grid-tight">
-            <div class="field"><label for="aj-max">Arrivées max</label><input id="aj-max" name="antiMassJoinMax" type="number" class="input" min="2" max="500" value="<%= ar.antiMassJoin.maxJoins %>"></div>
-            <div class="field"><label for="aj-int">Fenêtre (s)</label><input id="aj-int" name="antiMassJoinIntervalSeconds" type="number" class="input" min="1" max="600" value="<%= ar.antiMassJoin.intervalSeconds %>"></div>
-          </div>
-          <label class="check"><input type="checkbox" name="antiMassJoinLockdown" <%= ar.antiMassJoin.lockdown ? 'checked' : '' %>><span>Déclencher automatiquement le lockdown</span></label>
-          <h3 class="card-title">Exemptions</h3>
-          <div class="grid-2 grid-tight">
-            <div class="field"><label for="ex-roles">Rôles exemptés (en plus du staff)</label><select id="ex-roles" name="exemptRoleIds" class="select" multiple size="5" data-multi><%- include('../partials/role-options', { roles: guild.roles, selected: ar.exemptRoleIds }) %></select></div>
-            <div class="field"><label for="ex-channels">Salons exemptés (messages)</label><select id="ex-channels" name="exemptChannelIds" class="select" multiple size="5" data-multi><% for (const c of guild.textChannels) { %><option value="<%= c.id %>" <%= ar.exemptChannelIds.includes(c.id) ? 'selected' : '' %>># <%= c.name %></option><% } %></select></div>
-          </div>
-        </div>
-      </div>
-      <% const an = ar.antiNuke; %>
-      <div class="card">
-        <h3 class="card-title">Anti-nuke</h3>
-        <p class="muted">Protection contre les comptes compromis et les applications malveillantes : l'exécuteur (lu dans l'audit log) qui dépasse un seuil est puni. Toujours exemptés : propriétaire du serveur, owners du bot, le bot lui-même. Les rôles équipe / admin ne sont <strong>pas</strong> exemptés par défaut.</p>
-        <div class="check-grid">
-          <label class="check"><input type="checkbox" name="antiNukeEnabled" <%= an.enabled ? 'checked' : '' %>><span>Activer l'anti-nuke</span></label>
-          <label class="check"><input type="checkbox" name="antiNukeBotAdd" <%= an.botAddProtection ? 'checked' : '' %>><span>Expulser tout bot ajouté par un non-exempté et sanctionner l'ajouteur</span></label>
-          <label class="check"><input type="checkbox" name="antiNukeLockdown" <%= an.lockdownOnTrigger ? 'checked' : '' %>><span>Lockdown automatique au déclenchement</span></label>
-          <label class="check"><input type="checkbox" name="antiNukeRestoreBans" <%= an.restoreBans ? 'checked' : '' %>><span>Rétablir les bans effectués par l'exécuteur dans la fenêtre</span></label>
-          <label class="check"><input type="checkbox" name="antiNukeDm" <%= an.dmExecutor ? 'checked' : '' %>><span>Envoyer un DM à l'exécuteur humain</span></label>
-          <label class="check"><input type="checkbox" name="antiNukeExemptTeam" <%= an.exemptTeamRoles ? 'checked' : '' %>><span>Exempter les rôles équipe / admin configurés (déconseillé)</span></label>
-        </div>
-        <div class="grid-2 grid-tight">
-          <div class="field"><label for="nk-punish">Punition de l'exécuteur (un bot est toujours banni)</label><select id="nk-punish" name="antiNukePunishment" class="select"><option value="STRIP_ROLES" <%= an.punishment === 'STRIP_ROLES' ? 'selected' : '' %>>Retirer les rôles dangereux</option><option value="KICK" <%= an.punishment === 'KICK' ? 'selected' : '' %>>Expulser</option><option value="BAN" <%= an.punishment === 'BAN' ? 'selected' : '' %>>Bannir</option></select></div>
-          <div class="field"><label for="nk-wl">IDs d'utilisateurs de confiance (séparés par des espaces ou virgules)</label><textarea id="nk-wl" name="antiNukeWhitelist" class="textarea textarea-sm input-mono" rows="2"><%= an.whitelistUserIds.join(' ') %></textarea></div>
-        </div>
-        <h4 class="card-subtitle">Seuils par action (actions max / fenêtre en secondes)</h4>
-        <div class="grid-3 grid-tight">
-          <% for (const a of antiNukeActions) { const th = an.thresholds[a.key]; %>
-          <div class="field">
-            <label for="nk-<%= a.key %>-max"><%= a.label %></label>
-            <div class="grid-2 grid-tight">
-              <input id="nk-<%= a.key %>-max" name="antiNuke_<%= a.key %>_max" type="number" class="input" min="1" max="100" value="<%= th.max %>" title="Actions max">
-              <input id="nk-<%= a.key %>-sec" name="antiNuke_<%= a.key %>_seconds" type="number" class="input" min="1" max="600" value="<%= th.intervalSeconds %>" title="Fenêtre (s)">
-            </div>
-          </div>
+<% if (tab === 'sanctions') { %>
+  <form method="get" action="<%= base %>" class="row-wrap mb-4">
+    <input type="hidden" name="tab" value="sanctions">
+    <select name="type" class="select select-sm" aria-label="Type de sanction" data-submit-on-change><option value="">Tous les types</option><% for (const t of sanctionTypes) { %><option value="<%= t.value %>" <%= filters.type === t.value ? 'selected' : '' %>><%= t.label %></option><% } %></select>
+    <label class="search"><%- icon('search', { size: 16 }) %><input name="user" class="input input-sm input-mono" value="<%= filters.user || '' %>" pattern="^\d{15,22}$" placeholder="ID du membre" aria-label="ID du membre"></label>
+    <button type="submit" class="btn btn-sm">Filtrer</button>
+    <% if (filters.type || filters.user) { %><a class="btn btn-ghost btn-sm" href="<%= base %>">Effacer</a><% } %>
+  </form>
+  <div class="<%= selectedCase ? 'grid-aside-right grid-2' : '' %>">
+    <section class="card card-flush" data-live-reload>
+      <% if (!sanctions.length) { %>
+        <%- include('../partials/empty', { glyph: 'shield-check', title: 'Aucune sanction', text: filters.type || filters.user ? 'Aucune sanction ne correspond à ces filtres.' : 'Les sanctions prononcées par le staff ou le bot apparaîtront ici.' }) %>
+      <% } else { %>
+      <div class="table-wrap"><table class="table table-responsive table-clickable">
+        <thead><tr><th>Cas</th><th>Type</th><th>Membre</th><th>Modérateur</th><th>Raison</th><th>Date</th></tr></thead>
+        <tbody>
+          <% for (const s of sanctions) { %>
+            <tr data-href="<%= base %>?<%= baseQuery %>&case=<%= s.caseNumber %>">
+              <td class="cell-primary"><a class="link strong" href="<%= base %>?<%= baseQuery %>&case=<%= s.caseNumber %>">#<%= s.caseNumber %></a></td>
+              <td data-label="Type"><span class="badge <%= negativeTypes.includes(s.type) ? 'badge-danger' : 'badge-muted' %>"><%= typeLabels[s.type] %></span><% if (s.duration) { %> <span class="text-3 text-xs"><%= fmt.duration(s.duration) %></span><% } %></td>
+              <td data-label="Membre"><%- userCell(s.userId) %></td>
+              <td data-label="Modérateur"><%- userCell(s.moderatorId) %></td>
+              <td data-label="Raison" class="text-2"><%= fmt.truncate(s.reason, 60) || '—' %></td>
+              <td data-label="Date" class="nowrap" title="<%= fmt.dateTime(s.createdAt) %>"><%= fmt.relative(s.createdAt) %></td>
+            </tr>
           <% } %>
-        </div>
-      </div>
-      <div class="form-actions sticky-actions"><button type="submit" class="btn btn-primary">Enregistrer les protections</button></div>
-    </form>
-  </section>
-
-  <!-- ─── Lockdown ─── -->
-  <section class="tab-panel" data-tab-panel="lockdown" role="tabpanel">
-    <div class="card">
-      <div class="lockdown-state <%= modConfig.lockdownActive ? 'on' : '' %>">
-        <span class="lockdown-icon" aria-hidden="true"><%= modConfig.lockdownActive ? '🔒' : '🔓' %></span>
-        <div>
-          <strong><%= modConfig.lockdownActive ? 'Lockdown actif' : 'Serveur ouvert' %></strong>
-          <% if (modConfig.lockdownActive && modConfig.lockdownState) { %><p class="muted">Depuis le <%= fmt.dateTime(modConfig.lockdownState.at) %> par <%= names[modConfig.lockdownState.actorId] || modConfig.lockdownState.actorId %> · <%= Object.keys(modConfig.lockdownState.channels).length %> salon(s) verrouillé(s)<%= modConfig.lockdownState.reason ? ' · ' + modConfig.lockdownState.reason : '' %></p><% } else { %><p class="muted">Le lockdown retire la permission d'écrire à @everyone dans tous les salons texte, puis restaure l'état précédent à la levée.</p><% } %>
-        </div>
-      </div>
-      <% if (!botReady) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le bot n'est pas connecté : le lockdown ne peut pas être modifié pour le moment.</span></div><% } %>
-      <form method="post" action="/guilds/<%= guild.id %>/moderation/lockdown" class="inline-fields" data-confirm="<%= modConfig.lockdownActive ? 'Lever le lockdown et restaurer les permissions ?' : 'Activer le lockdown : plus personne (hors staff) ne pourra écrire ?' %>">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <% if (!modConfig.lockdownActive) { %><input type="hidden" name="enabled" value="on"><% } %>
-        <div class="field"><label for="ld-reason">Raison (optionnelle)</label><input id="ld-reason" name="reason" class="input" maxlength="300" placeholder="Raid en cours…"></div>
-        <div class="field field-fixed"><button type="submit" class="btn <%= modConfig.lockdownActive ? 'btn-primary' : 'btn-danger' %>" <%= botReady ? '' : 'disabled' %>><%= modConfig.lockdownActive ? 'Lever le lockdown' : 'Activer le lockdown' %></button></div>
-      </form>
-    </div>
-  </section>
-
-  <!-- ─── Sanctions ─── -->
-  <section class="tab-panel" data-tab-panel="sanctions" role="tabpanel">
+        </tbody>
+      </table></div>
+      <% } %>
+    </section>
     <% if (selectedCase) { %>
-    <div class="card">
-      <div class="card-head"><h3 class="card-title">Cas #<%= selectedCase.caseNumber %> · <span class="badge <%= negativeTypes.includes(selectedCase.type) ? 'badge-danger' : 'badge-muted' %>"><%= typeLabels[selectedCase.type] %></span></h3><a class="link" href="/guilds/<%= guild.id %>/moderation?<%= baseQuery %>">Fermer</a></div>
-      <dl class="dl">
-        <dt>Membre</dt><dd><% if (selectedCase.userId) { %><a class="link" href="/guilds/<%= guild.id %>/members/<%= selectedCase.userId %>"><%= names[selectedCase.userId] || selectedCase.userId %></a><% } else { %>—<% } %></dd>
-        <dt>Modérateur</dt><dd><%= names[selectedCase.moderatorId] || selectedCase.moderatorId %></dd>
+    <aside class="card">
+      <div class="card-head"><h2 class="card-title">Cas #<%= selectedCase.caseNumber %></h2><a class="icon-btn" href="<%= base %>?<%= baseQuery %>" aria-label="Fermer"><%- icon('x') %></a></div>
+      <span class="badge badge-lg <%= negativeTypes.includes(selectedCase.type) ? 'badge-danger' : 'badge-muted' %>"><%= typeLabels[selectedCase.type] %></span>
+      <dl class="dl mt-4">
+        <dt>Membre</dt><dd><%- userCell(selectedCase.userId) %></dd>
+        <dt>Modérateur</dt><dd><%- userCell(selectedCase.moderatorId) %></dd>
         <dt>Date</dt><dd><%= fmt.dateTime(selectedCase.createdAt) %></dd>
         <dt>Durée</dt><dd><%= selectedCase.duration ? fmt.duration(selectedCase.duration) : '—' %></dd>
         <dt>Salon</dt><dd><%= selectedCase.channelId ? '#' + ((guild.textChannels.find((c) => c.id === selectedCase.channelId) || { name: selectedCase.channelId }).name) : '—' %></dd>
         <dt>Raison</dt><dd><%= selectedCase.reason || '—' %></dd>
       </dl>
-      <% if (selectedCase.metadata) { %><details class="json-details"><summary>Métadonnées</summary><pre class="json"><%= fmt.json(selectedCase.metadata) %></pre></details><% } %>
-    </div>
+      <% if (selectedCase.metadata) { %><details class="editor-section mt-4 mb-0"><summary>Métadonnées</summary><pre class="json"><%= fmt.json(selectedCase.metadata) %></pre></details><% } %>
+    </aside>
     <% } %>
-    <form method="get" action="/guilds/<%= guild.id %>/moderation" class="card filter-bar">
-      <input type="hidden" name="tab" value="sanctions">
-      <div class="field"><label for="s-type">Type</label><select id="s-type" name="type" class="select"><option value="">Tous</option><% for (const t of sanctionTypes) { %><option value="<%= t.value %>" <%= filters.type === t.value ? 'selected' : '' %>><%= t.label %></option><% } %></select></div>
-      <div class="field"><label for="s-user">ID du membre</label><input id="s-user" name="user" class="input input-mono" value="<%= filters.user || '' %>" pattern="^\d{15,22}$" placeholder="123456789012345678"></div>
-      <div class="field field-actions"><button type="submit" class="btn btn-primary">Filtrer</button><a class="btn btn-ghost" href="/guilds/<%= guild.id %>/moderation?tab=sanctions">Réinitialiser</a></div>
-    </form>
-    <div class="card">
-      <% if (!sanctions.length) { %><p class="muted">Aucune sanction.</p><% } else { %>
-      <div class="table-wrap"><table class="table">
-        <thead><tr><th>Cas</th><th>Type</th><th>Membre</th><th>Modérateur</th><th>Durée</th><th>Raison</th><th>Date</th></tr></thead>
-        <tbody>
-          <% for (const s of sanctions) { %>
-            <tr>
-              <td><a class="link" href="/guilds/<%= guild.id %>/moderation?<%= baseQuery %>&case=<%= s.caseNumber %>">#<%= s.caseNumber %></a></td>
-              <td><span class="badge <%= negativeTypes.includes(s.type) ? 'badge-danger' : 'badge-muted' %>"><%= typeLabels[s.type] %></span></td>
-              <td><% if (s.userId) { %><a class="link" href="/guilds/<%= guild.id %>/members/<%= s.userId %>"><%= names[s.userId] || s.userId %></a><% } else { %>—<% } %></td>
-              <td><%= names[s.moderatorId] || s.moderatorId %></td>
-              <td><%= s.duration ? fmt.duration(s.duration) : '—' %></td>
-              <td><%= fmt.truncate(s.reason, 60) || '—' %></td>
-              <td class="nowrap"><%= fmt.dateTime(s.createdAt) %></td>
-            </tr>
-          <% } %>
-        </tbody>
-      </table></div>
-      <% } %>
-      <%- include('../partials/pagination', { pagination, baseQuery, baseUrl: `/guilds/${guild.id}/moderation` }) %>
-    </div>
-  </section>
+  </div>
+  <%- include('../partials/pagination', { pagination, baseQuery, baseUrl: base }) %>
 
-  <!-- ─── Avertissements ─── -->
-  <section class="tab-panel" data-tab-panel="warnings" role="tabpanel">
-    <form method="get" action="/guilds/<%= guild.id %>/moderation" class="card filter-bar">
-      <input type="hidden" name="tab" value="warnings">
-      <div class="field"><label for="w-user">ID du membre</label><input id="w-user" name="warnUser" class="input input-mono" value="<%= filters.warnUser || '' %>" required pattern="^\d{15,22}$" placeholder="123456789012345678"></div>
-      <div class="field field-actions"><button type="submit" class="btn btn-primary">Rechercher</button></div>
-    </form>
-    <% if (filters.warnUser) { %>
-    <div class="card">
-      <div class="card-head">
-        <h3 class="card-title">Avertissements de <a class="link" href="/guilds/<%= guild.id %>/members/<%= filters.warnUser %>"><%= names[filters.warnUser] || filters.warnUser %></a> <span class="badge <%= warnings.filter((w) => w.active).length ? 'badge-danger' : 'badge-muted' %>"><%= warnings.filter((w) => w.active).length %> actif(s)</span></h3>
-        <% if (warnings.some((w) => w.active)) { %>
-        <form method="post" action="/guilds/<%= guild.id %>/moderation/warnings/clear" class="inline-fields"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="userId" value="<%= filters.warnUser %>"><input name="reason" class="input input-sm" maxlength="300" placeholder="Raison (optionnelle)"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Effacer tous les avertissements actifs de ce membre ?">Tout effacer</button></form>
+<% } else if (tab === 'warnings') { %>
+  <form method="get" action="<%= base %>" class="row mb-5" role="search">
+    <input type="hidden" name="tab" value="warnings">
+    <label class="search grow"><%- icon('search', { size: 16 }) %><input name="warnUser" class="input input-mono" value="<%= filters.warnUser || '' %>" required pattern="^\d{15,22}$" placeholder="ID Discord du membre (clic droit → Copier l'identifiant)" aria-label="ID du membre"></label>
+    <button type="submit" class="btn btn-primary">Rechercher</button>
+  </form>
+  <% if (!filters.warnUser) { %>
+    <div class="card"><%- include('../partials/empty', { glyph: 'alert-triangle', title: 'Consulter les avertissements d’un membre', text: 'Saisissez son identifiant Discord, ou ouvrez sa fiche depuis la page Membres.' }) %></div>
+  <% } else { const active = warnings.filter((w) => w.active).length; %>
+  <section class="card card-flush">
+    <div class="card-head">
+      <div class="row-3"><%- userCell(filters.warnUser) %><span class="badge <%= active ? 'badge-warning' : 'badge-muted' %>"><%= active %> actif(s)</span></div>
+      <% if (active) { %>
+      <form method="post" action="<%= base %>/warnings/clear" class="row"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="userId" value="<%= filters.warnUser %>"><input name="reason" class="input input-sm" maxlength="300" placeholder="Raison (optionnelle)" aria-label="Raison"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Effacer tous les avertissements actifs de ce membre ?" data-confirm-title="Tout effacer" data-confirm-label="Effacer">Tout effacer</button></form>
+      <% } %>
+    </div>
+    <% if (!warnings.length) { %><%- include('../partials/empty', { glyph: 'check-circle', title: 'Aucun avertissement', compact: true }) %><% } else { %>
+    <ul class="list">
+      <% for (const w of warnings) { %>
+        <li class="list-item<%= w.active ? '' : ' row-disabled' %>">
+          <span class="list-item-icon"><%- icon('alert-triangle') %></span>
+          <div class="list-item-body"><div class="list-item-title"><%= w.reason %></div><div class="list-item-meta">#<%= w.id %> · par <%= (person(w.moderatorId) || {}).name || w.moderatorId %> · <%= fmt.dateTime(w.createdAt) %></div></div>
+          <span class="badge <%= w.active ? 'badge-warning' : 'badge-muted' %>"><%= w.active ? 'actif' : 'levé' %></span>
+          <% if (w.active) { %><form method="post" action="<%= base %>/warnings/<%= w.id %>/remove" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="userId" value="<%= w.userId %>"><button type="submit" class="btn btn-ghost btn-sm" data-confirm="Retirer l'avertissement #<%= w.id %> ?" data-confirm-label="Retirer">Retirer</button></form><% } %>
+        </li>
+      <% } %>
+    </ul>
+    <% } %>
+  </section>
+  <% } %>
+
+<% } else if (tab === 'config') { %>
+<form method="post" action="<%= base %>/config" class="form stack" data-dirty-form>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <section class="card">
+    <div class="card-head"><div><h2 class="card-title"><%- icon('zap') %>Escalade automatique</h2><p class="card-desc">Action appliquée quand le nombre d'avertissements actifs d'un membre atteint un seuil.</p></div></div>
+    <%- include('../partials/repeater', { kind: 'threshold', rows: modConfig.warnThresholds, name: 'thresholdsJson', id: 'thresholds-json', max: 25, addLabel: 'Ajouter un seuil' }) %>
+  </section>
+  <section class="card">
+    <h2 class="card-title"><%- icon('settings') %>Options</h2>
+    <div class="field"><label for="m-mute">Rôle mute <span class="field-optional">pour /mute</span></label><%- include('../partials/role-select', { name: 'muteRoleId', id: 'm-mute', selected: modConfig.muteRoleId || '', multiple: false, emptyLabel: 'Aucun (timeout Discord uniquement)', placeholder: 'Aucun (timeout Discord uniquement)' }) %></div>
+    <label class="toggle"><input type="checkbox" name="dmOnSanction" <%= modConfig.dmOnSanction ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Envoyer un message privé au membre sanctionné</span></label>
+    <div class="form-footer dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+  </section>
+</form>
+
+<% } else if (tab === 'antiraid') { %>
+<% if (!modules.antiraid) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Anti-raid est désactivé : aucune protection n'est appliquée. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer</a></span></div><% } %>
+<form method="post" action="<%= base %>/antiraid" class="form stack" data-dirty-form>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <section class="card card-accent">
+    <%- toggleHead('antiNukeEnabled', an.enabled, '#nk-opts', 'Anti-nuke', 'Protège contre un compte compromis ou une application malveillante : l’exécuteur qui dépasse un seuil est puni immédiatement.', 'shield-alert') %>
+    <div id="nk-opts" class="stack-4">
+      <div class="field"><span class="field-label" id="nk-pun">Punition de l'exécuteur <span class="field-optional">un bot est toujours banni</span></span>
+        <div class="segmented" role="radiogroup" aria-labelledby="nk-pun">
+          <label><input type="radio" name="antiNukePunishment" value="STRIP_ROLES" <%= an.punishment === 'STRIP_ROLES' ? 'checked' : '' %>><span>Retirer les rôles dangereux</span></label>
+          <label><input type="radio" name="antiNukePunishment" value="KICK" <%= an.punishment === 'KICK' ? 'checked' : '' %>><span>Expulser</span></label>
+          <label><input type="radio" name="antiNukePunishment" value="BAN" <%= an.punishment === 'BAN' ? 'checked' : '' %>><span>Bannir</span></label>
+        </div>
+      </div>
+      <div class="choice-grid">
+        <% for (const [n, v, t, d] of [
+          ['antiNukeBotAdd', an.botAddProtection, 'Ajouts de bots', 'Expulse tout bot ajouté par un non-exempté.'],
+          ['antiNukeLockdown', an.lockdownOnTrigger, 'Lockdown automatique', 'Verrouille le serveur au déclenchement.'],
+          ['antiNukeRestoreBans', an.restoreBans, 'Rétablir les bans', 'Annule les bans faits par l’exécuteur.'],
+          ['antiNukeDm', an.dmExecutor, 'Prévenir l’exécuteur', 'Message privé à l’humain sanctionné.'],
+          ['antiNukeExemptTeam', an.exemptTeamRoles, 'Exempter l’équipe', 'Rôles admin/staff exemptés (déconseillé).'],
+        ]) { %>
+          <label class="choice"><input type="checkbox" name="<%= n %>" <%= v ? 'checked' : '' %>><span><span class="choice-title"><%= t %></span><span class="choice-desc"><%= d %></span></span></label>
         <% } %>
       </div>
-      <% if (!warnings.length) { %><p class="muted">Aucun avertissement pour ce membre.</p><% } else { %>
-      <div class="table-wrap"><table class="table table-compact">
-        <thead><tr><th>#</th><th>Date</th><th>Modérateur</th><th>Raison</th><th>État</th><th></th></tr></thead>
-        <tbody>
-          <% for (const w of warnings) { %>
-            <tr class="<%= w.active ? '' : 'row-disabled' %>">
-              <td><%= w.id %></td><td class="nowrap"><%= fmt.dateTime(w.createdAt) %></td><td><%= names[w.moderatorId] || w.moderatorId %></td><td><%= w.reason %></td>
-              <td><span class="badge <%= w.active ? 'badge-danger' : 'badge-muted' %>"><%= w.active ? 'actif' : 'levé' %></span></td>
-              <td class="right"><% if (w.active) { %><form method="post" action="/guilds/<%= guild.id %>/moderation/warnings/<%= w.id %>/remove"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="userId" value="<%= w.userId %>"><button type="submit" class="btn btn-ghost btn-sm" data-confirm="Retirer l'avertissement #<%= w.id %> ?">Retirer</button></form><% } %></td>
-            </tr>
-          <% } %>
-        </tbody>
-      </table></div>
-      <% } %>
+      <div class="field"><label for="nk-wl">Utilisateurs de confiance <span class="field-optional">IDs séparés par des espaces</span></label><textarea id="nk-wl" name="antiNukeWhitelist" class="textarea textarea-sm input-mono" rows="2" placeholder="123456789012345678"><%= an.whitelistUserIds.join(' ') %></textarea><small class="hint">Toujours exemptés : propriétaire du serveur, propriétaires du bot et le bot lui-même.</small></div>
+      <div class="table-wrap">
+        <table class="table table-compact">
+          <thead><tr><th>Action surveillée</th><th class="shrink">Maximum</th><th class="shrink">Fenêtre (s)</th></tr></thead>
+          <tbody>
+            <% for (const a of antiNukeActions) { const th = an.thresholds[a.key]; %>
+              <tr><td><label for="nk-<%= a.key %>-max"><%= a.label %></label></td><td class="shrink"><input id="nk-<%= a.key %>-max" name="antiNuke_<%= a.key %>_max" type="number" class="input input-sm" min="1" max="100" value="<%= th.max %>" aria-label="<%= a.label %> : maximum"></td><td class="shrink"><input name="antiNuke_<%= a.key %>_seconds" type="number" class="input input-sm" min="1" max="600" value="<%= th.intervalSeconds %>" aria-label="<%= a.label %> : fenêtre en secondes"></td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
     </div>
-    <% } else { %><p class="muted">Saisissez l'ID d'un membre pour consulter et gérer ses avertissements.</p><% } %>
   </section>
 
-  <!-- ─── Statistiques ─── -->
-  <section class="tab-panel" data-tab-panel="stats" role="tabpanel">
-    <div class="card">
-      <h3 class="card-title">Sanctions des 30 derniers jours par type</h3>
-      <% if (!statRows.length) { %><p class="muted">Aucune sanction sur la période.</p><% } else { %>
-      <ul class="bars">
-        <% for (const r of [...statRows].sort((a, b) => b.count - a.count)) { %>
-          <li class="bar-row"><span class="bar-label"><span class="truncate"><%= r.label %></span></span><span class="bar-track"><span class="bar-fill" data-pct="<%= r.pct %>"></span></span><span class="bar-value"><%= fmt.number(r.count) %> · <%= fmt.percent(r.count, stats.total) %> %</span></li>
-        <% } %>
-      </ul>
-      <% } %>
+  <div class="grid-2 mb-0">
+    <section class="card">
+      <%- toggleHead('antiSpamEnabled', ar.antiSpam.enabled, '#as-opts', 'Anti-spam', 'Trop de messages en peu de temps.', 'message-square') %>
+      <div id="as-opts" class="field-row">
+        <div class="field"><label for="as-max">Messages max</label><input id="as-max" name="antiSpamMaxMessages" type="number" class="input" min="2" max="50" value="<%= ar.antiSpam.maxMessages %>"></div>
+        <div class="field"><label for="as-int">En (secondes)</label><input id="as-int" name="antiSpamIntervalSeconds" type="number" class="input" min="1" max="120" value="<%= ar.antiSpam.intervalSeconds %>"></div>
+        <div class="field"><label for="as-to">Timeout (min)</label><input id="as-to" name="antiSpamTimeoutMinutes" type="number" class="input" min="1" max="40320" value="<%= minutes(ar.antiSpam.timeoutSeconds) %>"></div>
+      </div>
+    </section>
+    <section class="card">
+      <%- toggleHead('antiMassMentionEnabled', ar.antiMassMention.enabled, '#am-opts', 'Mentions de masse', 'Trop de mentions dans un message.', 'users') %>
+      <div id="am-opts" class="field-row">
+        <div class="field"><label for="am-max">Mentions max</label><input id="am-max" name="antiMassMentionMax" type="number" class="input" min="2" max="100" value="<%= ar.antiMassMention.maxMentions %>"></div>
+        <div class="field"><label for="am-to">Timeout (min)</label><input id="am-to" name="antiMassMentionTimeoutMinutes" type="number" class="input" min="1" max="40320" value="<%= minutes(ar.antiMassMention.timeoutSeconds) %>"></div>
+      </div>
+    </section>
+    <section class="card">
+      <%- toggleHead('antiLinkEnabled', ar.antiLink.enabled, '#al-opts', 'Liens & invitations', 'Invitations Discord et liens non autorisés.', 'link') %>
+      <div id="al-opts" class="stack-4">
+        <div class="stack-2">
+          <label class="toggle toggle-sm"><input type="checkbox" name="antiLinkBlockInvites" <%= ar.antiLink.blockInvites ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Bloquer les invitations Discord</span></label>
+          <label class="toggle toggle-sm"><input type="checkbox" name="antiLinkBlockLinks" <%= ar.antiLink.blockLinks ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Bloquer tous les liens hors liste blanche</span></label>
+        </div>
+        <div class="field"><label for="al-wl">Domaines autorisés</label><textarea id="al-wl" name="antiLinkWhitelist" class="textarea textarea-sm input-mono" rows="3" placeholder="youtube.com&#10;redemption-story.fr"><%= ar.antiLink.whitelistDomains.join('\n') %></textarea></div>
+        <div class="field-row">
+          <div class="field"><span class="field-label">Action</span><div class="segmented"><label><input type="radio" name="antiLinkAction" value="DELETE" <%= ar.antiLink.action === 'DELETE' ? 'checked' : '' %>><span>Supprimer</span></label><label><input type="radio" name="antiLinkAction" value="TIMEOUT" <%= ar.antiLink.action === 'TIMEOUT' ? 'checked' : '' %>><span>+ Timeout</span></label></div></div>
+          <div class="field"><label for="al-to">Timeout (min)</label><input id="al-to" name="antiLinkTimeoutMinutes" type="number" class="input" min="1" max="40320" value="<%= minutes(ar.antiLink.timeoutSeconds) %>"></div>
+        </div>
+      </div>
+    </section>
+    <section class="card">
+      <%- toggleHead('antiNewAccountEnabled', ar.antiNewAccount.enabled, '#an-opts', 'Comptes récents', 'Comptes Discord créés récemment.', 'user-x') %>
+      <div id="an-opts" class="stack-4">
+        <div class="field-row">
+          <div class="field"><label for="an-age">Âge minimal (jours)</label><input id="an-age" name="antiNewAccountMinAgeDays" type="number" class="input" min="1" max="365" value="<%= ar.antiNewAccount.minAgeDays %>"></div>
+          <div class="field"><span class="field-label">Action</span><div class="segmented"><label><input type="radio" name="antiNewAccountAction" value="KICK" <%= ar.antiNewAccount.action === 'KICK' ? 'checked' : '' %>><span>Expulser</span></label><label><input type="radio" name="antiNewAccountAction" value="QUARANTINE" <%= ar.antiNewAccount.action === 'QUARANTINE' ? 'checked' : '' %>><span>Quarantaine</span></label></div></div>
+        </div>
+        <div class="field"><label for="an-role">Rôle de quarantaine</label><%- include('../partials/role-select', { name: 'antiNewAccountQuarantineRoleId', id: 'an-role', selected: ar.antiNewAccount.quarantineRoleId || '', multiple: false }) %></div>
+      </div>
+    </section>
+    <section class="card">
+      <%- toggleHead('antiBotEnabled', ar.antiBot.enabled, '#ab-opts', 'Bots non autorisés', 'Expulse les bots ajoutés sans autorisation.', 'bot') %>
+      <div id="ab-opts" class="field"><label for="ab-ids">Bots autorisés <span class="field-optional">IDs séparés par des espaces</span></label><textarea id="ab-ids" name="antiBotAllowedIds" class="textarea textarea-sm input-mono" rows="2"><%= ar.antiBot.allowedBotIds.join(' ') %></textarea></div>
+    </section>
+    <section class="card">
+      <%- toggleHead('antiMassJoinEnabled', ar.antiMassJoin.enabled, '#aj-opts', 'Arrivées massives', 'Vague d’arrivées en peu de temps.', 'user-plus') %>
+      <div id="aj-opts" class="stack-4">
+        <div class="field-row">
+          <div class="field"><label for="aj-max">Arrivées max</label><input id="aj-max" name="antiMassJoinMax" type="number" class="input" min="2" max="500" value="<%= ar.antiMassJoin.maxJoins %>"></div>
+          <div class="field"><label for="aj-int">En (secondes)</label><input id="aj-int" name="antiMassJoinIntervalSeconds" type="number" class="input" min="1" max="600" value="<%= ar.antiMassJoin.intervalSeconds %>"></div>
+        </div>
+        <label class="toggle toggle-sm"><input type="checkbox" name="antiMassJoinLockdown" <%= ar.antiMassJoin.lockdown ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Déclencher automatiquement le lockdown</span></label>
+      </div>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2 class="card-title"><%- icon('user-check') %>Exemptions</h2>
+    <p class="card-desc mb-4">Le staff est toujours exempté des protections de messages (spam, mentions, liens).</p>
+    <div class="field-row">
+      <div class="field"><label for="ex-roles">Rôles exemptés</label><%- include('../partials/role-select', { name: 'exemptRoleIds', id: 'ex-roles', selected: ar.exemptRoleIds }) %></div>
+      <div class="field"><label for="ex-channels">Salons exemptés</label>
+        <select id="ex-channels" name="exemptChannelIds" class="select" multiple data-channel-picker data-placeholder="Ajouter des salons…">
+          <% for (const c of guild.textChannels) { %><option value="<%= c.id %>" data-type="<%= c.type %>" data-name="<%= c.name %>" <%= ar.exemptChannelIds.includes(c.id) ? 'selected' : '' %>># <%= c.name %></option><% } %>
+        </select>
+      </div>
     </div>
+    <div class="form-footer dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer les protections</button></div>
   </section>
+</form>
+
+<% } else if (tab === 'honeypot') { %>
+<div class="split">
+  <div class="stack">
+    <div class="callout"><%- icon('info') %><div><strong>Comment ça marche ?</strong> Un salon visible par tous affiche un avertissement épinglé. Les comptes piratés et les bots de spam écrivent partout : dès qu'un membre <strong>hors staff</strong> poste dans ce salon, ses messages récents sont supprimés et il est <strong>expulsé</strong>.</div></div>
+    <% if (honeypot) { %>
+      <section class="card">
+        <div class="card-head">
+          <div><h2 class="card-title"><%- icon('ban') %>Salon piège</h2><p class="card-desc"><span class="channel-tag"><%- icon('hash') %><%= honeypotChannelName || 'salon introuvable' %></span> · suppression des messages des <%= honeypot.deleteWindowMinutes %> dernières minutes</p></div>
+          <label class="toggle" data-tooltip="<%= honeypot.enabled ? 'Activé' : 'Désactivé' %>"><input type="checkbox" data-toggle-url="<%= base %>/honeypot/toggle" data-toggle-label="Salon piège" <%= honeypot.enabled ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Actif</span></label>
+        </div>
+        <% if (!honeypotChannelName) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le salon configuré n'existe plus : recréez-le ci-dessous.</span></div><% } %>
+        <form method="post" action="<%= base %>/honeypot/setup" class="form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="mode" value="<%= honeypotChannelName ? 'existing' : 'create' %>"><input type="hidden" name="channelId" value="<%= honeypotChannelName ? honeypot.channelId : '' %>">
+          <div class="field"><label for="hp-window">Fenêtre de suppression (minutes)</label><input id="hp-window" name="windowMinutes" type="number" class="input" min="1" max="1440" value="<%= honeypot.deleteWindowMinutes %>" data-input-narrow></div>
+          <div class="form-footer"><button type="submit" class="btn" <%= botReady ? '' : 'disabled' %>><%- icon('refresh', { size: 16 }) %><%= honeypotChannelName ? 'Mettre à jour et republier l’avertissement' : 'Recréer le salon' %></button></div>
+        </form>
+      </section>
+      <form method="post" action="<%= base %>/honeypot/remove" class="card card-danger form" data-confirm="Retirer le salon piège ?" data-confirm-title="Retirer le salon piège" data-confirm-label="Retirer">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <h2 class="card-title"><%- icon('trash') %>Retirer</h2>
+        <label class="toggle toggle-sm"><input type="checkbox" name="deleteChannel"><span class="toggle-track"></span><span class="toggle-label">Supprimer aussi le salon Discord</span></label>
+        <div class="form-footer"><button type="submit" class="btn btn-danger" <%= botReady ? '' : 'disabled' %>>Retirer le salon piège</button></div>
+      </form>
+    <% } else { %>
+      <form method="post" action="<%= base %>/honeypot/setup" class="card form">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <h2 class="card-title"><%- icon('ban') %>Mettre en place un salon piège</h2>
+        <div class="field"><span class="field-label">Salon</span>
+          <div class="segmented"><label><input type="radio" name="mode" value="create" checked data-radio-toggle="#hp-create"><span>Créer un salon</span></label><label><input type="radio" name="mode" value="existing" data-radio-toggle="#hp-existing"><span>Utiliser un salon existant</span></label></div>
+        </div>
+        <div class="field" id="hp-create"><label for="hp-name">Nom du salon</label><input id="hp-name" name="name" class="input input-mono" maxlength="90" value="<%= honeypotDefaultName %>"><small class="hint">Créé en haut de la liste des salons, inscriptible par tous.</small></div>
+        <div class="field" id="hp-existing"><label for="hp-channel">Salon existant</label><%- include('../partials/channel-select', { name: 'channelId', id: 'hp-channel', selected: '', emptyLabel: '— Choisir —' }) %></div>
+        <div class="field"><label for="hp-window2">Supprimer les messages des</label><div class="input-group"><input id="hp-window2" name="windowMinutes" type="number" class="input" min="1" max="1440" value="60" data-input-narrow><span class="input-addon">dernières minutes</span></div></div>
+        <div class="form-footer"><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>><%- icon('check', { size: 16 }) %>Activer le salon piège</button></div>
+      </form>
+    <% } %>
+  </div>
+  <aside class="split-preview">
+    <div class="preview-panel">
+      <div class="preview-panel-head"><span class="row"><%- icon('hash', { size: 15 }) %><%= honeypotChannelName || honeypotDefaultName %></span><span class="badge badge-muted">Message épinglé</span></div>
+      <div class="preview-panel-body"><%- include('../partials/embed-preview', { embed: honeypotEmbed }) %></div>
+      <div class="preview-panel-note">L'avertissement est volontairement en anglais pour être compris de tous les comptes.</div>
+    </div>
+  </aside>
 </div>
+
+<% } else if (tab === 'lockdown') { %>
+<section class="card">
+  <div class="lockdown-state <%= modConfig.lockdownActive ? 'on' : '' %>">
+    <span class="page-icon"><%- icon(modConfig.lockdownActive ? 'lock' : 'unlock') %></span>
+    <div class="grow">
+      <strong><%= modConfig.lockdownActive ? 'Lockdown actif' : 'Serveur ouvert' %></strong>
+      <% if (modConfig.lockdownActive && modConfig.lockdownState) { %><p class="text-sm text-2 mb-0">Depuis le <%= fmt.dateTime(modConfig.lockdownState.at) %> par <%= names[modConfig.lockdownState.actorId] || modConfig.lockdownState.actorId %> · <%= Object.keys(modConfig.lockdownState.channels).length %> salon(s) verrouillé(s)<%= modConfig.lockdownState.reason ? ' · ' + modConfig.lockdownState.reason : '' %></p><% } else { %><p class="text-sm text-2 mb-0">Le lockdown retire à @everyone le droit d'écrire dans tous les salons texte, puis restaure l'état précédent à la levée.</p><% } %>
+    </div>
+  </div>
+  <% if (!botReady) { %><div class="alert alert-warning mt-4"><%- icon('alert-triangle') %><span class="alert-text">Le bot n'est pas connecté : le lockdown ne peut pas être modifié pour le moment.</span></div><% } %>
+  <form method="post" action="<%= base %>/lockdown" class="row-wrap mt-4" data-confirm="<%= modConfig.lockdownActive ? 'Lever le lockdown et restaurer les permissions ?' : 'Activer le lockdown : plus personne (hors staff) ne pourra écrire ?' %>" data-confirm-title="<%= modConfig.lockdownActive ? 'Lever le lockdown' : 'Activer le lockdown' %>" data-confirm-label="Confirmer" <%- modConfig.lockdownActive ? 'data-confirm-variant="primary"' : '' %>>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% if (!modConfig.lockdownActive) { %><input type="hidden" name="enabled" value="on"><% } %>
+    <input id="ld-reason" name="reason" class="input grow" maxlength="300" placeholder="Raison (optionnelle) — ex. raid en cours" aria-label="Raison">
+    <button type="submit" class="btn <%= modConfig.lockdownActive ? 'btn-primary' : 'btn-danger' %>" <%= botReady ? '' : 'disabled' %>><%- icon(modConfig.lockdownActive ? 'unlock' : 'lock', { size: 16 }) %><%= modConfig.lockdownActive ? 'Lever le lockdown' : 'Activer le lockdown' %></button>
+  </form>
+</section>
+
+<% } else { %>
+<section class="card">
+  <h2 class="card-title"><%- icon('bar-chart') %>Sanctions des 30 derniers jours par type</h2>
+  <% if (!statRows.length) { %><%- include('../partials/empty', { glyph: 'bar-chart', title: 'Aucune sanction sur la période', compact: true }) %><% } else { %>
+  <ul class="bars">
+    <% for (const r of [...statRows].sort((a, b) => b.count - a.count)) { %>
+      <li class="bar-row"><span class="bar-label"><span class="truncate"><%= r.label %></span></span><span class="bar-track"><span class="bar-fill" data-pct="<%= r.pct %>"></span></span><span class="bar-value"><%= fmt.number(r.count) %> · <%= fmt.percent(r.count, stats.total) %> %</span></li>
+    <% } %>
+  </ul>
+  <% } %>
+</section>
+<% } %>

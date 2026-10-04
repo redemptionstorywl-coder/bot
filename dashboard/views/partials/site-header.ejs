@@ -1,0 +1,15 @@
+<header class="site-header">
+  <a href="/" class="brand" aria-label="<%= brand.name %> — accueil"><span class="brand-mark"><%- include('logo') %></span><span class="brand-name">Redemption Story<small>Studio · Dashboard</small></span></a>
+  <% if (user) { %>
+    <nav class="site-header-nav" aria-label="Navigation">
+      <a href="/guilds"<%- page === 'guilds' ? ' aria-current="page"' : '' %>><%- icon('server', { size: 16 }) %>Serveurs</a>
+      <% if (isOwner) { %><a href="/admin"<%- page === 'admin' ? ' aria-current="page"' : '' %>><%- icon('wrench', { size: 16 }) %>Administration</a><% } %>
+    </nav>
+    <div class="ml-auto"><%- include('user-menu', { menuClass: 'align-right' }) %></div>
+  <% } else { %>
+    <div class="ml-auto row">
+      <a class="btn btn-ghost btn-sm" href="<%= inviteUrl %>" target="_blank" rel="noopener">Inviter le bot</a>
+      <a class="btn btn-primary btn-sm" href="/auth/login"><%- icon('discord', { size: 16 }) %>Se connecter</a>
+    </div>
+  <% } %>
+</header>

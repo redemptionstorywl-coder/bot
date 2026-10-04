@@ -1,46 +1,51 @@
-<section class="page-header">
-  <div><h2 class="page-title">Administration globale</h2><p class="muted">Vue réservée aux propriétaires du bot. Tous les serveurs connus en base, présents ou non.</p></div>
-  <div class="page-actions">
-    <form method="post" action="/admin/reload-locales" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-primary btn-sm">Recharger les locales</button></form>
-    <form method="post" action="/admin/invalidate-configs" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost btn-sm">Vider les caches de config</button></form>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('wrench') %></span>
+    <div><h1 class="page-title">Administration globale</h1><p class="page-subtitle">Réservé aux propriétaires du bot : tous les serveurs connus en base, présents ou non.</p></div>
   </div>
-</section>
+  <div class="page-actions">
+    <form method="post" action="/admin/reload-locales" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn"><%- icon('refresh', { size: 16 }) %>Recharger les locales</button></form>
+    <form method="post" action="/admin/invalidate-configs" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn"><%- icon('layers', { size: 16 }) %>Vider les caches de config</button></form>
+  </div>
+</header>
 
 <section class="stat-grid">
-  <div class="stat-card"><span class="stat-label">Serveurs (bot)</span><strong class="stat-value"><%= totals.guildsLive %><span class="stat-sub">/ <%= totals.guildsDb %> en base</span></strong></div>
-  <div class="stat-card"><span class="stat-label">Membres cumulés</span><strong class="stat-value"><%= fmt.number(totals.members) %></strong></div>
-  <div class="stat-card"><span class="stat-label">Utilisateurs connus</span><strong class="stat-value"><%= fmt.number(totals.users) %></strong></div>
-  <div class="stat-card"><span class="stat-label">Sessions dashboard</span><strong class="stat-value"><%= totals.sessions %></strong></div>
-  <div class="stat-card"><span class="stat-label">Logs en base</span><strong class="stat-value"><%= fmt.number(totals.logs) %></strong></div>
-  <div class="stat-card"><span class="stat-label">Commandes</span><strong class="stat-value"><%= totals.commands %></strong></div>
-  <div class="stat-card"><span class="stat-label">Uptime</span><strong class="stat-value stat-value-sm"><%= fmt.duration(totals.uptimeSeconds) %></strong></div>
-  <div class="stat-card"><span class="stat-label">Latence / RAM</span><strong class="stat-value stat-value-sm"><%= totals.pingMs >= 0 ? totals.pingMs + ' ms' : '—' %> · <%= totals.memoryMb %> Mo</strong></div>
+  <div class="stat"><span class="stat-label"><%- icon('server', { size: 14 }) %>Serveurs (bot)</span><strong class="stat-value"><%= totals.guildsLive %><span class="stat-sub">/ <%= totals.guildsDb %> en base</span></strong></div>
+  <div class="stat"><span class="stat-label"><%- icon('users', { size: 14 }) %>Membres cumulés</span><strong class="stat-value"><%= fmt.number(totals.members) %></strong></div>
+  <div class="stat"><span class="stat-label"><%- icon('user', { size: 14 }) %>Utilisateurs connus</span><strong class="stat-value"><%= fmt.number(totals.users) %></strong></div>
+  <div class="stat"><span class="stat-label"><%- icon('key', { size: 14 }) %>Sessions actives</span><strong class="stat-value"><%= totals.sessions %></strong></div>
+  <div class="stat"><span class="stat-label"><%- icon('scroll-text', { size: 14 }) %>Logs en base</span><strong class="stat-value"><%= fmt.number(totals.logs) %></strong></div>
+  <div class="stat"><span class="stat-label"><%- icon('square-slash', { size: 14 }) %>Commandes</span><strong class="stat-value"><%= totals.commands %></strong></div>
+  <div class="stat"><span class="stat-label"><%- icon('clock', { size: 14 }) %>Uptime</span><strong class="stat-value stat-value-sm"><%= fmt.duration(totals.uptimeSeconds) %></strong></div>
+  <div class="stat"><span class="stat-label"><%- icon('activity', { size: 14 }) %>Latence · RAM</span><strong class="stat-value stat-value-sm"><%= totals.pingMs >= 0 ? totals.pingMs + ' ms' : '—' %> · <%= totals.memoryMb %> Mo</strong></div>
 </section>
 
-<div class="card">
-  <div class="card-head"><h3 class="card-title">Serveurs</h3><input type="search" class="input input-sm" placeholder="Filtrer…" data-filter="#admin-guilds" aria-label="Filtrer les serveurs"></div>
+<section class="card card-flush">
+  <div class="card-head">
+    <h2 class="card-title">Serveurs</h2>
+    <label class="search"><%- icon('search', { size: 16 }) %><input type="search" class="input input-sm" placeholder="Filtrer…" data-filter="#admin-guilds" aria-label="Filtrer les serveurs"></label>
+  </div>
   <div class="table-wrap">
-    <table class="table" id="admin-guilds">
-      <thead><tr><th>Serveur</th><th>Type</th><th>Membres</th><th>Modules</th><th>Langue</th><th>Statut</th><th></th></tr></thead>
+    <table class="table table-responsive table-clickable" id="admin-guilds">
+      <thead><tr><th>Serveur</th><th>Type</th><th class="num">Membres</th><th class="num">Modules</th><th>Langue</th><th>Statut</th></tr></thead>
       <tbody>
         <% for (const r of rows) { %>
-          <tr data-filter-item data-filter-text="<%= (r.name + ' ' + r.id + ' ' + r.kindLabel).toLowerCase() %>">
-            <td><div class="user-cell"><% if (r.iconUrl) { %><img class="avatar avatar-sm" src="<%= r.iconUrl %>" alt=""><% } else { %><span class="avatar avatar-sm avatar-fallback"><%= fmt.initials(r.name) %></span><% } %><div><strong><%= r.name %></strong><br><small class="muted mono"><%= r.id %></small></div></div></td>
-            <td><%= r.kindLabel %></td>
-            <td><%= r.memberCount !== null ? fmt.number(r.memberCount) : '—' %></td>
-            <td><%= r.modulesActive %> / <%= r.modulesTotal %></td>
-            <td><%= r.defaultLanguage.toUpperCase() %></td>
-            <td><% if (r.present) { %><span class="badge badge-primary">présent</span><% } else { %><span class="badge badge-muted" title="<%= r.leftAt ? 'Quitté le ' + fmt.dateTime(r.leftAt) : '' %>">absent</span><% } %></td>
-            <td class="right"><% if (r.present) { %><a class="btn btn-ghost btn-sm" href="/guilds/<%= r.id %>">Ouvrir</a><% } %></td>
+          <tr data-filter-item data-filter-text="<%= (r.name + ' ' + r.id + ' ' + r.kindLabel).toLowerCase() %>"<%- r.present ? ` data-href="/guilds/${r.id}"` : '' %>>
+            <td class="cell-primary"><div class="user-cell"><% if (r.iconUrl) { %><img class="avatar avatar-square" src="<%= r.iconUrl %>" alt=""><% } else { %><span class="avatar avatar-fallback avatar-square"><%= fmt.initials(r.name) %></span><% } %><div class="user-cell-text"><span class="user-cell-name"><%= r.name %></span><span class="user-cell-sub mono"><%= r.id %></span></div></div></td>
+            <td data-label="Type"><%= r.kindLabel %></td>
+            <td data-label="Membres" class="num tabular"><%= r.memberCount !== null ? fmt.number(r.memberCount) : '—' %></td>
+            <td data-label="Modules" class="num tabular"><%= r.modulesActive %> / <%= r.modulesTotal %></td>
+            <td data-label="Langue"><%= r.defaultLanguage.toUpperCase() %></td>
+            <td data-label="Statut"><% if (r.present) { %><span class="badge badge-success badge-dot">présent</span><% } else { %><span class="badge badge-muted" title="<%= r.leftAt ? 'Quitté le ' + fmt.dateTime(r.leftAt) : '' %>">absent</span><% } %></td>
           </tr>
         <% } %>
-        <% if (!rows.length) { %><tr><td colspan="7" class="muted">Aucun serveur en base.</td></tr><% } %>
       </tbody>
     </table>
+    <% if (!rows.length) { %><%- include('../partials/empty', { glyph: 'server', title: 'Aucun serveur en base', compact: true }) %><% } %>
   </div>
-</div>
+</section>
 
-<div class="grid-2">
-  <section class="card"><h3 class="card-title">Langues chargées</h3><div class="badges"><% for (const l of totals.languages) { %><span class="badge"><%= l %></span><% } %></div></section>
-  <section class="card"><h3 class="card-title">Tâches planifiées</h3><ul class="task-list"><% for (const t of totals.tasks) { %><li><span class="status-dot ok" aria-hidden="true"></span><code><%= t %></code></li><% } %></ul><p class="muted">Node <%= totals.node %></p></section>
+<div class="grid-2 mt-5">
+  <section class="card"><h2 class="card-title"><%- icon('globe') %>Langues chargées</h2><div class="badges"><% for (const l of totals.languages) { %><span class="badge"><%= l %></span><% } %></div></section>
+  <section class="card"><h2 class="card-title"><%- icon('clock') %>Tâches planifiées</h2><ul class="task-list"><% for (const t of totals.tasks) { %><li><span class="dot dot-success" aria-hidden="true"></span><code><%= t %></code></li><% } %></ul><p class="hint mt-3">Node <%= totals.node %></p></section>
 </div>

@@ -1,0 +1,160 @@
+<%
+  const b = `/guilds/${guild.id}/tickets`;
+  const t = type;
+  const action = t ? `${b}/reasons/${t.id}` : `${b}/reasons`;
+  const customEmbed = Boolean(embed);
+  const varChips = ['{user}', '{username}', '{number}', '{type}', '{server}'];
+%>
+<a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Raisons</a>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="reason-emoji" data-live-emoji aria-hidden="true"><%= t && t.emoji ? t.emoji : '🎫' %></span>
+    <div>
+      <h1 class="page-title" data-live-title><%= t ? t.label : 'Nouvelle raison' %></h1>
+      <p class="page-subtitle"><%= t ? 'Clé interne ' : 'Configurez la raison, son formulaire et le message envoyé à l’ouverture.' %><% if (t) { %><code><%= t.key %></code> · utilisée par <code>/ticket</code><% } %></p>
+    </div>
+  </div>
+  <div class="page-actions">
+    <% if (t) { %>
+      <form method="post" action="<%= b %>/reasons/<%= t.id %>/delete" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger" data-confirm="Supprimer la raison « <%= t.label %> » ? Les tickets existants sont conservés mais perdent leur raison." data-confirm-title="Supprimer la raison" data-confirm-label="Supprimer"><%- icon('trash', { size: 16 }) %>Supprimer</button></form>
+    <% } %>
+  </div>
+</header>
+
+<form method="post" action="<%= action %>" class="form" id="reason-form" <%- t ? 'data-dirty-form' : '' %> data-no-live-reload data-reason-key="<%= t ? t.key : '' %>">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="editor-layout">
+    <nav class="editor-nav" aria-label="Sections de l'éditeur" data-editor-nav>
+      <a href="#general" class="is-active"><%- icon('settings') %>Général</a>
+      <a href="#opening"><%- icon('folder') %>Ouverture</a>
+      <a href="#access"><%- icon('key') %>Accès</a>
+      <a href="#form"><%- icon('text-cursor') %>Formulaire</a>
+      <a href="#welcome"><%- icon('message-square') %>Message d'accueil</a>
+    </nav>
+
+    <div class="stack">
+      <!-- ───── Général ───── -->
+      <section class="card editor-section-card" id="general">
+        <div class="card-head"><div><h2 class="card-title">Général</h2><p class="card-desc">Nom et description affichés dans les panneaux et le menu de choix.</p></div>
+          <label class="toggle"><input type="checkbox" name="enabled" <%= !t || t.enabled ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Activée</span></label>
+        </div>
+        <div class="field-row">
+          <div class="field"><label for="r-label" class="field-required">Nom</label><input id="r-label" name="label" class="input" maxlength="80" required value="<%= t ? t.label : '' %>" placeholder="Support" data-reason-label></div>
+          <div class="field"><label for="r-emoji">Emoji</label><input id="r-emoji" name="emoji" class="input" maxlength="64" value="<%= t && t.emoji ? t.emoji : '' %>" placeholder="🎫" data-reason-emoji><small class="hint">Emoji Unicode ou personnalisé (<code>&lt;:nom:id&gt;</code>).</small></div>
+        </div>
+        <div class="field mt-4"><label for="r-description">Description <span class="field-optional">100 caractères</span></label><input id="r-description" name="description" class="input" maxlength="100" value="<%= t && t.description ? t.description : '' %>" placeholder="Besoin d'aide ? Ouvrez un ticket support." data-reason-description></div>
+        <div class="field-row mt-4">
+          <div class="field">
+            <label for="r-nameFormat">Nom du salon</label>
+            <input id="r-nameFormat" name="nameFormat" class="input input-mono" maxlength="60" value="<%= t ? t.nameFormat : 'ticket-{number}' %>" data-name-format>
+            <div class="var-chips mt-2" data-insert-target="#r-nameFormat"><% for (const v of ['{number}', '{username}', '{type}']) { %><button type="button" class="var-chip" data-insert="<%= v %>"><%= v %></button><% } %></div>
+          </div>
+          <div class="field">
+            <span class="field-label">Aperçu</span>
+            <div class="dchannel"><%- icon('hash') %><span data-name-preview>ticket-42</span></div>
+            <small class="hint">Exemple pour le ticket n°42 ouvert par vous.</small>
+          </div>
+        </div>
+        <div class="field mt-4"><label for="r-max">Tickets ouverts maximum par membre</label><input id="r-max" name="maxPerUser" type="number" class="input" min="1" max="25" value="<%= t ? t.maxPerUser : 1 %>" data-input-narrow><small class="hint">Au-delà, le membre doit fermer un ticket de cette raison avant d'en ouvrir un autre.</small></div>
+      </section>
+
+      <!-- ───── Ouverture ───── -->
+      <section class="card editor-section-card" id="opening">
+        <h2 class="card-title">Ouverture &amp; archivage</h2>
+        <p class="card-desc mb-4">Où le salon du ticket est créé, puis rangé à la fermeture.</p>
+        <div class="field-row">
+          <div class="field"><label for="r-category">Catégorie de création</label><%- include('../partials/channel-select', { name: 'categoryId', id: 'r-category', kind: 'category', selected: t ? t.categoryId : '', emptyLabel: 'Racine du serveur', placeholder: 'Racine du serveur' }) %><small class="hint">Limite Discord : 50 salons par catégorie (au-delà, création à la racine).</small></div>
+          <div class="field"><label for="r-archive">Catégorie d'archive</label><%- include('../partials/channel-select', { name: 'archiveCategoryId', id: 'r-archive', kind: 'category', selected: t ? t.archiveCategoryId : '', emptyLabel: 'Aucune (verrouillé sur place)', placeholder: 'Aucune (verrouillé sur place)' }) %><small class="hint">À la fermeture, le salon y est déplacé et le membre n'y a plus accès.</small></div>
+        </div>
+      </section>
+
+      <!-- ───── Accès ───── -->
+      <section class="card editor-section-card" id="access">
+        <h2 class="card-title">Accès</h2>
+        <p class="card-desc mb-4">Rôles qui voient et gèrent les tickets de cette raison (en plus du staff global).</p>
+        <div class="field"><label for="r-staff">Rôles d'accès</label><%- include('../partials/role-select', { name: 'staffRoleIds', id: 'r-staff', selected: staffRoleIds, placeholder: 'Ajouter des rôles staff…' }) %></div>
+        <div class="callout mt-4">
+          <%- icon('eye') %>
+          <div>
+            <strong>Qui voit un ticket de cette raison ?</strong>
+            <ul class="access-explainer mt-2">
+              <li><%- icon('user') %><span>Le membre qui l'a ouvert (et les membres ajoutés au ticket).</span></li>
+              <li><%- icon('tags') %><span>Les rôles d'accès ci-dessus — ils sont mentionnés à l'ouverture.</span></li>
+              <li><%- icon('shield') %><span>Le staff et les administrateurs globaux :
+                <% if (!globalStaffRoleIds.length) { %><a class="link" href="/guilds/<%= guild.id %>/settings">aucun rôle défini dans les paramètres</a><% } else { for (const rid of globalStaffRoleIds) { const role = guild.roles.find((x) => x.id === rid); if (!role) continue; %>
+                  <span class="role-pill" data-role-color="<%= role.color %>"><span class="role-dot"></span><span><%= role.name %></span></span>
+                <% } } %></span></li>
+              <li><%- icon('bot') %><span>Le bot (pour gérer le salon). Tout le reste du serveur ne voit pas le ticket.</span></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ───── Formulaire ───── -->
+      <section class="card editor-section-card" id="form">
+        <div class="card-head"><div><h2 class="card-title">Formulaire d'ouverture</h2><p class="card-desc">Jusqu'à 5 questions posées dans une fenêtre Discord avant la création du ticket. Sans question, le ticket s'ouvre directement.</p></div></div>
+        <div class="editor-columns">
+          <div class="repeater" data-repeater data-repeater-max="5" data-repeater-json="#questions-json" data-repeater-require="label" data-questions>
+            <div class="q-list repeater-rows" data-repeater-rows>
+              <% questions.forEach((q, i) => { %><%- include('../partials/question-row', { q, index: i }) %><% }) %>
+            </div>
+            <template data-repeater-template><%- include('../partials/question-row', { q: null, index: 0 }) %></template>
+            <div class="repeater-foot"><button type="button" class="btn btn-sm" data-repeater-add><%- icon('plus', { size: 14 }) %>Ajouter une question</button><span class="hint" data-repeater-count></span></div>
+            <input type="hidden" name="questionsJson" id="questions-json" value="<%= JSON.stringify(questions) %>">
+          </div>
+          <aside class="split-preview">
+            <div class="preview-panel">
+              <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 15 }) %>Fenêtre affichée au membre</span><span class="badge badge-muted">Discord</span></div>
+              <div class="preview-panel-body"><div class="dmodal-stage" data-modal-preview><%- discordPreview.renderModal({ title: texts.open.modalTitle.replace('{emoji}', t && t.emoji ? t.emoji : '🎫').replace('{type}', t ? t.label : 'Nouvelle raison'), fields: questions }) %></div></div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- ───── Message d'accueil ───── -->
+      <section class="card editor-section-card" id="welcome">
+        <h2 class="card-title">Message d'accueil</h2>
+        <p class="card-desc mb-4">Premier message envoyé dans le salon du ticket (épinglé), avec les boutons de gestion.</p>
+        <div class="editor-columns">
+          <div class="stack-4">
+            <div class="field">
+              <label for="r-welcome">Texte du message <span class="field-optional">optionnel</span></label>
+              <textarea id="r-welcome" name="welcomeMessage" class="textarea" rows="4" maxlength="2000" placeholder="Merci {user} ! Un membre du staff va vous répondre très vite." data-welcome-text><%= t && t.welcomeMessage ? t.welcomeMessage : '' %></textarea>
+              <div class="var-chips mt-2" data-insert-target="#r-welcome"><% for (const v of varChips) { %><button type="button" class="var-chip" data-insert="<%= v %>"><%= v %></button><% } %></div>
+              <small class="hint">Ajouté sous la mention des rôles d'accès. Markdown Discord accepté.</small>
+            </div>
+            <div class="field">
+              <span class="field-label" id="embed-mode-label">Embed d'ouverture</span>
+              <div class="segmented" role="radiogroup" aria-labelledby="embed-mode-label">
+                <label><input type="radio" name="embedMode" value="default" <%= customEmbed ? '' : 'checked' %> data-radio-toggle="#embed-default-note"><span>Par défaut</span></label>
+                <label><input type="radio" name="embedMode" value="custom" <%= customEmbed ? 'checked' : '' %> data-radio-toggle="#embed-custom"><span>Personnalisé</span></label>
+              </div>
+            </div>
+            <div id="embed-default-note" class="callout"><%- icon('info') %><div>L'embed par défaut affiche le numéro du ticket, un message de bienvenue et les réponses du formulaire. Choisissez <strong>Personnalisé</strong> pour écrire le vôtre — les champs « Ouvert par », « Type », « Statut » et les réponses sont ajoutés automatiquement.</div></div>
+            <div id="embed-custom">
+              <%- include('../partials/embed-editor', { prefix: 'embed', spec: embed || { title: '{emoji} Ticket #{number} — {type}', description: 'Bienvenue {user} ! Décrivez votre demande, l’équipe vous répondra dès que possible.' }, id: 'r-embed', buttons: null, withPreview: false, withJson: true, compact: true, withFields: true }) %>
+            </div>
+          </div>
+          <aside class="split-preview">
+            <div class="preview-panel">
+              <div class="preview-panel-head"><span class="row"><%- icon('hash', { size: 15 }) %><span data-name-preview>ticket-42</span></span><span class="badge badge-muted">Aperçu</span></div>
+              <div class="preview-panel-body" data-opening-preview></div>
+              <div class="preview-panel-note">Exemple : ticket n°42 ouvert par vous. Les variables sont remplacées par des valeurs d'exemple.</div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <% if (!t) { %>
+        <div class="sticky-actions row justify-between">
+          <span class="text-sm text-2">La raison sera ajoutée à la fin de la liste.</span>
+          <div class="btn-group"><a class="btn btn-ghost" href="<%= b %>">Annuler</a><button type="submit" class="btn btn-primary"><%- icon('check', { size: 16 }) %>Créer la raison</button></div>
+        </div>
+      <% } else { %>
+        <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer la raison</button></div>
+      <% } %>
+    </div>
+  </div>
+</form>
+
+<script type="application/json" id="ticket-preview-data"><%- jsonScript({ texts, globalStaffRoleIds, number: 42 }) %></script>

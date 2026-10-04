@@ -1,8 +1,10 @@
-<div class="modal" id="confirm-modal" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+<%# Modale de confirmation (boutons / formulaires avec data-confirm, data-confirm-title, data-confirm-label, data-confirm-variant="primary"). %>
+<div class="modal" id="confirm-modal" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-text">
   <div class="modal-backdrop" data-modal-cancel></div>
   <div class="modal-card">
-    <h2 class="modal-title" id="confirm-title">Confirmer l'action</h2>
-    <p class="modal-text" data-modal-text>Cette action est irréversible.</p>
+    <div class="modal-icon" data-modal-icon><%- icon('alert-triangle') %></div>
+    <h2 class="modal-title" id="confirm-title" data-modal-title>Confirmer l'action</h2>
+    <p class="modal-text" id="confirm-text" data-modal-text>Cette action est irréversible.</p>
     <div class="modal-actions">
       <button type="button" class="btn btn-ghost" data-modal-cancel>Annuler</button>
       <button type="button" class="btn btn-danger" data-modal-confirm>Confirmer</button>

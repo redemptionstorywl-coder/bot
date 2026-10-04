@@ -1,0 +1,82 @@
+<% const b = `/guilds/${guild.id}/tickets`; %>
+<%- include('../partials/tickets-header', { tab: 'reminders' }) %>
+
+<form method="post" action="<%= b %>/reminders" class="form" id="reminders-form" data-dirty-form>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="split">
+    <div class="stack">
+      <section class="card">
+        <div class="card-head">
+          <div><h2 class="card-title"><%- icon('bell') %>Relances automatiques</h2><p class="card-desc">Le bot relance le staff dans un ticket resté sans réponse de sa part.</p></div>
+          <label class="toggle"><input type="checkbox" name="remindersEnabled" <%= settings.remindersEnabled ? 'checked' : '' %> data-check-toggle="#reminder-options"><span class="toggle-track"></span><span class="toggle-label">Activées</span></label>
+        </div>
+        <div id="reminder-options" class="stack-4">
+          <div class="field">
+            <label for="rm-hours">Délai sans réponse du staff</label>
+            <div class="row-wrap">
+              <div class="input-group"><input id="rm-hours" name="reminderHours" type="number" class="input" min="1" max="168" value="<%= settings.reminderHours %>" data-input-narrow required><span class="input-addon">heures</span></div>
+              <div class="btn-group" role="group" aria-label="Délais rapides"><% for (const h of [12, 24, 48, 72]) { %><button type="button" class="btn btn-sm btn-ghost" data-set-hours="<%= h %>"><%= h %> h</button><% } %></div>
+            </div>
+            <small class="hint">Entre 1 et 168 h (7 jours). Le compteur repart après chaque réponse du staff ou relance.</small>
+          </div>
+          <fieldset class="field">
+            <legend>Qui mentionner ?</legend>
+            <div class="choice-grid">
+              <% for (const m of pingModes) { %>
+                <label class="choice"><input type="radio" name="reminderPing" value="<%= m.value %>" <%= settings.reminderPing === m.value ? 'checked' : '' %>><span><span class="choice-title"><%= m.label %></span><span class="choice-desc"><%= m.description %></span></span></label>
+              <% } %>
+            </div>
+          </fieldset>
+        </div>
+        <div class="form-footer dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title"><%- icon('pin') %>Ticket permanent</h2>
+        <p class="text-sm text-2">Certains tickets doivent rester ouverts sans activité (suivi long, contact avec un responsable…). Dans le ticket, le staff clique sur <strong>📌 <%= texts.buttons.permanent %></strong> : les relances sont coupées pour ce ticket uniquement. Un nouveau clic les réactive.</p>
+        <div class="preview-panel mt-4">
+          <div class="preview-panel-body">
+            <%- include('../partials/embed-preview', { compact: true, components: [
+              { type: 'buttons', buttons: [{ label: texts.buttons.close, emoji: '🔒', style: 'danger' }, { label: texts.buttons.claim, emoji: '👤', style: 'primary' }, { label: texts.buttons.transcript, emoji: '📋', style: 'secondary' }] },
+              { type: 'buttons', buttons: [{ label: texts.buttons.transfer, emoji: '🔄', style: 'secondary' }, { label: texts.buttons.permanent, emoji: '📌', style: 'secondary', highlight: true }, { label: texts.buttons.delete, emoji: '🗑️', style: 'danger' }] },
+            ] }) %>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="split-preview">
+      <div class="preview-panel">
+        <div class="preview-panel-head"><span class="row"><%- icon('hash', { size: 15 }) %>ticket-42</span><span class="badge badge-muted">Aperçu de la relance</span></div>
+        <div class="preview-panel-body" data-reminder-preview></div>
+        <div class="preview-panel-note">Exemple pour un ticket non pris en charge. Le bouton « <%= texts.reminders.claim %> » disparaît si un membre du staff l'a déjà pris.</div>
+      </div>
+    </aside>
+  </div>
+</form>
+
+<section class="card card-flush mt-5">
+  <div class="card-head"><div><h2 class="card-title"><%- icon('bell-off') %>Tickets permanents</h2><p class="card-desc">Tickets ouverts dont les relances sont coupées.</p></div><span class="badge badge-muted"><%= permanent.length %></span></div>
+  <% if (!permanent.length) { %>
+    <%- include('../partials/empty', { glyph: 'pin', title: 'Aucun ticket permanent', text: 'Tous les tickets ouverts sont relancés normalement.', compact: true }) %>
+  <% } else { %>
+  <div class="table-wrap">
+    <table class="table table-responsive">
+      <thead><tr><th>Ticket</th><th>Créateur</th><th>Pris en charge</th><th>Ouvert</th><th class="shrink"></th></tr></thead>
+      <tbody>
+        <% for (const tk of permanent) { const c = profiles[tk.userId]; const s = tk.claimedById ? profiles[tk.claimedById] : null; %>
+          <tr>
+            <td class="cell-primary"><a class="link" href="<%= b %>/<%= tk.id %>">#<%= tk.number %></a> <span class="text-2"><%= tk.type ? (tk.type.emoji ? tk.type.emoji + ' ' : '') + tk.type.label : '—' %></span></td>
+            <td data-label="Créateur"><span class="user-cell"><% if (c) { %><img class="avatar avatar-xs" src="<%= c.avatarUrl %>" alt=""><% } %><span class="truncate"><%= c ? c.name : tk.userId %></span></span></td>
+            <td data-label="Pris en charge"><%= tk.claimedById ? (s ? s.name : tk.claimedById) : '—' %></td>
+            <td data-label="Ouvert" class="nowrap" title="<%= fmt.dateTime(tk.createdAt) %>"><%= fmt.relative(tk.createdAt) %></td>
+            <td class="shrink"><form method="post" action="<%= b %>/<%= tk.id %>/permanent?back=reminders" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="enabled" value=""><button type="submit" class="btn btn-sm"><%- icon('bell', { size: 14 }) %>Réactiver les relances</button></form></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+
+<script type="application/json" id="ticket-preview-data"><%- jsonScript({ texts, globalStaffRoleIds }) %></script>

@@ -13,6 +13,9 @@ import { formAction } from '../../lib/serviceErrors';
 import { resolveUserNames, requireBotGuild } from '../../lib/names';
 import { parseLocalDateTime, toLocalInputValue } from '../../lib/dates';
 import { broadcastToGuild } from '../../sockets';
+import { translationService } from '../../../src/services/TranslationService';
+import { serviceMessagePreview, renderPreviewHtml } from '../../lib/servicePreview';
+import { eventTabCounts } from './events';
 
 const idParams = z.object({ giveawayId: z.coerce.number().int().positive() });
 
@@ -37,6 +40,25 @@ const END_REASONS: Record<string, string> = {
   not_ended: "Ce giveaway n'est pas encore terminé.",
 };
 
+type GiveawayEntity = Parameters<typeof giveawayService.buildEmbed>[0];
+
+const loose = (max: number) => z.preprocess((v) => (v === undefined || v === null ? '' : String(v)), z.string().max(max));
+const previewBody = z.object({
+  prize: loose(190),
+  description: loose(1000),
+  endMode: loose(16),
+  duration: loose(32),
+  endsAt: loose(32),
+  winnersCount: loose(4),
+  requiredRoleId: loose(25),
+  minMessages: loose(8),
+  language: loose(8),
+});
+
+function giveawayPreviewMessage(giveaway: GiveawayEntity, t: ReturnType<typeof translationService.bind>, color: number) {
+  return serviceMessagePreview({ embeds: [giveawayService.buildEmbed(giveaway, t, color)], components: giveawayService.buildComponents(giveaway, t) });
+}
+
 /** Pages Giveaways : actifs / terminés, création, fin anticipée, reroll, annulation, détail participants. */
 export function createGiveawaysRouter(client: RedemptionClient): Router {
   const router = Router({ mergeParams: true });
@@ -48,29 +70,96 @@ export function createGiveawaysRouter(client: RedemptionClient): Router {
     return giveaway;
   }
 
+  const translator = (res: Parameters<typeof render>[0], language: string | null | undefined) => {
+    const config = res.locals.config!;
+    const lang = language && (LANGUAGE_CODES as string[]).includes(language) ? language : config.defaultLanguage;
+    return translationService.bind(lang, res.locals.guild!.id);
+  };
+
+  /** Entité fictive d'aperçu construite depuis le formulaire de création (jamais persistée). */
+  function giveawayFromForm(req: Parameters<typeof flash>[0], res: Parameters<typeof render>[0], body: z.infer<typeof previewBody>): GiveawayEntity {
+    const config = res.locals.config!;
+    let endsAt: Date | null = null;
+    if (body.endMode === 'date') endsAt = body.endsAt ? parseLocalDateTime(body.endsAt, config.timezone) : null;
+    else {
+      const seconds = body.duration ? parseDuration(body.duration) : null;
+      endsAt = seconds ? new Date(Date.now() + seconds * 1000) : null;
+    }
+    const winners = Number.parseInt(body.winnersCount, 10);
+    const minMessages = Number.parseInt(body.minMessages, 10);
+    return {
+      id: '…' as unknown as number,
+      guildId: res.locals.guild!.id,
+      channelId: '',
+      messageId: null,
+      prize: body.prize.trim() || 'Votre lot',
+      description: body.description.trim() || null,
+      winnersCount: Number.isFinite(winners) && winners > 0 ? Math.min(winners, 50) : 1,
+      endsAt: endsAt ?? new Date(Date.now() + 86_400_000),
+      requiredRoleId: /^\d{15,22}$/.test(body.requiredRoleId) ? body.requiredRoleId : null,
+      minMessages: Number.isFinite(minMessages) && minMessages > 0 ? minMessages : 0,
+      language: body.language || null,
+      hostId: req.session.user!.id,
+      ended: false,
+      winners: [],
+      createdAt: new Date(),
+      entries: [],
+    } as unknown as GiveawayEntity;
+  }
+
   router.get(
     '/giveaways',
     wrap(async (_req, res) => {
       const guild = res.locals.guild!;
       const config = res.locals.config!;
-      const all = await giveawayService.list(guild.id);
+      const [all, counts] = await Promise.all([giveawayService.list(guild.id), eventTabCounts(guild.id)]);
       const active = all.filter((g) => !g.ended);
       const ended = all.filter((g) => g.ended).sort((a, b) => b.endsAt.getTime() - a.endsAt.getTime()).slice(0, 50);
       const names = await resolveUserNames(client, guild.id, all.flatMap((g) => [g.hostId, ...asStringArray(g.winners)]));
       render(res, 'giveaways', {
         title: 'Giveaways',
-        page: 'giveaways',
+        page: 'events',
+        crumbs: [{ label: 'Giveaways' }],
         active,
         ended,
+        counts,
         names,
         winnersOf: (g: { winners: unknown }) => asStringArray(g.winners),
         channelName: (id: string) => guild.textChannels.find((c) => c.id === id)?.name ?? id,
         roleName: (id: string | null) => (id ? (guild.roles.find((r) => r.id === id)?.name ?? id) : null),
+        moduleEnabled: config.modules.giveaways,
+      });
+    }),
+  );
+
+  router.get(
+    '/giveaways/new',
+    wrap(async (req, res) => {
+      const config = res.locals.config!;
+      const draft = giveawayFromForm(req, res, previewBody.parse({ duration: '1d' }));
+      render(res, 'giveaway-form', {
+        title: 'Nouveau giveaway',
+        page: 'events',
+        layout: 'wide',
+        scripts: ['live-preview'],
+        crumbs: [{ label: 'Giveaways', href: base(res.locals.guild!.id) }, { label: 'Nouveau giveaway' }],
         languages: LANGUAGES,
         minEnd: toLocalInputValue(new Date(Date.now() + 10 * 60_000), config.timezone),
         timezone: config.timezone,
         moduleEnabled: config.modules.giveaways,
+        previewHtml: renderPreviewHtml(res, giveawayPreviewMessage(draft, translator(res, null), config.brandColor)),
       });
+    }),
+  );
+
+  router.post(
+    '/giveaways/preview',
+    validate({ body: previewBody }),
+    wrap(async (req, res) => {
+      const config = res.locals.config!;
+      const { body } = valid<z.infer<typeof previewBody>>(req);
+      const giveaway = giveawayFromForm(req, res, body);
+      res.json({ ok: true, html: renderPreviewHtml(res, giveawayPreviewMessage(giveaway, translator(res, giveaway.language), config.brandColor)) });
     }),
   );
 
@@ -79,18 +168,21 @@ export function createGiveawaysRouter(client: RedemptionClient): Router {
     validate({ params: idParams }),
     wrap(async (req, res) => {
       const guild = res.locals.guild!;
+      const config = res.locals.config!;
       const { params } = valid<unknown, unknown, z.infer<typeof idParams>>(req);
       const giveaway = await load(guild.id, params.giveawayId);
       const winners = asStringArray(giveaway.winners);
       const names = await resolveUserNames(client, guild.id, [giveaway.hostId, ...winners, ...giveaway.entries.map((e) => e.userId)]);
       render(res, 'giveaway', {
         title: `Giveaway · ${giveaway.prize}`,
-        page: 'giveaways',
+        page: 'events',
+        crumbs: [{ label: 'Giveaways', href: base(guild.id) }, { label: giveaway.prize }],
         giveaway,
         winners,
         names,
         channelName: guild.textChannels.find((c) => c.id === giveaway.channelId)?.name ?? giveaway.channelId,
         roleName: giveaway.requiredRoleId ? (guild.roles.find((r) => r.id === giveaway.requiredRoleId)?.name ?? giveaway.requiredRoleId) : null,
+        previewHtml: renderPreviewHtml(res, giveawayPreviewMessage(giveaway, translator(res, giveaway.language), config.brandColor), names),
       });
     }),
   );
@@ -99,7 +191,7 @@ export function createGiveawaysRouter(client: RedemptionClient): Router {
     '/giveaways',
     validate({ body: createBody }),
     formAction(
-      (_req, res) => base(res.locals.guild!.id),
+      (_req, res) => `${base(res.locals.guild!.id)}/new`,
       async (req, res) => {
         const guild = res.locals.guild!;
         const config = res.locals.config!;

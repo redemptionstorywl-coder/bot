@@ -8,7 +8,9 @@ import { LOG_CATEGORY_LABELS } from '../../../src/config/constants';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
 import { flash } from '../../lib/flash';
-import { validate, valid, pageQuery } from '../../lib/validate';
+import { validate, valid, pageQuery, discordIdSchema } from '../../lib/validate';
+import { LOG_CATEGORY_META, logTitle, logIcon, logCategoryLabel } from '../../lib/logs';
+import { resolveUserProfiles } from '../../lib/names';
 
 const PAGE_SIZE = 25;
 const CATEGORIES = Object.values(LogCategory) as LogCategory[];
@@ -19,7 +21,10 @@ const logsQuery = z.object({
   from: z.preprocess((v) => (v === '' ? undefined : v), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date AAAA-MM-JJ').optional()),
   to: z.preprocess((v) => (v === '' ? undefined : v), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date AAAA-MM-JJ').optional()),
   page: pageQuery,
+  tab: z.preprocess((v) => (v === 'channels' ? 'channels' : 'history'), z.enum(['history', 'channels'])),
 });
+
+const allBody = z.object({ channelId: discordIdSchema });
 
 const channelsBody = z.object({
   channels: z.preprocess((v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {}), z.record(z.nativeEnum(LogCategory), z.string().regex(/^(\d{15,22})?$/, 'salon invalide'))),
@@ -49,28 +54,38 @@ export function createLogsRouter(_client: RedemptionClient): Router {
       }
       const [total, rows] = await Promise.all([prisma.log.count({ where }), prisma.log.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (query.page - 1) * PAGE_SIZE, take: PAGE_SIZE })]);
       const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-      const names = new Map<string, string>();
-      if (_client.isReady()) {
-        const g = _client.guilds.cache.get(guild.id);
-        for (const row of rows) {
-          for (const id of [row.actorId, row.targetId]) {
-            if (!id || names.has(id)) continue;
-            const member = g?.members.cache.get(id);
-            const user = member?.user ?? _client.users.cache.get(id);
-            if (user) names.set(id, member?.displayName ?? user.username);
-          }
-        }
-      }
+      const profiles = await resolveUserProfiles(_client, guild.id, (rows ?? []).flatMap((r) => [r.actorId, r.targetId]));
+      const configured = CATEGORIES.filter((c) => config.logChannels[c]).length;
       render(res, 'logs', {
         title: 'Logs',
         page: 'logs',
-        categories: CATEGORIES.map((c) => ({ value: c, label: LOG_CATEGORY_LABELS[c] ?? c, channelId: config.logChannels[c] ?? '' })),
+        tab: query.tab,
+        crumbs: query.tab === 'channels' ? [{ label: 'Salons de logs' }] : [],
+        categories: CATEGORIES.map((c) => ({ value: c, label: LOG_CATEGORY_META[c]?.label ?? LOG_CATEGORY_LABELS[c] ?? c, icon: LOG_CATEGORY_META[c]?.icon ?? 'circle-dot', description: LOG_CATEGORY_META[c]?.description ?? '', channelId: config.logChannels[c] ?? '' })),
+        configured,
         filters: query,
-        logs: rows,
-        names: Object.fromEntries(names),
-        pagination: { page: query.page, pages, total, pageSize: PAGE_SIZE },
+        logs: (rows ?? []).map((r) => ({ ...r, title: logTitle(r), icon: logIcon(r.category), categoryLabel: logCategoryLabel(r.category) })),
+        profiles,
+        pagination: { page: query.page, pages, total: total ?? 0, pageSize: PAGE_SIZE },
         baseQuery: new URLSearchParams({ ...(query.category ? { category: query.category } : {}), ...(query.q ? { q: query.q } : {}), ...(query.from ? { from: query.from } : {}), ...(query.to ? { to: query.to } : {}) }).toString(),
+        moduleEnabled: config.modules.logs,
       });
+    }),
+  );
+
+  router.post(
+    '/logs/channels/all',
+    validate({ body: allBody }),
+    wrap(async (req, res) => {
+      const guild = res.locals.guild!;
+      const { body } = valid<z.infer<typeof allBody>>(req);
+      if (!guild.textChannels.some((c) => c.id === body.channelId)) {
+        flash(req, 'error', 'Salon inconnu : choisissez un salon texte du serveur.');
+        return res.redirect(`/guilds/${guild.id}/logs?tab=channels`);
+      }
+      for (const category of CATEGORIES) await guildConfigService.setLogChannel(guild.id, category, body.channelId);
+      flash(req, 'success', 'Toutes les catégories de logs sont envoyées dans le même salon.');
+      res.redirect(`/guilds/${guild.id}/logs?tab=channels`);
     }),
   );
 
@@ -91,7 +106,7 @@ export function createLogsRouter(_client: RedemptionClient): Router {
         await guildConfigService.setLogChannel(guild.id, category, channelId || null);
       }
       flash(req, 'success', 'Salons de logs enregistrés.');
-      res.redirect(`/guilds/${guild.id}/logs`);
+      res.redirect(`/guilds/${guild.id}/logs?tab=channels`);
     }),
   );
 

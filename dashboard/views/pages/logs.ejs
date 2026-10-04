@@ -1,72 +1,86 @@
-<section class="page-header">
-  <div><h2 class="page-title">Logs</h2><p class="muted">Salons de destination par catégorie et historique des actions enregistrées en base.</p></div>
-</section>
-
-<div class="tabs" data-tabs data-active="<%= filters.category || filters.q || filters.from || filters.to || filters.page > 1 ? 'history' : 'channels' %>">
-  <div class="tab-list" role="tablist">
-    <button type="button" class="tab" role="tab" data-tab="channels">Salons de logs</button>
-    <button type="button" class="tab" role="tab" data-tab="history">Historique <span class="badge badge-muted"><%= fmt.number(pagination.total) %></span></button>
+<% const base = `/guilds/${guild.id}`; %>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('scroll-text') %></span>
+    <div><h1 class="page-title">Logs</h1><p class="page-subtitle">Historique des événements du serveur et salons Discord où le bot les publie.</p></div>
   </div>
+</header>
 
-  <section class="tab-panel" data-tab-panel="channels" role="tabpanel">
-    <form method="post" action="/guilds/<%= guild.id %>/logs/channels" class="form">
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Logs est désactivé : rien n'est publié dans Discord (l'historique reste enregistré). <a class="link" href="<%= base %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+
+<%- include('../partials/tabs', { active: tab, label: 'Sections des logs', tabs: [
+  { key: 'history', label: 'Historique', href: base + '/logs', icon: 'list', count: fmt.number(pagination.total) },
+  { key: 'channels', label: 'Salons de logs', href: base + '/logs?tab=channels', icon: 'hash', count: configured + '/' + categories.length },
+] }) %>
+
+<% if (tab === 'channels') { %>
+<div class="grid-aside-right grid-2">
+  <form method="post" action="<%= base %>/logs/channels" class="form" data-dirty-form>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <section class="card">
+      <div class="card-head"><div><h2 class="card-title">Catégorie → salon</h2><p class="card-desc">Choisissez où chaque type d'événement est publié. Laissez vide pour ne pas publier.</p></div></div>
+      <div class="log-map">
+        <% for (const c of categories) { %>
+          <div class="log-map-row">
+            <div class="log-map-label"><span class="log-icon"><%- icon(c.icon) %></span><div class="grow"><label class="strong text-sm" for="log-<%= c.value %>"><%= c.label %></label><div class="text-xs text-3"><%= c.description %></div></div></div>
+            <%- include('../partials/channel-select', { name: `channels[${c.value}]`, id: `log-${c.value}`, selected: c.channelId, emptyLabel: 'Non publié', placeholder: 'Non publié' }) %>
+          </div>
+        <% } %>
+      </div>
+      <div class="card-foot dirty-hide"><span></span><button type="submit" class="btn btn-primary">Enregistrer les salons</button></div>
+    </section>
+  </form>
+  <aside class="stack">
+    <form method="post" action="<%= base %>/logs/channels/all" class="card form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="card">
-        <h3 class="card-title">Catégorie → salon</h3>
-        <% if (!config.modules.logs) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Logs est désactivé : les logs sont conservés en base mais rien n'est envoyé sur Discord.</span></div><% } %>
-        <div class="kv-grid">
-          <% for (const c of categories) { %>
-            <label class="kv-row"><span class="kv-key"><%= c.label %></span>
-              <select name="channels[<%= c.value %>]" class="select">
-                <%- include('../partials/channel-options', { channels: guild.textChannels, selected: c.channelId, allowEmpty: true, emptyLabel: '— Désactivé —' }) %>
-              </select>
-            </label>
-          <% } %>
-        </div>
-        <small class="hint">Sans salon dédié, une catégorie retombe sur le salon « Système » s'il est défini.</small>
-        <div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
-      </div>
+      <h2 class="card-title"><%- icon('zap') %>Tout dans un salon</h2>
+      <p class="card-desc mb-4">Envoie les <%= categories.length %> catégories dans un seul salon, en un clic.</p>
+      <div class="field"><label for="all-channel">Salon</label><%- include('../partials/channel-select', { name: 'channelId', id: 'all-channel', selected: '', allowEmpty: true, emptyLabel: '— Choisir —', required: true }) %></div>
+      <button type="submit" class="btn btn-block" data-confirm="Remplacer le salon de toutes les catégories par ce salon ?" data-confirm-title="Tout dans un salon" data-confirm-label="Appliquer" data-confirm-variant="primary">Appliquer à toutes les catégories</button>
     </form>
-  </section>
-
-  <section class="tab-panel" data-tab-panel="history" role="tabpanel">
-    <form method="get" action="/guilds/<%= guild.id %>/logs" class="card filter-bar">
-      <div class="field"><label for="f-category">Catégorie</label>
-        <select id="f-category" name="category" class="select"><option value="">Toutes</option><% for (const c of categories) { %><option value="<%= c.value %>" <%= filters.category === c.value ? 'selected' : '' %>><%= c.label %></option><% } %></select>
-      </div>
-      <div class="field"><label for="f-q">Recherche</label><input id="f-q" name="q" class="input" value="<%= filters.q %>" placeholder="action, ID utilisateur…"></div>
-      <div class="field"><label for="f-from">Du</label><input id="f-from" type="date" name="from" class="input" value="<%= filters.from || '' %>"></div>
-      <div class="field"><label for="f-to">Au</label><input id="f-to" type="date" name="to" class="input" value="<%= filters.to || '' %>"></div>
-      <div class="field field-actions"><button type="submit" class="btn btn-primary">Filtrer</button><a class="btn btn-ghost" href="/guilds/<%= guild.id %>/logs">Réinitialiser</a></div>
-    </form>
-
-    <div class="card">
-      <% if (!logs.length) { %><p class="muted">Aucun log ne correspond à ces filtres.</p><% } else { %>
-      <div class="table-wrap">
-        <table class="table" id="logs-table">
-          <thead><tr><th>Date</th><th>Catégorie</th><th>Action</th><th>Acteur</th><th>Cible</th><th>Données</th></tr></thead>
-          <tbody data-log-list>
-            <% for (const l of logs) { %>
-              <tr>
-                <td class="nowrap"><%= fmt.dateTime(l.createdAt) %><br><small class="muted"><%= fmt.relative(l.createdAt) %></small></td>
-                <td><span class="badge badge-muted"><%= constants.LOG_CATEGORY_LABELS[l.category] || l.category %></span></td>
-                <td><code><%= l.action %></code></td>
-                <td><% if (l.actorId) { %><a class="link mono" href="/guilds/<%= guild.id %>/members/<%= l.actorId %>"><%= names[l.actorId] || l.actorId %></a><% } else { %>—<% } %></td>
-                <td><% if (l.targetId) { %><a class="link mono" href="/guilds/<%= guild.id %>/members/<%= l.targetId %>"><%= names[l.targetId] || l.targetId %></a><% } else { %>—<% } %></td>
-                <td class="cell-json">
-                  <% if (l.data && typeof l.data === 'object') { %>
-                    <% const title = l.data.title || l.data.description; %>
-                    <% if (title) { %><div class="truncate" title="<%= title %>"><%= fmt.truncate(String(title), 60) %></div><% } %>
-                    <details class="json-details"><summary>JSON</summary><pre class="json"><%= fmt.json(l.data) %></pre></details>
-                  <% } else { %>—<% } %>
-                </td>
-              </tr>
-            <% } %>
-          </tbody>
-        </table>
-      </div>
-      <% } %>
-      <%- include('../partials/pagination', { pagination, baseQuery, baseUrl: `/guilds/${guild.id}/logs` }) %>
-    </div>
-  </section>
+    <div class="callout"><%- icon('info') %><div>Le bot doit pouvoir <strong>voir</strong> le salon, y <strong>envoyer des messages</strong> et des <strong>embeds</strong>.</div></div>
+  </aside>
 </div>
+<% } else { %>
+<form method="get" action="<%= base %>/logs" class="card filter-bar">
+  <div class="field"><label for="f-category">Catégorie</label>
+    <select id="f-category" name="category" class="select">
+      <option value="">Toutes</option>
+      <% for (const c of categories) { %><option value="<%= c.value %>" <%= filters.category === c.value ? 'selected' : '' %>><%= c.label %></option><% } %>
+    </select>
+  </div>
+  <div class="field"><label for="f-q">Recherche</label><label class="search"><%- icon('search', { size: 16 }) %><input id="f-q" name="q" class="input" value="<%= filters.q %>" placeholder="action (ex. ticket.open) ou ID"></label></div>
+  <div class="field"><label for="f-from">Du</label><input id="f-from" name="from" type="date" class="input" value="<%= filters.from || '' %>"></div>
+  <div class="field"><label for="f-to">Au</label><input id="f-to" name="to" type="date" class="input" value="<%= filters.to || '' %>"></div>
+  <div class="field field-actions"><button type="submit" class="btn btn-primary"><%- icon('filter', { size: 16 }) %>Filtrer</button><% if (filters.category || filters.q || filters.from || filters.to) { %><a class="btn btn-ghost" href="<%= base %>/logs">Réinitialiser</a><% } %></div>
+</form>
+
+<section class="card card-flush mt-5" data-live-reload>
+  <% if (!logs.length) { %>
+    <%- include('../partials/empty', { glyph: 'scroll-text', title: 'Aucun log', text: filters.category || filters.q || filters.from || filters.to ? 'Aucun événement ne correspond à ces filtres.' : 'Les événements du serveur apparaîtront ici.' }) %>
+  <% } else { %>
+  <div class="table-wrap">
+    <table class="table table-responsive">
+      <thead><tr><th>Événement</th><th>Catégorie</th><th>Acteur</th><th>Cible</th><th>Date</th></tr></thead>
+      <tbody>
+        <% for (const l of logs) { const a = l.actorId ? profiles[l.actorId] : null; const t = l.targetId ? profiles[l.targetId] : null; %>
+          <tr>
+            <td class="cell-primary">
+              <details class="log-details">
+                <summary class="row-3"><span class="log-icon"><%- icon(l.icon) %></span><span><span class="log-row-title"><%= l.title %></span><br><code class="text-xs text-3"><%= l.action %></code></span></summary>
+                <% if (l.data) { %><pre class="json"><%= fmt.json(l.data) %></pre><% } %>
+              </details>
+            </td>
+            <td data-label="Catégorie"><span class="badge badge-muted"><%= l.categoryLabel %></span></td>
+            <td data-label="Acteur"><% if (l.actorId) { %><a class="user-cell" href="<%= base %>/members/<%= l.actorId %>"><% if (a) { %><img class="avatar avatar-xs" src="<%= a.avatarUrl %>" alt=""><% } %><span class="truncate"><%= a ? a.name : l.actorId %></span></a><% } else { %><span class="text-3">Système</span><% } %></td>
+            <td data-label="Cible"><% if (l.targetId) { %><a class="user-cell" href="<%= base %>/members/<%= l.targetId %>"><% if (t) { %><img class="avatar avatar-xs" src="<%= t.avatarUrl %>" alt=""><% } %><span class="truncate"><%= t ? t.name : l.targetId %></span></a><% } else { %><span class="text-3">—</span><% } %></td>
+            <td data-label="Date" class="nowrap"><span title="<%= fmt.dateTime(l.createdAt) %>"><%= fmt.relative(l.createdAt) %></span></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+<%- include('../partials/pagination', { pagination, baseQuery, baseUrl: `${base}/logs` }) %>
+<% } %>

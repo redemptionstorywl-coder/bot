@@ -1,0 +1,53 @@
+<% const b = `/guilds/${guild.id}/giveaways`; %>
+<a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Giveaways</a>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('gift') %></span>
+    <div><h1 class="page-title">Nouveau giveaway</h1><p class="page-subtitle">Publié immédiatement avec un bouton de participation ; le tirage est automatique à la fin.</p></div>
+  </div>
+</header>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Giveaways est désactivé : les participations ne seront pas prises en compte. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+<% if (!botReady) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Bot hors ligne : le lancement est indisponible pour le moment.</span></div><% } %>
+
+<div class="split" data-no-live-reload>
+  <form method="post" action="<%= b %>" class="form stack" id="giveaway-form" data-live-preview="<%= b %>/preview" data-live-preview-target="#giveaway-preview">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <section class="card">
+      <h2 class="card-title">Lot</h2>
+      <div class="field"><label for="g-prize" class="field-required">Lot à gagner</label><input id="g-prize" name="prize" class="input" maxlength="190" required placeholder="Nitro 1 mois"></div>
+      <div class="field"><label for="g-description">Description <span class="field-optional">optionnel</span></label><textarea id="g-description" name="description" class="textarea" rows="3" maxlength="1000" placeholder="Détails, règles… Markdown Discord accepté."></textarea></div>
+      <div class="field-row">
+        <div class="field"><label for="g-winners">Gagnants</label><input id="g-winners" name="winnersCount" type="number" class="input" min="1" max="50" value="1"></div>
+        <div class="field"><label for="g-channel" class="field-required">Salon</label><%- include('../partials/channel-select', { name: 'channelId', id: 'g-channel', selected: '', emptyLabel: '— Choisir un salon —', required: true }) %></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Fin du tirage</h2>
+      <div class="segmented mb-4">
+        <label><input type="radio" name="endMode" value="duration" checked data-radio-toggle="#g-end-duration"><span><%- icon('hourglass', { size: 16 }) %>Durée</span></label>
+        <label><input type="radio" name="endMode" value="date" data-radio-toggle="#g-end-date"><span><%- icon('calendar', { size: 16 }) %>Date précise</span></label>
+      </div>
+      <div class="field" id="g-end-duration"><label for="g-duration">Durée</label><input id="g-duration" name="duration" class="input" maxlength="32" value="1d" placeholder="1h30m, 2j, 1w" data-input-narrow><small class="hint">Exemples : <code>30m</code>, <code>2h</code>, <code>1j</code>, <code>1w</code>.</small></div>
+      <div class="field" id="g-end-date" hidden><label for="g-endsAt">Date et heure <span class="field-optional"><%= timezone %></span></label><input id="g-endsAt" name="endsAt" type="datetime-local" class="input" min="<%= minEnd %>" value="<%= minEnd %>"></div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><div><h2 class="card-title">Conditions</h2><p class="card-desc">Vérifiées au moment où le membre clique sur « Participer ».</p></div></div>
+      <div class="field-row">
+        <div class="field"><label for="g-role">Rôle requis</label><%- include('../partials/role-select', { name: 'requiredRoleId', id: 'g-role', selected: '', multiple: false, emptyLabel: '— Aucun —' }) %></div>
+        <div class="field"><label for="g-min">Messages minimum</label><input id="g-min" name="minMessages" type="number" class="input" min="0" max="100000" value="0"></div>
+      </div>
+      <div class="field mt-4"><label for="g-lang">Langue du message</label><select id="g-lang" name="language" class="select"><option value="">Langue du serveur</option><% for (const l of languages) { %><option value="<%= l.code %>"><%= l.flag %> <%= l.nativeLabel %></option><% } %></select></div>
+    </section>
+
+    <div class="sticky-actions row justify-between"><span class="text-sm text-2">Le message est publié dès le lancement.</span><div class="btn-group"><a class="btn btn-ghost" href="<%= b %>">Annuler</a><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>><%- icon('gift', { size: 16 }) %>Lancer le giveaway</button></div></div>
+  </form>
+
+  <aside class="split-preview">
+    <div class="preview-panel">
+      <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 15 }) %>Aperçu</span><span class="badge badge-muted">Discord</span></div>
+      <div class="preview-panel-body" id="giveaway-preview"><%- previewHtml %></div>
+    </div>
+  </aside>
+</div>

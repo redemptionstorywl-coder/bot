@@ -1,0 +1,10 @@
+<%# Conteneur des toasts : messages flash (rendus serveur) + toasts JS (window.toast). %>
+<div id="toasts" class="toasts" aria-live="polite" aria-atomic="false">
+  <% for (const f of (flash || [])) { %>
+    <div class="toast toast-<%= f.type %>" role="<%= f.type === 'error' ? 'alert' : 'status' %>" data-autohide="<%= f.type === 'error' ? 9000 : 5000 %>">
+      <%- icon(f.type === 'success' ? 'check-circle' : f.type === 'error' ? 'x-circle' : f.type === 'warning' ? 'alert-triangle' : 'info', { size: 18 }) %>
+      <div class="toast-text"><%= f.message %></div>
+      <button type="button" class="toast-close" data-toast-close aria-label="Fermer"><%- icon('x', { size: 16 }) %></button>
+    </div>
+  <% } %>
+</div>

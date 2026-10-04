@@ -1,13 +1,13 @@
 <section class="page-narrow">
+  <div class="page-header"><div class="page-heading"><span class="page-icon"><%- icon('key') %></span><div><h1 class="page-title">Connexion Discord non configurée</h1><p class="page-subtitle">Le dashboard identifie les administrateurs via OAuth2 Discord.</p></div></div></div>
   <div class="card">
-    <h2 class="card-title">Connexion Discord non configurée</h2>
-    <p class="muted">Le dashboard utilise OAuth2 Discord pour identifier les administrateurs. La variable <code>DISCORD_CLIENT_SECRET</code> est vide : la connexion est désactivée tant qu'elle n'est pas renseignée.</p>
+    <p class="muted">La variable <code>DISCORD_CLIENT_SECRET</code> est vide : la connexion est désactivée tant qu'elle n'est pas renseignée.</p>
     <ol class="steps">
       <li>Ouvrez le <strong>Discord Developer Portal</strong> → votre application → <strong>OAuth2</strong>.</li>
       <li>Copiez le <strong>Client Secret</strong> (bouton « Reset Secret » si nécessaire) dans <code>.env</code> : <code>DISCORD_CLIENT_SECRET=…</code></li>
       <li>Ajoutez l'URL de redirection suivante dans « Redirects » : <code class="code-block"><%= redirectUri %></code></li>
       <li>Vérifiez que <code>DASHBOARD_URL</code> correspond exactement à l'adresse publique du dashboard, puis redémarrez le bot.</li>
     </ol>
-    <div class="card-actions"><a class="btn btn-ghost" href="/">Retour à l'accueil</a></div>
+    <div class="card-actions"><a class="btn" href="/"><%- icon('arrow-left', { size: 16 }) %>Retour à l'accueil</a></div>
   </div>
 </section>

@@ -34,12 +34,14 @@ export function createReactionRolesRouter(client: RedemptionClient): Router {
     '/reaction-roles',
     wrap(async (_req, res) => {
       const guild = res.locals.guild!;
-      const rows = await roleService.listReactionRoles(guild.id);
+      const [rows, autoroles, menus, notifications] = await Promise.all([roleService.listReactionRoles(guild.id), roleService.listAutoRoles(guild.id), roleService.listRoleMenus(guild.id), roleService.listNotificationRoles(guild.id)]);
       const byMessage = new Map<string, typeof rows>();
       for (const r of rows) byMessage.set(r.messageId, [...(byMessage.get(r.messageId) ?? []), r]);
       render(res, 'reactionroles', {
-        title: 'Reaction Roles',
-        page: 'reactionroles',
+        title: 'Reaction roles',
+        page: 'roles',
+        crumbs: [{ label: 'Reaction roles' }],
+        counts: { autoroles: autoroles.length, menus: menus.length, notifications: notifications.length, reactions: rows.length },
         groups: [...byMessage.entries()].map(([messageId, items]) => ({ messageId, channelId: items[0]!.channelId, items })),
         total: rows.length,
         roleName: (id: string) => guild.roles.find((r) => r.id === id)?.name ?? id,
@@ -86,7 +88,7 @@ export function createReactionRolesRouter(client: RedemptionClient): Router {
       async (req, res) => {
         const guild = res.locals.guild!;
         const { params } = valid<unknown, unknown, z.infer<typeof idParams>>(req);
-        const rows = await roleService.listReactionRoles(guild.id);
+        const [rows, autoroles, menus, notifications] = await Promise.all([roleService.listReactionRoles(guild.id), roleService.listAutoRoles(guild.id), roleService.listRoleMenus(guild.id), roleService.listNotificationRoles(guild.id)]);
         if (!rows.some((r) => r.id === params.reactionId)) throw new HttpError(404, 'Reaction role introuvable.');
         await roleService.removeReactionRole({ id: params.reactionId });
         broadcastToGuild(guild.id, 'roles:update', { guildId: guild.id, kind: 'reaction' });

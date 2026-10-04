@@ -59,18 +59,32 @@ export function createAnnouncementsRouter(_client: RedemptionClient): Router {
 
   router.get(
     '/announcements',
-    wrap(async (_req, res) => {
+    wrap(async (req, res) => {
       const guild = res.locals.guild!;
       const config = res.locals.config!;
       const statuses = Object.values(AnnouncementStatus);
+      const requested = typeof req.query.status === 'string' ? req.query.status.toUpperCase() : '';
+      const active = (statuses as string[]).includes(requested) ? (requested as AnnouncementStatus) : 'ALL';
       const lists = await Promise.all(statuses.map((status) => announcementService.list(guild.id, status, { pageSize: 50 })));
       const scheduled = lists[statuses.indexOf(AnnouncementStatus.SCHEDULED)]!.items;
       const schedules = await Promise.all(scheduled.map((a) => announcementService.getPendingSchedule(a.id)));
       const scheduleMap = Object.fromEntries(scheduled.map((a, i) => [a.id, schedules[i]?.scheduledAt ?? null]));
+      const columns = statuses.map((status, i) => ({ status, label: ANNOUNCEMENT_STATUS_LABELS[status], items: lists[i]!.items, total: lists[i]!.total }));
+      // « Toutes » = tout sauf les archivées, la plus récemment modifiée d'abord.
+      const items =
+        active === 'ALL'
+          ? columns
+              .filter((c) => c.status !== AnnouncementStatus.ARCHIVED)
+              .flatMap((c) => c.items)
+              .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+          : columns.find((c) => c.status === active)!.items;
       render(res, 'announcements', {
         title: 'Annonces',
         page: 'announcements',
-        columns: statuses.map((status, i) => ({ status, label: ANNOUNCEMENT_STATUS_LABELS[status], items: lists[i]!.items, total: lists[i]!.total })),
+        columns,
+        active,
+        items,
+        statusLabels: ANNOUNCEMENT_STATUS_LABELS,
         scheduleMap,
         channelName: (id: string | null) => (id ? (guild.textChannels.find((c) => c.id === id)?.name ?? id) : null),
         moduleEnabled: config.modules.announcements,
@@ -82,6 +96,9 @@ export function createAnnouncementsRouter(_client: RedemptionClient): Router {
     const config = res.locals.config!;
     return {
       page: 'announcements',
+      layout: 'wide',
+      scripts: ['announcements'],
+      crumbs: [{ label: ann ? ann.title : 'Nouvelle annonce' }],
       announcement: ann,
       spec: ann?.spec ?? {},
       buttons: ann?.buttons ?? [],
@@ -117,7 +134,13 @@ export function createAnnouncementsRouter(_client: RedemptionClient): Router {
       const { params } = valid<unknown, unknown, z.infer<typeof idParams>>(req);
       const ann = await load(guild.id, params.announcementId);
       const preview = await announcementService.preview(ann.id);
-      render(res, 'announcement-preview', { title: `Aperçu · ${ann.title}`, page: 'announcements', announcement: ann, preview });
+      render(res, 'announcement-preview', {
+        title: `Aperçu · ${ann.title}`,
+        page: 'announcements',
+        crumbs: [{ label: ann.title, href: `${base(guild.id)}/${ann.id}` }, { label: 'Aperçu final' }],
+        announcement: ann,
+        preview,
+      });
     }),
   );
 

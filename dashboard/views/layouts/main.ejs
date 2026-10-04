@@ -5,29 +5,55 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="<%= csrfToken || '' %>">
   <meta name="color-scheme" content="dark">
-  <title><%= typeof title === 'string' && title ? title + ' · ' : '' %><%= brand.name %></title>
+  <meta name="theme-color" content="#0a0a0c">
+  <title><%= typeof title === 'string' && title ? title + ' · ' : '' %><%= guild ? guild.name + ' · ' : '' %><%= brand.name %></title>
   <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/app.css">
 </head>
-<body class="<%= user ? 'has-sidebar' : 'no-sidebar' %>" data-guild-id="<%= guild ? guild.id : '' %>" data-page="<%= page || view || '' %>" data-brand-color="<%= config && config.brandColor !== undefined ? fmt.hex(config.brandColor) : brand.primary %>">
+<%
+  const _hasGuild = Boolean(user && guild);
+  const _mode = _hasGuild ? 'app' : user ? 'top' : 'public';
+  const _wide = typeof layout === 'string' && layout === 'wide';
+%>
+<body class="<%= _hasGuild ? 'has-sidebar' : 'no-sidebar' %> layout-<%= _mode %><%= _wide ? ' layout-wide' : '' %>" data-guild-id="<%= guild ? guild.id : '' %>" data-page="<%= page || view || '' %>" data-brand-color="<%= config && config.brandColor !== undefined ? fmt.hex(config.brandColor) : brand.primary %>">
   <a class="skip-link" href="#main">Aller au contenu</a>
-  <% if (user) { %>
-    <div class="sidebar-backdrop" data-sidebar-close hidden></div>
+  <% if (_hasGuild) { %>
     <%- include('../partials/sidebar') %>
-  <% } %>
-  <div class="shell">
-    <%- include('../partials/header') %>
-    <main id="main" class="main">
-      <%- include('../partials/flash') %>
+    <div class="sidebar-backdrop" data-sidebar-close hidden></div>
+    <div class="shell">
+      <%- include('../partials/topbar') %>
+      <main id="main" class="main" tabindex="-1">
+        <%- body %>
+      </main>
+    </div>
+    <script type="application/json" id="guild-data"><%- jsonScript({
+      id: guild.id,
+      name: guild.name,
+      iconUrl: guild.iconUrl,
+      brandColor: config ? fmt.hex(config.brandColor) : brand.primary,
+      roles: guild.roles.map((r) => ({ id: r.id, name: r.name, color: r.color, managed: r.managed })),
+      channels: guild.channels.concat(guild.categories).map((c) => ({ id: c.id, name: c.name, type: c.type, parentId: c.parentId, parentName: c.parentName })),
+      bot: botUser ? { name: botUser.username, avatarUrl: botUser.avatarUrl } : null,
+      user: user ? { id: user.id, name: user.globalName || user.username, username: user.username, avatarUrl: userAvatarUrl } : null,
+      memberCount: guild.memberCount,
+    }) %></script>
+  <% } else { %>
+    <%- include('../partials/site-header') %>
+    <main id="main" class="site-main" tabindex="-1">
       <%- body %>
     </main>
     <%- include('../partials/footer') %>
-  </div>
-  <div id="toasts" class="toasts" aria-live="polite" aria-atomic="true"></div>
+  <% } %>
+  <%- include('../partials/toasts') %>
   <%- include('../partials/modal') %>
+  <%- include('../partials/dirty-bar') %>
   <% if (user) { %><script src="/socket.io/socket.io.js" defer></script><% } %>
+  <script src="/js/discord-preview.js" defer></script>
   <script src="/js/app.js" defer></script>
+  <script src="/js/pickers.js" defer></script>
   <script src="/js/repeater.js" defer></script>
   <script src="/js/embed-editor.js" defer></script>
+  <% for (const s of (Array.isArray(scripts) ? scripts : [])) { if (/^[a-z0-9-]+$/.test(s)) { %><script src="/js/<%= s %>.js" defer></script>
+  <% } } %>
 </body>
 </html>

@@ -1,54 +1,12 @@
 <%#
-  Aperçu d'un message Discord (façon client Discord, thème sombre).
-  Attend : embed (EmbedSpec | null), buttons (ButtonSpec[] | undefined), content (string | undefined), compact (bool | undefined).
-  Le rendu côté client (public/js/embed-editor.js → renderEmbedPreview) reproduit exactement ce balisage.
-%>
-<%
-  const _e = typeof embed !== 'undefined' && embed ? embed : {};
-  const _buttons = typeof buttons !== 'undefined' && Array.isArray(buttons) ? buttons : [];
-  const _content = typeof content === 'string' ? content : '';
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-  const md = (s) => esc(s)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/__(.+?)__/g, '<u>$1</u>')
-    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
-    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
-    .replace(/&lt;@&amp;(\d+)&gt;/g, '<span class="dmention">@rôle</span>')
-    .replace(/&lt;@!?(\d+)&gt;/g, '<span class="dmention">@membre</span>')
-    .replace(/&lt;#(\d+)&gt;/g, '<span class="dmention">#salon</span>')
-    .replace(/\n/g, '<br>');
-  const imgOk = (u) => typeof u === 'string' && /^https:\/\/(cdn\.discordapp\.com|media\.discordapp\.net)\//.test(u);
-  const color = _e.color ? (_e.color.startsWith('#') ? _e.color : '#' + _e.color) : (config && config.brandColor !== undefined ? fmt.hex(config.brandColor) : '#7C3AED');
-  const hasEmbed = Boolean(_e.title || _e.description || (_e.fields && _e.fields.length) || _e.image || _e.thumbnail || (_e.author && _e.author.name) || (_e.footer && _e.footer.text));
-%>
-<div class="dpreview<%= typeof compact !== 'undefined' && compact ? ' dpreview-compact' : '' %>">
-  <div class="dmsg">
-    <div class="davatar" aria-hidden="true"><%- include('logo') %></div>
-    <div class="dbody">
-      <div class="dmeta"><span class="dname"><%= botUser ? botUser.username : 'Redemption Story' %></span><span class="dbot">BOT</span><span class="dtime">Aujourd'hui</span></div>
-      <% if (_content) { %><div class="dcontent"><%- md(_content) %></div><% } %>
-      <% if (hasEmbed) { %>
-      <div class="dembed" data-embed-color="<%= color %>">
-        <% if (_e.thumbnail) { %><div class="dembed-thumb"><% if (imgOk(_e.thumbnail)) { %><img src="<%= _e.thumbnail %>" alt=""><% } else { %><span class="dimg-ph" title="<%= _e.thumbnail %>">🖼</span><% } %></div><% } %>
-        <% if (_e.author && _e.author.name) { %><div class="dembed-author"><% if (_e.author.iconUrl && imgOk(_e.author.iconUrl)) { %><img src="<%= _e.author.iconUrl %>" alt=""><% } %><span><%= _e.author.name %></span></div><% } %>
-        <% if (_e.title) { %><div class="dembed-title"><% if (_e.url) { %><a href="<%= _e.url %>" rel="noopener noreferrer" target="_blank"><%- md(_e.title) %></a><% } else { %><%- md(_e.title) %><% } %></div><% } %>
-        <% if (_e.description) { %><div class="dembed-desc"><%- md(_e.description) %></div><% } %>
-        <% if (_e.fields && _e.fields.length) { %>
-        <div class="dembed-fields">
-          <% for (const f of _e.fields) { %><div class="dembed-field<%= f.inline ? ' inline' : '' %>"><div class="dembed-field-name"><%- md(f.name) %></div><div class="dembed-field-value"><%- md(f.value) %></div></div><% } %>
-        </div>
-        <% } %>
-        <% if (_e.image) { %><div class="dembed-image"><% if (imgOk(_e.image)) { %><img src="<%= _e.image %>" alt=""><% } else { %><div class="dimg-ph dimg-ph-wide" title="<%= _e.image %>">🖼 <span class="truncate"><%= _e.image %></span></div><% } %></div><% } %>
-        <% if ((_e.footer && _e.footer.text) || _e.timestamp) { %>
-        <div class="dembed-footer"><% if (_e.footer && _e.footer.iconUrl && imgOk(_e.footer.iconUrl)) { %><img src="<%= _e.footer.iconUrl %>" alt=""><% } %><span><%= _e.footer && _e.footer.text ? _e.footer.text : '' %><%= _e.footer && _e.footer.text && _e.timestamp ? ' • ' : '' %><%= _e.timestamp ? "Aujourd'hui à " + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '' %></span></div>
-        <% } %>
-      </div>
-      <% } else if (!_content) { %><div class="dcontent muted">Message vide — ajoutez un titre, une description ou du texte.</div><% } %>
-      <% if (_buttons.length) { %>
-      <div class="dbuttons">
-        <% for (const b of _buttons) { %><span class="dbtn dbtn-<%= b.style || 'secondary' %><%= b.disabled ? ' disabled' : '' %>"><% if (b.emoji) { %><span class="dbtn-emoji"><%= b.emoji.includes(':') ? '◆' : b.emoji %></span><% } %><%= b.label %><% if (b.style === 'link') { %> ↗<% } %></span><% } %>
-      </div>
-      <% } %>
-    </div>
-  </div>
-</div>
+  Aperçu d'un message Discord (rendu serveur — même moteur que le JS : public/js/discord-preview.js).
+  Attend : embed (EmbedSpec | null), buttons (ButtonSpec[]), content (string), compact (bool),
+           components ([{ type: 'select', placeholder, options, open } | { type: 'buttons', buttons }]), ephemeral (bool).
+%><%- discordPreview.render({
+  content: typeof content === 'string' ? content : '',
+  embed: typeof embed !== 'undefined' && embed ? embed : null,
+  buttons: typeof buttons !== 'undefined' && Array.isArray(buttons) ? buttons : [],
+  components: typeof components !== 'undefined' && Array.isArray(components) ? components : [],
+  compact: typeof compact !== 'undefined' && compact,
+  ephemeral: typeof ephemeral !== 'undefined' && ephemeral,
+}, previewContext()) %>

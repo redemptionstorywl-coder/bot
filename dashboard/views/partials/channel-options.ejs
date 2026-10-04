@@ -1,12 +1,15 @@
-<%# Attend : channels (ChannelOption[]), selected (string|''), allowEmpty (bool), emptyLabel %>
+<%#
+  Options de salons groupées par catégorie. Attend : channels (ChannelOption[]), selected (string|''), allowEmpty (bool), emptyLabel.
+  Chaque option porte data-type (text | announcement | voice | stage | forum | category) et data-name (lus par le sélecteur de salons).
+%>
 <% if (typeof allowEmpty === 'undefined' || allowEmpty) { %><option value="" <%= !selected ? 'selected' : '' %>><%= typeof emptyLabel === 'string' ? emptyLabel : '— Aucun —' %></option><% } %>
 <% let currentParent = null; let open = false; %>
 <% for (const c of channels) { %>
-  <% if (c.parentId !== currentParent) { %>
+  <% if (c.type !== 'category' && c.parentId !== currentParent) { %>
     <% if (open) { %></optgroup><% } %>
     <% currentParent = c.parentId; open = Boolean(c.parentId); %>
     <% if (open) { %><optgroup label="<%= c.parentName %>"><% } %>
   <% } %>
-  <option value="<%= c.id %>" <%= selected === c.id ? 'selected' : '' %>><%= c.type === 'announcement' ? '📣' : c.type === 'voice' ? '🔊' : c.type === 'forum' ? '🗂' : '#' %> <%= c.name %></option>
+  <option value="<%= c.id %>" data-type="<%= c.type %>" data-name="<%= c.name %>" <%= selected === c.id ? 'selected' : '' %>><%= c.type === 'category' ? '' : c.type === 'voice' || c.type === 'stage' ? '🔊 ' : c.type === 'announcement' ? '📣 ' : c.type === 'forum' ? '💬 ' : '# ' %><%= c.name %></option>
 <% } %>
 <% if (open) { %></optgroup><% } %>

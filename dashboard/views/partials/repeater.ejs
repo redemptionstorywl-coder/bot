@@ -9,7 +9,7 @@
   </div>
   <template data-repeater-template><%- include('repeater-row', { kind, row: null, roles: _roles }) %></template>
   <div class="repeater-foot">
-    <button type="button" class="btn btn-ghost btn-sm" data-repeater-add>+ <%= typeof addLabel === 'string' ? addLabel : 'Ajouter' %></button>
+    <button type="button" class="btn btn-sm" data-repeater-add><%- icon('plus', { size: 14 }) %><%= typeof addLabel === 'string' ? addLabel : 'Ajouter' %></button>
     <span class="hint" data-repeater-count></span>
   </div>
   <input type="hidden" name="<%= name %>" id="<%= id %>" value="<%= JSON.stringify(_rows) %>">

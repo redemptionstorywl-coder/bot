@@ -1,71 +1,116 @@
-<% const a = announcement; const isPublished = a && a.status === 'PUBLISHED'; const isArchived = a && a.status === 'ARCHIVED'; %>
-<section class="page-header">
-  <div>
-    <a class="link" href="/guilds/<%= guild.id %>/announcements">← Retour aux annonces</a>
-    <h2 class="page-title"><%= a ? a.title : 'Nouvelle annonce' %> <% if (a) { %><span class="badge badge-status-<%= a.status %>"><%= statusLabel %></span><% } %></h2>
-    <p class="muted"><% if (a) { %>Créée le <%= fmt.dateTime(a.createdAt) %><% if (a.publishedAt) { %> · publiée le <%= fmt.dateTime(a.publishedAt) %><% } %><% if (pendingSchedule) { %> · programmée pour le <strong><%= fmt.dateTime(pendingSchedule.scheduledAt) %></strong><% } %><% } else { %>Rédigez l'annonce, choisissez son salon puis publiez ou programmez.<% } %></p>
+<%
+  const a = announcement;
+  const b = `/guilds/${guild.id}/announcements`;
+  const isPublished = a && a.status === 'PUBLISHED';
+  const isArchived = a && a.status === 'ARCHIVED';
+  const singular = { DRAFT: 'Brouillon', SCHEDULED: 'Programmée', PUBLISHED: 'Publiée', ARCHIVED: 'Archivée' };
+  const mentions = a ? [a.mentionEveryone ? '@everyone' : null, ...(a.mentionRoleIds || []).map((r) => `<@&${r}>`)].filter(Boolean).join(' ') : '';
+  const initialContent = [mentions, a && a.content ? a.content : ''].filter(Boolean).join('\n');
+  const chips = ['{server}', '{memberCount}', '{date}', '{time}'];
+  const refs = a && Array.isArray(a.messages) ? a.messages : [];
+%>
+<a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Annonces</a>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('megaphone') %></span>
+    <div>
+      <h1 class="page-title row-wrap"><span><%= a ? a.title : 'Nouvelle annonce' %></span><% if (a) { %><span class="badge badge-status-<%= a.status %>"><%= singular[a.status] || a.status %></span><% } %></h1>
+      <p class="page-subtitle"><% if (a) { %>Créée le <%= fmt.dateTime(a.createdAt) %><% if (a.publishedAt) { %> · publiée le <%= fmt.dateTime(a.publishedAt) %><% } %><% if (pendingSchedule) { %> · programmée pour le <strong><%= fmt.dateTime(pendingSchedule.scheduledAt) %></strong><% } %><% } else { %>Rédigez le message, vérifiez l'aperçu, enregistrez le brouillon puis publiez ou programmez.<% } %></p>
+    </div>
   </div>
   <% if (a) { %>
   <div class="page-actions">
-    <a class="btn btn-ghost" href="/guilds/<%= guild.id %>/announcements/<%= a.id %>/preview">Aperçu</a>
-    <form method="post" action="/guilds/<%= guild.id %>/announcements/<%= a.id %>/duplicate"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost">Dupliquer</button></form>
-    <% if (!isArchived) { %><form method="post" action="/guilds/<%= guild.id %>/announcements/<%= a.id %>/archive"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost" data-confirm="Archiver cette annonce ? Les messages publiés sont conservés, la programmation annulée.">Archiver</button></form><% } %>
-    <form method="post" action="/guilds/<%= guild.id %>/announcements/<%= a.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger" data-confirm="Supprimer définitivement cette annonce et ses messages Discord ?">Supprimer</button></form>
+    <a class="btn" href="<%= b %>/<%= a.id %>/preview"><%- icon('eye', { size: 16 }) %>Aperçu final</a>
+    <div class="dropdown" data-dropdown>
+      <button type="button" class="btn btn-icon" data-dropdown-toggle aria-haspopup="menu" aria-expanded="false" aria-label="Plus d'actions"><%- icon('more-horizontal', { size: 18 }) %></button>
+      <div class="dropdown-menu align-right" role="menu">
+        <form method="post" action="<%= b %>/<%= a.id %>/duplicate"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="dropdown-item" role="menuitem"><%- icon('copy', { size: 16 }) %>Dupliquer</button></form>
+        <% if (!isArchived) { %><form method="post" action="<%= b %>/<%= a.id %>/archive"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="dropdown-item" role="menuitem" data-confirm="Archiver cette annonce ? Les messages publiés sont conservés et la programmation est annulée." data-confirm-label="Archiver" data-confirm-variant="primary"><%- icon('archive', { size: 16 }) %>Archiver</button></form><% } %>
+        <div class="dropdown-sep"></div>
+        <form method="post" action="<%= b %>/<%= a.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="dropdown-item is-danger" role="menuitem" data-confirm="Supprimer définitivement cette annonce et ses messages Discord ?" data-confirm-label="Supprimer"><%- icon('trash', { size: 16 }) %>Supprimer</button></form>
+      </div>
+    </div>
   </div>
   <% } %>
-</section>
+</header>
 
-<form method="post" action="/guilds/<%= guild.id %>/announcements<%= a ? '/' + a.id : '' %>" class="form">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-  <% if (isPublished) { %><div class="alert alert-info"><span class="alert-icon" aria-hidden="true">i</span><span class="alert-text">Cette annonce est publiée : enregistrer met à jour les messages Discord existants.</span></div><% } %>
+<div class="split" data-no-live-reload>
+  <form method="post" action="<%= b %><%= a ? '/' + a.id : '' %>" class="form stack" id="announcement-form" <%- a ? 'data-dirty-form' : '' %>>
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <% if (isPublished) { %><div class="alert alert-info"><%- icon('info') %><span class="alert-text">Annonce publiée : enregistrer met aussi à jour <%= refs.length > 1 ? 'les ' + refs.length + ' messages' : 'le message' %> sur Discord.</span></div><% } %>
 
-  <div class="grid-2">
-    <div class="card">
-      <h3 class="card-title">Général</h3>
-      <div class="field"><label for="a-title">Titre interne</label><input id="a-title" name="title" class="input" maxlength="190" required value="<%= a ? a.title : '' %>" placeholder="Nouvelle saison"></div>
-      <div class="field"><label for="a-content">Texte au-dessus de l'embed</label><textarea id="a-content" name="content" class="textarea" rows="3" maxlength="2000" placeholder="Texte optionnel, variables acceptées"><%= a && a.content ? a.content : '' %></textarea></div>
-      <div class="field"><label for="a-channel">Salon de publication</label><select id="a-channel" name="channelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: a ? a.channelId : '', allowEmpty: true, emptyLabel: '— Choisir un salon —' }) %></select><small class="hint">Obligatoire pour publier ou programmer.</small></div>
-    </div>
-    <div class="card">
-      <h3 class="card-title">Mentions</h3>
-      <label class="check"><input type="checkbox" name="mentionEveryone" <%= a && a.mentionEveryone ? 'checked' : '' %>><span>Mentionner @everyone</span></label>
-      <div class="field"><label for="a-roles">Rôles à mentionner</label><select id="a-roles" name="mentionRoleIds" class="select" multiple size="8" data-multi><%- include('../partials/role-options', { roles: guild.roles, selected: a ? a.mentionRoleIds : [] }) %></select></div>
-    </div>
-  </div>
+    <section class="card">
+      <h2 class="card-title">Message</h2>
+      <div class="field-row">
+        <div class="field"><label for="a-title" class="field-required">Titre interne</label><input id="a-title" name="title" class="input" maxlength="190" required value="<%= a ? a.title : '' %>" placeholder="Nouvelle saison"><small class="hint">Visible uniquement dans le panel.</small></div>
+        <div class="field"><label for="a-channel">Salon de publication</label><%- include('../partials/channel-select', { name: 'channelId', id: 'a-channel', selected: a ? a.channelId : '', emptyLabel: '— Choisir plus tard —' }) %><small class="hint">Obligatoire pour publier ou programmer.</small></div>
+      </div>
+      <div class="field mt-4">
+        <label for="a-content">Texte au-dessus de l'embed <span class="field-optional">optionnel</span></label>
+        <textarea id="a-content" name="content" class="textarea" rows="3" maxlength="2000" placeholder="Texte libre, Markdown Discord et variables acceptés"><%= a && a.content ? a.content : '' %></textarea>
+        <div class="var-chips mt-2" data-insert-target="#a-content"><% for (const v of chips) { %><button type="button" class="var-chip" data-insert="<%= v %>"><%= v %></button><% } %></div>
+      </div>
+    </section>
 
-  <div class="card">
-    <h3 class="card-title">Embed</h3>
-    <%- include('../partials/embed-editor', { prefix: 'embed', spec, id: 'ann-embed', buttons, buttonsName: 'buttonsJson', withPreview: true, withJson: true, contentSource: '#a-content' }) %>
-  </div>
+    <section class="card">
+      <div class="card-head"><div><h2 class="card-title">Mentions</h2><p class="card-desc">Ajoutées au début du message. Discord ne notifie que les rôles mentionnables par le bot.</p></div></div>
+      <label class="toggle"><input type="checkbox" name="mentionEveryone" <%= a && a.mentionEveryone ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Mentionner @everyone</span></label>
+      <div class="field mt-4"><label for="a-roles">Rôles à mentionner</label><%- include('../partials/role-select', { name: 'mentionRoleIds', id: 'a-roles', selected: a ? a.mentionRoleIds : [], placeholder: 'Ajouter un rôle à mentionner…' }) %></div>
+    </section>
 
-  <div class="form-actions sticky-actions">
-    <a class="btn btn-ghost" href="/guilds/<%= guild.id %>/announcements">Annuler</a>
-    <button type="submit" class="btn btn-primary"><%= a ? 'Enregistrer' : 'Créer le brouillon' %></button>
-  </div>
-</form>
+    <section class="card">
+      <div class="card-head"><div><h2 class="card-title">Embed &amp; boutons</h2><p class="card-desc">La couleur par défaut est celle de votre marque.</p></div></div>
+      <%- include('../partials/embed-editor', { prefix: 'embed', spec, id: 'ann-embed', buttons, buttonsName: 'buttonsJson', withPreview: false, withJson: true, compact: true }) %>
+    </section>
 
-<% if (a && !isArchived) { %>
-<div class="grid-2">
-  <div class="card">
-    <h3 class="card-title">Publier maintenant</h3>
-    <% if (!botReady) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le bot n'est pas connecté : la publication est indisponible pour le moment.</span></div><% } %>
-    <% if (isPublished) { %><p class="muted">Déjà publiée. Modifiez le contenu ci-dessus puis enregistrez pour synchroniser les messages.</p><% } else { %>
-    <p class="muted">Envoie l'annonce dans le salon choisi. Les mentions sont incluses.</p>
-    <form method="post" action="/guilds/<%= guild.id %>/announcements/<%= a.id %>/publish" data-confirm="Publier l'annonce « <%= a.title %> » maintenant ?"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>>Publier</button></form>
+    <% if (!a) { %>
+      <div class="sticky-actions row justify-between"><span class="text-sm text-2">L'annonce est enregistrée en brouillon.</span><div class="btn-group"><a class="btn btn-ghost" href="<%= b %>">Annuler</a><button type="submit" class="btn btn-primary">Créer le brouillon</button></div></div>
+    <% } else { %>
+      <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary"><%= isPublished ? 'Enregistrer et synchroniser' : 'Enregistrer' %></button></div>
     <% } %>
-  </div>
-  <div class="card">
-    <h3 class="card-title">Programmer</h3>
-    <% if (pendingSchedule) { %>
-      <p>Programmée pour le <strong><%= fmt.dateTime(pendingSchedule.scheduledAt) %></strong> (<%= fmt.relative(pendingSchedule.scheduledAt) %>).</p>
-      <form method="post" action="/guilds/<%= guild.id %>/announcements/<%= a.id %>/cancel-schedule"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger" data-confirm="Annuler la programmation ?">Annuler la programmation</button></form>
-    <% } else if (isPublished) { %><p class="muted">Une annonce publiée ne peut pas être reprogrammée : dupliquez-la.</p><% } else { %>
-      <form method="post" action="/guilds/<%= guild.id %>/announcements/<%= a.id %>/schedule" class="inline-fields">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="field"><label for="a-schedule">Date et heure (<%= timezone %>)</label><input id="a-schedule" type="datetime-local" name="scheduledAt" class="input" required min="<%= minSchedule %>" value="<%= minSchedule %>"></div>
-        <div class="field field-fixed"><button type="submit" class="btn btn-primary">Programmer</button></div>
-      </form>
-    <% } %>
-  </div>
+  </form>
+
+  <aside class="split-preview">
+    <div class="preview-panel">
+      <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 15 }) %>Aperçu</span><span class="badge badge-muted">Discord</span></div>
+      <div class="preview-panel-body" data-announcement-preview><%- include('../partials/embed-preview', { embed: spec, buttons, content: initialContent }) %></div>
+      <div class="preview-panel-note">Les variables sont remplacées à l'envoi. « Aperçu final » montre le rendu exact de la version enregistrée.</div>
+    </div>
+
+    <section class="card">
+      <h2 class="card-title"><%- icon('send') %>Publication</h2>
+      <% if (!a) { %>
+        <p class="text-sm text-2">Créez le brouillon pour pouvoir le publier tout de suite ou le programmer.</p>
+      <% } else if (isArchived) { %>
+        <p class="text-sm text-2">Annonce archivée<%= a.archivedAt ? ' le ' + fmt.dateTime(a.archivedAt) : '' %>. Dupliquez-la pour la republier.</p>
+      <% } else if (isPublished) { %>
+        <p class="text-sm text-2">Publiée <%= fmt.relative(a.publishedAt) %>. Modifiez puis enregistrez pour synchroniser les messages.</p>
+        <% if (refs.length) { %>
+          <ul class="list mt-3">
+            <% for (const r of refs) { %>
+              <li class="list-item"><span class="channel-tag"><%- icon('hash') %><%= (guild.textChannels.find((c) => c.id === r.channelId) || { name: r.channelId }).name %></span><a class="link text-xs ml-auto" href="https://discord.com/channels/<%= guild.id %>/<%= r.channelId %>/<%= r.messageId %>" target="_blank" rel="noopener noreferrer">Voir le message <%- icon('external-link', { size: 12 }) %></a></li>
+            <% } %>
+          </ul>
+        <% } %>
+      <% } else { %>
+        <% if (!botReady) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Bot hors ligne : publication indisponible.</span></div><% } %>
+        <% if (!a.channelId) { %><div class="alert alert-info"><%- icon('info') %><span class="alert-text">Choisissez un salon puis enregistrez pour activer la publication.</span></div><% } %>
+        <form method="post" action="<%= b %>/<%= a.id %>/publish" class="mb-4">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit" class="btn btn-primary btn-block" data-confirm="Publier « <%= a.title %> » maintenant<%= a.channelId ? ' dans #' + (guild.textChannels.find((c) => c.id === a.channelId) || { name: a.channelId }).name : '' %> ? Seule la version enregistrée est envoyée." data-confirm-label="Publier" data-confirm-variant="primary" <%= botReady && a.channelId ? '' : 'disabled' %>><%- icon('send', { size: 16 }) %>Publier maintenant</button>
+        </form>
+        <div class="divider-label"><span>ou</span></div>
+        <% if (pendingSchedule) { %>
+          <div class="callout mt-3"><%- icon('clock') %><div><strong>Programmée le <%= fmt.dateTime(pendingSchedule.scheduledAt) %></strong><div class="text-xs text-2"><%= fmt.relative(pendingSchedule.scheduledAt) %> · fuseau <%= timezone %></div></div></div>
+          <form method="post" action="<%= b %>/<%= a.id %>/cancel-schedule" class="mt-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-block" data-confirm="Annuler la programmation ? L'annonce repasse en brouillon." data-confirm-label="Annuler la programmation"><%- icon('x', { size: 16 }) %>Annuler la programmation</button></form>
+        <% } else { %>
+          <form method="post" action="<%= b %>/<%= a.id %>/schedule" class="form mt-3">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="field"><label for="a-schedule">Date et heure <span class="field-optional"><%= timezone %></span></label><input id="a-schedule" type="datetime-local" name="scheduledAt" class="input" required min="<%= minSchedule %>" value="<%= minSchedule %>"></div>
+            <button type="submit" class="btn btn-block" <%= a.channelId ? '' : 'disabled' %>><%- icon('clock', { size: 16 }) %>Programmer</button>
+          </form>
+        <% } %>
+      <% } %>
+    </section>
+  </aside>
 </div>
-<% } %>

@@ -7,6 +7,8 @@ import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
 import { validate, valid, discordIdSchema } from '../../lib/validate';
 import { HttpError } from '../../lib/errors';
+import { resolveUserProfiles } from '../../lib/names';
+import { SANCTION_TYPE_LABELS } from './moderation';
 
 const searchQuery = z.object({ q: z.string().trim().max(100).optional().default('') });
 const memberParams = z.object({ guildId: discordIdSchema, userId: discordIdSchema });
@@ -87,12 +89,15 @@ export function createMembersRouter(client: RedemptionClient): Router {
       const member = await guild.members.fetch({ user: params.userId }).catch(() => null);
       const user = member?.user ?? (await client.users.fetch(params.userId).catch(() => null));
       if (!user) throw new HttpError(404, 'Membre introuvable.');
-      const [warnings, sanctions, tickets, dbUser] = await Promise.all([
+      const [warnings, sanctions, tickets, dbUser, players] = await Promise.all([
         prisma.warning.findMany({ where: { guildId: guild.id, userId: params.userId }, orderBy: { createdAt: 'desc' }, take: 50 }),
         prisma.sanction.findMany({ where: { guildId: guild.id, userId: params.userId }, orderBy: { createdAt: 'desc' }, take: 50 }),
         prisma.ticket.findMany({ where: { guildId: guild.id, userId: params.userId }, orderBy: { createdAt: 'desc' }, take: 50, include: { type: true } }),
         prisma.user.findUnique({ where: { id: params.userId } }),
+        // Joueurs FiveM liés à ce compte Discord (lecture seule)
+        prisma.fiveMPlayer.findMany({ where: { guildId: guild.id, discordId: params.userId }, orderBy: { lastSeenAt: 'desc' }, take: 5 }),
       ]);
+      const moderators = await resolveUserProfiles(client, guild.id, [...(sanctions ?? []).map((s) => s.moderatorId), ...(warnings ?? []).map((w) => w.moderatorId)]);
       const roles = member
         ? member.roles.cache
             .filter((r) => r.id !== guild.id)
@@ -115,9 +120,13 @@ export function createMembersRouter(client: RedemptionClient): Router {
           timeoutUntil: member?.communicationDisabledUntil ?? null,
           knownSince: dbUser?.createdAt ?? null,
         },
-        warnings,
-        sanctions,
-        tickets,
+        warnings: warnings ?? [],
+        sanctions: sanctions ?? [],
+        tickets: tickets ?? [],
+        players: players ?? [],
+        moderators,
+        sanctionLabels: SANCTION_TYPE_LABELS,
+        crumbs: [{ label: member?.displayName ?? user.username }],
       });
     }),
   );

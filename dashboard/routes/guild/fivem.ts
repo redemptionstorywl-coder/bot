@@ -3,6 +3,10 @@ import { z } from 'zod';
 import { FiveMFramework, type FiveMServer } from '@prisma/client';
 import type { RedemptionClient } from '../../../src/core/Client';
 import { fivemService, resolveStatus, onlineSince } from '../../../src/services/FiveMService';
+import { fivemSyncService } from '../../../src/services/FiveMSyncService';
+import { translationService } from '../../../src/services/TranslationService';
+import { listFiveMPlayers } from '../../lib/fivemPlayers';
+import { resolveUserProfiles, resolveUserNames } from '../../lib/names';
 import { env } from '../../../src/config/env';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
@@ -21,7 +25,33 @@ const keySchema = z
   .toLowerCase()
   .regex(/^[a-z0-9_-]{2,64}$/, 'clé : 2 à 64 caractères, lettres minuscules, chiffres, - ou _');
 const keyParams = z.object({ key: keySchema });
-const pageQuerySchema = z.object({ server: z.preprocess((v) => (v === '' ? undefined : v), keySchema.optional()) });
+const TABS = ['servers', 'players', 'integration'] as const;
+const SERVER_TABS = ['overview', 'settings', 'sync'] as const;
+const pick = <T extends readonly string[]>(list: T, fallback: T[number]) => z.preprocess((v) => (typeof v === 'string' && (list as readonly string[]).includes(v) ? v : fallback), z.enum(list as unknown as [T[number], ...T[number][]]));
+const pageQuerySchema = z.object({
+  server: z.preprocess((v) => (v === '' ? undefined : v), keySchema.optional()),
+  tab: pick(TABS, 'servers'),
+  stab: pick(SERVER_TABS, 'overview'),
+  filter: pick(['all', 'linked', 'unlinked', 'online'] as const, 'all'),
+  q: z.preprocess((v) => (typeof v === 'string' ? v.trim().slice(0, 100) : ''), z.string()),
+  page: z.preprocess((v) => (v === '' || v === undefined ? 1 : v), z.coerce.number().int().min(1).max(10_000).catch(1)),
+});
+
+/** Formulaire « Synchronisation » → patch strict de syncSettingsSchema (toutes les clés, cases décochées = false). */
+const syncBody = z.object({
+  syncBansToDiscord: checkbox,
+  syncBansToGame: checkbox,
+  syncKicks: checkbox,
+  syncNicknames: checkbox,
+  nicknameFormat: z.string().trim().min(1, 'format requis').max(64),
+  linkedRoleId: optionalDiscordId,
+  onlineRoleId: optionalDiscordId,
+  playerCountChannelId: optionalDiscordId,
+  requireDiscord: checkbox,
+  requireRoleId: optionalDiscordId,
+  requireWhitelist: checkbox,
+});
+const linkBody = z.object({ userId: z.string().trim().regex(/^\d{15,22}$/, 'ID Discord invalide'), license: z.string().trim().min(8, 'licence requise').max(128) });
 
 const hostSchema = z.preprocess(
   (v) => (v === undefined || v === null || (typeof v === 'string' && v.trim() === '') ? null : typeof v === 'string' ? v.trim().replace(/\/+$/, '') : v),
@@ -70,7 +100,7 @@ export interface ServerView {
   updatedAt: Date;
 }
 
-function toView(server: FiveMServer): ServerView {
+export function toServerView(server: FiveMServer): ServerView {
   const status = resolveStatus(server);
   const state = status.maintenance ? 'maintenance' : status.online ? 'online' : 'offline';
   const since = onlineSince(server);
@@ -111,35 +141,125 @@ export function createFiveMRouter(client: RedemptionClient): Router {
       const config = res.locals.config!;
       const { query } = valid<unknown, z.infer<typeof pageQuerySchema>>(req);
       const servers = await fivemService.listServers(guild.id);
+      const apiBase = `${env().DASHBOARD_URL.replace(/\/+$/, '')}/api/fivem`;
       const selected = query.server ? servers.find((s) => s.key === query.server) ?? null : null;
       if (query.server && !selected) throw new HttpError(404, 'Serveur FiveM introuvable.');
-      const players = selected ? await fivemService.getPlayers(selected) : [];
-      const apiBase = `${env().DASHBOARD_URL.replace(/\/+$/, '')}/api/fivem`;
       const exampleKey = selected?.key ?? servers[0]?.key ?? 'main';
+      const integration = {
+        base: apiBase,
+        botUrl: env().DASHBOARD_URL.replace(/\/+$/, ''),
+        serverBase: `${apiBase}/servers/${guild.id}/${exampleKey}`,
+        exampleKey,
+        socketUrl: `${env().DASHBOARD_URL.replace(/\/+$/, '')}/fivem`,
+        globalKeyConfigured: env().FIVEM_API_KEY !== 'change-me-fivem-api-key',
+      };
+      const common = { page: 'fivem', frameworks: Object.values(FiveMFramework).map((f) => ({ value: f, label: FRAMEWORK_LABELS[f] })), integration, moduleEnabled: config.modules.fivem };
+
+      if (selected) {
+        const view = toServerView(selected);
+        const players = query.stab === 'overview' ? await fivemService.getPlayers(selected) : [];
+        const links = players.length ? await fivemSyncService.discordIdsFor(guild.id, players) : new Map<number, string | null>();
+        const profiles = await resolveUserProfiles(client, guild.id, [...links.values()].filter((v): v is string => Boolean(v)));
+        const t = translationService.bind(config.defaultLanguage, guild.id);
+        render(res, 'fivem-server', {
+          ...common,
+          title: `FiveM · ${selected.name}`,
+          crumbs: [{ label: selected.name }],
+          stab: query.stab,
+          server: view,
+          sync: {
+            syncBansToDiscord: selected.syncBansToDiscord,
+            syncBansToGame: selected.syncBansToGame,
+            syncKicks: selected.syncKicks,
+            syncNicknames: selected.syncNicknames,
+            nicknameFormat: selected.nicknameFormat,
+            linkedRoleId: selected.linkedRoleId,
+            onlineRoleId: selected.onlineRoleId,
+            playerCountChannelId: selected.playerCountChannelId,
+            requireDiscord: selected.requireDiscord,
+            requireRoleId: selected.requireRoleId,
+            requireWhitelist: selected.requireWhitelist,
+          },
+          counterTexts: { online: t('fivem.counter.online'), offline: t('fivem.counter.offline'), maintenance: t('fivem.counter.maintenance') },
+          players: players.map((p) => ({ ...p, discordId: links.get(p.id) ?? null })),
+          profiles,
+          scripts: query.stab === 'sync' ? ['fivem'] : [],
+        });
+        return;
+      }
+
+      const playerList = query.tab === 'players' ? await listFiveMPlayers(guild.id, { q: query.q, filter: query.filter, page: query.page }) : null;
+      const profiles = playerList ? await resolveUserProfiles(client, guild.id, playerList.items.map((p) => p.discordId).filter((v): v is string => Boolean(v))) : {};
+      const baseQuery = new URLSearchParams({ tab: 'players', ...(query.filter !== 'all' ? { filter: query.filter } : {}), ...(query.q ? { q: query.q } : {}) }).toString();
       render(res, 'fivem', {
+        ...common,
         title: 'FiveM',
+        crumbs: query.tab === 'players' ? [{ label: 'Joueurs' }] : query.tab === 'integration' ? [{ label: 'Intégration' }] : [],
+        tab: query.tab,
+        servers: servers.map(toServerView),
+        playerList,
+        profiles,
+        filters: { q: query.q, filter: query.filter },
+        baseQuery,
+        pagination: playerList ? { page: playerList.page, pages: playerList.pages, total: playerList.total, pageSize: 25 } : null,
+        serverNames: Object.fromEntries(servers.map((s) => [s.key, s.name])),
+      });
+    }),
+  );
+
+  router.get(
+    '/fivem/new',
+    wrap(async (_req, res) => {
+      const config = res.locals.config!;
+      render(res, 'fivem-new', {
+        title: 'Ajouter un serveur FiveM',
         page: 'fivem',
-        servers: servers.map(toView),
-        selected: selected ? toView(selected) : null,
-        players,
+        crumbs: [{ label: 'Ajouter un serveur' }],
         frameworks: Object.values(FiveMFramework).map((f) => ({ value: f, label: FRAMEWORK_LABELS[f] })),
-        integration: {
-          base: apiBase,
-          serverBase: `${apiBase}/servers/${guild.id}/${exampleKey}`,
-          exampleKey,
-          socketUrl: `${env().DASHBOARD_URL.replace(/\/+$/, '')}/fivem`,
-          globalKeyConfigured: env().FIVEM_API_KEY !== 'change-me-fivem-api-key',
-        },
         moduleEnabled: config.modules.fivem,
       });
     }),
   );
 
   router.post(
+    '/fivem/servers/:key/sync',
+    validate({ body: syncBody, params: keyParams }),
+    formAction(
+      (req, res) => `${base(res.locals.guild!.id)}?server=${encodeURIComponent(String(req.params.key))}&stab=sync`,
+      async (req, res) => {
+        const guild = res.locals.guild!;
+        const { body, params } = valid<z.infer<typeof syncBody>, unknown, z.infer<typeof keyParams>>(req);
+        for (const id of [body.linkedRoleId, body.onlineRoleId, body.requireRoleId]) if (id && !guild.roles.some((r) => r.id === id)) throw new HttpError(400, 'Rôle inconnu.');
+        if (body.playerCountChannelId && !guild.channels.some((c) => c.id === body.playerCountChannelId)) throw new HttpError(400, 'Salon compteur inconnu.');
+        if (!/\{name\}|\{id\}|\{level\}/.test(body.nicknameFormat)) throw new HttpError(400, 'Le format de pseudo doit contenir {name}, {id} ou {level}.');
+        const server = await fivemSyncService.updateSyncSettings(guild.id, params.key, body);
+        broadcastToGuild(guild.id, 'fivem:status', { guildId: guild.id, serverKey: server.key, action: 'sync' });
+        flash(req, 'success', `Synchronisation de « ${server.name} » enregistrée.`);
+      },
+    ),
+  );
+
+  router.post(
+    '/fivem/players/link',
+    validate({ body: linkBody }),
+    formAction(
+      (_req, res) => `${base(res.locals.guild!.id)}?tab=players`,
+      async (req, res) => {
+        const guild = res.locals.guild!;
+        const { body } = valid<z.infer<typeof linkBody>>(req);
+        const player = await fivemSyncService.linkManually(guild.id, body.userId, body.license, req.session.user!.id);
+        broadcastToGuild(guild.id, 'fivem:status', { guildId: guild.id, action: 'link', userId: body.userId });
+        const names = await resolveUserNames(client, guild.id, [body.userId]);
+        flash(req, 'success', `Compte lié : ${names[body.userId] ?? body.userId} ⇄ ${player.license ?? body.license}.`);
+      },
+    ),
+  );
+
+  router.post(
     '/fivem/servers',
     validate({ body: serverBody }),
     formAction(
-      (_req, res) => base(res.locals.guild!.id),
+      (_req, res) => `${base(res.locals.guild!.id)}/new`,
       async (req, res) => {
         const guild = res.locals.guild!;
         const { body } = valid<z.infer<typeof serverBody>>(req);
@@ -161,7 +281,7 @@ export function createFiveMRouter(client: RedemptionClient): Router {
     '/fivem/servers/:key',
     validate({ body: editBody, params: keyParams }),
     formAction(
-      (req, res) => `${base(res.locals.guild!.id)}?server=${encodeURIComponent(String(req.params.key))}`,
+      (req, res) => `${base(res.locals.guild!.id)}?server=${encodeURIComponent(String(req.params.key))}&stab=settings`,
       async (req, res) => {
         const guild = res.locals.guild!;
         const { body, params } = valid<z.infer<typeof editBody>, unknown, z.infer<typeof keyParams>>(req);

@@ -1,73 +1,113 @@
-<section class="page-header">
-  <div>
-    <h2 class="page-title"><%= guild.name %></h2>
-    <p class="muted"><%= overview.kindLabel %> · langue du bot <strong><%= overview.defaultLanguage.toUpperCase() %></strong></p>
+<% const g = guild; const base = `/guilds/${g.id}`; %>
+<header class="page-header">
+  <div class="overview-hero">
+    <% if (g.iconUrl) { %><img class="avatar avatar-xl" src="<%= g.iconUrl %>" alt=""><% } else { %><span class="avatar avatar-xl avatar-fallback avatar-square"><%= fmt.initials(g.name) %></span><% } %>
+    <div>
+      <h1 class="page-title"><%= g.name %></h1>
+      <p class="page-subtitle row-wrap"><span class="badge badge-accent"><%= overview.kindLabel %></span><span class="text-3">Langue du bot : <%= overview.defaultLanguage === 'en' ? 'English' : 'Français' %></span></p>
+    </div>
   </div>
   <div class="page-actions">
-    <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/settings">Paramètres</a>
-    <a class="btn btn-primary btn-sm" href="/guilds/<%= guild.id %>/logs">Voir les logs</a>
+    <a class="btn" href="<%= base %>/logs"><%- icon('scroll-text', { size: 16 }) %>Logs</a>
+    <a class="btn btn-primary" href="<%= base %>/settings"><%- icon('settings', { size: 16 }) %>Paramètres</a>
   </div>
+</header>
+
+<section class="stat-grid" aria-label="Statistiques" data-live-reload>
+  <a class="stat" href="<%= base %>/members">
+    <div class="stat-head"><span class="stat-label">Membres</span><span class="stat-icon"><%- icon('users') %></span></div>
+    <strong class="stat-value" data-stat="members"><%= fmt.number(overview.members) %></strong>
+    <span class="stat-sub"><%= fmt.number(overview.roles) %> rôles · <%= fmt.number(overview.channels) %> salons</span>
+  </a>
+  <div class="stat">
+    <div class="stat-head"><span class="stat-label">En ligne</span><span class="stat-icon"><span class="dot dot-success"></span></span></div>
+    <strong class="stat-value" data-stat="online"><%= overview.online === null ? '—' : fmt.number(overview.online) %></strong>
+    <span class="stat-sub"><%= overview.online !== null && overview.members ? fmt.percent(overview.online, overview.members) + ' % des membres' : 'présences indisponibles' %></span>
+  </div>
+  <a class="stat" href="<%= base %>/tickets/list?status=open">
+    <div class="stat-head"><span class="stat-label">Tickets ouverts</span><span class="stat-icon is-accent"><%- icon('ticket') %></span></div>
+    <strong class="stat-value" data-stat="openTickets"><%= fmt.number(overview.counts.openTickets) %></strong>
+    <span class="stat-sub">en attente ou pris en charge</span>
+  </a>
+  <a class="stat" href="<%= base %>/moderation">
+    <div class="stat-head"><span class="stat-label">Sanctions (7 j)</span><span class="stat-icon"><%- icon('shield') %></span></div>
+    <strong class="stat-value" data-stat="sanctions7d"><%= fmt.number(overview.counts.sanctions7d) %></strong>
+    <span class="stat-sub"><span data-stat="activeWarnings"><%= fmt.number(overview.counts.activeWarnings) %></span> avertissements actifs</span>
+  </a>
+  <a class="stat" href="<%= base %>/settings?tab=modules">
+    <div class="stat-head"><span class="stat-label">Modules actifs</span><span class="stat-icon"><%- icon('layers') %></span></div>
+    <strong class="stat-value"><span data-stat="modules-active"><%= overview.modules.active %></span><span class="stat-sub">/ <%= overview.modules.total %></span></strong>
+    <span class="stat-sub">latence <span data-stat="ping"><%= overview.pingMs >= 0 ? overview.pingMs + ' ms' : '—' %></span></span>
+  </a>
 </section>
 
-<section class="stat-grid">
-  <div class="stat-card"><span class="stat-label">Membres</span><strong class="stat-value" data-stat="members"><%= fmt.number(overview.members) %></strong></div>
-  <div class="stat-card"><span class="stat-label">Salons</span><strong class="stat-value" data-stat="channels"><%= fmt.number(overview.channels) %></strong></div>
-  <div class="stat-card"><span class="stat-label">Rôles</span><strong class="stat-value" data-stat="roles"><%= fmt.number(overview.roles) %></strong></div>
-  <div class="stat-card"><span class="stat-label">Modules actifs</span><strong class="stat-value"><span data-stat="modules-active"><%= overview.modules.active %></span><span class="stat-sub">/ <%= overview.modules.total %></span></strong></div>
-  <div class="stat-card"><span class="stat-label">Uptime du bot</span><strong class="stat-value stat-value-sm" data-stat="uptime"><%= fmt.duration(overview.uptimeSeconds) %></strong></div>
-  <div class="stat-card"><span class="stat-label">Latence</span><strong class="stat-value" data-stat="ping"><%= overview.pingMs >= 0 ? overview.pingMs + ' ms' : '—' %></strong></div>
-  <div class="stat-card"><span class="stat-label">Tickets ouverts</span><strong class="stat-value" data-stat="openTickets"><%= overview.counts.openTickets %></strong></div>
-  <div class="stat-card"><span class="stat-label">Avertissements actifs</span><strong class="stat-value" data-stat="activeWarnings"><%= overview.counts.activeWarnings %></strong></div>
-</section>
-
-<div class="grid-2">
-  <section class="card">
-    <div class="card-head"><h3 class="card-title">Activité</h3></div>
-    <dl class="kv-grid">
-      <div class="kv-row"><dt class="kv-key">Sanctions enregistrées</dt><dd><%= fmt.number(overview.counts.sanctions) %></dd></div>
-      <div class="kv-row"><dt class="kv-key">Logs enregistrés</dt><dd><%= fmt.number(overview.counts.logs) %></dd></div>
-      <div class="kv-row"><dt class="kv-key">Tâches planifiées</dt><dd><%= overview.tasks.length %></dd></div>
-    </dl>
-  </section>
-
-  <section class="card">
-    <div class="card-head"><h3 class="card-title">Modules</h3><a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Gérer</a></div>
-    <ul class="module-chips" data-module-chips>
-      <% for (const m of overview.modules.list) { %>
-        <li class="chip <%= m.enabled ? 'chip-on' : 'chip-off' %>" data-module-chip="<%= m.key %>"><span class="chip-dot" aria-hidden="true"></span><%= m.label %></li>
-      <% } %>
-    </ul>
-  </section>
-</div>
-
-<div class="grid-2">
-  <section class="card">
-    <div class="card-head"><h3 class="card-title">Derniers logs</h3><a class="link" href="/guilds/<%= guild.id %>/logs">Tout voir</a></div>
-    <% if (!logs.length) { %><p class="muted">Aucun log enregistré pour l'instant.</p><% } else { %>
-    <div class="table-wrap">
-      <table class="table table-compact" id="recent-logs">
-        <thead><tr><th>Date</th><th>Catégorie</th><th>Action</th><th>Acteur</th></tr></thead>
-        <tbody>
-          <% for (const l of logs) { %>
-            <tr>
-              <td class="nowrap" title="<%= fmt.dateTime(l.createdAt) %>"><%= fmt.relative(l.createdAt) %></td>
-              <td><span class="badge badge-muted"><%= constants.LOG_CATEGORY_LABELS[l.category] || l.category %></span></td>
-              <td><code><%= l.action %></code></td>
-              <td class="mono"><%= l.actorId ? `<@${l.actorId}>` : '—' %></td>
-            </tr>
-          <% } %>
-        </tbody>
-      </table>
+<div class="grid-aside-right grid-2">
+  <section class="card card-flush">
+    <div class="card-head">
+      <div><h2 class="card-title"><%- icon('activity') %>Activité récente</h2></div>
+      <a class="btn btn-ghost btn-sm" href="<%= base %>/logs">Tout voir<%- icon('arrow-right', { size: 14 }) %></a>
     </div>
-    <% } %>
+    <div class="card-body">
+      <% if (!logs.length) { %>
+        <%- include('../partials/empty', { glyph: 'activity', title: 'Aucune activité pour l’instant', text: 'Les actions du bot et du staff apparaîtront ici en temps réel.', compact: true }) %>
+      <% } else { %>
+      <ol class="timeline" id="recent-logs">
+        <% for (const l of logs) { const p = l.actorId ? profiles[l.actorId] : null; %>
+          <li class="timeline-item">
+            <span class="log-icon"><%- icon(l.icon) %></span>
+            <div class="grow">
+              <div class="log-row-title"><%= l.title %></div>
+              <div class="log-row-meta">
+                <span class="badge badge-muted"><%= l.categoryLabel %></span>
+                <% if (l.actorId) { %><span class="row"><% if (p) { %><img class="avatar avatar-xs" src="<%= p.avatarUrl %>" alt=""><% } %><%= p ? p.name : l.actorId %></span><% } %>
+                <span title="<%= fmt.dateTime(l.createdAt) %>"><%= fmt.relative(l.createdAt) %></span>
+                <code class="text-3"><%= l.action %></code>
+              </div>
+            </div>
+          </li>
+        <% } %>
+      </ol>
+      <% } %>
+    </div>
   </section>
 
-  <section class="card">
-    <div class="card-head"><h3 class="card-title">Tâches planifiées</h3><span class="muted"><%= overview.tasks.length %> tâche(s)</span></div>
-    <% if (!overview.tasks.length) { %><p class="muted">Aucune tâche enregistrée.</p><% } else { %>
-    <ul class="task-list">
-      <% for (const t of overview.tasks) { %><li><span class="status-dot ok" aria-hidden="true"></span><code><%= t %></code></li><% } %>
-    </ul>
+  <div class="stack">
+    <section class="card">
+      <h2 class="card-title"><%- icon('zap') %>Raccourcis</h2>
+      <div class="stack-2">
+        <% for (const [href, ic, label] of [
+          [base + '/tickets', 'ticket', 'Configurer les tickets'],
+          [base + '/tickets/panels', 'send', 'Publier un panneau de tickets'],
+          [base + '/welcome', 'hand', 'Message de bienvenue'],
+          [base + '/embeds', 'layout-template', 'Créer un embed'],
+          [base + '/moderation', 'shield', 'Modération & sécurité'],
+          [base + '/settings?tab=modules', 'layers', 'Activer des modules'],
+        ]) { %>
+          <a class="shortcut" href="<%= href %>"><span class="list-item-icon"><%- icon(ic) %></span><%= label %><%- icon('arrow-right') %></a>
+        <% } %>
+      </div>
+    </section>
+
+    <% if (servers.length) { %>
+    <section class="card">
+      <div class="card-head"><h2 class="card-title"><%- icon('gamepad') %>Serveurs FiveM</h2><a class="link text-sm" href="<%= base %>/fivem">Gérer</a></div>
+      <% for (const s of servers) { %>
+        <div class="server-status">
+          <span class="dot <%= s.state === 'online' ? 'dot-success' : s.state === 'maintenance' ? 'dot-warning' : 'dot-danger' %>" aria-hidden="true"></span>
+          <div class="grow"><div class="strong text-sm truncate"><%= s.name %></div><div class="text-xs text-3"><%= s.stateLabel %><%= s.lastSeenAt ? ' · vu ' + fmt.relative(s.lastSeenAt) : '' %></div></div>
+          <span class="badge <%= s.state === 'online' ? 'badge-success' : 'badge-muted' %> tabular"><%= s.players %> / <%= s.maxPlayers || '—' %></span>
+        </div>
+      <% } %>
+    </section>
     <% } %>
-  </section>
+
+    <section class="card">
+      <div class="card-head"><h2 class="card-title"><%- icon('layers') %>Modules</h2><a class="link text-sm" href="<%= base %>/settings?tab=modules">Gérer</a></div>
+      <ul class="module-chips" data-module-chips>
+        <% for (const grp of moduleGroups) { for (const m of grp.modules) { %>
+          <li class="chip <%= m.enabled ? 'chip-on' : 'chip-off' %>" data-module-chip="<%= m.key %>"><span class="chip-dot" aria-hidden="true"></span><%= m.label %></li>
+        <% } } %>
+      </ul>
+    </section>
+  </div>
 </div>

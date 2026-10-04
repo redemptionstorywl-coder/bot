@@ -137,9 +137,11 @@ export function createBattleRoyaleRouter(client: RedemptionClient): Router {
 
       const top = rows.slice(0, TOP);
       const maxValue = Math.max(1, ...top.map((r) => (query.metric === 'level' ? r.xp : query.metric === 'kd' ? r.kd : r[query.metric])));
+      const crumbs = query.tab === 'profiles' ? [{ label: 'Joueurs' }] : query.tab === 'seasons' ? [{ label: 'Saisons & Battle Pass' }] : [];
       render(res, 'battleroyale', {
         title: 'Battle Royale',
         page: 'battleRoyale',
+        crumbs,
         tab: query.tab,
         filters: { metric: query.metric, season, user: query.user ?? '', identifier: query.identifier ?? '' },
         metrics: METRICS.map((m) => ({ value: m, label: METRIC_LABELS[m] })),

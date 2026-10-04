@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { AutoRoleType, PanelStyle } from '@prisma/client';
 import type { RedemptionClient } from '../../../src/core/Client';
 import { roleService, roleMenuOptionSchema, parseRoleMenuOptions, MAX_AUTOROLE_DELAY_SECONDS, ACTIVE_AUTOROLE_TYPES, DEFAULT_NOTIFICATIONS } from '../../../src/services/RoleService';
+import { translationService } from '../../../src/services/TranslationService';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
 import { flash } from '../../lib/flash';
@@ -84,11 +85,15 @@ export function createRolesRouter(client: RedemptionClient): Router {
       const guild = res.locals.guild!;
       const config = res.locals.config!;
       const { query } = valid<unknown, z.infer<typeof tabQuery>>(req);
-      const [autoroles, menus, notifications] = await Promise.all([roleService.listAutoRoles(guild.id), roleService.listRoleMenus(guild.id), roleService.listNotificationRoles(guild.id)]);
+      const [autoroles, menus, notifications, reactions] = await Promise.all([roleService.listAutoRoles(guild.id), roleService.listRoleMenus(guild.id), roleService.listNotificationRoles(guild.id), roleService.listReactionRoles(guild.id)]);
+      const t = translationService.bind(config.defaultLanguage, guild.id);
       render(res, 'roles', {
         title: 'Rôles',
         page: 'roles',
         tab: query.tab,
+        crumbs: query.tab === 'autoroles' ? [] : [{ label: query.tab === 'menus' ? 'Menus de rôles' : 'Notifications' }],
+        counts: { autoroles: autoroles.length, menus: menus.length, notifications: notifications.length, reactions: reactions.length },
+        placeholderDefault: t('roles.rolemenu.default_placeholder'),
         autoroles,
         autoroleTypes: Object.values(AutoRoleType).map((t) => ({ value: t, label: AUTOROLE_TYPE_LABELS[t], active: (ACTIVE_AUTOROLE_TYPES as readonly string[]).includes(t) })),
         menus: menus.map((m) => ({ ...m, optionList: parseRoleMenuOptions(m.options) })),
@@ -141,7 +146,7 @@ export function createRolesRouter(client: RedemptionClient): Router {
   router.get(
     '/roles/menus/new',
     wrap(async (_req, res) => {
-      render(res, 'role-menu', { title: 'Nouveau role menu', page: 'roles', menu: null, spec: {}, options: [] });
+      render(res, 'role-menu', { title: 'Nouveau menu de rôles', page: 'roles', layout: 'wide', crumbs: [{ label: 'Menus de rôles', href: `${base(res.locals.guild!.id)}?tab=menus` }, { label: 'Nouveau menu' }], menu: null, spec: {}, options: [], placeholderDefault: translationService.translate(res.locals.config!.defaultLanguage, 'roles.rolemenu.default_placeholder'), scripts: ['roles'] });
     }),
   );
 
@@ -152,7 +157,7 @@ export function createRolesRouter(client: RedemptionClient): Router {
       const guild = res.locals.guild!;
       const { params } = valid<unknown, unknown, z.infer<typeof menuParams>>(req);
       const menu = await loadMenu(guild.id, params.menuId);
-      render(res, 'role-menu', { title: `Role menu · ${menu.name}`, page: 'roles', menu, spec: safeEmbedSpec(menu.embed), options: parseRoleMenuOptions(menu.options) });
+      render(res, 'role-menu', { title: `Menu · ${menu.name}`, page: 'roles', layout: 'wide', crumbs: [{ label: 'Menus de rôles', href: `${base(res.locals.guild!.id)}?tab=menus` }, { label: menu.name }], menu, spec: safeEmbedSpec(menu.embed), options: parseRoleMenuOptions(menu.options), placeholderDefault: translationService.translate(res.locals.config!.defaultLanguage, 'roles.rolemenu.default_placeholder'), scripts: ['roles'] });
     }),
   );
 

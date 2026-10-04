@@ -297,15 +297,17 @@ describe('Dashboard — pages connectées', () => {
   });
   it('GET settings / logs / members / fivem / whitelist se rendent', async () => {
     for (const [path, needle] of [
-      ['/settings', 'Permissions par commande'],
+      ['/settings', 'Type de serveur'],
       ['/settings?tab=modules', 'data-module-toggle="tickets"'],
-      ['/logs', 'Catégorie → salon'],
+      ['/settings?tab=commands', 'Permissions par commande'],
+      ['/logs', 'Historique'],
+      ['/logs?tab=channels', 'Catégorie → salon'],
       ['/logs?category=TICKET&q=ticket&from=2024-01-01&to=2030-01-01', 'ticket.open'],
       ['/members', 'Tester'],
       ['/members?q=test', '@tester'],
       [`/members/${USER_ID}`, 'Avertissements'],
-      ['/fivem', 'Intégration — API REST'],
-      ['/whitelist', 'Questions du formulaire'],
+      ['/fivem?tab=integration', 'Installer rs_bridge'],
+      ['/whitelist?tab=config', 'Questions du formulaire'],
     ] as const) {
       const r = await get(`/guilds/${GUILD_ID}${path}`, { auth: true });
       expect(r.status, path).toBe(200);

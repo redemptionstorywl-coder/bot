@@ -1,12 +1,19 @@
 <section class="error-page">
-  <div class="error-code"><%= status %></div>
-  <h2 class="error-title"><%= statusTitle %></h2>
+  <svg class="error-art" viewBox="0 0 140 112" fill="none" aria-hidden="true">
+    <rect x="16" y="22" width="108" height="76" rx="16" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-opacity=".25"/>
+    <path d="M16 42h108" stroke="currentColor" stroke-opacity=".2"/>
+    <circle cx="30" cy="32" r="3" fill="currentColor" fill-opacity=".4"/><circle cx="40" cy="32" r="3" fill="currentColor" fill-opacity=".25"/><circle cx="50" cy="32" r="3" fill="currentColor" fill-opacity=".15"/>
+    <path d="M56 62l28 22M84 62L56 84" stroke="currentColor" stroke-opacity=".55" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="122" cy="16" r="4" fill="currentColor" fill-opacity=".35"/><circle cx="12" cy="100" r="3" fill="currentColor" fill-opacity=".25"/>
+  </svg>
+  <div class="error-code">Erreur <%= status %></div>
+  <h1 class="error-title"><%= statusTitle %></h1>
   <p class="error-message"><%= message %></p>
   <% if (details && details.length) { %>
     <ul class="error-details"><% for (const d of details) { %><li><%= d %></li><% } %></ul>
   <% } %>
   <div class="error-actions">
-    <a class="btn btn-primary" href="<%= user ? '/guilds' : '/' %>" data-back>← Retour</a>
-    <a class="btn btn-ghost" href="<%= user ? '/guilds' : '/' %>">Accueil</a>
+    <a class="btn" href="<%= user ? '/guilds' : '/' %>" data-back><%- icon('arrow-left', { size: 16 }) %>Retour</a>
+    <a class="btn btn-primary" href="<%= user ? '/guilds' : '/' %>"><%= user ? 'Mes serveurs' : "Accueil" %></a>
   </div>
 </section>

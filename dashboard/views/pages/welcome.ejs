@@ -1,103 +1,147 @@
-<section class="page-header">
-  <div><h2 class="page-title">Bienvenue</h2><p class="muted">Messages d'arrivée et de départ (image générée, DM).</p></div>
-</section>
-
-<% const w = welcome; const lv = leave; %>
 <%
-  const varsHelp = () => {
-    let out = '<div class="var-list">';
-    for (const [k, v] of Object.entries(constants.TEMPLATE_VARIABLES)) out += `<div><code>${k}</code><span class="muted">${v}</span></div>`;
-    return out + '</div>';
-  };
+  const base = `/guilds/${guild.id}/welcome`;
+  const w = welcome; const lv = leave;
+  const chips = ['{user}', '{username}', '{displayName}', '{server}', '{memberCount}', '{date}'];
+  const varChips = (target) => `<div class="var-chips mt-2" data-insert-target="${target}">` + chips.map((v) => `<button type="button" class="var-chip" data-insert="${v}">${v}</button>`).join('') + '</div>';
 %>
-<div class="tabs" data-tabs data-active="<%= tab %>">
-  <div class="tab-list" role="tablist">
-    <button type="button" class="tab" role="tab" data-tab="welcome">👋 Bienvenue <% if (w && w.enabled) { %><span class="badge badge-primary">actif</span><% } %></button>
-    <button type="button" class="tab" role="tab" data-tab="leave">🚪 Départ <% if (lv && lv.enabled) { %><span class="badge badge-primary">actif</span><% } %></button>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('hand') %></span>
+    <div><h1 class="page-title">Bienvenue</h1><p class="page-subtitle">Messages d'arrivée et de départ, image générée et message privé.</p></div>
   </div>
+</header>
 
-  <!-- ─── Bienvenue ─── -->
-  <section class="tab-panel" data-tab-panel="welcome" role="tabpanel">
-    <% if (!modules.welcome) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Bienvenue est désactivé : aucun message ne sera envoyé.</span></div><% } %>
-    <form method="post" action="/guilds/<%= guild.id %>/welcome" class="form">
+<%- include('../partials/tabs', { active: tab, label: 'Bienvenue ou départ', tabs: [
+  { key: 'welcome', label: 'Arrivées', href: base, icon: 'hand', count: w && w.enabled ? 'actif' : null },
+  { key: 'leave', label: 'Départs', href: base + '?tab=leave', icon: 'log-out', count: lv && lv.enabled ? 'actif' : null },
+] }) %>
+
+<% if (tab === 'welcome') { %>
+<% if (!modules.welcome) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Bienvenue est désactivé : aucun message ne sera envoyé. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer</a></span></div><% } %>
+<div class="split" data-no-live-reload>
+    <form method="post" action="<%= base %>" class="form stack" id="welcome-form" data-dirty-form data-welcome-kind="welcome">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="grid-2">
-        <div class="card">
-          <h3 class="card-title">Salon &amp; message</h3>
-          <label class="check"><input type="checkbox" name="enabled" <%= w && w.enabled ? 'checked' : '' %>><span>Activer le message de bienvenue</span></label>
-          <div class="field"><label for="w-channel">Salon</label><select id="w-channel" name="channelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: w ? w.channelId : '', allowEmpty: true }) %></select></div>
-          <div class="field"><label for="w-message">Message</label><textarea id="w-message" name="message" class="textarea" rows="3" maxlength="2000" placeholder="Bienvenue {user} sur {server} ! Tu es le membre n°{memberCount}."><%= welcomeMessage %></textarea></div>
-          <small class="hint">Sans message ni embed, un message par défaut est envoyé.</small>
-          <%- varsHelp() %>
+      <section class="card">
+        <div class="card-head">
+          <div><h2 class="card-title">Message d'arrivée</h2><p class="card-desc">Envoyé dans un salon quand un membre rejoint le serveur.</p></div>
+          <label class="toggle"><input type="checkbox" name="enabled" <%= w && w.enabled ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Activé</span></label>
         </div>
-        <div class="card">
-          <h3 class="card-title">Image</h3>
-          <label class="check"><input type="checkbox" name="imageEnabled" <%= w && w.imageEnabled ? 'checked' : '' %>><span>Générer une image de bienvenue (avatar + titre)</span></label>
-          <div class="field"><label for="w-bg">Image de fond (URL, optionnelle)</label><input id="w-bg" name="imageBackgroundUrl" type="url" class="input" maxlength="500" value="<%= w && w.imageBackgroundUrl ? w.imageBackgroundUrl : '' %>" placeholder="https://…/fond.png"></div>
-          <div class="grid-2 grid-tight">
-            <div class="field"><label for="w-title">Titre de l'image</label><input id="w-title" name="imageTitle" class="input" maxlength="60" value="<%= w ? w.imageTitle : 'BIENVENUE' %>"></div>
+        <div class="field"><label for="w-channel">Salon</label><%- include('../partials/channel-select', { name: 'channelId', id: 'w-channel', selected: w ? w.channelId : '', emptyLabel: '— Aucun —' }) %></div>
+        <div class="field"><label for="w-message">Message</label><textarea id="w-message" name="message" class="textarea" rows="3" maxlength="2000" placeholder="Bienvenue {user} sur {server} ! Tu es le membre n°{memberCount}."><%= welcomeMessage %></textarea><%- varChips('#w-message') %><small class="hint">Sans message ni embed, un message par défaut est envoyé.</small></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><h2 class="card-title">Embed</h2><p class="card-desc">Carte mise en forme sous le message, avec boutons.</p></div>
+          <div class="segmented" role="radiogroup" aria-label="Type d'embed">
+            <label><input type="radio" name="embedMode" value="none" data-radio-toggle="#w-embed-none" <%= welcomeEmbed.mode === 'none' ? 'checked' : '' %>><span>Aucun</span></label>
+            <label><input type="radio" name="embedMode" value="form" data-radio-toggle="#w-embed-form" <%= welcomeEmbed.mode === 'form' ? 'checked' : '' %>><span>Éditeur</span></label>
+            <label><input type="radio" name="embedMode" value="json" data-radio-toggle="#w-embed-jsonwrap" <%= welcomeEmbed.mode === 'json' ? 'checked' : '' %>><span>JSON</span></label>
+          </div>
+        </div>
+        <p class="text-sm text-3" id="w-embed-none">Aucun embed : seuls le message et l'image sont envoyés (les boutons de l'éditeur restent envoyés).</p>
+        <div id="w-embed-form"><%- include('../partials/embed-editor', { prefix: 'embed', spec: welcomeEmbed.spec, id: 'w-embed', buttons: buttons, buttonsName: 'buttonsJson', withPreview: false, withJson: false, compact: true }) %></div>
+        <div class="field" id="w-embed-jsonwrap"><label for="w-embed-json">JSON (EmbedSpec)</label><textarea id="w-embed-json" name="embedJson" class="textarea textarea-sm input-mono" rows="8"><%= welcomeEmbed.json %></textarea></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <div><h2 class="card-title">Image de bienvenue</h2><p class="card-desc">Carte générée avec l'avatar du membre, intégrée à l'embed (ou jointe au message).</p></div>
+          <label class="toggle"><input type="checkbox" name="imageEnabled" data-check-toggle="#w-image-opts" <%= w && w.imageEnabled ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Activée</span></label>
+        </div>
+        <div id="w-image-opts" class="stack-4">
+          <div class="field-row">
+            <div class="field"><label for="w-title">Titre</label><input id="w-title" name="imageTitle" class="input" maxlength="60" value="<%= w ? w.imageTitle : 'BIENVENUE' %>"></div>
             <div class="field"><label for="w-subtitle">Sous-titre</label><input id="w-subtitle" name="imageSubtitle" class="input" maxlength="80" value="<%= w ? w.imageSubtitle : '{username} · membre #{memberCount}' %>"></div>
           </div>
-          <h3 class="card-title">Message privé (DM)</h3>
-          <label class="check"><input type="checkbox" name="dmEnabled" data-check-toggle="#w-dm" <%= w && w.dmEnabled ? 'checked' : '' %>><span>Envoyer un DM à l'arrivée</span></label>
-          <div id="w-dm">
-            <div class="field"><label for="w-dm-message">Message du DM</label><textarea id="w-dm-message" name="dmMessage" class="textarea" rows="2" maxlength="2000"><%= dmMessage %></textarea></div>
-            <div class="field"><label for="w-dm-embed">Embed du DM (JSON, optionnel)</label><textarea id="w-dm-embed" name="dmEmbedJson" class="textarea textarea-sm input-mono" rows="4" placeholder='{"title": "Bienvenue !", "description": "…"}'><%= dmEmbedJson %></textarea></div>
-          </div>
+          <div class="field"><label for="w-bg">Image de fond <span class="field-optional">URL, optionnelle</span></label><input id="w-bg" name="imageBackgroundUrl" type="url" class="input" maxlength="500" value="<%= w && w.imageBackgroundUrl ? w.imageBackgroundUrl : '' %>" placeholder="https://…/fond.png"></div>
+          <div><button type="button" class="btn" data-image-preview="welcome" <%= botReady ? '' : 'disabled' %>><%- icon('image', { size: 16 }) %>Générer l'aperçu de l'image</button> <span class="hint">avec votre avatar</span></div>
         </div>
-      </div>
+      </section>
 
-      <div class="card">
-        <div class="card-head"><h3 class="card-title">Embed de bienvenue</h3>
-          <div class="tag-list">
-            <label class="check check-sm"><input type="radio" name="embedMode" value="none" data-radio-toggle="#w-embed-none" <%= welcomeEmbed.mode === 'none' ? 'checked' : '' %>><span>Aucun</span></label>
-            <label class="check check-sm"><input type="radio" name="embedMode" value="form" data-radio-toggle="#w-embed-form" <%= welcomeEmbed.mode === 'form' ? 'checked' : '' %>><span>Formulaire</span></label>
-            <label class="check check-sm"><input type="radio" name="embedMode" value="json" data-radio-toggle="#w-embed-jsonwrap" <%= welcomeEmbed.mode === 'json' ? 'checked' : '' %>><span>JSON avancé</span></label>
-          </div>
+      <section class="card">
+        <div class="card-head">
+          <div><h2 class="card-title">Message privé</h2><p class="card-desc">DM envoyé au nouveau membre.</p></div>
+          <label class="toggle"><input type="checkbox" name="dmEnabled" data-check-toggle="#w-dm" <%= w && w.dmEnabled ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Activé</span></label>
         </div>
-        <p class="muted" id="w-embed-none">Aucun embed : seul le message texte (et l'image éventuelle) est envoyé. Les boutons configurés en mode « Formulaire » restent envoyés.</p>
-        <div id="w-embed-form"><%- include('../partials/embed-editor', { prefix: 'embed', spec: welcomeEmbed.spec, id: 'w-embed', buttons: buttons, buttonsName: 'buttonsJson', withPreview: true, withJson: false, compact: true, contentSource: '#w-message' }) %></div>
-        <div class="field" id="w-embed-jsonwrap"><label for="w-embed-json">JSON avancé (EmbedSpec)</label><textarea id="w-embed-json" name="embedJson" class="textarea textarea-sm input-mono" rows="8"><%= welcomeEmbed.json %></textarea></div>
-      </div>
-
-      <div class="form-actions sticky-actions">
-        <button type="submit" class="btn btn-primary">Enregistrer la bienvenue</button>
-      </div>
-    </form>
-    <form method="post" action="/guilds/<%= guild.id %>/welcome/test" class="card">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="kind" value="welcome">
-      <div class="card-head"><div><h3 class="card-title">Tester</h3><p class="muted">Envoie le message de bienvenue (version enregistrée) dans le salon configuré, avec votre profil.</p></div><button type="submit" class="btn btn-ghost" <%= botReady && w && w.channelId ? '' : 'disabled' %>>Envoyer un test</button></div>
-      <% if (!botReady) { %><small class="hint">Bot hors ligne : test indisponible.</small><% } else if (!w || !w.channelId) { %><small class="hint">Configurez et enregistrez un salon d'abord.</small><% } %>
-    </form>
-  </section>
-
-  <!-- ─── Départ ─── -->
-  <section class="tab-panel" data-tab-panel="leave" role="tabpanel">
-    <% if (!modules.leave) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Départ est désactivé : aucun message ne sera envoyé.</span></div><% } %>
-    <form method="post" action="/guilds/<%= guild.id %>/welcome/leave" class="form">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <div class="grid-2">
-        <div class="card">
-          <h3 class="card-title">Salon &amp; message</h3>
-          <label class="check"><input type="checkbox" name="enabled" <%= lv && lv.enabled ? 'checked' : '' %>><span>Activer le message de départ</span></label>
-          <div class="field"><label for="l-channel">Salon</label><select id="l-channel" name="channelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: lv ? lv.channelId : '', allowEmpty: true }) %></select></div>
-          <div class="field"><label for="l-message">Message</label><textarea id="l-message" name="message" class="textarea" rows="3" maxlength="2000" placeholder="{username} a quitté le serveur. Nous sommes désormais {memberCount}."><%= leaveMessage %></textarea></div>
-          <label class="check"><input type="checkbox" name="logEnabled" <%= !lv || lv.logEnabled ? 'checked' : '' %>><span>Journaliser les départs dans les logs « Membres »</span></label>
+        <div id="w-dm" class="stack-4">
+          <div class="field"><label for="w-dm-message">Message</label><textarea id="w-dm-message" name="dmMessage" class="textarea" rows="2" maxlength="2000" placeholder="Bienvenue sur {server} ! Pense à lire le règlement."><%= dmMessage %></textarea><%- varChips('#w-dm-message') %></div>
+          <div class="field"><label for="w-dm-embed">Embed <span class="field-optional">JSON, optionnel</span></label><textarea id="w-dm-embed" name="dmEmbedJson" class="textarea textarea-sm input-mono" rows="4" placeholder='{"title": "Bienvenue !", "description": "…"}'><%= dmEmbedJson %></textarea></div>
         </div>
-        <div class="card">
-          <h3 class="card-title">Embed &amp; image</h3>
-          <div class="field"><label for="l-embed">Embed (JSON, optionnel)</label><textarea id="l-embed" name="embedJson" class="textarea input-mono" rows="8" placeholder='{"title": "Au revoir {username}", "description": "Nous sommes désormais {memberCount}."}'><%= leaveEmbedJson %></textarea></div>
-          <label class="check"><input type="checkbox" name="imageEnabled" <%= lv && lv.imageEnabled ? 'checked' : '' %>><span>Générer une image de départ</span></label>
-          <div class="field"><label for="l-bg">Image de fond (URL, optionnelle)</label><input id="l-bg" name="imageBackgroundUrl" type="url" class="input" maxlength="500" value="<%= lv && lv.imageBackgroundUrl ? lv.imageBackgroundUrl : '' %>"></div>
-          <%- varsHelp() %>
-        </div>
-      </div>
-      <div class="form-actions sticky-actions"><button type="submit" class="btn btn-primary">Enregistrer le départ</button></div>
+      </section>
+      <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
     </form>
-    <form method="post" action="/guilds/<%= guild.id %>/welcome/test" class="card">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="kind" value="leave">
-      <div class="card-head"><div><h3 class="card-title">Tester</h3><p class="muted">Envoie le message de départ (version enregistrée) dans le salon configuré, avec votre profil.</p></div><button type="submit" class="btn btn-ghost" <%= botReady && lv && lv.channelId ? '' : 'disabled' %>>Envoyer un test</button></div>
-    </form>
-  </section>
 
+    <aside class="split-preview">
+      <div class="preview-panel">
+        <div class="preview-panel-head"><span class="row"><%- icon('hash', { size: 15 }) %><span data-preview-channel>salon</span></span><span class="badge badge-muted">Aperçu</span></div>
+        <div class="preview-panel-body" data-welcome-preview></div>
+      </div>
+      <div class="preview-panel" data-dm-panel>
+        <div class="preview-panel-head"><span class="row"><%- icon('message-square', { size: 15 }) %>Message privé</span></div>
+        <div class="preview-panel-body" data-dm-preview></div>
+      </div>
+      <form method="post" action="<%= base %>/test" class="callout">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="kind" value="welcome">
+        <%- icon('send') %>
+        <div class="grow"><strong>Tester en vrai</strong><br>Envoie la version <em>enregistrée</em> dans le salon, avec votre profil.
+          <div class="mt-3"><button type="submit" class="btn btn-sm" <%= botReady && w && w.channelId ? '' : 'disabled' %>>Envoyer un test</button></div>
+        </div>
+      </form>
+    </aside>
 </div>
+<% } else { %>
+<% if (!modules.leave) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Départ est désactivé : aucun message ne sera envoyé. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer</a></span></div><% } %>
+<div class="split" data-no-live-reload>
+    <form method="post" action="<%= base %>/leave" class="form stack" id="welcome-form" data-dirty-form data-welcome-kind="leave">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <section class="card">
+        <div class="card-head">
+          <div><h2 class="card-title">Message de départ</h2><p class="card-desc">Envoyé quand un membre quitte le serveur.</p></div>
+          <label class="toggle"><input type="checkbox" name="enabled" <%= lv && lv.enabled ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Activé</span></label>
+        </div>
+        <div class="field"><label for="l-channel">Salon</label><%- include('../partials/channel-select', { name: 'channelId', id: 'l-channel', selected: lv ? lv.channelId : '', emptyLabel: '— Aucun —' }) %></div>
+        <div class="field"><label for="w-message">Message</label><textarea id="w-message" name="message" class="textarea" rows="3" maxlength="2000" placeholder="{username} a quitté le serveur. Nous sommes désormais {memberCount}."><%= leaveMessage %></textarea><%- varChips('#w-message') %></div>
+        <label class="toggle"><input type="checkbox" name="logEnabled" <%= !lv || lv.logEnabled ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Journaliser les départs dans les logs « Membres »</span></label>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <div><h2 class="card-title">Embed</h2></div>
+          <div class="segmented" role="radiogroup" aria-label="Type d'embed">
+            <label><input type="radio" name="embedMode" value="none" data-radio-toggle="#l-embed-none" <%= leaveEmbed.mode === 'none' ? 'checked' : '' %>><span>Aucun</span></label>
+            <label><input type="radio" name="embedMode" value="form" data-radio-toggle="#l-embed-form" <%= leaveEmbed.mode === 'form' ? 'checked' : '' %>><span>Éditeur</span></label>
+            <label><input type="radio" name="embedMode" value="json" data-radio-toggle="#l-embed-jsonwrap" <%= leaveEmbed.mode === 'json' ? 'checked' : '' %>><span>JSON</span></label>
+          </div>
+        </div>
+        <p class="text-sm text-3" id="l-embed-none">Aucun embed : seuls le message et l'image sont envoyés.</p>
+        <div id="l-embed-form"><%- include('../partials/embed-editor', { prefix: 'embed', spec: leaveEmbed.spec, id: 'l-embed', buttons: null, withPreview: false, withJson: false, compact: true }) %></div>
+        <div class="field" id="l-embed-jsonwrap"><label for="w-embed-json">JSON (EmbedSpec)</label><textarea id="w-embed-json" name="embedJson" class="textarea textarea-sm input-mono" rows="8" placeholder='{"title": "Au revoir {username}"}'><%= leaveEmbedJson %></textarea></div>
+      </section>
+      <section class="card">
+        <div class="card-head">
+          <div><h2 class="card-title">Image de départ</h2><p class="card-desc">« <%= texts.leaveImageTitle %> » avec l'avatar du membre.</p></div>
+          <label class="toggle"><input type="checkbox" name="imageEnabled" data-check-toggle="#l-image-opts" <%= lv && lv.imageEnabled ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Activée</span></label>
+        </div>
+        <div id="l-image-opts" class="stack-4">
+          <div class="field"><label for="w-bg">Image de fond <span class="field-optional">URL, optionnelle</span></label><input id="w-bg" name="imageBackgroundUrl" type="url" class="input" maxlength="500" value="<%= lv && lv.imageBackgroundUrl ? lv.imageBackgroundUrl : '' %>" placeholder="https://…/fond.png"></div>
+          <div><button type="button" class="btn" data-image-preview="leave" <%= botReady ? '' : 'disabled' %>><%- icon('image', { size: 16 }) %>Générer l'aperçu de l'image</button></div>
+        </div>
+      </section>
+      <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+    </form>
+    <aside class="split-preview">
+      <div class="preview-panel">
+        <div class="preview-panel-head"><span class="row"><%- icon('hash', { size: 15 }) %><span data-preview-channel>salon</span></span><span class="badge badge-muted">Aperçu</span></div>
+        <div class="preview-panel-body" data-welcome-preview></div>
+      </div>
+      <form method="post" action="<%= base %>/test" class="callout">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="kind" value="leave">
+        <%- icon('send') %>
+        <div class="grow"><strong>Tester en vrai</strong><br>Envoie la version <em>enregistrée</em> dans le salon, avec votre profil.
+          <div class="mt-3"><button type="submit" class="btn btn-sm" <%= botReady && lv && lv.channelId ? '' : 'disabled' %>>Envoyer un test</button></div>
+        </div>
+      </form>
+    </aside>
+</div>
+<% } %>
+<script type="application/json" id="welcome-data"><%- jsonScript({ texts, imageUrl: base + '/image' }) %></script>

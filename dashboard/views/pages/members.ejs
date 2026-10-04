@@ -1,41 +1,36 @@
-<section class="page-header">
-  <div><h2 class="page-title">Membres</h2><p class="muted"><%= fmt.number(total) %> membres · <%= fmt.number(cached) %> en cache. Recherche par pseudo ou ID Discord.</p></div>
-  <form method="get" action="/guilds/<%= guild.id %>/members" class="page-actions search-form">
-    <input type="search" name="q" class="input" value="<%= q %>" placeholder="Pseudo, nom d'utilisateur ou ID…" aria-label="Rechercher un membre" maxlength="100">
-    <button type="submit" class="btn btn-primary">Rechercher</button>
-    <% if (q) { %><a class="btn btn-ghost" href="/guilds/<%= guild.id %>/members">Effacer</a><% } %>
-  </form>
-</section>
+<% const base = `/guilds/${guild.id}`; %>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('users') %></span>
+    <div><h1 class="page-title">Membres</h1><p class="page-subtitle"><%= fmt.number(total) %> membres sur le serveur. Recherchez par pseudo, nom d'utilisateur ou ID.</p></div>
+  </div>
+</header>
 
-<div class="card">
+<form method="get" action="<%= base %>/members" class="row mb-5" role="search">
+  <label class="search grow"><%- icon('search', { size: 16 }) %><input type="search" name="q" class="input input-lg" value="<%= q %>" placeholder="Rechercher un membre…" aria-label="Rechercher un membre" maxlength="100" autofocus></label>
+  <button type="submit" class="btn btn-primary btn-lg">Rechercher</button>
+  <% if (q) { %><a class="btn btn-ghost btn-lg" href="<%= base %>/members">Effacer</a><% } %>
+</form>
+
+<section class="card card-flush">
+  <div class="card-head"><h2 class="card-title"><%= q ? 'Résultats pour « ' + q + ' »' : 'Arrivées récentes' %></h2><span class="text-xs text-3"><%= members.length %> affiché(s)</span></div>
   <% if (!members.length) { %>
-    <p class="muted"><%= q ? 'Aucun membre ne correspond à cette recherche.' : 'Aucun membre en cache pour le moment.' %></p>
+    <%- include('../partials/empty', { glyph: q ? 'search' : 'users', title: q ? 'Aucun membre trouvé' : 'Aucun membre en cache', text: q ? 'Vérifiez l’orthographe ou essayez avec l’ID Discord.' : 'Recherchez un membre pour afficher sa fiche.' }) %>
   <% } else { %>
   <div class="table-wrap">
-    <table class="table" id="members-table">
-      <thead><tr><th>Membre</th><th>Rôles</th><th>Arrivée</th><th></th></tr></thead>
+    <table class="table table-responsive table-clickable" id="members-table">
+      <thead><tr><th>Membre</th><th>Rôles</th><th>Arrivée</th><th class="shrink"></th></tr></thead>
       <tbody>
         <% for (const m of members) { %>
-          <tr>
-            <td>
-              <div class="user-cell">
-                <img class="avatar avatar-sm" src="<%= m.avatarUrl %>" alt="">
-                <div><strong><%= m.displayName %></strong><% if (m.bot) { %> <span class="badge badge-muted">BOT</span><% } %><br><small class="muted">@<%= m.username %> · <span class="mono"><%= m.id %></span></small></div>
-              </div>
-            </td>
-            <td>
-              <div class="badges">
-                <% for (const r of m.roles) { %><span class="badge role-badge" data-role-color="<%= r.color %>"><span class="role-dot" aria-hidden="true"></span><%= r.name %></span><% } %>
-                <% if (m.roleCount > m.roles.length) { %><span class="badge badge-muted">+<%= m.roleCount - m.roles.length %></span><% } %>
-                <% if (!m.roleCount) { %><span class="muted">—</span><% } %>
-              </div>
-            </td>
-            <td class="nowrap" title="<%= fmt.dateTime(m.joinedAt) %>"><%= fmt.date(m.joinedAt) %></td>
-            <td class="right"><a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/members/<%= m.id %>">Fiche</a></td>
+          <tr data-href="<%= base %>/members/<%= m.id %>">
+            <td class="cell-primary"><div class="user-cell"><img class="avatar avatar-md" src="<%= m.avatarUrl %>" alt=""><div class="user-cell-text"><span class="user-cell-name"><%= m.displayName %><% if (m.bot) { %> <span class="badge badge-info">APP</span><% } %></span><span class="user-cell-sub">@<%= m.username %></span></div></div></td>
+            <td data-label="Rôles"><div class="badges"><% for (const r of m.roles) { %><span class="role-pill" data-role-color="<%= r.color %>"><span class="role-dot"></span><span><%= r.name %></span></span><% } %><% if (m.roleCount > m.roles.length) { %><span class="badge badge-muted">+<%= m.roleCount - m.roles.length %></span><% } %><% if (!m.roleCount) { %><span class="text-3 text-xs">aucun</span><% } %></div></td>
+            <td data-label="Arrivée" class="nowrap"><span title="<%= fmt.dateTime(m.joinedAt) %>"><%= m.joinedAt ? fmt.relative(m.joinedAt) : '—' %></span></td>
+            <td class="shrink"><a class="btn btn-ghost btn-sm" href="<%= base %>/members/<%= m.id %>">Fiche<%- icon('chevron-right', { size: 14 }) %></a></td>
           </tr>
         <% } %>
       </tbody>
     </table>
   </div>
   <% } %>
-</div>
+</section>

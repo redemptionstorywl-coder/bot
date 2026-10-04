@@ -23,14 +23,13 @@ import { createWhitelistRouter } from './guild/whitelist';
 import { createBattleRoyaleRouter } from './guild/battleroyale';
 import { createSchoolRouter } from './guild/school';
 import { createShopRouter } from './guild/shop';
-import { createComingRouter } from './guild/coming';
 
 /**
  * Point de montage de toutes les routes.
  *
  * Pour ajouter une page de module : créer routes/guild/<module>.ts exportant
- * `create<Module>Router(client): Router` (Router({ mergeParams: true })) et l'ajouter
- * dans `guildRouters` ci-dessous AVANT `createComingRouter` (qui sert les pages génériques).
+ * `create<Module>Router(client): Router` (Router({ mergeParams: true })), l'ajouter dans `guildRouters`
+ * ci-dessous et déclarer l'entrée de menu dans lib/navigation.ts.
  */
 export function mountRoutes(client: RedemptionClient): Router {
   const root = Router();
@@ -61,8 +60,6 @@ export function mountRoutes(client: RedemptionClient): Router {
     createBattleRoyaleRouter,
     createSchoolRouter,
     createShopRouter,
-    // ↑ les routeurs des modules métier s'insèrent ici (avant createComingRouter)
-    createComingRouter,
   ];
   for (const factory of guildRouters) guildScoped.use('/', factory(client));
   root.use('/guilds/:guildId', guildScoped);

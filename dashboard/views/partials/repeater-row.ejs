@@ -31,7 +31,7 @@
     </select>
     <label class="repeater-inline"><input class="input input-sm" data-field="durationMinutes" type="number" min="1" max="525600" placeholder="Durée" value="<%= r.duration ? Math.round(r.duration / 60) : '' %>" aria-label="Durée en minutes"><span class="muted">min (timeout / tempban)</span></label>
   <% } else if (kind === 'option') { %>
-    <select class="select select-sm" data-field="roleId" aria-label="Rôle"><option value="">— Rôle —</option><%- include('role-options', { roles: roles || [], selected: r.roleId || '' }) %></select>
+    <select class="select select-sm" data-field="roleId" aria-label="Rôle" data-role-picker data-placeholder="Choisir un rôle…"><option value="">— Rôle —</option><%- include('role-options', { roles: roles || [], selected: r.roleId || '' }) %></select>
     <input class="input input-sm" data-field="label" maxlength="80" placeholder="Libellé (défaut : nom du rôle)" value="<%= r.label || '' %>" aria-label="Libellé">
     <input class="input input-sm" data-field="emoji" maxlength="64" placeholder="Emoji" value="<%= r.emoji || '' %>" aria-label="Emoji">
     <input class="input input-sm" data-field="description" maxlength="100" placeholder="Description (select)" value="<%= r.description || '' %>" aria-label="Description">
@@ -46,8 +46,8 @@
     <input class="input input-sm" data-field="premiumReward" maxlength="200" placeholder="Récompense premium" value="<%= r.premiumReward || '' %>" aria-label="Récompense premium">
   <% } %>
   <div class="repeater-actions">
-    <button type="button" class="icon-btn icon-btn-sm" data-repeater-up title="Monter" aria-label="Monter">↑</button>
-    <button type="button" class="icon-btn icon-btn-sm" data-repeater-down title="Descendre" aria-label="Descendre">↓</button>
-    <button type="button" class="icon-btn icon-btn-sm text-danger" data-repeater-remove title="Retirer" aria-label="Retirer">✕</button>
+    <button type="button" class="icon-btn icon-btn-sm" data-repeater-up data-tooltip="Monter" aria-label="Monter"><%- icon('arrow-up', { size: 15 }) %></button>
+    <button type="button" class="icon-btn icon-btn-sm" data-repeater-down data-tooltip="Descendre" aria-label="Descendre"><%- icon('arrow-down', { size: 15 }) %></button>
+    <button type="button" class="icon-btn icon-btn-sm is-danger" data-repeater-remove data-tooltip="Retirer" aria-label="Retirer"><%- icon('trash', { size: 15 }) %></button>
   </div>
 </div>

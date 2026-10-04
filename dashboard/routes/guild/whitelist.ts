@@ -13,6 +13,9 @@ import { jsonArray } from '../../lib/embedForm';
 import { formAction } from '../../lib/serviceErrors';
 import { resolveUserNames } from '../../lib/names';
 import { broadcastToGuild } from '../../sockets';
+import { translationService } from '../../../src/services/TranslationService';
+import { BRAND } from '../../../src/config/constants';
+import { serviceMessagePreview, renderPreviewHtml } from '../../lib/servicePreview';
 
 const TABS = ['applications', 'config'] as const;
 const LIST_LIMIT = 200;
@@ -79,10 +82,28 @@ export function createWhitelistRouter(client: RedemptionClient): Router {
       const applications = q
         ? rows.filter((r) => r.userId.includes(q) || String(r.id) === q || (r.identifier ?? '').toLowerCase().includes(q) || (names[r.userId] ?? '').toLowerCase().includes(q) || parseAnswers(r.answers).some((a) => a.answer.toLowerCase().includes(q)))
         : rows;
+      const t = translationService.bind(config.defaultLanguage, guild.id);
+      const reviewPreview = selected
+        ? renderPreviewHtml(res, serviceMessagePreview({ embeds: [whitelistService.buildReviewEmbed(selected, config.defaultLanguage)], components: whitelistService.buildReviewButtons(selected, config.defaultLanguage, selected.status !== ReviewStatus.PENDING) }), names)
+        : null;
+      const dm = (accepted: boolean) =>
+        renderPreviewHtml(res, {
+          embed: {
+            title: t(accepted ? 'whitelist.dm.accepted_title' : 'whitelist.dm.rejected_title'),
+            description: `${t(accepted ? 'whitelist.dm.accepted' : 'whitelist.dm.rejected', { server: guild.name })}\n\n> ${accepted ? 'Bienvenue parmi nous !' : 'Merci de compléter votre candidature.'}`,
+            color: `#${(accepted ? BRAND.colors.primary : BRAND.colors.danger).toString(16).padStart(6, '0')}`,
+            footer: { text: BRAND.footer },
+          },
+        });
       render(res, 'whitelist', {
         title: 'Whitelist',
         page: 'whitelist',
+        crumbs: query.tab === 'config' ? [{ label: 'Formulaire & réglages' }] : selected ? [{ label: `Dossier #${selected.id}` }] : [],
+        scripts: query.tab === 'config' ? ['modal-preview'] : [],
         tab: query.tab,
+        reviewPreview,
+        dmPreviews: query.tab === 'config' ? { accepted: dm(true), rejected: dm(false) } : null,
+        modalTitle: t('whitelist.apply.modal_title'),
         filters: { status: query.status ?? 'all', q: query.q },
         settings,
         counts,

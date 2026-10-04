@@ -1,0 +1,22 @@
+<%#
+  En-tête commun Événements / Sondages / Giveaways. Attend : etab ('events' | 'polls' | 'giveaways'),
+  counts? { events, polls, giveaways } (éléments actifs), moduleOff? (texte d'avertissement si le module de l'onglet est désactivé).
+%>
+<% const _eb = `/guilds/${guild.id}`; const _c = typeof counts === 'object' && counts ? counts : {}; const _n = (v) => (v ? v : null); %>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon(etab === 'giveaways' ? 'gift' : etab === 'polls' ? 'bar-chart' : 'calendar') %></span>
+    <div><h1 class="page-title">Événements</h1><p class="page-subtitle">Événements avec inscriptions et rappels, sondages et giveaways — publiés et suivis en direct.</p></div>
+  </div>
+  <div class="page-actions">
+    <% if (etab === 'events') { %><a class="btn btn-primary" href="<%= _eb %>/events/new"><%- icon('plus', { size: 16 }) %>Nouvel événement</a><% } %>
+    <% if (etab === 'polls') { %><a class="btn btn-primary" href="<%= _eb %>/events/polls/new"><%- icon('plus', { size: 16 }) %>Nouveau sondage</a><% } %>
+    <% if (etab === 'giveaways') { %><a class="btn btn-primary" href="<%= _eb %>/giveaways/new"><%- icon('plus', { size: 16 }) %>Nouveau giveaway</a><% } %>
+  </div>
+</header>
+<% if (typeof moduleOff === 'string' && moduleOff) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text"><%= moduleOff %> <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+<%- include('tabs', { active: etab, label: 'Sections des événements', tabs: [
+  { key: 'events', label: 'Événements', href: _eb + '/events', icon: 'calendar', count: _n(_c.events) },
+  { key: 'polls', label: 'Sondages', href: _eb + '/events?tab=polls', icon: 'bar-chart', count: _n(_c.polls) },
+  { key: 'giveaways', label: 'Giveaways', href: _eb + '/giveaways', icon: 'gift', count: _n(_c.giveaways) },
+] }) %>

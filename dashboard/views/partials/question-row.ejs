@@ -1,0 +1,26 @@
+<%# Question d'un formulaire Discord (modale) — ligne de liste dynamique repeater.js. Attend : q (question | null), index, withMaxLength (défaut true), defaultStyle ('short' | 'paragraph', défaut 'short'). %>
+<% const r = q || {}; const _ds = typeof defaultStyle === 'string' ? defaultStyle : 'short'; const st = (r.style || _ds) === 'paragraph' ? 'paragraph' : 'short'; const _ml = typeof withMaxLength === 'undefined' ? true : withMaxLength; %>
+<div class="q-card" data-repeater-row>
+  <div class="q-handle">
+    <button type="button" class="drag-handle" data-repeater-handle aria-label="Déplacer la question (Alt + flèches)"><%- icon('grip') %></button>
+    <span class="q-index" data-repeater-index><%= index + 1 %></span>
+  </div>
+  <div class="q-fields">
+    <input type="hidden" data-field="id" value="<%= r.id || '' %>">
+    <label class="field q-wide"><span class="field-label">Question <span class="field-optional">45 caractères max</span></span><input class="input" data-field="label" maxlength="45" value="<%= r.label || '' %>" placeholder="Décrivez votre demande"></label>
+    <label class="field q-wide"><span class="field-label">Texte indicatif <span class="field-optional">optionnel</span></span><input class="input" data-field="placeholder" maxlength="100" value="<%= r.placeholder || '' %>" placeholder="Expliquez votre problème avec un maximum de détails."></label>
+    <div class="field"><span class="field-label">Type de réponse</span>
+      <div class="segmented">
+        <label><input type="radio" data-field="style" value="short" <%= st === 'short' ? 'checked' : '' %>><span>Courte</span></label>
+        <label><input type="radio" data-field="style" value="paragraph" <%= st === 'paragraph' ? 'checked' : '' %>><span>Paragraphe</span></label>
+      </div>
+    </div>
+    <% if (_ml) { %><label class="field"><span class="field-label">Longueur max</span><input type="number" class="input" data-field="maxLength" min="1" max="4000" value="<%= r.maxLength || '' %>" placeholder="4000"></label><% } %>
+    <div class="q-opts"><label class="toggle toggle-sm"><input type="checkbox" data-field="required" <%= r.required === false ? '' : 'checked' %>><span class="toggle-track"></span><span class="toggle-label">Réponse obligatoire</span></label></div>
+  </div>
+  <div class="q-actions">
+    <button type="button" class="icon-btn icon-btn-sm" data-repeater-up aria-label="Monter" data-tooltip="Monter"><%- icon('arrow-up', { size: 15 }) %></button>
+    <button type="button" class="icon-btn icon-btn-sm" data-repeater-down aria-label="Descendre" data-tooltip="Descendre"><%- icon('arrow-down', { size: 15 }) %></button>
+    <button type="button" class="icon-btn icon-btn-sm is-danger" data-repeater-remove aria-label="Supprimer la question" data-tooltip="Supprimer"><%- icon('trash', { size: 15 }) %></button>
+  </div>
+</div>

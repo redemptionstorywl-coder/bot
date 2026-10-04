@@ -1,37 +1,43 @@
-<section class="hero">
-  <div class="hero-badge"><%- include('../partials/logo') %><span>Redemption Story Studio</span></div>
-  <h1 class="hero-title">Pilotez votre bot Discord<br><span class="accent">depuis un seul tableau de bord</span></h1>
-  <p class="hero-text">Tickets, modération, annonces, rôles, traductions, Battle Royale, School RP, Shop : configurez chaque module serveur par serveur, suivez les logs en temps réel et gérez vos communautés multilingues.</p>
-  <div class="hero-actions">
-    <% if (oauthConfigured) { %>
-      <a class="btn btn-primary btn-lg" href="/auth/login"><span aria-hidden="true">🎮</span> Se connecter avec Discord</a>
-    <% } else { %>
-      <a class="btn btn-primary btn-lg" href="/auth/login">Configurer la connexion</a>
+<div class="landing">
+  <div class="landing-glow" aria-hidden="true"></div>
+  <section class="hero">
+    <div class="hero-badge"><%- include('../partials/logo') %><span>Redemption Story Studio</span></div>
+    <h1 class="hero-title">Votre bot Discord,<br><span class="accent">configuré en quelques clics.</span></h1>
+    <p class="hero-text">Tickets, modération, bienvenue, annonces et serveurs FiveM : tout se règle ici, avec un aperçu Discord en direct avant chaque publication.</p>
+    <div class="hero-actions">
+      <a class="btn btn-xl btn-discord" href="/auth/login"><%- icon('discord', { size: 20 }) %>Se connecter avec Discord</a>
+      <a class="btn btn-xl btn-ghost" href="<%= inviteUrl %>" target="_blank" rel="noopener"><%- icon('plus', { size: 18 }) %>Inviter le bot</a>
+    </div>
+    <% if (!oauthConfigured) { %>
+      <div class="alert alert-warning hero-alert"><%- icon('alert-triangle') %><span class="alert-text">La connexion Discord n'est pas encore configurée (<code>DISCORD_CLIENT_SECRET</code> manquant).</span></div>
     <% } %>
-    <a class="btn btn-ghost btn-lg" href="<%= inviteUrl %>" target="_blank" rel="noopener">Inviter le bot</a>
-  </div>
-  <% if (!oauthConfigured) { %>
-    <div class="alert alert-warning hero-alert"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">La connexion Discord n'est pas encore configurée (DISCORD_CLIENT_SECRET manquant).</span></div>
-  <% } %>
-</section>
+    <div class="hero-meta">
+      <span><strong><%= fmt.number(stats.guilds) %></strong> serveurs</span>
+      <span><strong><%= fmt.number(stats.members) %></strong> membres</span>
+      <span><strong><%= stats.modules %></strong> modules</span>
+    </div>
+  </section>
 
-<section class="stat-grid stat-grid-landing">
-  <div class="stat-card"><span class="stat-label">Serveurs</span><strong class="stat-value"><%= fmt.number(stats.guilds) %></strong></div>
-  <div class="stat-card"><span class="stat-label">Membres</span><strong class="stat-value"><%= fmt.number(stats.members) %></strong></div>
-  <div class="stat-card"><span class="stat-label">Modules</span><strong class="stat-value"><%= stats.modules %></strong></div>
-  <div class="stat-card"><span class="stat-label">Commandes</span><strong class="stat-value"><%= stats.commands %></strong></div>
-</section>
+  <section class="feature-grid" aria-label="Points forts">
+    <% for (const [ic, name, text] of [
+      ['ticket', 'Tickets complets', 'Raisons, formulaires, panneaux et transcripts, avec relances automatiques du staff.'],
+      ['eye', 'Aperçus en direct', 'Chaque embed, panneau ou message est prévisualisé exactement comme sur Discord.'],
+      ['shield', 'Sécurité intégrée', 'Modération, anti-raid, anti-nuke et salon piège configurables en un instant.'],
+      ['gamepad', 'Connecté au jeu', 'Statut FiveM, liaison des joueurs, whitelist, boutique et Battle Royale.'],
+    ]) { %>
+      <article class="feature"><div class="feature-icon"><%- icon(ic) %></div><h3><%= name %></h3><p><%= text %></p></article>
+    <% } %>
+  </section>
 
-<section class="feature-grid">
-  <% const features = [
-    ['🎫', 'Tickets', 'Panneaux, formulaires, transcripts et statistiques.'],
-    ['🛡️', 'Modération', 'Sanctions, avertissements, anti-raid et historique complet.'],
-    ['🌍', 'Multilingue', '10 langues, salons ou permissions par langue, overrides par serveur.'],
-    ['📢', 'Annonces & embeds', 'Éditeur d’embeds, planification, publication multi-salons.'],
-    ['🎭', 'Rôles', 'Auto-roles, menus de rôles, reaction roles et notifications.'],
-    ['⚔️', 'FiveM', 'Battle Royale, School RP, whitelist et boutique connectés au jeu.'],
-  ]; %>
-  <% for (const [icon, name, text] of features) { %>
-    <article class="card feature-card"><div class="feature-icon" aria-hidden="true"><%= icon %></div><h3><%= name %></h3><p><%= text %></p></article>
-  <% } %>
-</section>
+  <section class="landing-preview" aria-label="Exemple d'aperçu">
+    <div class="preview-panel">
+      <div class="preview-panel-head"><span class="row"><%- icon('hash', { size: 15 }) %>support</span><span class="badge badge-muted">Aperçu</span></div>
+      <div class="preview-panel-body">
+        <%- include('../partials/embed-preview', {
+          embed: { title: '🎫 Support', description: "Besoin d'aide ? Choisissez le sujet de votre demande ci-dessous, l'équipe vous répond au plus vite.", footer: { text: 'Un ticket = un sujet' } },
+          components: [{ type: 'select', placeholder: 'Quel est le sujet ?', open: true, options: [{ label: 'Support', emoji: '🎫', description: "Besoin d'aide ?" }, { label: 'Boutique', emoji: '🛒', description: 'Question sur une commande' }, { label: 'Signalement', emoji: '🚨', description: 'Signaler un joueur' }] }],
+        }) %>
+      </div>
+    </div>
+  </section>
+</div>

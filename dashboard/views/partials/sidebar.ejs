@@ -1,50 +1,56 @@
+<%
+  const _sb = buildSidebar(guild.id, page, config ? config.modules : null);
+  const _section = (currentPath.match(/^\/guilds\/\d+\/([a-z-]+)/) || [])[1] || '';
+%>
 <aside class="sidebar" id="sidebar" aria-label="Navigation principale">
-  <div class="sidebar-brand">
-    <a href="/" class="brand-link" aria-label="<%= brand.name %>">
-      <span class="brand-mark" aria-hidden="true"><%- include('logo') %></span>
-      <span class="brand-text"><span class="brand-name">Redemption Story</span><span class="brand-sub">Studio · Dashboard</span></span>
-    </a>
-    <button type="button" class="icon-btn sidebar-close" data-sidebar-close aria-label="Fermer le menu">✕</button>
-  </div>
-
-  <% if (guild) { %>
-  <div class="sidebar-guild">
-    <% if (guild.iconUrl) { %><img class="avatar avatar-sm" src="<%= guild.iconUrl %>" alt=""><% } else { %><span class="avatar avatar-sm avatar-fallback"><%= fmt.initials(guild.name) %></span><% } %>
-    <div class="sidebar-guild-meta">
-      <strong class="truncate" title="<%= guild.name %>"><%= guild.name %></strong>
-      <small><%= fmt.number(guild.memberCount) %> membres</small>
+  <div class="sidebar-head">
+    <div class="dropdown grow" data-dropdown>
+      <button type="button" class="guild-switch" data-dropdown-toggle aria-haspopup="menu" aria-expanded="false" aria-label="Changer de serveur (actuel : <%= guild.name %>)">
+        <% if (guild.iconUrl) { %><img class="guild-switch-icon" src="<%= guild.iconUrl %>" alt=""><% } else { %><span class="guild-switch-icon avatar avatar-fallback"><%= fmt.initials(guild.name) %></span><% } %>
+        <span class="guild-switch-text"><span class="guild-switch-name truncate"><%= guild.name %></span><span class="guild-switch-sub"><%= fmt.number(guild.memberCount) %> membres</span></span>
+        <%- icon('chevrons-up-down', { size: 16 }) %>
+      </button>
+      <div class="dropdown-menu full" role="menu">
+        <div class="dropdown-label">Vos serveurs</div>
+        <% for (const g of switcherGuilds) { %>
+          <a class="dropdown-item<%= g.id === guild.id ? ' is-active' : '' %>" role="menuitem" href="/guilds/<%= g.id %><%= _section ? '/' + _section : '' %>">
+            <% if (g.iconUrl) { %><img src="<%= g.iconUrl %>" alt=""><% } else { %><span class="avatar avatar-xs avatar-fallback avatar-square"><%= fmt.initials(g.name) %></span><% } %>
+            <span class="truncate"><%= g.name %></span>
+            <% if (g.id === guild.id) { %><%- icon('check', { size: 16, cls: 'check-mark' }) %><% } %>
+          </a>
+        <% } %>
+        <div class="dropdown-sep"></div>
+        <a class="dropdown-item" role="menuitem" href="/guilds"><%- icon('server', { size: 16 }) %>Tous les serveurs</a>
+        <a class="dropdown-item" role="menuitem" href="<%= inviteUrl %>" target="_blank" rel="noopener"><%- icon('plus', { size: 16 }) %>Ajouter le bot à un serveur</a>
+      </div>
     </div>
+    <button type="button" class="icon-btn sidebar-close" data-sidebar-close aria-label="Fermer le menu"><%- icon('x') %></button>
   </div>
-  <% } %>
 
-  <nav class="sidebar-nav">
-    <% const groups = ['general', 'modules', 'advanced', 'global']; %>
-    <% for (const group of groups) { %>
-      <% const entries = nav.filter((e) => e.group === group && (!e.ownerOnly || isOwner) && (guild || e.path === null)); %>
-      <% if (!entries.length) continue; %>
+  <nav class="sidebar-nav" aria-label="Sections du serveur">
+    <% for (const group of _sb.groups) { %>
       <div class="nav-group">
-        <div class="nav-group-label"><%= navGroups[group] %></div>
-        <% for (const entry of entries) { %>
-          <% const disabled = entry.module && config && !config.modules[entry.module]; %>
-          <a href="<%= navHref(entry, guild ? guild.id : null) %>" class="nav-item<%= page === entry.key ? ' active' : '' %><%= disabled ? ' nav-item-dim' : '' %>" <%- page === entry.key ? 'aria-current="page"' : '' %> title="<%= entry.label %><%= disabled ? ' (module désactivé)' : '' %>">
-            <span class="nav-icon" aria-hidden="true"><%= entry.icon %></span>
-            <span class="nav-label"><%= entry.label %></span>
-            <% if (disabled) { %><span class="nav-dot" aria-label="désactivé"></span><% } %>
+        <% if (group.label) { %><div class="nav-group-label"><%= group.label %></div><% } %>
+        <% for (const item of group.items) { %>
+          <a href="<%= item.href %>" class="nav-item<%= item.active ? ' active' : '' %><%= item.dimmed ? ' is-dim' : '' %>"<%- item.active ? ' aria-current="page"' : '' %><%- item.dimmed ? ' title="Module désactivé"' : '' %>>
+            <%- icon(item.icon) %><span class="nav-label"><%= item.label %></span>
           </a>
         <% } %>
       </div>
     <% } %>
+    <% if (_sb.others.length) { %>
+      <details class="nav-more"<%= _sb.othersOpen ? ' open' : '' %>>
+        <summary><%- icon('chevron-right', { size: 14 }) %>Autres modules</summary>
+        <% for (const item of _sb.others) { %>
+          <a href="<%= item.href %>" class="nav-item is-dim<%= item.active ? ' active' : '' %>"<%- item.active ? ' aria-current="page"' : '' %> title="Module désactivé">
+            <%- icon(item.icon) %><span class="nav-label"><%= item.label %></span>
+          </a>
+        <% } %>
+      </details>
+    <% } %>
   </nav>
 
-  <div class="sidebar-user">
-    <img class="avatar avatar-sm" src="<%= avatarUrl(user.id, user.avatar, 64) %>" alt="">
-    <div class="sidebar-user-meta">
-      <strong class="truncate"><%= user.globalName || user.username %></strong>
-      <small class="truncate">@<%= user.username %><%= isOwner ? ' · propriétaire' : '' %></small>
-    </div>
-    <form method="post" action="/auth/logout" class="inline-form">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <button type="submit" class="icon-btn" title="Se déconnecter" aria-label="Se déconnecter">⎋</button>
-    </form>
+  <div class="sidebar-foot">
+    <%- include('user-menu', { menuClass: 'align-up full' }) %>
   </div>
 </aside>

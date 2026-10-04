@@ -1,5 +1,5 @@
 <%# Attend : roles (RoleOption[]), selected (string[]|string) %>
 <% const sel = Array.isArray(selected) ? selected : (selected ? [selected] : []); %>
 <% for (const r of roles) { %>
-  <option value="<%= r.id %>" <%= sel.includes(r.id) ? 'selected' : '' %> data-color="<%= r.color %>"><%= r.name %><%= r.managed ? ' (géré)' : '' %></option>
+  <option value="<%= r.id %>" <%= sel.includes(r.id) ? 'selected' : '' %> data-color="<%= r.color %>"<%- r.managed ? ' data-managed="1"' : '' %>><%= r.name %><%= r.managed ? ' (géré)' : '' %></option>
 <% } %>

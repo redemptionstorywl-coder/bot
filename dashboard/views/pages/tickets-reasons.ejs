@@ -1,0 +1,45 @@
+<% const b = `/guilds/${guild.id}/tickets`; %>
+<%- include('../partials/tickets-header', { tab: 'reasons' }) %>
+
+<% if (!reasons.length) { %>
+  <section class="card">
+    <%- include('../partials/empty', { glyph: 'ticket', title: 'Aucune raison de ticket', text: 'Une raison = un type de demande (support, boutique, signalement…). Chaque raison a son formulaire, ses rôles d’accès et son message d’accueil.', actionHref: b + '/reasons/new', actionLabel: 'Créer une raison' }) %>
+    <div class="center">
+      <form method="post" action="<%= b %>/reasons/defaults" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost btn-sm"><%- icon('sparkles', { size: 14 }) %>Ou générer les <%= defaultsAvailable %> raisons par défaut</button></form>
+    </div>
+  </section>
+<% } else { %>
+  <div class="row justify-between mb-3 wrap">
+    <p class="text-sm text-2 mb-0">Glissez les raisons pour changer leur ordre d'affichage dans les panneaux et les menus.</p>
+    <span class="text-xs text-3"><%= reasons.filter((r) => r.enabled).length %> activée(s) sur <%= reasons.length %></span>
+  </div>
+  <ol class="reason-list" data-sortable data-sortable-url="<%= b %>/reasons/order" aria-label="Raisons (ordre d'affichage)">
+    <% reasons.forEach((r, i) => { %>
+      <li class="reason-card<%= r.enabled ? '' : ' is-disabled' %>" data-sortable-item data-toggle-scope data-id="<%= r.id %>">
+        <button type="button" class="drag-handle" data-sortable-handle aria-label="Déplacer « <%= r.label %> » (Alt + flèches)" data-tooltip="Glisser pour réordonner"><%- icon('grip') %></button>
+        <span class="reason-emoji" aria-hidden="true"><%= r.emoji || '🎫' %></span>
+        <div class="reason-main">
+          <div class="reason-title"><a href="<%= b %>/reasons/<%= r.id %>" class="truncate"><%= r.label %></a><span class="badge badge-muted" data-toggle-off<%- r.enabled ? ' hidden' : '' %>>désactivée</span></div>
+          <% if (r.description) { %><div class="reason-desc"><%= r.description %></div><% } %>
+          <div class="reason-meta">
+            <span class="reason-meta-item"><%- icon('folder') %><%= r.categoryId ? ((guild.categories.find((c) => c.id === r.categoryId) || {}).name || 'Catégorie supprimée') : 'Sans catégorie' %></span>
+            <span class="reason-meta-item"><%- icon('text-cursor') %><%= r.questionCount %> question<%= r.questionCount > 1 ? 's' : '' %></span>
+            <span class="reason-meta-item"><%- icon('ticket') %><%= r.ticketCount %> ticket<%= r.ticketCount > 1 ? 's' : '' %></span>
+            <span class="reason-meta-item"><%- icon('user') %>max <%= r.maxPerUser %> / membre</span>
+          </div>
+          <div class="badges mt-2">
+            <% if (!r.staff.length) { %><span class="badge badge-muted"><%- icon('shield') %>Staff global uniquement</span><% } %>
+            <% for (const rid of r.staff) { const role = guild.roles.find((x) => x.id === rid); %>
+              <span class="role-pill" data-role-color="<%= role ? role.color : '#71717a' %>"><span class="role-dot"></span><span><%= role ? role.name : 'Rôle supprimé' %></span></span>
+            <% } %>
+          </div>
+        </div>
+        <div class="reason-actions">
+          <label class="toggle toggle-sm" data-tooltip="<%= r.enabled ? 'Activée' : 'Désactivée' %>"><input type="checkbox" data-toggle-url="<%= b %>/reasons/<%= r.id %>/toggle" data-toggle-label="Raison « <%= r.label %> »" <%= r.enabled ? 'checked' : '' %> aria-label="Activer la raison <%= r.label %>"><span class="toggle-track"></span></label>
+          <a class="btn btn-sm" href="<%= b %>/reasons/<%= r.id %>"><%- icon('pencil', { size: 14 }) %>Modifier</a>
+        </div>
+      </li>
+    <% }) %>
+  </ol>
+  <div class="callout mt-5"><%- icon('info') %><div>Les raisons activées apparaissent dans vos <a class="link" href="<%= b %>/panels">panneaux</a>. Après une modification, <strong>republiez</strong> un panneau pour mettre à jour son message.</div></div>
+<% } %>
