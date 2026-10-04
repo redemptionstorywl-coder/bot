@@ -54,5 +54,72 @@
     "channels_title": "📁 Kategorien und Kanäle",
     "roles_title": "🎭 Rollen ({from}–{to} / {total})",
     "role_members": "Mitglied(er)"
+  },
+  "template": {
+    "list_title": "🧩 Server-Vorlagen",
+    "list_description": "Eine Vorlage erkennt deine vorhandenen Kanäle und Rollen anhand ihres Namens, konfiguriert den Bot auf einmal (Typ, Rollen, Logs, Willkommen, Tickets, Sprachen, Benachrichtigungen) und veröffentlicht die ersten Nachrichten (Regeln, Panels, Infos). Ohne Duplikate wiederholbar.",
+    "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
+    "unknown": "Unbekannte Vorlage: `{key}`.",
+    "plan_title": "📋 Plan — {emoji} {name}",
+    "plan_description": "**{ready}** Schritt(e) bereit · **{skipped}** übersprungen. Ein übersprungener Schritt hat seinen Kanal oder seine Rolle nicht gefunden: umbenennen oder erstellen, dann erneut ausführen.",
+    "dry_run_footer": "Simulation: nichts wurde geändert.",
+    "confirm": "Vorlage **{name}** auf **{server}** anwenden? Die bestehende Konfiguration wird aktualisiert; bereits vom Bot veröffentlichte Nachrichten werden nicht erneut gesendet.",
+    "confirm_button": "Anwenden",
+    "cancel_button": "Abbrechen",
+    "cancelled": "Anwendung abgebrochen.",
+    "not_author": "Nur die Person, die den Befehl ausgeführt hat, kann bestätigen.",
+    "applying": "⏳ Vorlage **{name}** wird angewendet… das kann einige Sekunden dauern.",
+    "report_title": "🧩 Bericht — {emoji} {name}",
+    "report_description": "✅ **{done}** erledigt · ⚠️ **{skipped}** übersprungen · ❌ **{failed}** fehlgeschlagen",
+    "page_footer": "Seite {page}/{pages}",
+    "recommended": "Empfohlene Kanäle",
+    "recommended_giveaways": "🎁 Giveaways",
+    "recommended_polls": "📊 Umfragen",
+    "recommended_events": "📅 Events",
+    "recommended_hint": "In der Option `channel` von `/giveaway create`, `/poll create` und `/event create` verwenden.",
+    "templates": {
+      "shop": {
+        "name": "Redemption Story Shop",
+        "description": "Script-Shop: Support, Bestellungen, Zahlungen, Bugs, Partnerschaften, Zahlungsinfos."
+      },
+      "battle-royale": {
+        "name": "Redemption Story Battle Royale",
+        "description": "Mehrsprachiges Battle Royale (10 Sprachen): Tickets pro Kategorie, Anleitung, Ranglisten, Turniere, FiveM-Status."
+      },
+      "prison": {
+        "name": "Redemption Story WL (Prison RP)",
+        "description": "Prison RP mit Whitelist: Bewerbungen, Support, Meldungen, Staff-Logs."
+      },
+      "school": {
+        "name": "Redemption Story School RP",
+        "description": "School RP: Anmeldungen, Support, Meldungen, Staff-Logs."
+      }
+    },
+    "steps": {
+      "kind": "Servertyp und Sprachen",
+      "roles": "Admin- / Staff-Rollen",
+      "autorole": "Auto-Rollen (Mitglieder / Bots)",
+      "logs": "Log-Kanäle",
+      "moderation": "Moderation (Sanktions-DMs, Mute-Rolle)",
+      "embed_templates": "Standard-Embed-Vorlagen",
+      "welcome": "Willkommensnachricht",
+      "leave": "Abschiedsnachricht",
+      "rules": "Regeln",
+      "tickets": "Ticket-Typen",
+      "ticket_panel": "Ticket-Panel",
+      "language": "Sprachen (Rollen, Kanäle pro Sprache)",
+      "language_panel": "Sprach-Panel",
+      "notifications": "Benachrichtigungsrollen",
+      "notification_panel": "Benachrichtigungs-Panel",
+      "fivem": "FiveM-Status",
+      "info": "Infonachricht „{name}“"
+    },
+    "reasons": {
+      "channel_not_found": "Kanal nicht gefunden (gesucht: {names})",
+      "role_not_found": "Rolle nicht gefunden (gesucht: {names})",
+      "no_fivem_server": "Kein FiveM-Server konfiguriert (`/fivem add`)",
+      "missing_permissions": "Unzureichende Bot-Berechtigungen: {message}",
+      "error": "Fehler: {message}"
+    }
   }
 }

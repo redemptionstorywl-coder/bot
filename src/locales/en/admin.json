@@ -54,5 +54,72 @@
     "channels_title": "📁 Categories and channels",
     "roles_title": "🎭 Roles ({from}–{to} / {total})",
     "role_members": "member(s)"
+  },
+  "template": {
+    "list_title": "🧩 Server templates",
+    "list_description": "A template detects your existing channels and roles by name, configures the bot in one go (type, roles, logs, welcome, tickets, languages, notifications) and posts the first messages (rules, panels, info). Can be re-run without duplicates.",
+    "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
+    "unknown": "Unknown template: `{key}`.",
+    "plan_title": "📋 Plan — {emoji} {name}",
+    "plan_description": "**{ready}** step(s) ready · **{skipped}** skipped. A skipped step could not find its channel or role: rename or create it, then run again.",
+    "dry_run_footer": "Dry run: nothing was changed.",
+    "confirm": "Apply the **{name}** template to **{server}**? Existing configuration is updated; messages already posted by the bot are not posted again.",
+    "confirm_button": "Apply",
+    "cancel_button": "Cancel",
+    "cancelled": "Application cancelled.",
+    "not_author": "Only the person who ran the command can confirm.",
+    "applying": "⏳ Applying the **{name}** template… this may take a few seconds.",
+    "report_title": "🧩 Report — {emoji} {name}",
+    "report_description": "✅ **{done}** done · ⚠️ **{skipped}** skipped · ❌ **{failed}** failed",
+    "page_footer": "Page {page}/{pages}",
+    "recommended": "Recommended channels",
+    "recommended_giveaways": "🎁 Giveaways",
+    "recommended_polls": "📊 Polls",
+    "recommended_events": "📅 Events",
+    "recommended_hint": "Use them in the `channel` option of `/giveaway create`, `/poll create` and `/event create`.",
+    "templates": {
+      "shop": {
+        "name": "Redemption Story Shop",
+        "description": "Script shop: support, orders, payments, bugs, partnerships, payment info."
+      },
+      "battle-royale": {
+        "name": "Redemption Story Battle Royale",
+        "description": "Multilingual Battle Royale (10 languages): tickets per category, guide, leaderboards, tournaments, FiveM status."
+      },
+      "prison": {
+        "name": "Redemption Story WL (Prison RP)",
+        "description": "Whitelisted Prison RP: applications, support, reports, staff logs."
+      },
+      "school": {
+        "name": "Redemption Story School RP",
+        "description": "School RP: registrations, support, reports, staff logs."
+      }
+    },
+    "steps": {
+      "kind": "Server type and languages",
+      "roles": "Admin / staff roles",
+      "autorole": "Auto-roles (members / bots)",
+      "logs": "Log channels",
+      "moderation": "Moderation (sanction DMs, mute role)",
+      "embed_templates": "Default embed templates",
+      "welcome": "Welcome message",
+      "leave": "Leave message",
+      "rules": "Rules",
+      "tickets": "Ticket types",
+      "ticket_panel": "Ticket panel",
+      "language": "Languages (roles, per-language channels)",
+      "language_panel": "Language panel",
+      "notifications": "Notification roles",
+      "notification_panel": "Notification panel",
+      "fivem": "FiveM status",
+      "info": "Info message “{name}”"
+    },
+    "reasons": {
+      "channel_not_found": "Channel not found (looked for: {names})",
+      "role_not_found": "Role not found (looked for: {names})",
+      "no_fivem_server": "No FiveM server configured (`/fivem add`)",
+      "missing_permissions": "Insufficient bot permissions: {message}",
+      "error": "Error: {message}"
+    }
   }
 }

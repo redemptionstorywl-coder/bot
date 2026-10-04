@@ -54,5 +54,72 @@
     "channels_title": "📁 Categorias e canais",
     "roles_title": "🎭 Cargos ({from}–{to} / {total})",
     "role_members": "membro(s)"
+  },
+  "template": {
+    "list_title": "🧩 Modelos de servidor",
+    "list_description": "Um modelo detecta seus canais e cargos existentes pelo nome, configura o bot de uma vez (tipo, cargos, logs, boas-vindas, tickets, idiomas, notificações) e publica as primeiras mensagens (regras, painéis, informações). Pode ser repetido sem duplicados.",
+    "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
+    "unknown": "Modelo desconhecido: `{key}`.",
+    "plan_title": "📋 Plano — {emoji} {name}",
+    "plan_description": "**{ready}** etapa(s) pronta(s) · **{skipped}** ignorada(s). Uma etapa ignorada não encontrou seu canal ou cargo: renomeie ou crie, depois execute novamente.",
+    "dry_run_footer": "Simulação: nada foi alterado.",
+    "confirm": "Aplicar o modelo **{name}** a **{server}**? A configuração existente é atualizada; mensagens já publicadas pelo bot não são republicadas.",
+    "confirm_button": "Aplicar",
+    "cancel_button": "Cancelar",
+    "cancelled": "Aplicação cancelada.",
+    "not_author": "Apenas quem executou o comando pode confirmar.",
+    "applying": "⏳ Aplicando o modelo **{name}**… pode levar alguns segundos.",
+    "report_title": "🧩 Relatório — {emoji} {name}",
+    "report_description": "✅ **{done}** concluída(s) · ⚠️ **{skipped}** ignorada(s) · ❌ **{failed}** com falha",
+    "page_footer": "Página {page}/{pages}",
+    "recommended": "Canais recomendados",
+    "recommended_giveaways": "🎁 Sorteios",
+    "recommended_polls": "📊 Enquetes",
+    "recommended_events": "📅 Eventos",
+    "recommended_hint": "Use-os na opção `channel` de `/giveaway create`, `/poll create` e `/event create`.",
+    "templates": {
+      "shop": {
+        "name": "Redemption Story Shop",
+        "description": "Loja de scripts: suporte, pedidos, pagamentos, bugs, parcerias, informações de pagamento."
+      },
+      "battle-royale": {
+        "name": "Redemption Story Battle Royale",
+        "description": "Battle Royale multilíngue (10 idiomas): tickets por categoria, guia, rankings, torneios, status FiveM."
+      },
+      "prison": {
+        "name": "Redemption Story WL (Prison RP)",
+        "description": "Prison RP com whitelist: candidaturas, suporte, denúncias, logs da equipe."
+      },
+      "school": {
+        "name": "Redemption Story School RP",
+        "description": "School RP: inscrições, suporte, denúncias, logs da equipe."
+      }
+    },
+    "steps": {
+      "kind": "Tipo de servidor e idiomas",
+      "roles": "Cargos admin / staff",
+      "autorole": "Auto-cargos (membros / bots)",
+      "logs": "Canais de logs",
+      "moderation": "Moderação (DM de sanções, cargo mute)",
+      "embed_templates": "Modelos de embed padrão",
+      "welcome": "Mensagem de boas-vindas",
+      "leave": "Mensagem de saída",
+      "rules": "Regras",
+      "tickets": "Tipos de ticket",
+      "ticket_panel": "Painel de tickets",
+      "language": "Idiomas (cargos, canais por idioma)",
+      "language_panel": "Painel de idioma",
+      "notifications": "Cargos de notificação",
+      "notification_panel": "Painel de notificações",
+      "fivem": "Status FiveM",
+      "info": "Mensagem informativa “{name}”"
+    },
+    "reasons": {
+      "channel_not_found": "Canal não encontrado (procurado: {names})",
+      "role_not_found": "Cargo não encontrado (procurado: {names})",
+      "no_fivem_server": "Nenhum servidor FiveM configurado (`/fivem add`)",
+      "missing_permissions": "Permissões do bot insuficientes: {message}",
+      "error": "Erro: {message}"
+    }
   }
 }

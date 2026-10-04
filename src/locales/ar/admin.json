@@ -54,5 +54,72 @@
     "channels_title": "📁 الفئات والقنوات",
     "roles_title": "🎭 الأدوار ({from}–{to} / {total})",
     "role_members": "عضو"
+  },
+  "template": {
+    "list_title": "🧩 قوالب السيرفر",
+    "list_description": "يكتشف القالب القنوات والرتب الموجودة حسب الاسم، ويضبط البوت دفعة واحدة (النوع، الرتب، السجلات، الترحيب، التذاكر، اللغات، الإشعارات) وينشر الرسائل الأولى (القوانين، اللوحات، المعلومات). يمكن إعادة تشغيله دون تكرار.",
+    "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
+    "unknown": "قالب غير معروف: `{key}`.",
+    "plan_title": "📋 الخطة — {emoji} {name}",
+    "plan_description": "**{ready}** خطوة جاهزة · **{skipped}** متجاهَلة. الخطوة المتجاهَلة لم تجد قناتها أو رتبتها: أعد تسميتها أو أنشئها ثم أعد التشغيل.",
+    "dry_run_footer": "محاكاة: لم يتم تغيير أي شيء.",
+    "confirm": "تطبيق القالب **{name}** على **{server}**؟ سيتم تحديث الإعدادات الحالية؛ الرسائل التي نشرها البوت مسبقًا لن تُنشر مجددًا.",
+    "confirm_button": "تطبيق",
+    "cancel_button": "إلغاء",
+    "cancelled": "تم إلغاء التطبيق.",
+    "not_author": "فقط من نفّذ الأمر يمكنه التأكيد.",
+    "applying": "⏳ جارٍ تطبيق القالب **{name}**… قد يستغرق بضع ثوانٍ.",
+    "report_title": "🧩 التقرير — {emoji} {name}",
+    "report_description": "✅ **{done}** منجزة · ⚠️ **{skipped}** متجاهَلة · ❌ **{failed}** فاشلة",
+    "page_footer": "صفحة {page}/{pages}",
+    "recommended": "القنوات الموصى بها",
+    "recommended_giveaways": "🎁 المسابقات",
+    "recommended_polls": "📊 الاستطلاعات",
+    "recommended_events": "📅 الفعاليات",
+    "recommended_hint": "استخدمها في خيار `channel` للأوامر `/giveaway create` و`/poll create` و`/event create`.",
+    "templates": {
+      "shop": {
+        "name": "Redemption Story Shop",
+        "description": "متجر سكربتات: دعم، طلبات، مدفوعات، أخطاء، شراكات، معلومات الدفع."
+      },
+      "battle-royale": {
+        "name": "Redemption Story Battle Royale",
+        "description": "باتل رويال متعدد اللغات (10 لغات): تذاكر حسب الفئة، دليل، تصنيفات، بطولات، حالة FiveM."
+      },
+      "prison": {
+        "name": "Redemption Story WL (Prison RP)",
+        "description": "Prison RP بقائمة بيضاء: طلبات انضمام، دعم، بلاغات، سجلات الطاقم."
+      },
+      "school": {
+        "name": "Redemption Story School RP",
+        "description": "School RP: تسجيلات، دعم، بلاغات، سجلات الطاقم."
+      }
+    },
+    "steps": {
+      "kind": "نوع السيرفر واللغات",
+      "roles": "رتب الإدارة / الطاقم",
+      "autorole": "الرتب التلقائية (الأعضاء / البوتات)",
+      "logs": "قنوات السجلات",
+      "moderation": "الإشراف (رسائل العقوبات الخاصة، رتبة الكتم)",
+      "embed_templates": "قوالب الإمبد الافتراضية",
+      "welcome": "رسالة الترحيب",
+      "leave": "رسالة المغادرة",
+      "rules": "القوانين",
+      "tickets": "أنواع التذاكر",
+      "ticket_panel": "لوحة التذاكر",
+      "language": "اللغات (الرتب، القنوات حسب اللغة)",
+      "language_panel": "لوحة اللغة",
+      "notifications": "رتب الإشعارات",
+      "notification_panel": "لوحة الإشعارات",
+      "fivem": "حالة FiveM",
+      "info": "رسالة معلومات «{name}»"
+    },
+    "reasons": {
+      "channel_not_found": "القناة غير موجودة (تم البحث عن: {names})",
+      "role_not_found": "الرتبة غير موجودة (تم البحث عن: {names})",
+      "no_fivem_server": "لا يوجد سيرفر FiveM مضبوط (`/fivem add`)",
+      "missing_permissions": "صلاحيات البوت غير كافية: {message}",
+      "error": "خطأ: {message}"
+    }
   }
 }

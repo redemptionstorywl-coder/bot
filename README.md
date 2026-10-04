@@ -18,13 +18,14 @@ Node.js 22 · TypeScript · discord.js v14 · Prisma · MySQL · Express · Sock
 3. [Installation pas à pas](#installation-pas-à-pas)
 4. [Lancement](#lancement)
 5. [Configuration du premier serveur](#configuration-du-premier-serveur)
-6. [Dashboard web](#dashboard-web)
-7. [Commandes](#commandes)
-8. [Variables de template](#variables-de-template)
-9. [Intégration FiveM](#intégration-fivem)
-10. [Architecture & extension](#architecture--extension)
-11. [Tests](#tests)
-12. [Dépannage](#dépannage)
+6. [Templates de serveur](#templates-de-serveur)
+7. [Dashboard web](#dashboard-web)
+8. [Commandes](#commandes)
+9. [Variables de template](#variables-de-template)
+10. [Intégration FiveM](#intégration-fivem)
+11. [Architecture & extension](#architecture--extension)
+12. [Tests](#tests)
+13. [Dépannage](#dépannage)
 
 ---
 
@@ -192,6 +193,37 @@ Le dashboard écoute automatiquement sur le port `PORT` fourni par l'hébergeur.
 
 `/guild-config show` affiche l'état complet. Chaque module s'active/désactive avec `/guild-config module` ou depuis la page **Paramètres** du dashboard.
 
+> Raccourci : `/template apply` fait les étapes 1 à 6 en une fois à partir de vos salons et rôles existants (voir ci-dessous).
+
+---
+
+## Templates de serveur
+
+`/template apply template:<shop|battle-royale|prison|school> [dry_run]` pré-configure **tout le serveur en une commande** à partir des salons et rôles **déjà présents** : rien n'est renommé, et aucun salon n'est créé en dehors des catégories de tickets manquantes et des salons d'annonces par langue (Battle Royale).
+
+- **Détection par nom** : les noms sont normalisés (minuscules, sans emoji, sans `・ - _`, sans accents) et chaque cible accepte plusieurs synonymes — `👋・welcome`, `bienvenue` ou `arrivées` désignent le même salon de bienvenue ; `🛡️ RS Team`, `Support`, `Manager`… les rôles d'équipe.
+- **Plan avant action** : `dry_run:true` affiche chaque étape ✅ prête / ⚠️ ignorée (avec la raison et les noms cherchés). Sans `dry_run`, le plan est affiché puis un bouton **Appliquer** confirme ; le rapport final liste chaque étape ✅ / ⚠️ / ❌ avec le détail.
+- **Idempotent** : relancer la commande met à jour la configuration mais ne republie pas les messages déjà postés par le bot (règlement, infos, panneaux : marqueur `template:<étape>` cherché dans les 20 derniers messages du salon).
+- **Tout passe par les services existants** (`/guild-config`, `/welcome-config`, `/ticket-config`, `/language-setup`, `/notifications`… restent utilisables ensuite pour ajuster).
+
+| Étape | Ce qui est fait |
+| --- | --- |
+| Type & langues | `kind` du serveur, langue par défaut, langues activées |
+| Rôles | rôles admin / staff ajoutés à la config ; auto-rôle JOIN (Member / Player…) et BOT |
+| Logs | une catégorie de logs par salon staff (`orders` → SHOP, `bug-management` → SYSTEM, `player-reports` → MODERATION, `staff-chat` → le reste…) |
+| Modération | DM des sanctions activé, rôle mute si un rôle `Muted` existe ; templates d'embeds par défaut |
+| Bienvenue / départ | message + embed FR/EN (`{user}`, `{memberCount}`, liens vers règlement et tickets), image générée |
+| Règlement | 9–10 règles numérotées (FR puis EN) publiées dans `rules` |
+| Tickets | types par modèle (Shop : Support / Commande / Paiement / Bug / Partenariat ; BR : General Support / Bug Report / Player Report / Ban Appeal / Payment Support mappés sur les catégories existantes…), rôles staff, questions ; panneau publié dans `create-ticket` |
+| Langues | rôles de langue, panneau (salon `langues` ou à défaut `welcome`) ; BR : les salons `🇫🇷・french`… existants deviennent les salons d'annonces par langue (mode CHANNELS), les langues manquantes sont créées dans 📢 Annonces |
+| Notifications | rôles de notification (annonces, giveaways, mises à jour, shop / events, tournois, streams…) + panneau |
+| FiveM | salon de statut (`stats` / `server-status`) si un serveur est configuré avec `/fivem add` |
+| Infos | messages FR/EN : moyens de paiement, feedback (Shop) ; how-to-play, leaderboards, tournament-info, streamers (BR) ; whitelist / inscription (Prison, School) |
+
+Les salons `giveaways`, `polls` et `events` ne sont pas persistés : ils sont rappelés en fin de rapport comme salons à indiquer dans `/giveaway create`, `/poll create` et `/event create`.
+
+Pour ajouter un modèle : créer `src/templates/<nom>.ts` (type `ServerTemplate`), l'enregistrer dans `src/templates/index.ts` et ajouter `admin.template.templates.<clé>` dans les locales.
+
 ---
 
 ## Dashboard web
@@ -208,11 +240,11 @@ Voir [`dashboard/README.md`](dashboard/README.md) pour la structure et l'ajout d
 
 ## Commandes
 
-La liste à jour est disponible avec `/help` (48 commandes). Principales commandes :
+La liste à jour est disponible avec `/help` (49 commandes). Principales commandes :
 
 | Catégorie | Commandes |
 | --- | --- |
-| Administration | `/info` (fiche du serveur : catégories, salons, rôles avec IDs), `/dm user|all|status|cancel` (messages privés via le bot), `/guild-config type|show|language|languages|staff-role|admin-role|log-channel|module|brand-color|translation-mode|language-channel`, `/help`, `/status`, `/fivem add|remove|list|status|maintenance|status-channel|players` |
+| Administration | `/template list|apply` (pré-configuration complète par modèle), `/info` (fiche du serveur : catégories, salons, rôles avec IDs), `/dm user|all|status|cancel` (messages privés via le bot), `/guild-config type|show|language|languages|staff-role|admin-role|log-channel|module|brand-color|translation-mode|language-channel`, `/help`, `/status`, `/fivem add|remove|list|status|maintenance|status-channel|players` |
 | Langue & rôles | `/language`, `/language-setup` (crée rôles + salon + panneau), `/autorole add|remove|list`, `/rolemenu create|add-role|remove-role|publish|edit|delete|list`, `/reactionrole create|remove|list`, `/notifications setup|panel|add|remove|list` |
 | Bienvenue / départ | `/welcome-config` — panneau interactif éphémère (onglets Bienvenue / Départ : activation, salon, message, embed, image, DM, bouton langue, boutons liens, logs des départs, test) |
 | Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |

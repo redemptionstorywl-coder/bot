@@ -54,5 +54,72 @@
     "channels_title": "📁 Категории и каналы",
     "roles_title": "🎭 Роли ({from}–{to} / {total})",
     "role_members": "участн."
+  },
+  "template": {
+    "list_title": "🧩 Шаблоны сервера",
+    "list_description": "Шаблон находит ваши каналы и роли по названию, настраивает бота за один раз (тип, роли, логи, приветствие, тикеты, языки, уведомления) и публикует первые сообщения (правила, панели, информацию). Можно запускать повторно без дублей.",
+    "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
+    "unknown": "Неизвестный шаблон: `{key}`.",
+    "plan_title": "📋 План — {emoji} {name}",
+    "plan_description": "**{ready}** шаг(ов) готово · **{skipped}** пропущено. Пропущенный шаг не нашёл свой канал или роль: переименуйте или создайте их и запустите снова.",
+    "dry_run_footer": "Симуляция: ничего не изменено.",
+    "confirm": "Применить шаблон **{name}** к **{server}**? Существующая конфигурация будет обновлена; уже опубликованные ботом сообщения не публикуются повторно.",
+    "confirm_button": "Применить",
+    "cancel_button": "Отмена",
+    "cancelled": "Применение отменено.",
+    "not_author": "Подтвердить может только тот, кто запустил команду.",
+    "applying": "⏳ Применение шаблона **{name}**… это может занять несколько секунд.",
+    "report_title": "🧩 Отчёт — {emoji} {name}",
+    "report_description": "✅ **{done}** выполнено · ⚠️ **{skipped}** пропущено · ❌ **{failed}** с ошибкой",
+    "page_footer": "Страница {page}/{pages}",
+    "recommended": "Рекомендуемые каналы",
+    "recommended_giveaways": "🎁 Розыгрыши",
+    "recommended_polls": "📊 Опросы",
+    "recommended_events": "📅 События",
+    "recommended_hint": "Укажите их в опции `channel` команд `/giveaway create`, `/poll create` и `/event create`.",
+    "templates": {
+      "shop": {
+        "name": "Redemption Story Shop",
+        "description": "Магазин скриптов: поддержка, заказы, оплата, баги, партнёрства, информация об оплате."
+      },
+      "battle-royale": {
+        "name": "Redemption Story Battle Royale",
+        "description": "Многоязычный Battle Royale (10 языков): тикеты по категориям, гайд, таблицы лидеров, турниры, статус FiveM."
+      },
+      "prison": {
+        "name": "Redemption Story WL (Prison RP)",
+        "description": "Prison RP с вайтлистом: заявки, поддержка, жалобы, логи персонала."
+      },
+      "school": {
+        "name": "Redemption Story School RP",
+        "description": "School RP: регистрации, поддержка, жалобы, логи персонала."
+      }
+    },
+    "steps": {
+      "kind": "Тип сервера и языки",
+      "roles": "Роли админов / персонала",
+      "autorole": "Авто-роли (участники / боты)",
+      "logs": "Каналы логов",
+      "moderation": "Модерация (ЛС о санкциях, роль мута)",
+      "embed_templates": "Шаблоны эмбедов по умолчанию",
+      "welcome": "Приветственное сообщение",
+      "leave": "Сообщение об уходе",
+      "rules": "Правила",
+      "tickets": "Типы тикетов",
+      "ticket_panel": "Панель тикетов",
+      "language": "Языки (роли, каналы по языкам)",
+      "language_panel": "Панель выбора языка",
+      "notifications": "Роли уведомлений",
+      "notification_panel": "Панель уведомлений",
+      "fivem": "Статус FiveM",
+      "info": "Информационное сообщение «{name}»"
+    },
+    "reasons": {
+      "channel_not_found": "Канал не найден (искали: {names})",
+      "role_not_found": "Роль не найдена (искали: {names})",
+      "no_fivem_server": "Сервер FiveM не настроен (`/fivem add`)",
+      "missing_permissions": "Недостаточно прав у бота: {message}",
+      "error": "Ошибка: {message}"
+    }
   }
 }

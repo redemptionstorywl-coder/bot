@@ -54,5 +54,72 @@
     "channels_title": "📁 Kategoriler ve kanallar",
     "roles_title": "🎭 Roller ({from}–{to} / {total})",
     "role_members": "üye"
+  },
+  "template": {
+    "list_title": "🧩 Sunucu şablonları",
+    "list_description": "Bir şablon mevcut kanal ve rollerinizi ada göre algılar, botu tek seferde yapılandırır (tür, roller, loglar, karşılama, destek talepleri, diller, bildirimler) ve ilk mesajları yayınlar (kurallar, paneller, bilgiler). Kopya oluşturmadan tekrar çalıştırılabilir.",
+    "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
+    "unknown": "Bilinmeyen şablon: `{key}`.",
+    "plan_title": "📋 Plan — {emoji} {name}",
+    "plan_description": "**{ready}** adım hazır · **{skipped}** atlandı. Atlanan bir adım kanalını veya rolünü bulamadı: yeniden adlandırın ya da oluşturun, sonra tekrar çalıştırın.",
+    "dry_run_footer": "Simülasyon: hiçbir şey değiştirilmedi.",
+    "confirm": "**{name}** şablonu **{server}** sunucusuna uygulansın mı? Mevcut yapılandırma güncellenir; botun zaten yayınladığı mesajlar tekrar gönderilmez.",
+    "confirm_button": "Uygula",
+    "cancel_button": "İptal",
+    "cancelled": "Uygulama iptal edildi.",
+    "not_author": "Yalnızca komutu çalıştıran kişi onaylayabilir.",
+    "applying": "⏳ **{name}** şablonu uygulanıyor… birkaç saniye sürebilir.",
+    "report_title": "🧩 Rapor — {emoji} {name}",
+    "report_description": "✅ **{done}** tamamlandı · ⚠️ **{skipped}** atlandı · ❌ **{failed}** başarısız",
+    "page_footer": "Sayfa {page}/{pages}",
+    "recommended": "Önerilen kanallar",
+    "recommended_giveaways": "🎁 Çekilişler",
+    "recommended_polls": "📊 Anketler",
+    "recommended_events": "📅 Etkinlikler",
+    "recommended_hint": "`/giveaway create`, `/poll create` ve `/event create` komutlarının `channel` seçeneğinde kullanın.",
+    "templates": {
+      "shop": {
+        "name": "Redemption Story Shop",
+        "description": "Script mağazası: destek, siparişler, ödemeler, hatalar, ortaklıklar, ödeme bilgileri."
+      },
+      "battle-royale": {
+        "name": "Redemption Story Battle Royale",
+        "description": "Çok dilli Battle Royale (10 dil): kategoriye göre destek talepleri, rehber, sıralamalar, turnuvalar, FiveM durumu."
+      },
+      "prison": {
+        "name": "Redemption Story WL (Prison RP)",
+        "description": "Whitelist Prison RP: başvurular, destek, şikayetler, yetkili logları."
+      },
+      "school": {
+        "name": "Redemption Story School RP",
+        "description": "School RP: kayıtlar, destek, şikayetler, yetkili logları."
+      }
+    },
+    "steps": {
+      "kind": "Sunucu türü ve diller",
+      "roles": "Yönetici / yetkili rolleri",
+      "autorole": "Otomatik roller (üyeler / botlar)",
+      "logs": "Log kanalları",
+      "moderation": "Moderasyon (yaptırım DM’leri, susturma rolü)",
+      "embed_templates": "Varsayılan embed şablonları",
+      "welcome": "Karşılama mesajı",
+      "leave": "Ayrılma mesajı",
+      "rules": "Kurallar",
+      "tickets": "Destek talebi türleri",
+      "ticket_panel": "Destek talebi paneli",
+      "language": "Diller (roller, dile göre kanallar)",
+      "language_panel": "Dil paneli",
+      "notifications": "Bildirim rolleri",
+      "notification_panel": "Bildirim paneli",
+      "fivem": "FiveM durumu",
+      "info": "Bilgi mesajı “{name}”"
+    },
+    "reasons": {
+      "channel_not_found": "Kanal bulunamadı (aranan: {names})",
+      "role_not_found": "Rol bulunamadı (aranan: {names})",
+      "no_fivem_server": "Yapılandırılmış FiveM sunucusu yok (`/fivem add`)",
+      "missing_permissions": "Bot izinleri yetersiz: {message}",
+      "error": "Hata: {message}"
+    }
   }
 }
