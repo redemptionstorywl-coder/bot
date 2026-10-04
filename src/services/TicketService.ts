@@ -734,6 +734,20 @@ export class TicketService {
     await target.edit({ embeds: [embed], components: this.buildControls(ticket, t) }).catch((err) => log.warn({ err, ticket: ticket.id }, 'Mise à jour du message de contrôle échouée'));
   }
 
+  /** Republie le message de contrôle (embed + boutons, épinglé) d'un ticket ouvert : salon recréé par /clear. */
+  async republishControls(ticketId: number): Promise<void> {
+    const ticket = await this.getTicket(ticketId);
+    if (!ticket || !OPEN_STATUSES.includes(ticket.status)) return;
+    const channel = await this.fetchChannel(ticket.channelId);
+    if (!channel) return;
+    const config = await guildConfigService.get(ticket.guildId);
+    const lang = ticket.language ?? config?.defaultLanguage ?? 'fr';
+    const t = translationService.bind(lang, ticket.guildId);
+    const user = await channel.client.users.fetch(ticket.userId).catch(() => null);
+    const message = await channel.send({ embeds: [this.buildTicketEmbed(ticket, ticket.type, channel.guild, user, lang, config?.brandColor)], components: this.buildControls(ticket, t) });
+    await message.pin().catch(() => null);
+  }
+
   // ───── Lecture ─────
 
   async getTicket(id: number): Promise<TicketFull | null> {

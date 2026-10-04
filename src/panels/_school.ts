@@ -169,7 +169,8 @@ export async function renderEntity(kind: EntityKind, id: number, opts: SchoolRen
     if (roleId) s.setDefaultRoles(roleId);
     return row(s);
   };
-  const assign = () => row(new UserSelectMenuBuilder().setCustomId(scid('assign', kind, id)).setPlaceholder(truncate(t(`panels_modules.school.${kind}_assign_placeholder`), 150)).setMinValues(1).setMaxValues(25));
+  /** Affectation de membres : classes et maisons uniquement (pas de clubs). */
+  const assign = (target: 'class' | 'house') => row(new UserSelectMenuBuilder().setCustomId(scid('assign', target, id)).setPlaceholder(truncate(t(`panels_modules.school.${target}_assign_placeholder`), 150)).setMinValues(1).setMaxValues(25));
 
   if (kind === 'class') {
     const c = await schoolService.requireClass(guild.id, id);
@@ -183,7 +184,7 @@ export async function renderEntity(kind: EntityKind, id: number, opts: SchoolRen
     if (c.channelId) channel.setDefaultChannels(c.channelId);
     const teacher = new UserSelectMenuBuilder().setCustomId(scid('set', kind, 'teacher', id)).setPlaceholder(truncate(t('panels_modules.school.teacher_placeholder'), 150)).setMinValues(0).setMaxValues(1);
     if (c.teacherId) teacher.setDefaultUsers(c.teacherId);
-    return { embeds: [embed], components: [roleSelect(c.roleId), row(channel), row(teacher), assign(), row(edit, back)] };
+    return { embeds: [embed], components: [roleSelect(c.roleId), row(channel), row(teacher), assign('class'), row(edit, back)] };
   }
   if (kind === 'house') {
     const h = (await schoolService.listHouses(guild.id)).find((x) => x.id === id) ?? null;
@@ -195,7 +196,7 @@ export async function renderEntity(kind: EntityKind, id: number, opts: SchoolRen
       { name: t('panels_modules.school.field_role'), value: roleMention(h.roleId, none), inline: true },
     );
     if (h.color) embed.setColor(parseInt(h.color.replace('#', ''), 16));
-    return { embeds: [embed], components: [roleSelect(h.roleId), assign(), row(edit, back)] };
+    return { embeds: [embed], components: [roleSelect(h.roleId), assign('house'), row(edit, back)] };
   }
   const c = await schoolService.requireClub(guild.id, id);
   embed.setTitle(`🎨 ${c.name}`).addFields(

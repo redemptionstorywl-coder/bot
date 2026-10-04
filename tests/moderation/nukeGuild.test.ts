@@ -97,6 +97,22 @@ describe('remapChannelReferences', () => {
     const r = await remapChannelReferences('g', MAP, { includeTickets: true });
     expect(prisma.ticket!.update).toHaveBeenCalledWith({ where: { id: 11 }, data: { channelId: 'new-2' } });
     expect(r.counts.ticket).toBe(1);
+    expect(r.ticketIds).toEqual([11]);
+  });
+
+  it('/clear salon sur un salon de ticket : le ticket suit le nouveau salon et ses boutons sont republiés', async () => {
+    prisma.ticket!.findMany!.mockResolvedValue([{ id: 12, channelId: 'old-1' }]);
+    prisma.sanction!.aggregate!.mockResolvedValue({ _max: { caseNumber: 0 } });
+    prisma.sanction!.create!.mockResolvedValue({ id: 1, caseNumber: 1, type: 'PURGE', userId: null, moderatorId: 'admin', reason: null, duration: null, channelId: 'new-1', metadata: null, createdAt: new Date() });
+    vi.mocked(ticketService).republishControls = vi.fn() as never;
+    const svc = new ModerationService();
+    const clone = { id: 'new-1', setPosition: vi.fn(async () => null) };
+    const channel = { id: 'old-1', name: 'ticket-12', type: ChannelType.GuildText, position: 3, guild: { id: 'g', rulesChannelId: null, publicUpdatesChannelId: null, safetyAlertsChannelId: null, systemChannelId: null }, clone: vi.fn(async () => clone), delete: vi.fn(async () => null) };
+    const r = await svc.nukeChannel({ channel: channel as never, moderator: { id: 'admin' } as never });
+    expect(r.channel).toBe(clone);
+    expect(prisma.ticket!.update).toHaveBeenCalledWith({ where: { id: 12 }, data: { channelId: 'new-1' } });
+    expect(ticketService.loadOpenChannels).toHaveBeenCalled();
+    expect((ticketService as unknown as { republishControls: ReturnType<typeof vi.fn> }).republishControls).toHaveBeenCalledWith(12);
   });
 
   it('ne fait rien sans salon recréé et ignore les configs non concernées', async () => {

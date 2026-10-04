@@ -70,6 +70,7 @@ export default defineCommand({
 
 ### Qualité
 - `npx tsc -p tsconfig.json --noEmit` doit passer sans erreur.
+- `npm run check` (scripts/checks/) doit être vert : customIds ⇄ handlers, clés fr/en, références mortes, Lua ⇄ API FiveM, migrations ⇄ schéma. Toute modification du schéma passe par une **nouvelle** migration.
 - Tests Vitest dans `tests/<module>/*.test.ts`, en mockant Prisma : `vi.mock('../../src/database/client', () => ({ prisma: mockPrisma }))` (voir `tests/helpers/prisma.ts`).
 - Aucune fonctionnalité simulée : pas de `TODO`, pas de bouton qui ne fait rien. Si une intégration externe est requise (Tebex, FiveM), implémenter l'architecture + documenter précisément ce qu'il faut brancher.
 

@@ -345,6 +345,8 @@ export function isGuildNameConfirmed(input: string | null | undefined, guildName
 export interface ChannelRemapResult {
   counts: Record<string, number>;
   ticketPanelIds: number[];
+  /** Tickets ouverts rattachés à un salon recréé (`includeTickets`) : message de contrôle à republier */
+  ticketIds?: number[];
   roleMenuIds: number[];
   eventIds: number[];
   giveawayIds: number[];
@@ -493,6 +495,7 @@ export async function remapChannelReferences(guildId: string, map: Record<string
   if (opts.includeTickets) {
     for (const row of await prisma.ticket.findMany({ where: { guildId, channelId: inOld, status: { not: 'DELETED' } } })) {
       await prisma.ticket.update({ where: { id: row.id }, data: { channelId: next(row.channelId)! } });
+      (result.ticketIds ??= []).push(row.id);
       count('ticket', 1);
     }
   }
@@ -1019,7 +1022,11 @@ export class ModerationService {
     const { channel, moderator } = opts;
     if (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement) throw new ModerationError('moderation.errors.channel_type');
     const clone = await this.recreateChannel(channel, auditReason(moderator, opts.reason ?? 'clear salon'));
-    await remapChannelReferences(channel.guild.id, { [channel.id]: clone.id }).then((r) => this.afterRemap(channel.guild, r)).catch((err) => log.warn({ err, channel: channel.id }, 'Remap après /clear salon incomplet'));
+    // Le salon a été choisi explicitement : s'il s'agit d'un ticket, celui-ci suit le nouveau salon (sinon il restait
+    // ouvert sur un salon supprimé, sans contrôle possible, et bloquait la limite de tickets du membre).
+    await remapChannelReferences(channel.guild.id, { [channel.id]: clone.id }, { includeTickets: true })
+      .then((r) => this.afterRemap(channel.guild, r, { includeTickets: (r.ticketIds?.length ?? 0) > 0 }))
+      .catch((err) => log.warn({ err, channel: channel.id }, 'Remap après /clear salon incomplet'));
     const sanction = await this.createSanction({
       guildId: channel.guild.id,
       type: 'PURGE',
@@ -1090,6 +1097,7 @@ export class ModerationService {
     welcomeService.invalidate(guild.id);
     roleService.invalidate(guild.id); // vide aussi le cache des role menus et recharge les reaction roles suivis
     if (opts.includeTickets) await attempt('tickets', () => ticketService.loadOpenChannels());
+    for (const id of remap.ticketIds ?? []) await attempt(`ticket #${id}`, () => ticketService.republishControls(id));
     for (const id of remap.ticketPanelIds) await attempt(`ticket panel #${id}`, () => ticketService.republishPanel(id));
     for (const id of remap.roleMenuIds) {
       await attempt(`role menu #${id}`, async () => {

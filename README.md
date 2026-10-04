@@ -288,6 +288,13 @@ npm test
 
 Les tests (Vitest) couvrent les systèmes critiques : tickets, permissions, traductions de l'interface, rôles, sanctions, `/clear serveur`, annonces, programmation, base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
 
+```bash
+npm run check            # vérifications statiques (aussi exécutées par npm test)
+npm run check -- --verbose
+```
+
+`scripts/checks/` : customIds ⇄ handlers (chaque bouton / menu / modal généré a un handler qui traite son action, aucun handler orphelin, admin requis sur la configuration), clés de traduction fr/en (littérales, dynamiques, codes d'erreur, parité), références mortes (commandes supprimées, anciennes variables), ressource Lua `rs_bridge` ⇄ API FiveM (routes, en-têtes, corps, champs de réponse), migrations ⇄ `schema.prisma` (table par table, colonne par colonne ; `SHADOW_DATABASE_URL=mysql://…` ajoute la comparaison sur une vraie base).
+
 ---
 
 ## Dépannage
