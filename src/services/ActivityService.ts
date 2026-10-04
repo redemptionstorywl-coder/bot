@@ -20,7 +20,8 @@ interface PendingEntry {
 export class ActivityService {
   private pending = new Map<string, PendingEntry>();
   private readonly dbCache = new TTLCache<number>(30_000, 20_000);
-  private flushing = false;
+  /** Flush en cours : un appel concurrent (tâche planifiée + arrêt du bot) l'attend au lieu de rendre la main tout de suite. */
+  private inFlight: Promise<number> | null = null;
 
   private key(guildId: string, userId: string): string {
     return `${guildId}:${userId}`;
@@ -64,8 +65,19 @@ export class ActivityService {
    * En cas d'erreur, les compteurs sont réinjectés dans le buffer.
    */
   async flush(): Promise<number> {
-    if (this.flushing || this.pending.size === 0) return 0;
-    this.flushing = true;
+    // À l'arrêt, `flush()` peut être appelé pendant la tâche planifiée : on attend la fin de celle-ci
+    // (sinon la base était déconnectée pendant l'écriture et les compteurs perdus), puis on écrit le reste.
+    while (this.inFlight) await this.inFlight.catch(() => 0);
+    if (this.pending.size === 0) return 0;
+    this.inFlight = this.write();
+    try {
+      return await this.inFlight;
+    } finally {
+      this.inFlight = null;
+    }
+  }
+
+  private async write(): Promise<number> {
     const batch = this.pending;
     this.pending = new Map();
     try {
@@ -97,8 +109,6 @@ export class ActivityService {
       }
       log.error({ err }, 'Flush de l’activité en erreur');
       throw err;
-    } finally {
-      this.flushing = false;
     }
   }
 

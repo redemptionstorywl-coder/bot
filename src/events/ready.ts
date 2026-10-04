@@ -39,6 +39,7 @@ export default defineEvent({
       readyClient.user.setPresence({ activities: [{ name: s.name, type: s.type }], status: 'online' });
     };
     rotate();
-    setInterval(rotate, 60_000).unref();
+    // Rotation du statut via le scheduler central (pas de setInterval ad hoc).
+    if (!scheduler.registered.includes('core:presence')) scheduler.register({ name: 'core:presence', intervalMs: 60_000, run: async () => rotate() });
   },
 });

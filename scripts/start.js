@@ -16,10 +16,12 @@ if (!fs.existsSync(entry)) {
   run('node scripts/copy-assets.js');
 }
 
-if (process.env.SKIP_MIGRATIONS !== '1') {
+if (process.env.SKIP_MIGRATIONS !== '1' && process.env.RUN_MIGRATIONS !== '0') {
   try {
     console.log('▶ Application des migrations Prisma…');
     run('npx prisma migrate deploy');
+    // Déjà fait : src/index.ts ne relance pas `prisma migrate deploy` (sinon deux exécutions à chaque démarrage).
+    process.env.RUN_MIGRATIONS = '0';
   } catch (err) {
     console.error('▲ Migrations non appliquées :', err.message);
   }

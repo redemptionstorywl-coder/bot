@@ -48,6 +48,30 @@ describe('ActivityService', () => {
     expect(await service.flush()).toBe(0);
   });
 
+  it('flush concurrent (arrêt pendant la tâche planifiée) : attend l’écriture en cours puis écrit le reste', async () => {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    prismaMock.$transaction.mockImplementationOnce(async (ops: Promise<unknown>[]) => {
+      await gate;
+      return Promise.all(ops);
+    });
+    service.increment('g1', 'u1');
+    const first = service.flush();
+    service.increment('g1', 'u2'); // reçu pendant l'écriture
+    let secondDone = false;
+    const second = service.flush().then((n) => {
+      secondDone = true;
+      return n;
+    });
+    await new Promise((r) => setTimeout(r, 5));
+    expect(secondDone).toBe(false); // ne rend pas la main pendant l'écriture en cours
+    release();
+    expect(await first).toBe(1);
+    expect(await second).toBe(1);
+    expect(service.pendingSize).toBe(0);
+    expect(prismaMock.messageActivity.upsert).toHaveBeenCalledTimes(2);
+  });
+
   it('flush : réinjecte les compteurs en cas d’erreur base', async () => {
     service.increment('g1', 'u1');
     service.increment('g1', 'u1');

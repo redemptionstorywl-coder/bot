@@ -227,7 +227,8 @@ export class TicketService {
   /** channelId → ticketId des tickets ouverts (évite toute requête SQL sur les messages hors ticket) */
   private readonly openChannels = new Map<string, number>();
   private messageBuffer: Prisma.TicketMessageCreateManyInput[] = [];
-  private flushing = false;
+  /** Écriture en cours du buffer : un flush concurrent (transcript à la fermeture) l'attend avant d'écrire le reste. */
+  private flushInFlight: Promise<void> | null = null;
   private schedulerRegistered = false;
 
   // ───── Cycle de vie ─────
@@ -298,17 +299,23 @@ export class TicketService {
     if (this.messageBuffer.length >= 50) void this.flushMessages();
   }
 
+  /**
+   * Écrit le buffer des messages en base. Si une écriture est déjà en cours (tâche planifiée), on l'attend puis on
+   * écrit ce qui reste : le transcript d'un ticket fermé à ce moment-là contient bien les derniers messages.
+   */
   async flushMessages(): Promise<void> {
-    if (this.flushing || !this.messageBuffer.length) return;
-    this.flushing = true;
+    while (this.flushInFlight) await this.flushInFlight;
+    if (!this.messageBuffer.length) return;
     const batch = this.messageBuffer;
     this.messageBuffer = [];
+    this.flushInFlight = prisma.ticketMessage
+      .createMany({ data: batch, skipDuplicates: true })
+      .then(() => undefined)
+      .catch((err) => log.error({ err, count: batch.length }, 'Flush des messages de tickets échoué'));
     try {
-      await prisma.ticketMessage.createMany({ data: batch, skipDuplicates: true });
-    } catch (err) {
-      log.error({ err, count: batch.length }, 'Flush des messages de tickets échoué');
+      await this.flushInFlight;
     } finally {
-      this.flushing = false;
+      this.flushInFlight = null;
     }
   }
 

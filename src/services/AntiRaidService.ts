@@ -107,6 +107,8 @@ export class AntiRaidService {
   private readonly punished = new TTLCache<true>(15_000, 10_000);
   /** Lockdown automatique déjà déclenché récemment pour ce serveur. */
   private readonly lockdownTriggered = new TTLCache<true>(60_000, 1000);
+  /** Contrôles d'arrivée en cours / récents (`guild:user` → expulsé ?), partagés entre les écouteurs guildMemberAdd. */
+  private readonly screenings = new TTLCache<Promise<boolean>>(30_000, 5000);
 
   attach(client: Client): void {
     this.client = client;
@@ -273,23 +275,47 @@ export class AntiRaidService {
     });
   }
 
-  async handleMemberAdd(member: GuildMember): Promise<void> {
+  /**
+   * Contrôle anti-raid d'une arrivée, mémoïsé 30 s par membre : l'écouteur anti-raid le déclenche et les autres
+   * écouteurs `guildMemberAdd` (autoroles, bienvenue) l'attendent pour ne pas accueillir un membre aussitôt expulsé.
+   * Ne lance jamais ; retourne true si le membre a été expulsé.
+   */
+  screenMember(member: GuildMember): Promise<boolean> {
+    const key = `${member.guild.id}:${member.id}`;
+    const pending = this.screenings.get(key);
+    if (pending) return pending;
+    const run = this.handleMemberAdd(member).catch((err) => {
+      log.warn({ err, guild: member.guild.id, user: member.id }, 'Anti-raid : contrôle d’arrivée en erreur');
+      return false;
+    });
+    this.screenings.set(key, run);
+    return run;
+  }
+
+  /** Anti-bot / anti-mass-join / anti-compte récent. Retourne true si le membre a été expulsé. */
+  async handleMemberAdd(member: GuildMember): Promise<boolean> {
     const gcfg = await guildConfigService.get(member.guild.id);
-    if (!gcfg?.modules.antiraid) return;
+    if (!gcfg?.modules.antiraid) return false;
     const cfg = await moderationService.getAntiRaidConfig(member.guild.id);
     const { t } = await moderationService.guildTranslator(member.guild.id);
     const bot = member.client.user;
 
     // Anti-bot : bots non autorisés expulsés, sauf ajoutés par un admin.
     if (member.user.bot) {
-      if (!cfg.antiBot.enabled || cfg.antiBot.allowedBotIds.includes(member.id)) return;
+      if (!cfg.antiBot.enabled || cfg.antiBot.allowedBotIds.includes(member.id)) return false;
       const executor = await this.findBotAdder(member);
-      if (executor && this.isAdmin(executor, gcfg)) return;
-      if (!member.kickable) return;
+      if (executor && this.isAdmin(executor, gcfg)) return false;
+      if (!member.kickable) return false;
       const reason = t('moderation.antiraid.reasons.bot');
-      await moderationService.kick({ guild: member.guild, target: member, moderator: bot, reason, metadata: { antiraid: 'bot', addedBy: executor?.id ?? null } }).catch((err) => log.warn({ err }, 'Anti-bot : kick impossible'));
+      const kicked = await moderationService
+        .kick({ guild: member.guild, target: member, moderator: bot, reason, metadata: { antiraid: 'bot', addedBy: executor?.id ?? null } })
+        .then(() => true)
+        .catch((err) => {
+          log.warn({ err }, 'Anti-bot : kick impossible');
+          return false;
+        });
       await this.logSecurity(member, 'bot', t, [{ name: t('moderation.fields.added_by'), value: executor ? `<@${executor.id}>` : t('core.none'), inline: true }]);
-      return;
+      return kicked;
     }
 
     // Anti-mass-join : fenêtre par serveur → lockdown automatique.
@@ -308,6 +334,7 @@ export class AntiRaidService {
     }
 
     // Anti-compte récent.
+    let kicked = false;
     if (cfg.antiNewAccount.enabled && this.isAccountTooYoung(member.user.createdTimestamp, cfg.antiNewAccount.minAgeDays)) {
       const ageDays = Math.floor((Date.now() - member.user.createdTimestamp) / 86400_000);
       const reason = t('moderation.antiraid.reasons.new_account', { days: cfg.antiNewAccount.minAgeDays });
@@ -317,6 +344,7 @@ export class AntiRaidService {
         action = ok ? t('moderation.antiraid.actions.quarantined', { role: `<@&${cfg.antiNewAccount.quarantineRoleId}>` }) : t('moderation.antiraid.actions.quarantine_failed');
       } else if (member.kickable) {
         const r = await moderationService.kick({ guild: member.guild, target: member, moderator: bot, reason, metadata: { antiraid: 'new_account', ageDays } }).catch(() => null);
+        kicked = !!r;
         action = r ? t('moderation.antiraid.actions.kicked_case', { number: r.sanction.caseNumber }) : t('moderation.antiraid.actions.kick_failed');
       }
       await this.logSecurity(member, 'new_account', t, [
@@ -324,6 +352,7 @@ export class AntiRaidService {
         { name: t('moderation.antiraid.action_taken'), value: action, inline: true },
       ]);
     }
+    return kicked;
   }
 
   private isAdmin(member: GuildMember, gcfg: ResolvedGuildConfig): boolean {

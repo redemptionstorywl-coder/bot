@@ -5,9 +5,12 @@ export class CooldownManager {
   private readonly map = new Map<string, number>();
   private sweepTimer: NodeJS.Timeout | null = null;
 
+  /** `sweepIntervalMs = 0` : pas de minuterie propre, `sweep()` est appelé par le scheduler (tâche `core:cooldowns`). */
   constructor(private readonly sweepIntervalMs = 60_000) {
-    this.sweepTimer = setInterval(() => this.sweep(), this.sweepIntervalMs);
-    this.sweepTimer.unref?.();
+    if (this.sweepIntervalMs > 0) {
+      this.sweepTimer = setInterval(() => this.sweep(), this.sweepIntervalMs);
+      this.sweepTimer.unref?.();
+    }
   }
 
   /** Retourne le temps restant en ms (0 si aucun cooldown actif). */
@@ -40,7 +43,8 @@ export class CooldownManager {
     this.map.delete(`${scope}:${userId}`);
   }
 
-  private sweep(): void {
+  /** Supprime les cooldowns expirés. */
+  sweep(): void {
     const now = Date.now();
     for (const [k, v] of this.map) if (v <= now) this.map.delete(k);
   }

@@ -17,6 +17,7 @@ import { checkPanelAccess, isHttpUrl, isWelcomeTab, parseButtonLines, renderPane
  */
 export default defineModal({
   id: 'welcome',
+  permissions: { internal: 'admin' },
   async execute(interaction, args, ctx) {
     const { t, config } = ctx;
     const [kind, action, tabArg] = args;

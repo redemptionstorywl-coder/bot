@@ -28,6 +28,7 @@ import {
  */
 export default defineButton({
   id: 'welcome',
+  permissions: { internal: 'admin' },
   cooldown: 1,
   async execute(interaction, args, ctx) {
     const [action, second, third] = args;

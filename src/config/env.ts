@@ -19,7 +19,7 @@ const envSchema = z.object({
   FIVEM_API_KEY: z.string().min(8).default('change-me-fivem-api-key'),
   TEBEX_WEBHOOK_SECRET: z.string().optional().default(''),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),
+  LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']).default('info'),
   TZ: z.string().default('Europe/Paris'),
 });
 

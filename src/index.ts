@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { execSync } from 'node:child_process';
 import { Events } from 'discord.js';
@@ -10,17 +11,32 @@ import { deployCommands } from './core/deploy';
 import { scheduler } from './services/SchedulerService';
 import { registerCoreTasks } from './core/tasks';
 import { ticketService } from './services/TicketService';
+import { ticketReminderService } from './services/TicketReminderService';
 import { activityService } from './services/ActivityService';
 import { startDashboard } from '../dashboard/server';
+
+/**
+ * Racine du projet (dossier contenant prisma/schema.prisma) : `__dirname` vaut src/ en développement (tsx)
+ * et dist/src/ une fois compilé — un chemin relatif fixe pointait hors du projet en `npm run dev`.
+ */
+function projectRoot(): string {
+  let dir = __dirname;
+  for (let i = 0; i < 4; i++) {
+    if (fs.existsSync(path.join(dir, 'prisma', 'schema.prisma'))) return dir;
+    dir = path.dirname(dir);
+  }
+  return process.cwd();
+}
 
 async function main(): Promise<void> {
   const config = env();
   logger.info({ env: config.NODE_ENV, clientId: config.CLIENT_ID, token: maskSecret(config.DISCORD_TOKEN) }, 'Démarrage de Redemption Story Bot');
 
-  if (process.env.RUN_MIGRATIONS !== '0') {
+  // scripts/start.js applique déjà les migrations (et pose RUN_MIGRATIONS=0) ; SKIP_MIGRATIONS=1 les désactive partout.
+  if (process.env.RUN_MIGRATIONS !== '0' && process.env.SKIP_MIGRATIONS !== '1') {
     try {
       logger.info('Application des migrations Prisma…');
-      execSync('npx prisma migrate deploy', { stdio: 'pipe', cwd: path.resolve(__dirname, '..', '..'), env: process.env });
+      execSync('npx prisma migrate deploy', { stdio: 'pipe', cwd: projectRoot(), env: process.env });
       logger.info('Migrations à jour');
     } catch (err) {
       const out = (err as { stdout?: Buffer; stderr?: Buffer }).stderr?.toString() || (err as Error).message;
@@ -46,12 +62,16 @@ async function main(): Promise<void> {
 
   const dashboard = await startDashboard(client);
 
+  let stopping = false;
   const shutdown = async (signal: string) => {
+    if (stopping) return;
+    stopping = true;
     logger.info({ signal }, 'Arrêt en cours…');
     scheduler.stop();
     for (const mod of client.modules.values()) await Promise.resolve(mod.onShutdown?.(client)).catch(() => null);
     // Buffers mémoire (messages de tickets, compteurs d'activité) : écrits en base avant la déconnexion.
     await ticketService.flushMessages().catch((err) => logger.warn({ err }, 'Flush des messages de tickets à l’arrêt'));
+    await ticketReminderService.flushActivity().catch((err) => logger.warn({ err }, 'Flush de l’activité des tickets à l’arrêt'));
     await activityService.flush().catch((err) => logger.warn({ err }, 'Flush de l’activité à l’arrêt'));
     await dashboard.close().catch(() => null);
     client.destroy();

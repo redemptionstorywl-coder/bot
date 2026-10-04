@@ -13,7 +13,8 @@ export class RedemptionClient extends Client {
   readonly selectMenus = new Collection<string, SelectMenuHandler>();
   readonly modals = new Collection<string, ModalHandler>();
   readonly modules = new Collection<string, BotModule>();
-  readonly cooldowns = new CooldownManager();
+  /** Purge des cooldowns expirés : tâche `core:cooldowns` du scheduler (src/core/tasks.ts). */
+  readonly cooldowns = new CooldownManager(0);
   /** Bus interne (dashboard ↔ bot) */
   readonly bus = new EventEmitter();
   readonly startedAt = Date.now();

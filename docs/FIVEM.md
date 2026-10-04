@@ -247,7 +247,7 @@ L'adaptateur est choisi par `FiveMServer.framework`. Il **normalise** les payloa
 
 | Framework | Stats acceptées | Sanctions acceptées |
 |-----------|-----------------|---------------------|
-| **CUSTOM** | Payload normalisé strict (§ 4.3) | Payload normalisé strict (§ 4.6) |
+| **CUSTOM** | Payload normalisé strict (§ 5.1) | Payload normalisé strict (§ 5.2 : `identifier?`, `identifiers?`, `discordId?`, `type`, `reason`, `duration?`, `staff`) |
 | **ESX** | `identifier`/`license`, `season?`, champs à plat ou dans `stats`/`data` : `wins|victories`, `kills`, `deaths`, `matches|played|games`, `damage|damage_dealt`, `top10`, `xp|experience`, `playtimeMinutes|playtime` | `identifier`, `type|action` (`ban|kick|warn|unban`, insensible à la casse), `identifiers` (liste), `reason|motif`, `duration|time|expire`, `staff|admin|author` ; `target: { identifier, discord }` accepté |
 | **QBCORE** | `license|identifier` ou `citizenid` (→ `citizenid:<cid>`), champs à plat ou dans `metadata`/`stats` : `wins`, `kills`, `deaths`, `matches|games|rounds`, `damage`, `top10`, `xp`, `playtime` | `license|citizenid`, `action|type` (`ban|kick|warn|unban`), `identifiers`, `reason`, `expire|duration`, `admin|staff` |
 
@@ -301,7 +301,7 @@ Monté par le dashboard via `createShopWebhookRouter()` sur `/api/shop`.
 
 | En-tête | Valeur |
 |---------|--------|
-| `x-webhook-secret` | `TEBEX_WEBHOOK_SECRET` si défini dans l'environnement, **sinon `FIVEM_API_KEY`** (aucune variable dédiée dans `env.ts` pour l'instant). |
+| `x-webhook-secret` | `TEBEX_WEBHOOK_SECRET` (`.env`) si défini, **sinon `FIVEM_API_KEY`**. |
 
 Payload normalisé (à produire depuis votre endpoint Tebex ou une fonction serverless qui relaie le webhook Tebex natif) :
 ```json

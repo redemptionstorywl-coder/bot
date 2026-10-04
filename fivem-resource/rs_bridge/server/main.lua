@@ -165,17 +165,35 @@ local LocalBans = {}
 local function banKey(identifier) return 'rsban:' .. identifier end
 
 --- Enregistre un ban local sur chaque identifiant. expires = timestamp Unix ou nil (permanent).
+--- La liste complète des identifiants est conservée dans le ban : une levée par un seul identifiant
+--- (unban Discord : discord + licence, UnbanPlayer('license:…')) lève aussi steam:, license2:, xbl:…
 function LocalBans.add(ids, reason, expires, staff)
-  local value = json.encode({ reason = reason or '', expires = expires, staff = staff or '', at = os.time() })
+  local list = {}
   for _, id in ipairs(ids) do
-    if id and id ~= '' then SetResourceKvp(banKey(id), value) end
+    if type(id) == 'string' and id ~= '' then list[#list + 1] = id end
   end
+  local value = json.encode({ reason = reason or '', expires = expires, staff = staff or '', at = os.time(), ids = list })
+  for _, id in ipairs(list) do SetResourceKvp(banKey(id), value) end
 end
 
+--- Lève les bans de ces identifiants et de tous les identifiants enregistrés avec eux.
 function LocalBans.remove(ids)
+  local all = {}
   for _, id in ipairs(ids) do
-    if id and id ~= '' then DeleteResourceKvp(banKey(id)) end
+    if type(id) == 'string' and id ~= '' then
+      all[id] = true
+      local raw = GetResourceKvpString(banKey(id))
+      if raw then
+        local ok, ban = pcall(json.decode, raw)
+        if ok and type(ban) == 'table' and type(ban.ids) == 'table' then
+          for _, other in ipairs(ban.ids) do
+            if type(other) == 'string' and other ~= '' then all[other] = true end
+          end
+        end
+      end
+    end
   end
+  for id in pairs(all) do DeleteResourceKvp(banKey(id)) end
 end
 
 --- Premier ban local actif parmi les identifiants (les bans expirés sont purgés).

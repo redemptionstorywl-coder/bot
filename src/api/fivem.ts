@@ -133,25 +133,39 @@ async function handleSanction(server: FiveMServer, payload: unknown) {
   return fivemSyncService.handleSanction(server, sanction);
 }
 
-/** Arrivée en jeu : liaison / rôles / surnom, puis ajout à la liste des joueurs du statut. */
+/**
+ * Arrivée en jeu : liaison / rôles / surnom, puis ajout à la liste des joueurs du statut.
+ * Sérialisée par serveur (withStatusLock) : deux arrivées simultanées partaient de la même liste et la seconde
+ * effaçait la première, que le diff du statut traitait ensuite comme un départ (session close, rôle retiré).
+ */
 async function handleJoin(server: FiveMServer, payload: unknown) {
   const player: ServerPlayer = playerJoinSchema.parse(payload);
-  const result = await fivemSyncService.handleJoin(server, player);
-  const current = fivemService.getResolvedStatus(server);
-  const playerList = [...current.playerList.filter((p) => p.id !== player.id), player];
-  const updated = await fivemService.applyStatus(server, { ...current, online: true, players: playerList.length, playerList }, 'rest');
-  return { updated, players: playerList.length, ...result };
+  return fivemService.withStatusLock(server, async (fresh) => {
+    const result = await fivemSyncService.handleJoin(fresh, player);
+    const current = fivemService.getResolvedStatus(fresh);
+    const playerList = [...current.playerList.filter((p) => p.id !== player.id), player];
+    const updated = await fivemService.applyStatus(fresh, { ...current, online: true, players: playerList.length, playerList }, 'rest');
+    return { updated, players: playerList.length, ...result };
+  });
 }
 
-/** Départ : temps de session comptabilisé, rôle « en jeu » retiré, joueur retiré du statut. */
+/** Départ : temps de session comptabilisé, rôle « en jeu » retiré, joueur retiré du statut (sérialisé par serveur). */
 async function handleLeave(server: FiveMServer, payload: unknown) {
   const leave = playerLeaveSchema.parse(payload);
-  const current = fivemService.getResolvedStatus(server);
-  const known = current.playerList.find((p) => p.id === leave.id);
-  const r = await fivemSyncService.handleLeave(server, { id: leave.id, identifiers: leave.identifiers ?? known?.identifiers });
-  const playerList = current.playerList.filter((p) => p.id !== leave.id);
-  const updated = await fivemService.applyStatus(server, { ...current, online: true, players: playerList.length, playerList }, 'rest');
-  return { updated, players: playerList.length, minutes: r.minutes, discordId: r.discordId };
+  return fivemService.withStatusLock(server, async (fresh) => {
+    const current = fivemService.getResolvedStatus(fresh);
+    const known = current.playerList.find((p) => p.id === leave.id);
+    const r = await fivemSyncService.handleLeave(fresh, { id: leave.id, identifiers: leave.identifiers ?? known?.identifiers });
+    const playerList = current.playerList.filter((p) => p.id !== leave.id);
+    const updated = await fivemService.applyStatus(fresh, { ...current, online: true, players: playerList.length, playerList }, 'rest');
+    return { updated, players: playerList.length, minutes: r.minutes, discordId: r.discordId };
+  });
+}
+
+/** Heartbeat / statut complet (sérialisé avec les arrivées / départs du même serveur). */
+async function handleStatus(server: FiveMServer, payload: unknown, source: 'rest' | 'socket') {
+  const status = serverStatusSchema.parse(payload);
+  return fivemService.withStatusLock(server, (fresh) => fivemService.applyStatus(fresh, status, source));
 }
 
 // ───────────── Router ─────────────
@@ -175,8 +189,7 @@ export function createFiveMRouter(client: RedemptionClient): Router {
     `${base}/status`,
     authenticate,
     wrap(async (req, res) => {
-      const status = serverStatusSchema.parse(req.body);
-      const updated = await fivemService.applyStatus(req.server, status, 'rest');
+      const updated = await handleStatus(req.server, req.body, 'rest');
       res.json({ ok: true, status: fivemService.getResolvedStatus(updated) });
     }),
   );
@@ -358,8 +371,7 @@ export function attachFiveMSocket(io: SocketServer, client: RedemptionClient): v
     socket.emit('ready', { serverKey: server.key, guildId: server.guildId, maintenance: server.maintenance });
 
     withAck(socket, 'status', async (payload) => {
-      const status = serverStatusSchema.parse(payload);
-      const updated = await fivemService.applyStatus(server, status, 'socket');
+      const updated = await handleStatus(server, payload, 'socket');
       Object.assign(server, updated);
       return { status: fivemService.getResolvedStatus(updated) };
     });

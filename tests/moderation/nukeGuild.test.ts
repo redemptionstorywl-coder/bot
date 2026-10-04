@@ -108,6 +108,34 @@ describe('remapChannelReferences', () => {
   });
 });
 
+describe('remapChannelReferences : configuration de modération', () => {
+  beforeEach(resetPrisma);
+
+  it('remappe les salons exemptés de l’anti-raid et les salons d’un lockdown en cours', async () => {
+    prisma.moderationConfig!.findUnique!.mockResolvedValue({
+      guildId: 'g',
+      antiRaid: { exemptChannelIds: ['old-1', 'keep'], antiSpam: { enabled: true } },
+      lockdownState: { at: '2026-01-01T00:00:00.000Z', actorId: 'a', reason: null, channels: { 'old-2': 'allow', keep: 'none' } },
+    });
+    prisma.moderationConfig!.update!.mockResolvedValue({});
+    const r = await remapChannelReferences('g', MAP);
+    expect(prisma.moderationConfig!.update).toHaveBeenCalledWith({
+      where: { guildId: 'g' },
+      data: {
+        antiRaid: { exemptChannelIds: ['new-1', 'keep'], antiSpam: { enabled: true } },
+        lockdownState: { at: '2026-01-01T00:00:00.000Z', actorId: 'a', reason: null, channels: { 'new-2': 'allow', keep: 'none' } },
+      },
+    });
+    expect(r.counts.moderationConfig).toBe(1);
+  });
+
+  it('ne touche pas une configuration sans salon recréé', async () => {
+    prisma.moderationConfig!.findUnique!.mockResolvedValue({ guildId: 'g', antiRaid: { exemptChannelIds: ['keep'] }, lockdownState: null });
+    await remapChannelReferences('g', MAP);
+    expect(prisma.moderationConfig!.update).not.toHaveBeenCalled();
+  });
+});
+
 describe('selectNukeTargets', () => {
   const ch = (id: string, type: ChannelType, extra: Partial<NukeChannelInfo> = {}): NukeChannelInfo => ({ id, name: id, type, position: 0, parentPosition: -1, manageable: true, ...extra });
 

@@ -463,6 +463,26 @@ export async function remapChannelReferences(guildId: string, map: Record<string
     count('channelMute', 1);
   }
 
+  // Anti-raid (salons exemptés) et lockdown en cours (permissions à restaurer) : JSON de ModerationConfig
+  const modCfg = await prisma.moderationConfig.findUnique({ where: { guildId } });
+  if (modCfg) {
+    const data: Prisma.ModerationConfigUpdateInput = {};
+    const antiRaid = modCfg.antiRaid && typeof modCfg.antiRaid === 'object' && !Array.isArray(modCfg.antiRaid) ? (modCfg.antiRaid as Record<string, unknown>) : null;
+    const exempt = Array.isArray(antiRaid?.exemptChannelIds) ? (antiRaid!.exemptChannelIds as unknown[]) : [];
+    if (exempt.some((id) => typeof id === 'string' && map[id])) {
+      data.antiRaid = toJson({ ...antiRaid, exemptChannelIds: exempt.map((id) => (typeof id === 'string' && map[id] ? map[id] : id)) });
+    }
+    const lockdown = modCfg.lockdownState && typeof modCfg.lockdownState === 'object' && !Array.isArray(modCfg.lockdownState) ? (modCfg.lockdownState as Record<string, unknown>) : null;
+    const lockChannels = lockdown?.channels && typeof lockdown.channels === 'object' ? (lockdown.channels as Record<string, unknown>) : null;
+    if (lockChannels && Object.keys(lockChannels).some((id) => map[id])) {
+      data.lockdownState = toJson({ ...lockdown, channels: Object.fromEntries(Object.entries(lockChannels).map(([id, state]) => [map[id] ?? id, state])) });
+    }
+    if (Object.keys(data).length) {
+      await prisma.moderationConfig.update({ where: { guildId }, data });
+      count('moderationConfig', 1);
+    }
+  }
+
   // Salon piège anti-spam
   for (const row of await prisma.honeypotChannel.findMany({ where: { guildId, channelId: inOld } })) {
     await prisma.honeypotChannel.update({ where: { guildId: row.guildId }, data: { channelId: next(row.channelId)!, messageId: null } });
@@ -1065,6 +1085,7 @@ export class ModerationService {
       }
     };
     guildConfigService.invalidate(guild.id);
+    this.invalidate(guild.id); // salons exemptés / lockdown remappés dans ModerationConfig
     guildConfigService.emit(CHANNELS_REMAPPED_EVENT, guild.id);
     welcomeService.invalidate(guild.id);
     roleService.invalidate(guild.id); // vide aussi le cache des role menus et recharge les reaction roles suivis

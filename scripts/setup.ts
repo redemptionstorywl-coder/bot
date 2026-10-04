@@ -60,7 +60,15 @@ async function main(): Promise<void> {
     ok(`Connexion réussie (MySQL ${row?.v ?? '?'})`);
     title('4. Migrations Prisma');
     try {
-      const out = execSync('npx prisma migrate status', { stdio: 'pipe', env: process.env }).toString();
+      let out: string;
+      try {
+        out = execSync('npx prisma migrate status', { stdio: 'pipe', env: process.env }).toString();
+      } catch (err) {
+        // `prisma migrate status` sort en code 1 quand des migrations sont en attente (cas d'une base neuve).
+        const stdout = (err as { stdout?: Buffer }).stdout?.toString() ?? '';
+        if (!/not yet been applied/i.test(stdout)) throw err;
+        out = stdout;
+      }
       if (/Database schema is up to date/i.test(out)) ok('Schéma à jour');
       else {
         warn('Des migrations sont en attente. Application avec `prisma migrate deploy`…');

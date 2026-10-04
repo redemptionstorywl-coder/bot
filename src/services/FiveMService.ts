@@ -77,6 +77,8 @@ export class FiveMService {
   private readonly sockets = new Map<number, Set<Socket>>();
   private tasksRegistered = false;
   private readonly statusListeners: StatusListener[] = [];
+  /** File par serveur (id) des mises à jour de statut / liste des joueurs. */
+  private readonly statusLocks = new Map<number, Promise<void>>();
 
   attach(client: Client): void {
     this.client = client;
@@ -180,6 +182,25 @@ export class FiveMService {
     return resolveStatus(server);
   }
 
+  /**
+   * Exécute `fn` après les mises à jour de statut déjà en cours pour ce serveur (une à la fois) :
+   * des arrivées / départs / heartbeats simultanés ne lisent plus la même liste de joueurs pour l'écraser
+   * l'un après l'autre (joueur perdu puis « départ » fantôme). `fn` reçoit le serveur relu en base.
+   */
+  async withStatusLock<T>(server: FiveMServer, fn: (fresh: FiveMServer) => Promise<T>): Promise<T> {
+    const previous = this.statusLocks.get(server.id) ?? Promise.resolve();
+    const run = previous.then(async () => fn((await prisma.fiveMServer.findUnique({ where: { id: server.id } })) ?? server));
+    const tail = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    this.statusLocks.set(server.id, tail);
+    void tail.then(() => {
+      if (this.statusLocks.get(server.id) === tail) this.statusLocks.delete(server.id);
+    });
+    return run;
+  }
+
   /** Applique un statut reçu (REST / socket / polling) : DB + message Discord. */
   async applyStatus(server: FiveMServer, status: ServerStatus, source: StatusSource): Promise<FiveMServer> {
     const previous = (server.lastStatus ?? {}) as { online?: boolean; onlineSince?: number };
@@ -253,7 +274,7 @@ export class FiveMService {
 
   async pollAll(): Promise<void> {
     const servers = await prisma.fiveMServer.findMany({ where: { enabled: true } });
-    await Promise.all(servers.map((s) => this.pollOne(s).catch((err) => log.warn({ err, server: s.key }, 'Polling en erreur'))));
+    await Promise.all(servers.map((s) => this.withStatusLock(s, (fresh) => this.pollOne(fresh)).catch((err) => log.warn({ err, server: s.key }, 'Polling en erreur'))));
   }
 
   async pollOne(server: FiveMServer): Promise<void> {

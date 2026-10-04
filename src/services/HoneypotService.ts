@@ -59,6 +59,18 @@ export class HoneypotService {
     const row = await prisma.honeypotChannel.findUnique({ where: { guildId } }).catch(() => null);
     if (row?.enabled) this.channels.set(guildId, { channelId: row.channelId, windowMinutes: row.deleteWindowMinutes });
     else this.channels.delete(guildId);
+    // Salon recréé (remapChannelReferences remet messageId à null) : l'avertissement épinglé a disparu avec l'ancien
+    // salon. Sans lui, des membres légitimes écriraient dans le piège et seraient expulsés.
+    if (row && !row.messageId) await this.republishWarning(guildId, row.channelId).catch((err) => log.warn({ err, guild: guildId }, 'Salon piège : avertissement non republié'));
+  }
+
+  /** Publie et épingle l'avertissement dans le salon piège, puis mémorise le message. */
+  private async republishWarning(guildId: string, channelId: string): Promise<void> {
+    const channel = await this.client?.channels.fetch(channelId).catch(() => null);
+    if (!channel || channel.type !== ChannelType.GuildText) return;
+    const msg = await channel.send({ embeds: [this.embed()] });
+    await msg.pin().catch(() => null);
+    await prisma.honeypotChannel.update({ where: { guildId }, data: { messageId: msg.id } });
   }
 
   channelFor(guildId: string): string | null {

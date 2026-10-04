@@ -32,9 +32,7 @@ export default defineEvent({
       },
     });
 
-    const flushOnExit = () => void activityService.flush().catch((err) => log.error({ err }, 'Flush final de l’activité en erreur'));
-    process.once('SIGINT', flushOnExit);
-    process.once('SIGTERM', flushOnExit);
+    // Le flush final de l'activité est fait par l'arrêt propre de src/index.ts (SIGINT / SIGTERM).
 
     log.info('Services événements / giveaways / sondages / activité prêts');
   },

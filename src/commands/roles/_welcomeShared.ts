@@ -6,7 +6,6 @@ import {
   ChannelType,
   GuildMember,
   LabelBuilder,
-  PermissionFlagsBits,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -36,7 +35,8 @@ import { guildConfigService } from '../../services/GuildConfigService';
  */
 
 /**
- * Vérifie que l'interaction vient d'un serveur et d'un admin (niveau interne ou ManageGuild).
+ * Vérifie que l'interaction vient d'un serveur et d'un admin interne (comme `/config`, qui ouvre ce panneau ;
+ * les handlers `welcome` déclarent aussi `permissions: { internal: 'admin' }`).
  * Le module n'est pas exigé : le panneau sert aussi à le réactiver.
  * Renvoie `null` si OK, sinon la clé/variables du message d'erreur à afficher (éphémère).
  */
@@ -44,7 +44,7 @@ export function checkPanelAccess(interaction: { inGuild(): boolean; member: unkn
   const { config } = ctx;
   if (!interaction.inGuild() || !config) return { key: 'core.guild_only' };
   const member = interaction.member instanceof GuildMember ? interaction.member : null;
-  if (!hasInternalPermission({ member, config, ownerIds: env().OWNER_IDS, required: 'admin' }) && !member?.permissions.has(PermissionFlagsBits.ManageGuild)) {
+  if (!hasInternalPermission({ member, config, ownerIds: env().OWNER_IDS, required: 'admin' })) {
     return { key: 'core.insufficient_level', vars: { level: 'admin' } };
   }
   return null;

@@ -10,7 +10,14 @@ const log = childLogger('CoreTasks');
  * Tâches de maintenance génériques. Les services métiers enregistrent leurs propres tâches
  * (annonces programmées, giveaways, événements…) via `scheduler.register`.
  */
-export function registerCoreTasks(_client: RedemptionClient): void {
+export function registerCoreTasks(client: RedemptionClient): void {
+  scheduler.register({
+    name: 'core:cooldowns',
+    intervalMs: 60_000,
+    async run() {
+      client.cooldowns.sweep();
+    },
+  });
   scheduler.register({
     name: 'core:prune-logs',
     intervalMs: 6 * 3600_000,
