@@ -1,309 +1,330 @@
-<section class="page-header">
-  <div><h2 class="page-title">🛒 Shop</h2><p class="muted">Catalogue, catégories, commandes, historique client, statistiques et webhook Tebex.</p></div>
-  <div class="page-actions"><a class="btn btn-primary" href="/guilds/<%= guild.id %>/shop?tab=products#product-form">+ Nouveau produit</a></div>
-</section>
+<%
+  const b = `/guilds/${guild.id}/shop`;
+  const imgOk = (u) => typeof u === 'string' && /^https:\/\/(cdn\.discordapp\.com|media\.discordapp\.net)\//.test(u);
+  const pending = stats.byStatus.find((s) => s.status === 'PENDING').count;
+  const catLabel = (c) => c ? (c.emoji ? c.emoji + ' ' : '') + c.name : '—';
+  const stockLabel = (p) => p.stock === null ? 'Illimité' : p.stock === 0 ? 'Épuisé' : String(p.stock);
+  const oq = (extra) => `${b}?${baseQuery}${extra ? '&' + extra : ''}`;
+  const e = editing;
+  const statusColor = { PENDING: '#f59e0b', PAID: '#8b5cf6', DELIVERED: '#22c55e', CANCELLED: '#71717a', REFUNDED: '#ef4444' };
+  const maxDayTotal = Math.max(0, ...stats.days.map((d) => d.total));
+%>
+<header class="page-header">
+  <div class="page-heading">
+    <span class="page-icon"><%- icon('shopping-bag') %></span>
+    <div><h1 class="page-title">Shop</h1><p class="page-subtitle">Catalogue, commandes, historique client, statistiques et intégration Tebex.</p></div>
+  </div>
+  <div class="page-actions"><a class="btn btn-primary" href="<%= b %>?tab=products#new-product"><%- icon('plus', { size: 16 }) %>Nouveau produit</a></div>
+</header>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Shop est désactivé sur ce serveur : la commande <code>/shop</code> et les boutons « Commander » ne répondent pas (le webhook Tebex reste actif). <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Gérer les modules</a></span></div><% } %>
-
-<% const imgOk = (u) => typeof u === 'string' && /^https:\/\/(cdn\.discordapp\.com|media\.discordapp\.net)\//.test(u); %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Shop est désactivé : <code>/shop</code> et les boutons « Commander » ne répondent pas (le webhook Tebex reste actif). <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
 
 <div class="stat-grid">
-  <div class="stat-card"><span class="stat-label">Produits</span><span class="stat-value"><%= products.length %> <span class="stat-sub"><%= products.filter((p) => p.enabled).length %> actifs</span></span></div>
-  <div class="stat-card"><span class="stat-label">Commandes en attente</span><span class="stat-value"><%= fmt.number(stats.byStatus.find((s) => s.status === 'PENDING').count) %></span></div>
-  <div class="stat-card"><span class="stat-label">Commandes (total)</span><span class="stat-value"><%= fmt.number(stats.totalOrders) %></span></div>
-  <div class="stat-card"><span class="stat-label">CA payé / livré (<%= stats.period %> j)</span><span class="stat-value stat-value-sm"><%= stats.revenueLabel %></span></div>
+  <div class="stat"><span class="stat-label"><%- icon('shopping-bag', { size: 14 }) %>Produits</span><span class="stat-value"><%= products.length %><span class="stat-sub"><%= products.filter((p) => p.enabled).length %> actifs</span></span></div>
+  <a class="stat" href="<%= b %>?tab=orders&status=PENDING"><span class="stat-label"><span class="dot dot-warning"></span>Commandes en attente</span><span class="stat-value"><%= fmt.number(pending) %></span></a>
+  <div class="stat"><span class="stat-label"><%- icon('inbox', { size: 14 }) %>Commandes</span><span class="stat-value"><%= fmt.number(stats.totalOrders) %></span></div>
+  <div class="stat"><span class="stat-label"><%- icon('activity', { size: 14 }) %>CA <%= stats.period %> j</span><span class="stat-value stat-value-sm"><%= stats.revenueLabel %></span></div>
 </div>
 
-<div class="tabs" data-tabs data-active="<%= tab %>">
-  <div class="tab-list" role="tablist">
-    <button type="button" class="tab" role="tab" data-tab="products">Produits <span class="badge badge-muted"><%= products.length %></span></button>
-    <button type="button" class="tab" role="tab" data-tab="categories">Catégories <span class="badge badge-muted"><%= categories.length %></span></button>
-    <button type="button" class="tab" role="tab" data-tab="orders">Commandes <span class="badge badge-muted"><%= fmt.number(pagination.total) %></span></button>
-    <button type="button" class="tab" role="tab" data-tab="history">Historique client</button>
-    <button type="button" class="tab" role="tab" data-tab="stats">Statistiques</button>
-    <button type="button" class="tab" role="tab" data-tab="webhook">Webhook Tebex</button>
+<%- include('../partials/tabs', { active: tab, label: 'Sections du shop', tabs: [
+  { key: 'products', label: 'Produits', href: b, icon: 'shopping-bag', count: products.length || null },
+  { key: 'categories', label: 'Catégories', href: b + '?tab=categories', icon: 'folder', count: categories.length || null },
+  { key: 'orders', label: 'Commandes', href: b + '?tab=orders', icon: 'inbox', count: pending ? pending + ' en attente' : null },
+  { key: 'history', label: 'Historique client', href: b + '?tab=history', icon: 'user' },
+  { key: 'stats', label: 'Statistiques', href: b + '?tab=stats', icon: 'bar-chart' },
+  { key: 'webhook', label: 'Tebex', href: b + '?tab=webhook', icon: 'link' },
+] }) %>
+
+<% if (tab === 'products') { %>
+  <% const productForm = (p) => { %>
+    <div class="split" data-no-live-reload>
+      <form method="post" action="<%= b %>/products<%= p ? '/' + p.id : '' %>" class="form stack" id="product-form" <%- p ? 'data-dirty-form' : '' %> data-live-preview="<%= b %>/products/preview" data-live-preview-target="#product-preview"<% if (p) { %> data-live-preview-extra="<%= JSON.stringify({ productId: String(p.id) }) %>"<% } %>>
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <section class="card">
+          <div class="field-row">
+            <div class="field"><label for="pr-name" class="field-required">Nom</label><input id="pr-name" name="name" class="input" required maxlength="100" value="<%= p ? p.name : '' %>" placeholder="Pack VIP"></div>
+            <div class="field"><label for="pr-cat">Catégorie</label><select id="pr-cat" name="categoryId" class="select"><option value="">— Aucune —</option><% for (const c of categories) { %><option value="<%= c.id %>" <%= p && p.categoryId === c.id ? 'selected' : '' %>><%= catLabel(c) %></option><% } %></select></div>
+          </div>
+          <div class="field mt-4"><label for="pr-desc">Description</label><textarea id="pr-desc" name="description" class="textarea" maxlength="2000" rows="3" placeholder="Avantages, durée… Markdown Discord accepté."><%= p && p.description ? p.description : '' %></textarea></div>
+          <div class="field-row mt-4">
+            <div class="field"><label for="pr-price" class="field-required">Prix</label><input id="pr-price" name="price" class="input" required inputmode="decimal" pattern="^\d+([.,]\d{1,2})?$" value="<%= p ? p.priceInput : '' %>" placeholder="9.99"></div>
+            <div class="field"><label for="pr-cur">Devise</label><input id="pr-cur" name="currency" class="input input-mono" required pattern="^[A-Za-z]{3,8}$" maxlength="8" value="<%= p ? p.currency : 'EUR' %>"></div>
+            <div class="field"><label for="pr-stock">Stock <span class="field-optional">vide = illimité</span></label><input id="pr-stock" name="stock" type="number" class="input" min="0" max="1000000" value="<%= p && p.stock !== null ? p.stock : '' %>"></div>
+          </div>
+          <div class="field mt-4"><label for="pr-img">Image <span class="field-optional">URL https</span></label><input id="pr-img" name="imageUrl" type="url" class="input input-mono" maxlength="500" value="<%= p && p.imageUrl ? p.imageUrl : '' %>" placeholder="https://cdn.discordapp.com/…"></div>
+        </section>
+        <section class="card">
+          <div class="card-head"><div><h2 class="card-title">Tebex</h2><p class="card-desc">Le package ID relie les paiements Tebex à ce produit (onglet Tebex).</p></div></div>
+          <div class="field-row">
+            <div class="field"><label for="pr-tbx">Package ID</label><input id="pr-tbx" name="tebexPackageId" class="input input-mono" maxlength="64" value="<%= p && p.tebexPackageId ? p.tebexPackageId : '' %>" placeholder="5581234"></div>
+            <div class="field"><label for="pr-tbxu">Lien de paiement</label><input id="pr-tbxu" name="tebexUrl" type="url" class="input input-mono" maxlength="500" value="<%= p && p.tebexUrl ? p.tebexUrl : '' %>" placeholder="https://boutique.tebex.io/package/…"></div>
+          </div>
+          <label class="toggle mt-4"><input type="checkbox" name="enabled" <%= !p || p.enabled ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Produit activé <span class="text-3">— visible et commandable</span></span></label>
+        </section>
+        <% if (p) { %><div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div><% } else { %><div class="form-actions"><button type="submit" class="btn btn-primary"><%- icon('plus', { size: 16 }) %>Ajouter le produit</button></div><% } %>
+      </form>
+      <aside class="split-preview">
+        <div class="preview-panel">
+          <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 15 }) %>Annonce <code>/shop announce</code></span><span class="badge badge-muted">Discord</span></div>
+          <div class="preview-panel-body" id="product-preview"><%- productPreview %></div>
+          <div class="preview-panel-note">Seules les images du CDN Discord s'affichent dans l'aperçu ; les autres restent valides sur Discord.</div>
+        </div>
+      </aside>
+    </div>
+  <% }; %>
+
+  <% if (e) { %>
+    <section class="card card-accent">
+      <div class="card-head"><div><h2 class="card-title">Modifier « <%= e.name %> »</h2><p class="card-desc">Produit #<%= e.id %> · <%= e.enabled ? 'activé' : 'désactivé' %></p></div>
+        <span class="row">
+          <form method="post" action="<%= b %>/products/<%= e.id %>/delete" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-sm btn-ghost btn-danger-text" data-confirm="Supprimer le produit « <%= e.name %> » ? Les commandes existantes sont conservées." data-confirm-label="Supprimer"><%- icon('trash', { size: 14 }) %>Supprimer</button></form>
+          <a class="icon-btn" href="<%= b %>" aria-label="Fermer l'éditeur"><%- icon('x', { size: 16 }) %></a>
+        </span>
+      </div>
+      <% productForm(e) %>
+    </section>
+  <% } %>
+
+  <% if (!products.length) { %>
+    <div class="card"><%- include('../partials/empty', { glyph: 'shopping-bag', title: 'Catalogue vide', text: 'Ajoutez votre premier produit : il pourra être annoncé sur Discord et commandé avec /shop.', compact: true }) %></div>
+  <% } else { %>
+    <div class="product-grid mb-5">
+      <% for (const p of products) { %>
+        <a class="card product-tile mb-0<%= p.enabled ? '' : ' is-muted-preview' %><%= e && e.id === p.id ? ' is-selected' : '' %>" href="<%= b %>?tab=products&product=<%= p.id %>">
+          <div class="product-thumb"><% if (imgOk(p.imageUrl)) { %><img src="<%= p.imageUrl %>" alt="" loading="lazy"><% } else { %><span aria-hidden="true"><%= p.category && p.category.emoji ? p.category.emoji : '🛒' %></span><% } %></div>
+          <div class="product-body">
+            <strong class="truncate"><%= p.name %></strong>
+            <span class="product-price"><%= p.priceLabel %></span>
+            <span class="text-xs text-3 truncate"><%= catLabel(p.category) %> · stock <%= stockLabel(p).toLowerCase() %></span>
+          </div>
+          <div class="row-wrap">
+            <% if (!p.enabled) { %><span class="badge badge-muted">Désactivé</span><% } %>
+            <% if (p.stock === 0) { %><span class="badge badge-danger">Épuisé</span><% } %>
+            <% if (p.tebexPackageId) { %><span class="badge badge-muted"><%- icon('link', { size: 12 }) %>Tebex</span><% } %>
+          </div>
+        </a>
+      <% } %>
+    </div>
+  <% } %>
+
+  <% if (!e) { %>
+    <details class="card card-collapsible" id="new-product" <%= products.length ? '' : 'open' %>>
+      <summary><span class="row"><%- icon('plus', { size: 16 }) %><strong>Nouveau produit</strong></span><span class="text-xs text-3">Aperçu de l'annonce Discord en direct</span></summary>
+      <div class="mt-4"><% productForm(null) %></div>
+    </details>
+  <% } %>
+<% } else if (tab === 'categories') { %>
+  <div class="grid-2 grid-aside-right">
+    <section class="card card-flush">
+      <% if (!categories.length) { %>
+        <%- include('../partials/empty', { glyph: 'folder', title: 'Aucune catégorie', text: 'Regroupez vos produits (Packs, VIP, Véhicules…) pour un catalogue plus lisible.', compact: true }) %>
+      <% } else { %>
+      <ul class="list">
+        <% for (const c of categories) { const n = products.filter((p) => p.categoryId === c.id).length; %>
+          <li class="list-item">
+            <span class="list-item-icon" aria-hidden="true"><%= c.emoji || '📁' %></span>
+            <div class="list-item-body"><div class="list-item-title"><%= c.name %></div><div class="list-item-meta"><%= c.description || 'Sans description' %> · ordre <%= c.order %></div></div>
+            <span class="badge badge-muted"><%= n %> produit<%= n > 1 ? 's' : '' %></span>
+            <button type="button" class="icon-btn" aria-label="Modifier" data-tooltip="Modifier" data-fill-form="#category-form" data-form-title-text="Modifier « <%= c.name %> »" data-set-id="<%= c.id %>" data-set-name="<%= c.name %>" data-set-description="<%= c.description || '' %>" data-set-emoji="<%= c.emoji || '' %>" data-set-order="<%= c.order %>"><%- icon('pencil', { size: 16 }) %></button>
+            <form method="post" action="<%= b %>/categories/<%= c.id %>/delete" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="icon-btn is-danger" aria-label="Supprimer" data-tooltip="Supprimer" data-confirm="Supprimer la catégorie « <%= c.name %> » ? Les produits resteront sans catégorie." data-confirm-label="Supprimer"><%- icon('trash', { size: 16 }) %></button></form>
+          </li>
+        <% } %>
+      </ul>
+      <% } %>
+    </section>
+    <form method="post" action="<%= b %>/categories" class="card form sticky-card" id="category-form" data-id-action="<%= b %>/categories">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="id" value="">
+      <h2 class="card-title" data-form-title>Nouvelle catégorie</h2>
+      <div class="field-row">
+        <div class="field"><label for="ca-name" class="field-required">Nom</label><input id="ca-name" name="name" class="input" required maxlength="100" placeholder="Packs VIP"></div>
+        <div class="field"><label for="ca-emoji">Emoji</label><input id="ca-emoji" name="emoji" class="input" maxlength="64" placeholder="👑" data-input-narrow></div>
+      </div>
+      <div class="field mt-3"><label for="ca-desc">Description</label><input id="ca-desc" name="description" class="input" maxlength="300"></div>
+      <div class="field"><label for="ca-order">Ordre d'affichage</label><input id="ca-order" name="order" type="number" class="input" min="-1000" max="1000" value="0" data-input-narrow></div>
+      <div class="form-actions"><button type="reset" class="btn btn-ghost">Nouvelle</button><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+    </form>
+  </div>
+<% } else if (tab === 'orders') { %>
+  <div class="toolbar mb-4">
+    <nav class="segmented" aria-label="Filtrer par statut">
+      <a href="<%= b %>?tab=orders<%= filters.user ? '&user=' + filters.user : '' %>"<%- !filters.status ? ' aria-current="page"' : '' %>>Toutes</a>
+      <% for (const s of statuses) { const c = stats.byStatus.find((x) => x.status === s.value).count; %><a href="<%= b %>?tab=orders&status=<%= s.value %><%= filters.user ? '&user=' + filters.user : '' %>"<%- filters.status === s.value ? ' aria-current="page"' : '' %>><%= s.label %><% if (c) { %><span class="seg-count"><%= c %></span><% } %></a><% } %>
+    </nav>
+    <form method="get" action="<%= b %>" class="row-wrap" role="search">
+      <input type="hidden" name="tab" value="orders"><% if (filters.status) { %><input type="hidden" name="status" value="<%= filters.status %>"><% } %>
+      <label class="search"><%- icon('search', { size: 16 }) %><input type="search" name="user" class="input input-sm input-mono" value="<%= filters.user %>" pattern="^\d{15,22}$" placeholder="ID Discord du client" aria-label="Filtrer par client"></label>
+      <button type="submit" class="btn btn-sm">Filtrer</button>
+      <% if (filters.user) { %><a class="btn btn-sm btn-ghost" href="<%= b %>?tab=orders<%= filters.status ? '&status=' + filters.status : '' %>">Effacer</a><% } %>
+    </form>
   </div>
 
-  <!-- ─── Produits ─── -->
-  <section class="tab-panel" data-tab-panel="products" role="tabpanel">
-    <div class="card">
-      <% if (!products.length) { %><p class="muted">Aucun produit : ajoutez-en un ci-dessous.</p><% } else { %>
-      <div class="table-wrap"><table class="table table-compact">
-        <thead><tr><th>Produit</th><th>Catégorie</th><th>Prix</th><th>Stock</th><th>Tebex</th><th>État</th><th></th></tr></thead>
-        <tbody>
-          <% for (const p of products) { %>
-            <tr class="<%= p.enabled ? '' : 'row-disabled' %>">
-              <td><strong>#<%= p.id %> <%= p.name %></strong><% if (p.description) { %><br><small class="muted"><%= fmt.truncate(p.description, 80) %></small><% } %></td>
-              <td><%= p.category ? (p.category.emoji ? p.category.emoji + ' ' : '') + p.category.name : '—' %></td>
-              <td class="nowrap"><%= p.priceLabel %></td>
-              <td><% if (p.stock === null) { %>illimité<% } else if (p.stock === 0) { %><span class="text-danger">épuisé</span><% } else { %><%= p.stock %><% } %></td>
-              <td><%= p.tebexPackageId ? 'package ' + p.tebexPackageId : '—' %><% if (p.tebexUrl) { %> <a class="link" href="<%= p.tebexUrl %>" target="_blank" rel="noopener noreferrer">↗</a><% } %></td>
-              <td><span class="badge <%= p.enabled ? 'badge-primary' : 'badge-muted' %>"><%= p.enabled ? 'activé' : 'désactivé' %></span></td>
-              <td class="right"><div class="actions-cell">
-                <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/shop?tab=products&product=<%= p.id %>#product-form">Modifier</a>
-                <form method="post" action="/guilds/<%= guild.id %>/shop/products/<%= p.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer le produit « <%= p.name %> » ? Les commandes existantes sont conservées.">Supprimer</button></form>
-              </div></td>
-            </tr>
-          <% } %>
-        </tbody>
-      </table></div>
-      <% } %>
-    </div>
-
-    <% const e = editing; %>
-    <div class="grid-2">
-      <form method="post" action="/guilds/<%= guild.id %>/shop/products<%= e ? '/' + e.id : '' %>" class="card form" id="product-form">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="card-head"><h3 class="card-title"><%= e ? `Modifier « ${e.name} »` : 'Nouveau produit' %></h3><% if (e) { %><a class="link" href="/guilds/<%= guild.id %>/shop?tab=products">Nouveau produit</a><% } %></div>
-        <div class="grid-2 grid-tight">
-          <div class="field"><label for="pr-name">Nom</label><input id="pr-name" name="name" class="input" required maxlength="100" value="<%= e ? e.name : '' %>" placeholder="Pack VIP"></div>
-          <div class="field"><label for="pr-cat">Catégorie</label><select id="pr-cat" name="categoryId" class="select"><option value="">— Aucune —</option><% for (const c of categories) { %><option value="<%= c.id %>" <%= e && e.categoryId === c.id ? 'selected' : '' %>><%= c.emoji ? c.emoji + ' ' : '' %><%= c.name %></option><% } %></select></div>
-        </div>
-        <div class="field"><label for="pr-desc">Description</label><textarea id="pr-desc" name="description" class="textarea textarea-sm" maxlength="2000" rows="3"><%= e && e.description ? e.description : '' %></textarea></div>
-        <div class="grid-3 grid-tight">
-          <div class="field"><label for="pr-price">Prix</label><input id="pr-price" name="price" class="input" required inputmode="decimal" pattern="^\d+([.,]\d{1,2})?$" value="<%= e ? e.priceInput : '' %>" placeholder="9.99"></div>
-          <div class="field"><label for="pr-cur">Devise</label><input id="pr-cur" name="currency" class="input input-mono" required pattern="^[A-Za-z]{3,8}$" maxlength="8" value="<%= e ? e.currency : 'EUR' %>"></div>
-          <div class="field"><label for="pr-stock">Stock (vide = illimité)</label><input id="pr-stock" name="stock" type="number" class="input" min="0" max="1000000" value="<%= e && e.stock !== null ? e.stock : '' %>"></div>
-        </div>
-        <div class="field"><label for="pr-img">Image (URL https)</label><input id="pr-img" name="imageUrl" type="url" class="input input-mono" maxlength="500" value="<%= e && e.imageUrl ? e.imageUrl : '' %>" placeholder="https://cdn.discordapp.com/…"></div>
-        <div class="grid-2 grid-tight">
-          <div class="field"><label for="pr-tbx">Tebex package ID</label><input id="pr-tbx" name="tebexPackageId" class="input input-mono" maxlength="64" value="<%= e && e.tebexPackageId ? e.tebexPackageId : '' %>" placeholder="5581234"></div>
-          <div class="field"><label for="pr-tbxu">Tebex URL (paiement)</label><input id="pr-tbxu" name="tebexUrl" type="url" class="input input-mono" maxlength="500" value="<%= e && e.tebexUrl ? e.tebexUrl : '' %>" placeholder="https://boutique.tebex.io/package/…"></div>
-        </div>
-        <label class="check"><input type="checkbox" name="enabled" <%= !e || e.enabled ? 'checked' : '' %>><span>Produit activé (visible dans le catalogue et commandable)</span></label>
-        <div class="form-actions"><button type="submit" class="btn btn-primary"><%= e ? 'Enregistrer' : 'Ajouter le produit' %></button></div>
-      </form>
-
-      <section class="card">
-        <h3 class="card-title">Aperçu dans Discord</h3>
-        <% if (e) { %>
-          <%- include('../partials/embed-preview', {
-            embed: {
-              title: `${e.category && e.category.emoji ? e.category.emoji : '🛒'} ${e.name}`,
-              description: e.description || '',
-              color: fmt.hex(config.brandColor),
-              fields: [{ name: 'Prix', value: e.priceLabel || (e.priceInput + ' ' + e.currency), inline: true }, { name: 'Stock', value: e.stock === null ? 'Illimité' : String(e.stock), inline: true }, ...(e.category ? [{ name: 'Catégorie', value: e.category.name, inline: true }] : [])],
-              image: imgOk(e.imageUrl) ? e.imageUrl : undefined,
-              footer: { text: `${brand.footer} • #${e.id}` },
-            },
-            buttons: [{ label: 'Commander', emoji: '🛒', style: 'primary' }, ...(e.tebexUrl ? [{ label: 'Tebex', emoji: '🔗', style: 'link', url: e.tebexUrl }] : [])],
-            compact: true,
-          }) %>
+  <div class="<%= selectedOrder ? 'grid-2 grid-aside-wide' : '' %>">
+    <div class="stack">
+      <section class="card card-flush" data-live-reload>
+        <% if (!orders.length) { %>
+          <%- include('../partials/empty', { glyph: 'inbox', title: 'Aucune commande', text: filters.status || filters.user ? 'Aucune commande ne correspond à ces filtres.' : 'Les commandes passées avec /shop ou reçues de Tebex apparaîtront ici.', compact: true }) %>
         <% } else { %>
-          <p class="muted">Sélectionnez un produit (« Modifier ») pour afficher son embed d'annonce tel que publié par <code>/shop announce</code>.</p>
-          <% if (products.length) { %>
-          <div class="card-grid">
-            <% for (const p of products.slice(0, 4)) { %>
-              <a class="card card-compact product-card" href="/guilds/<%= guild.id %>/shop?tab=products&product=<%= p.id %>#product-form">
-                <% if (imgOk(p.imageUrl)) { %><img class="product-image" src="<%= p.imageUrl %>" alt=""><% } %>
-                <strong><%= p.name %></strong><span class="product-price"><%= p.priceLabel %></span>
-                <small class="muted"><%= p.stock === null ? 'Stock illimité' : `Stock : ${p.stock}` %></small>
-              </a>
-            <% } %>
+        <div class="table-wrap">
+          <table class="table table-responsive table-clickable">
+            <thead><tr><th class="shrink">#</th><th>Client</th><th>Produit</th><th>Statut</th><th class="right">Total</th><th>Date</th></tr></thead>
+            <tbody>
+              <% for (const o of orders) { const href = oq('order=' + o.id); %>
+                <tr data-href="<%= href %>"<%- selectedOrder && selectedOrder.id === o.id ? ' class="is-selected"' : '' %>>
+                  <td class="cell-primary"><a class="link strong" href="<%= href %>">#<%= o.id %></a></td>
+                  <td data-label="Client"><span class="truncate"><%= names[o.userId] || o.userId %></span></td>
+                  <td data-label="Produit"><%= o.product ? o.product.name : '—' %><%= o.quantity > 1 ? ' ×' + o.quantity : '' %></td>
+                  <td data-label="Statut"><span class="badge badge-status-<%= o.status %>"><%= statusLabels[o.status] %></span></td>
+                  <td data-label="Total" class="right nowrap tabular"><%= o.totalLabel %></td>
+                  <td data-label="Date" class="nowrap text-2" title="<%= fmt.dateTime(o.createdAt) %>"><%= fmt.relative(o.createdAt) %></td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+      <%- include('../partials/pagination', { pagination, baseQuery, baseUrl: b }) %>
+
+      <details class="card card-collapsible" id="new-order">
+        <summary><span class="row"><%- icon('plus', { size: 16 }) %><strong>Commande manuelle</strong></span><span class="text-xs text-3">Paiement hors Tebex, geste commercial…</span></summary>
+        <form method="post" action="<%= b %>/orders" class="form mt-4">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="field-row">
+            <div class="field"><label for="no-user" class="field-required">ID Discord du client</label><input id="no-user" name="userId" class="input input-mono" required pattern="^\d{15,22}$" placeholder="123456789012345678"></div>
+            <div class="field"><label for="no-product" class="field-required">Produit</label><select id="no-product" name="productId" class="select" required><option value="">— Choisir —</option><% for (const p of products.filter((x) => x.enabled)) { %><option value="<%= p.id %>"><%= p.name %> — <%= p.priceLabel %><%= p.stock !== null ? ` (stock ${p.stock})` : '' %></option><% } %></select></div>
+            <div class="field"><label for="no-qty">Quantité</label><input id="no-qty" name="quantity" type="number" class="input" min="1" max="99" value="1" data-input-narrow></div>
           </div>
-          <% } %>
-        <% } %>
-      </section>
+          <div class="field mt-3"><label for="no-note">Note <span class="field-optional">optionnel</span></label><input id="no-note" name="note" class="input" maxlength="1000" placeholder="Paiement reçu en main propre…"></div>
+          <div class="form-actions"><button type="submit" class="btn btn-primary" <%= products.some((x) => x.enabled) ? '' : 'disabled' %>>Créer la commande</button></div>
+        </form>
+      </details>
     </div>
-  </section>
 
-  <!-- ─── Catégories ─── -->
-  <section class="tab-panel" data-tab-panel="categories" role="tabpanel">
-    <div class="grid-2">
-      <div class="card">
-        <h3 class="card-title">Catégories</h3>
-        <% if (!categories.length) { %><p class="muted">Aucune catégorie.</p><% } else { %>
-        <div class="table-wrap"><table class="table table-compact">
-          <thead><tr><th>Ordre</th><th>Catégorie</th><th>Produits</th><th></th></tr></thead>
-          <tbody>
-            <% for (const c of categories) { %>
-              <tr>
-                <td class="muted"><%= c.order %></td>
-                <td><strong><%= c.emoji ? c.emoji + ' ' : '' %><%= c.name %></strong><% if (c.description) { %><br><small class="muted"><%= c.description %></small><% } %></td>
-                <td><%= products.filter((p) => p.categoryId === c.id).length %></td>
-                <td class="right"><div class="actions-cell">
-                  <button type="button" class="btn btn-ghost btn-sm" data-fill-form="#category-form" data-form-title-text="Modifier « <%= c.name %> »" data-set-id="<%= c.id %>" data-set-name="<%= c.name %>" data-set-description="<%= c.description || '' %>" data-set-emoji="<%= c.emoji || '' %>" data-set-order="<%= c.order %>">Modifier</button>
-                  <form method="post" action="/guilds/<%= guild.id %>/shop/categories/<%= c.id %>/delete"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger btn-sm" data-confirm="Supprimer la catégorie « <%= c.name %> » ? Les produits resteront sans catégorie.">Supprimer</button></form>
-                </div></td>
-              </tr>
-            <% } %>
-          </tbody>
-        </table></div>
-        <% } %>
-      </div>
-      <form method="post" action="/guilds/<%= guild.id %>/shop/categories" class="card form" id="category-form" data-id-action="/guilds/<%= guild.id %>/shop/categories">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <input type="hidden" name="id" value="">
-        <h3 class="card-title" data-form-title>Nouvelle catégorie</h3>
-        <div class="grid-2 grid-tight">
-          <div class="field"><label for="ca-name">Nom</label><input id="ca-name" name="name" class="input" required maxlength="100" placeholder="Packs VIP"></div>
-          <div class="field"><label for="ca-emoji">Emoji</label><input id="ca-emoji" name="emoji" class="input" maxlength="64" placeholder="👑"></div>
-        </div>
-        <div class="field"><label for="ca-desc">Description</label><input id="ca-desc" name="description" class="input" maxlength="300"></div>
-        <div class="field"><label for="ca-order">Ordre d'affichage</label><input id="ca-order" name="order" type="number" class="input" min="-1000" max="1000" value="0"></div>
-        <div class="form-actions"><button type="reset" class="btn btn-ghost">Nouvelle</button><button type="submit" class="btn btn-primary">Enregistrer</button></div>
-      </form>
-    </div>
-  </section>
-
-  <!-- ─── Commandes ─── -->
-  <section class="tab-panel" data-tab-panel="orders" role="tabpanel">
-    <% if (selectedOrder) { %>
-    <% const o = selectedOrder; %>
-    <div class="card">
-      <div class="card-head"><h3 class="card-title">Commande #<%= o.id %> · <span class="badge badge-status-<%= o.status %>"><%= statusLabels[o.status] %></span></h3><a class="link" href="/guilds/<%= guild.id %>/shop?<%= baseQuery %>">Fermer</a></div>
-      <div class="grid-2 grid-2-aside">
-        <aside>
-          <dl class="dl">
-            <dt>Client</dt><dd><a class="link" href="/guilds/<%= guild.id %>/members/<%= o.userId %>"><%= names[o.userId] || o.userId %></a><br><a class="link" href="/guilds/<%= guild.id %>/shop?tab=history&historyUser=<%= o.userId %>">historique</a></dd>
-            <dt>Produit</dt><dd><%= o.product ? `#${o.product.id} ${o.product.name}` : '— (supprimé)' %></dd>
-            <dt>Quantité</dt><dd><%= o.quantity %></dd>
-            <dt>Total</dt><dd><strong><%= o.totalLabel %></strong></dd>
-            <dt>Créée le</dt><dd><%= fmt.dateTime(o.createdAt) %></dd>
-            <dt>Mise à jour</dt><dd><%= fmt.dateTime(o.updatedAt) %></dd>
-            <% if (o.tebexTransactionId) { %><dt>Transaction Tebex</dt><dd class="mono"><%= o.tebexTransactionId %></dd><% } %>
-            <% if (o.ticketId) { %><dt>Ticket lié</dt><dd><a class="link" href="/guilds/<%= guild.id %>/tickets/<%= o.ticketId %>">ticket #<%= o.ticketId %></a></dd><% } %>
-            <% if (o.note) { %><dt>Note</dt><dd class="pre-wrap"><%= o.note %></dd><% } %>
-          </dl>
-        </aside>
-        <div>
-          <h4 class="card-subtitle">Changer le statut</h4>
-          <% if (!o.transitions.length) { %><p class="muted">Statut final : aucune transition possible depuis « <%= statusLabels[o.status] %> ».</p><% } else { %>
-          <form method="post" action="/guilds/<%= guild.id %>/shop/orders/<%= o.id %>/status" class="form">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <div class="inline-fields">
-              <div class="field"><label for="os-status">Nouveau statut</label><select id="os-status" name="status" class="select"><% for (const s of o.transitions) { %><option value="<%= s %>"><%= statusLabels[s] %></option><% } %></select></div>
-              <div class="field"><label for="os-note">Note (optionnelle, remplace l'actuelle)</label><input id="os-note" name="note" class="input" maxlength="1000" placeholder="Livré en jeu le…"></div>
-              <div class="field field-fixed"><button type="submit" class="btn btn-primary" data-confirm="Changer le statut de la commande #<%= o.id %> ?">Appliquer</button></div>
-            </div>
-            <p class="hint">Transitions autorisées : en attente → payée / livrée / annulée · payée → livrée / remboursée / annulée · livrée → remboursée. Annuler ou rembourser rend le stock réservé.</p>
-          </form>
-          <% } %>
-        </div>
-      </div>
-    </div>
+    <% if (selectedOrder) { const o = selectedOrder; %>
+    <aside class="card sheet" aria-label="Commande #<%= o.id %>">
+      <div class="card-head"><div><h2 class="card-title">Commande #<%= o.id %></h2><p class="card-desc">Créée <%= fmt.relative(o.createdAt) %></p></div><span class="row"><span class="badge badge-status-<%= o.status %>"><%= statusLabels[o.status] %></span><a class="icon-btn" href="<%= oq() %>" aria-label="Fermer"><%- icon('x', { size: 16 }) %></a></span></div>
+      <dl class="dl">
+        <dt>Client</dt><dd><a class="link" href="/guilds/<%= guild.id %>/members/<%= o.userId %>"><%= names[o.userId] || o.userId %></a> · <a class="link" href="<%= b %>?tab=history&historyUser=<%= o.userId %>">historique</a></dd>
+        <dt>Produit</dt><dd><%= o.product ? o.product.name : '— (supprimé)' %> × <%= o.quantity %></dd>
+        <dt>Total</dt><dd><strong class="tabular"><%= o.totalLabel %></strong></dd>
+        <dt>Mise à jour</dt><dd><%= fmt.dateTime(o.updatedAt) %></dd>
+        <% if (o.tebexTransactionId) { %><dt>Tebex</dt><dd class="mono text-xs"><%= o.tebexTransactionId %></dd><% } %>
+        <% if (o.ticketId) { %><dt>Ticket</dt><dd><a class="link" href="/guilds/<%= guild.id %>/tickets/<%= o.ticketId %>">ticket #<%= o.ticketId %></a></dd><% } %>
+        <% if (o.note) { %><dt>Note</dt><dd class="pre-wrap"><%= o.note %></dd><% } %>
+      </dl>
+      <h3 class="section-title mt-5">Changer le statut</h3>
+      <% if (!o.transitions.length) { %>
+        <p class="text-sm text-3">Statut final : aucune transition possible depuis « <%= statusLabels[o.status] %> ».</p>
+      <% } else { %>
+        <form method="post" action="<%= b %>/orders/<%= o.id %>/status" class="form">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="field"><label for="os-status">Nouveau statut</label><select id="os-status" name="status" class="select"><% for (const s of o.transitions) { %><option value="<%= s %>"><%= statusLabels[s] %></option><% } %></select></div>
+          <div class="field"><label for="os-note">Note <span class="field-optional">remplace l'actuelle</span></label><input id="os-note" name="note" class="input" maxlength="1000" placeholder="Livré en jeu le…"></div>
+          <div class="btn-row"><button type="submit" class="btn btn-primary" data-confirm="Changer le statut de la commande #<%= o.id %> ?" data-confirm-label="Appliquer" data-confirm-variant="primary">Appliquer</button></div>
+          <p class="hint">Annuler ou rembourser rend le stock réservé.</p>
+        </form>
+      <% } %>
+      <details class="editor-section mt-4">
+        <summary>Récapitulatif envoyé au client</summary>
+        <div class="preview-panel"><div class="preview-panel-body"><%- orderPreview %></div></div>
+      </details>
+    </aside>
     <% } %>
-
-    <form method="get" action="/guilds/<%= guild.id %>/shop" class="card filter-bar">
-      <input type="hidden" name="tab" value="orders">
-      <div class="field"><label for="f-status">Statut</label><select id="f-status" name="status" class="select"><option value="">Tous</option><% for (const s of statuses) { %><option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option><% } %></select></div>
-      <div class="field"><label for="f-user">ID client</label><input id="f-user" name="user" class="input input-mono" value="<%= filters.user %>" pattern="^\d{15,22}$" placeholder="123456789012345678"></div>
-      <div class="field field-actions"><button type="submit" class="btn btn-primary">Filtrer</button><a class="btn btn-ghost" href="/guilds/<%= guild.id %>/shop?tab=orders">Réinitialiser</a></div>
-    </form>
-
-    <div class="card">
-      <% if (!orders.length) { %><p class="muted">Aucune commande ne correspond à ces filtres.</p><% } else { %>
-      <div class="table-wrap"><table class="table">
-        <thead><tr><th>#</th><th>Statut</th><th>Client</th><th>Produit</th><th>Qté</th><th>Total</th><th>Date</th><th></th></tr></thead>
-        <tbody>
-          <% for (const o of orders) { %>
-            <tr>
-              <td><a class="link" href="/guilds/<%= guild.id %>/shop?<%= baseQuery %>&order=<%= o.id %>">#<%= o.id %></a></td>
-              <td><span class="badge badge-status-<%= o.status %>"><%= statusLabels[o.status] %></span></td>
-              <td><a class="link" href="/guilds/<%= guild.id %>/members/<%= o.userId %>"><%= names[o.userId] || o.userId %></a></td>
-              <td><%= o.product ? o.product.name : '—' %></td>
-              <td><%= o.quantity %></td>
-              <td class="nowrap"><%= o.totalLabel %></td>
-              <td class="nowrap"><%= fmt.dateTime(o.createdAt) %></td>
-              <td class="right"><a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/shop?<%= baseQuery %>&order=<%= o.id %>">Ouvrir</a></td>
-            </tr>
-          <% } %>
-        </tbody>
-      </table></div>
+  </div>
+<% } else if (tab === 'history') { %>
+  <form method="get" action="<%= b %>" class="card card-compact toolbar mb-5" role="search">
+    <input type="hidden" name="tab" value="history">
+    <label class="search grow"><%- icon('user', { size: 16 }) %><input name="historyUser" class="input input-sm input-mono" required pattern="^\d{15,22}$" value="<%= filters.historyUser %>" placeholder="ID Discord du client" aria-label="ID Discord du client"></label>
+    <button type="submit" class="btn btn-sm btn-primary"><%- icon('search', { size: 14 }) %>Afficher</button>
+  </form>
+  <% if (!filters.historyUser) { %>
+    <div class="card"><%- include('../partials/empty', { glyph: 'user', title: 'Historique d’un client', text: 'Saisissez l’ID Discord d’un client pour voir toutes ses commandes et le total payé.' }) %></div>
+  <% } else { %>
+    <section class="card card-flush">
+      <div class="card-head"><div><h2 class="card-title">Historique de <a class="link" href="/guilds/<%= guild.id %>/members/<%= filters.historyUser %>"><%= names[filters.historyUser] || filters.historyUser %></a></h2><p class="card-desc"><%= history.length %> commande(s) · <%= fmt.number(Math.round(historyTotal * 100) / 100) %> <%= stats.currency %> payés</p></div></div>
+      <% if (!history.length) { %>
+        <%- include('../partials/empty', { glyph: 'inbox', title: 'Aucune commande', text: 'Ce client n’a encore rien commandé.', compact: true }) %>
+      <% } else { %>
+      <div class="table-wrap">
+        <table class="table table-responsive table-clickable">
+          <thead><tr><th class="shrink">#</th><th>Produit</th><th>Statut</th><th class="right">Total</th><th>Date</th></tr></thead>
+          <tbody><% for (const o of history) { %><tr data-href="<%= b %>?tab=orders&order=<%= o.id %>"><td class="cell-primary"><a class="link strong" href="<%= b %>?tab=orders&order=<%= o.id %>">#<%= o.id %></a></td><td data-label="Produit"><%= o.product ? o.product.name : '—' %><%= o.quantity > 1 ? ' ×' + o.quantity : '' %></td><td data-label="Statut"><span class="badge badge-status-<%= o.status %>"><%= statusLabels[o.status] %></span></td><td data-label="Total" class="right nowrap tabular"><%= o.totalLabel %></td><td data-label="Date" class="nowrap text-2"><%= fmt.dateTime(o.createdAt) %></td></tr><% } %></tbody>
+        </table>
+      </div>
       <% } %>
-      <%- include('../partials/pagination', { pagination, baseQuery, baseUrl: `/guilds/${guild.id}/shop` }) %>
-    </div>
-
-    <form method="post" action="/guilds/<%= guild.id %>/shop/orders" class="card form">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-      <h3 class="card-title">Créer une commande manuelle</h3>
-      <div class="grid-3 grid-tight">
-        <div class="field"><label for="no-user">ID Discord du client</label><input id="no-user" name="userId" class="input input-mono" required pattern="^\d{15,22}$" placeholder="123456789012345678"></div>
-        <div class="field"><label for="no-product">Produit</label><select id="no-product" name="productId" class="select" required><option value="">— Choisir —</option><% for (const p of products.filter((x) => x.enabled)) { %><option value="<%= p.id %>"><%= p.name %> — <%= p.priceLabel %><%= p.stock !== null ? ` (stock ${p.stock})` : '' %></option><% } %></select></div>
-        <div class="field"><label for="no-qty">Quantité</label><input id="no-qty" name="quantity" type="number" class="input" min="1" max="99" value="1"></div>
-      </div>
-      <div class="field"><label for="no-note">Note (optionnelle)</label><input id="no-note" name="note" class="input" maxlength="1000" placeholder="Paiement reçu en main propre…"></div>
-      <div class="form-actions"><button type="submit" class="btn btn-primary" <%= products.some((x) => x.enabled) ? '' : 'disabled' %>>Créer la commande</button></div>
-    </form>
-  </section>
-
-  <!-- ─── Historique client ─── -->
-  <section class="tab-panel" data-tab-panel="history" role="tabpanel">
-    <form method="get" action="/guilds/<%= guild.id %>/shop" class="card filter-bar">
-      <input type="hidden" name="tab" value="history">
-      <div class="field"><label for="h-user">ID Discord du client</label><input id="h-user" name="historyUser" class="input input-mono" required pattern="^\d{15,22}$" value="<%= filters.historyUser %>" placeholder="123456789012345678"></div>
-      <div class="field field-actions"><button type="submit" class="btn btn-primary">Afficher</button></div>
-    </form>
-    <% if (filters.historyUser) { %>
-    <div class="card">
-      <div class="card-head"><h3 class="card-title">Historique de <a class="link" href="/guilds/<%= guild.id %>/members/<%= filters.historyUser %>"><%= names[filters.historyUser] || filters.historyUser %></a></h3><span class="badge badge-muted"><%= history.length %> commande(s) · <%= fmt.number(Math.round(historyTotal * 100) / 100) %> <%= stats.currency %> payés</span></div>
-      <% if (!history.length) { %><p class="muted">Aucune commande pour ce client.</p><% } else { %>
-      <div class="table-wrap"><table class="table table-compact">
-        <thead><tr><th>#</th><th>Statut</th><th>Produit</th><th>Qté</th><th>Total</th><th>Date</th><th></th></tr></thead>
-        <tbody><% for (const o of history) { %><tr><td>#<%= o.id %></td><td><span class="badge badge-status-<%= o.status %>"><%= statusLabels[o.status] %></span></td><td><%= o.product ? o.product.name : '—' %></td><td><%= o.quantity %></td><td class="nowrap"><%= o.totalLabel %></td><td class="nowrap"><%= fmt.dateTime(o.createdAt) %></td><td class="right"><a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/shop?tab=orders&order=<%= o.id %>">Ouvrir</a></td></tr><% } %></tbody>
-      </table></div>
+    </section>
+  <% } %>
+<% } else if (tab === 'stats') { %>
+  <div class="grid-2">
+    <section class="card">
+      <div class="card-head"><div><h2 class="card-title">Commandes par statut</h2><p class="card-desc"><%= fmt.number(stats.totalOrders) %> au total</p></div></div>
+      <% if (!stats.totalOrders) { %>
+        <%- include('../partials/empty', { glyph: 'bar-chart', title: 'Aucune commande enregistrée', text: 'Les statistiques apparaîtront avec les premières commandes.', compact: true }) %>
+      <% } else { %>
+      <ul class="bars">
+        <% for (const s of stats.byStatus) { %>
+          <li class="bar-row"><span class="bar-label"><span class="row"><span class="role-dot house-dot" data-color="<%= statusColor[s.status] %>" aria-hidden="true"></span><span class="truncate"><%= s.label %></span></span></span><span class="bar-track"><span class="bar-fill" data-pct="<%= s.pct %>" data-color="<%= statusColor[s.status] %>" data-color-bg></span></span><span class="bar-value"><%= fmt.number(s.count) %> · <%= fmt.percent(s.count, stats.totalOrders) %> %</span></li>
+        <% } %>
+      </ul>
       <% } %>
-    </div>
-    <% } else { %><p class="muted">Saisissez l'ID Discord d'un client pour afficher ses commandes.</p><% } %>
-  </section>
-
-  <!-- ─── Statistiques ─── -->
-  <section class="tab-panel" data-tab-panel="stats" role="tabpanel">
-    <div class="grid-2">
-      <div class="card">
-        <h3 class="card-title">Commandes par statut</h3>
-        <% if (!stats.totalOrders) { %><p class="muted">Aucune commande enregistrée.</p><% } else { %>
-        <ul class="bars">
-          <% for (const s of stats.byStatus) { %>
-            <li class="bar-row"><span class="bar-label"><span class="truncate"><%= s.label %></span></span><span class="bar-track"><span class="bar-fill" data-pct="<%= s.pct %>"></span></span><span class="bar-value"><%= fmt.number(s.count) %> · <%= fmt.percent(s.count, stats.totalOrders) %> %</span></li>
-          <% } %>
-        </ul>
-        <% } %>
-      </div>
-      <div class="card">
-        <div class="card-head"><h3 class="card-title">Chiffre d'affaires payé / livré — <%= stats.period %> derniers jours</h3><strong><%= stats.revenueLabel %></strong></div>
-        <% if (!stats.days.some((d) => d.count)) { %><p class="muted">Aucune commande payée ou livrée sur la période.</p><% } else { %>
-        <ul class="bars">
-          <% for (const d of stats.days.filter((x) => x.count)) { %>
-            <li class="bar-row"><span class="bar-label"><span class="truncate"><%= d.label %></span></span><span class="bar-track"><span class="bar-fill" data-pct="<%= d.pct %>"></span></span><span class="bar-value"><%= d.totalLabel %> · <%= d.count %></span></li>
-          <% } %>
-        </ul>
-        <% } %>
-      </div>
-    </div>
-  </section>
-
-  <!-- ─── Webhook Tebex ─── -->
-  <section class="tab-panel" data-tab-panel="webhook" role="tabpanel">
-    <div class="grid-2">
+    </section>
+    <section class="card">
+      <div class="card-head"><div><h2 class="card-title">Chiffre d'affaires</h2><p class="card-desc">Commandes payées ou livrées · <%= stats.period %> derniers jours</p></div><strong class="stat-value stat-value-sm"><%= stats.revenueLabel %></strong></div>
+      <% if (!stats.days.some((d) => d.count)) { %>
+        <%- include('../partials/empty', { glyph: 'activity', title: 'Aucune vente', text: 'Aucune commande payée ou livrée sur la période.', compact: true }) %>
+      <% } else { %>
+        <div class="histo histo-dense" role="img" aria-label="Chiffre d'affaires par jour sur <%= stats.period %> jours">
+          <% stats.days.forEach((d, i) => { %>
+            <div class="histo-col" data-tooltip="<%= d.label %> · <%= d.totalLabel %> (<%= d.count %> commande<%= d.count > 1 ? 's' : '' %>)">
+              <div class="histo-bars"><span class="histo-bar" data-h="<%= maxDayTotal ? Math.round(d.total / maxDayTotal * 100) : 0 %>"></span></div>
+              <span class="histo-label"><%= i % 5 === 0 || i === stats.days.length - 1 ? d.label : '' %></span>
+            </div>
+          <% }) %>
+        </div>
+        <details class="editor-section mt-4 mb-0">
+          <summary>Voir les données</summary>
+          <div class="table-wrap"><table class="table table-compact"><thead><tr><th>Jour</th><th class="num">Commandes</th><th class="num">CA</th></tr></thead><tbody><% for (const d of stats.days.filter((x) => x.count)) { %><tr><td><%= d.label %></td><td class="num tabular"><%= d.count %></td><td class="num tabular"><%= d.totalLabel %></td></tr><% } %></tbody></table></div>
+        </details>
+      <% } %>
+    </section>
+  </div>
+<% } else { %>
+  <% const curl = `curl -X POST "${webhook.url}" \\\n  -H "${webhook.header}: VOTRE_SECRET" -H "Content-Type: application/json" \\\n  -d '{"transactionId":"tbx-1234","packageId":"5581234","discordId":"${user.id}","status":"paid"}'`; %>
+  <div class="grid-2 grid-aside-right">
+    <div class="stack">
       <section class="card">
-        <h3 class="card-title">Endpoint</h3>
-        <dl class="dl">
-          <dt>URL</dt><dd><code class="code-block"><%= webhook.url %></code></dd>
-          <dt>Méthode</dt><dd><code>POST</code> · <code>Content-Type: application/json</code></dd>
-          <dt>En-tête</dt><dd><code><%= webhook.header %></code> : valeur de <code><%= webhook.secretSource %></code> (fichier <code>.env</code>, jamais affichée ici)</dd>
-          <dt>Santé</dt><dd><code class="code-block"><%= webhook.health %></code></dd>
-          <dt>Produits liés</dt><dd><%= webhook.linkedProducts %> produit(s) avec un <em>Tebex package ID</em></dd>
-        </dl>
-        <p class="hint">Hors CSRF et hors session : l'authentification repose uniquement sur l'en-tête secret. Détails et logique de rapprochement : <code>docs/FIVEM.md</code> § 8.</p>
+        <div class="card-head"><div><h2 class="card-title">Webhook Tebex</h2><p class="card-desc">Les paiements Tebex créent ou mettent à jour les commandes automatiquement.</p></div></div>
+        <ol class="steps">
+          <li><strong>Liez vos produits</strong><p>Renseignez le <em>package ID</em> Tebex de chaque produit (<%= webhook.linkedProducts %> produit<%= webhook.linkedProducts > 1 ? 's liés' : ' lié' %> actuellement).</p></li>
+          <li><strong>Déclarez l'URL du webhook</strong>
+            <div class="snippet"><div class="snippet-head"><span>POST · JSON</span><button type="button" class="btn btn-ghost btn-sm" data-copy="<%= webhook.url %>"><%- icon('copy', { size: 14 }) %>Copier</button></div><pre class="snippet-code"><%= webhook.url %></pre></div>
+          </li>
+          <li><strong>Authentifiez les appels</strong><p>En-tête <code><%= webhook.header %></code> = valeur de <code><%= webhook.secretSource %></code> (fichier <code>.env</code>, jamais affichée ici).</p></li>
+          <li><strong>Testez</strong>
+            <div class="snippet"><div class="snippet-head"><span>curl</span><button type="button" class="btn btn-ghost btn-sm" data-copy="<%= curl %>"><%- icon('copy', { size: 14 }) %>Copier</button></div><pre class="snippet-code"><%= curl %></pre></div>
+            <p class="hint">Réponses : <code>200/201</code> commande créée ou mise à jour · <code>202</code> package inconnu · <code>400</code> validation · <code>401</code> secret invalide.</p>
+          </li>
+        </ol>
       </section>
+    </div>
+    <aside class="stack">
       <section class="card">
-        <h3 class="card-title">Payload normalisé</h3>
+        <h2 class="card-title">Payload normalisé</h2>
 <pre class="json">{
   "transactionId": "tbx-1234",
   "packageId": "5581234",
   "discordId": "123456789012345678",
   "status": "paid",
-  "quantity": 1,
-  "note": "…"
+  "quantity": 1
 }</pre>
-        <p class="muted"><code>status</code> : valeurs internes (<code>PENDING</code>, <code>PAID</code>, <code>DELIVERED</code>, <code>CANCELLED</code>, <code>REFUNDED</code>) ou alias Tebex (<code>complete</code>, <code>payment.completed</code>, <code>refund</code>, <code>chargeback</code>, <code>declined</code>…).</p>
-        <h4 class="card-subtitle">Exemple curl</h4>
-<pre class="json">curl -X POST "<%= webhook.url %>" \
-  -H "<%= webhook.header %>: VOTRE_SECRET" -H "Content-Type: application/json" \
-  -d '{"transactionId":"tbx-1234","packageId":"5581234","discordId":"<%= user.id %>","status":"paid"}'</pre>
-        <p class="hint">Réponses : <code>200/201 { ok, orderId, status, created }</code> · <code>202 { ok:false, reason }</code> (package inconnu / aucune commande) · <code>400</code> validation · <code>401</code> secret invalide.</p>
+        <p class="hint mt-3"><code>status</code> : <code>PENDING</code>, <code>PAID</code>, <code>DELIVERED</code>, <code>CANCELLED</code>, <code>REFUNDED</code> ou alias Tebex (<code>complete</code>, <code>refund</code>, <code>chargeback</code>…).</p>
       </section>
-    </div>
-  </section>
-</div>
+      <section class="card card-muted">
+        <h2 class="card-title">Santé</h2>
+        <p class="text-sm text-2"><code class="code-block"><%= webhook.health %></code></p>
+        <p class="hint">Hors session et hors CSRF : l'en-tête secret fait foi. Détails : <code>docs/FIVEM.md</code> § 8.</p>
+      </section>
+    </aside>
+  </div>
+<% } %>

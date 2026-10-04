@@ -557,10 +557,19 @@ describe('Shop', () => {
     expect(r.text).toContain('Pack VIP');
     expect(r.text).toContain('9.99 EUR');
     expect(r.text).toContain('Modifier « Pack VIP »');
-    expect(r.text).toContain('Commander');
-    expect(r.text).toContain('http://localhost:3999/api/shop/tebex');
-    expect(r.text).toContain('x-webhook-secret');
-    expect(r.text).toContain('data-pct="100"');
+    expect(r.text).toContain('Commander'); // bouton de l'annonce construite par buildProductAnnouncement
+    expect(r.text).toContain('data-live-preview="/guilds/' + GUILD_ID + '/shop/products/preview"');
+    const webhook = await get(`/guilds/${GUILD_ID}/shop?tab=webhook`);
+    expect(webhook.text).toContain('http://localhost:3999/api/shop/tebex');
+    expect(webhook.text).toContain('x-webhook-secret');
+    const statsTab = await get(`/guilds/${GUILD_ID}/shop?tab=stats`);
+    expect(statsTab.text).toContain('data-pct="100"');
+    const preview = await request(base, 'POST', `/guilds/${GUILD_ID}/shop/products/preview`, { cookie: signedCookie(env().SESSION_SECRET), 'content-type': 'application/json', accept: 'application/json', 'x-csrf-token': 'csrf-test-token' }, JSON.stringify({ name: 'Pack Or', price: '19,99', currency: 'eur', categoryId: '1', stock: '' }));
+    expect(preview.status).toBe(200);
+    const html = JSON.parse(preview.text).html as string;
+    expect(html).toContain('Pack Or');
+    expect(html).toContain('19.99 EUR');
+    expect(html).toContain('Stock illimité');
     const order = await get(`/guilds/${GUILD_ID}/shop?tab=orders&status=PENDING&order=7`);
     expect(order.text).toContain('Commande #7');
     const transitionSelect = order.text.match(/<select id="os-status"[\s\S]*?<\/select>/)?.[0] ?? '';

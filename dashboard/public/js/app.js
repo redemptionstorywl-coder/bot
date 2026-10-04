@@ -185,29 +185,6 @@
     if (bar && bar.scrollWidth > bar.clientWidth) bar.scrollLeft = Math.max(0, a.offsetLeft - bar.clientWidth / 2 + a.clientWidth / 2);
   });
 
-  // ───── Onglets côté client ([data-tabs], pages modules) ─────
-  $$('[data-tabs]').forEach(function (container) {
-    var tabs = $$('[data-tab]', container).filter(function (t) { return t.closest('[data-tabs]') === container; });
-    var panels = $$('[data-tab-panel]', container).filter(function (p) { return p.parentElement.closest('[data-tabs]') === container; });
-    var param = container.getAttribute('data-tab-param') || 'tab';
-    function activate(name, push) {
-      tabs.forEach(function (t) { var a = t.getAttribute('data-tab') === name; t.classList.toggle('active', a); t.setAttribute('aria-selected', a ? 'true' : 'false'); t.setAttribute('tabindex', a ? '0' : '-1'); });
-      panels.forEach(function (p) { p.classList.toggle('active', p.getAttribute('data-tab-panel') === name); });
-      if (push && window.history.replaceState) { var url = new URL(window.location.href); url.searchParams.set(param, name); window.history.replaceState(null, '', url.toString()); }
-    }
-    tabs.forEach(function (t, i) {
-      on(t, 'click', function () { activate(t.getAttribute('data-tab'), true); });
-      on(t, 'keydown', function (e) {
-        if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
-        var n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
-        n.focus(); activate(n.getAttribute('data-tab'), true);
-      });
-    });
-    var initial = container.getAttribute('data-active');
-    if (!initial || !tabs.some(function (t) { return t.getAttribute('data-tab') === initial; })) initial = tabs[0] && tabs[0].getAttribute('data-tab');
-    if (initial) activate(initial, false);
-  });
-
   // ───── Filtre local ([data-filter="#cible"] + [data-filter-item]) ─────
   $$('[data-filter]').forEach(function (input) {
     var target = $(input.getAttribute('data-filter'));
@@ -251,6 +228,15 @@
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () { toast('Copie impossible.', 'error'); });
     else { var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (err) { /* ignoré */ } ta.remove(); }
   });
+
+  // ───── Ancre vers un <details> (ex. #new-product) : il s'ouvre ─────
+  function openHashDetails() {
+    var id = decodeURIComponent(location.hash.slice(1));
+    var el = id ? document.getElementById(id) : null;
+    if (el && el.tagName === 'DETAILS') { el.open = true; el.scrollIntoView({ block: 'start' }); }
+  }
+  openHashDetails();
+  on(window, 'hashchange', openHashDetails);
 
   // ───── Insertion de variables ([data-insert-target] > [data-insert]) ─────
   $$('[data-insert-target]').forEach(function (group) {

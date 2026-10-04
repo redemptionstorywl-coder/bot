@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { OrderStatus, Prisma } from '@prisma/client';
 import type { RedemptionClient } from '../../../src/core/Client';
 import { prisma } from '../../../src/database/client';
-import { shopService, canTransition, formatPrice } from '../../../src/services/ShopService';
+import { shopService, canTransition, formatPrice, buildProductAnnouncement, buildOrderSummary, type ProductWithCategory } from '../../../src/services/ShopService';
+import { serviceMessagePreview, renderPreviewHtml } from '../../lib/servicePreview';
 import { env } from '../../../src/config/env';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
@@ -55,6 +56,45 @@ const orderBody = z.object({ userId: discordIdSchema, productId: z.coerce.number
 const statusBody = z.object({ status: z.nativeEnum(OrderStatus), note: optionalText(1000) });
 
 const ALL_STATUSES = Object.values(OrderStatus);
+const TAB_LABELS: Record<(typeof TABS)[number], string> = { products: 'Produits', categories: 'Catégories', orders: 'Commandes', history: 'Historique client', stats: 'Statistiques', webhook: 'Webhook Tebex' };
+
+/** Formulaire produit brut (aperçu) : tout est toléré, rien n'est enregistré. */
+const loose = (max: number) => z.preprocess((v) => (v === undefined || v === null ? '' : String(v)), z.string().max(max));
+const productPreviewBody = z.object({
+  productId: loose(12),
+  name: loose(100),
+  description: loose(2000),
+  categoryId: loose(12),
+  price: loose(16),
+  currency: loose(8),
+  imageUrl: loose(500),
+  stock: loose(8),
+  tebexUrl: loose(500),
+});
+
+function productFromForm(guildId: string, body: z.infer<typeof productPreviewBody>, categories: { id: number }[]): ProductWithCategory {
+  const price = /^\d+([.,]\d{1,2})?$/.test(body.price.trim()) ? body.price.trim().replace(',', '.') : '0';
+  const stock = body.stock.trim() === '' ? null : Math.max(0, Number.parseInt(body.stock, 10) || 0);
+  const category = (categories.find((c) => String(c.id) === body.categoryId) ?? null) as ProductWithCategory['category'];
+  const url = (v: string) => (/^https:\/\//i.test(v.trim()) ? v.trim() : null);
+  return {
+    id: Number.parseInt(body.productId, 10) || ('…' as unknown as number),
+    guildId,
+    categoryId: category?.id ?? null,
+    category,
+    name: body.name.trim() || 'Nom du produit',
+    description: body.description.trim() || null,
+    price: new Prisma.Decimal(price),
+    currency: /^[A-Za-z]{3,8}$/.test(body.currency.trim()) ? body.currency.trim().toUpperCase() : 'EUR',
+    imageUrl: url(body.imageUrl),
+    stock,
+    tebexPackageId: null,
+    tebexUrl: url(body.tebexUrl),
+    enabled: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  } as ProductWithCategory;
+}
 
 /** Pages Shop : produits, catégories, commandes (liste paginée, fiche, transitions, création manuelle), historique client, statistiques, webhook Tebex. */
 export function createShopRouter(client: RedemptionClient): Router {
@@ -111,9 +151,18 @@ export function createShopRouter(client: RedemptionClient): Router {
       const currency = products[0]?.currency ?? recentPaid[0]?.currency ?? 'EUR';
       const baseQuery = new URLSearchParams({ tab: 'orders', ...(query.status ? { status: query.status } : {}), ...(query.user ? { user: query.user } : {}) }).toString();
       const dashboardUrl = env().DASHBOARD_URL.replace(/\/+$/, '');
+      const lang = config.defaultLanguage;
+      const productPreview = query.tab === 'products'
+        ? renderPreviewHtml(res, serviceMessagePreview(buildProductAnnouncement(editing ?? productFromForm(guild.id, productPreviewBody.parse({}), categories), lang, config.brandColor)))
+        : null;
+      const orderPreview = selectedOrder ? renderPreviewHtml(res, { ...serviceMessagePreview(buildOrderSummary(selectedOrder, lang, config.brandColor)), ephemeral: true }) : null;
       render(res, 'shop', {
         title: 'Shop',
         page: 'shop',
+        crumbs: query.tab === 'products' ? (editing ? [{ label: editing.name }] : []) : [{ label: TAB_LABELS[query.tab] }],
+        scripts: query.tab === 'products' ? ['live-preview'] : [],
+        productPreview,
+        orderPreview,
         tab: query.tab,
         filters: { status: query.status ?? '', user: query.user ?? '', historyUser: query.historyUser ?? '' },
         products: products.map((p) => ({ ...p, priceLabel: formatPrice(p.price, p.currency) })),
@@ -150,6 +199,19 @@ export function createShopRouter(client: RedemptionClient): Router {
   );
 
   // ───── Produits ─────
+
+  router.post(
+    '/shop/products/preview',
+    validate({ body: productPreviewBody }),
+    wrap(async (req, res) => {
+      const guild = res.locals.guild!;
+      const config = res.locals.config!;
+      const { body } = valid<z.infer<typeof productPreviewBody>>(req);
+      const categories = await shopService.listCategories(guild.id);
+      const product = productFromForm(guild.id, body, categories);
+      res.json({ ok: true, html: renderPreviewHtml(res, serviceMessagePreview(buildProductAnnouncement(product, config.defaultLanguage, config.brandColor))) });
+    }),
+  );
 
   function productInput(body: z.infer<typeof productBody>) {
     return {
