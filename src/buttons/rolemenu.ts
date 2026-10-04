@@ -5,6 +5,8 @@ import { roleService } from '../services/RoleService';
 import { embedService, embedSpecSchema } from '../services/EmbedService';
 import { buildCustomId } from '../utils/customId';
 import { assertRoleMenuEditor, parseMenuId, PUBLIC_ROLEMENU_ACTIONS } from './_rolemenuEditor';
+import { renderRoles } from '../panels/_roles';
+import { ok } from '../panels/_modulesKit';
 
 /**
  * Boutons du namespace `rolemenu` :
@@ -100,7 +102,9 @@ export default defineButton({
       }
       case 'delete': {
         await roleService.deleteRoleMenu(menu.id, true);
-        await interaction.update({ content: t('roles.rolemenu.deleted', { name: menu.name }), embeds: [], components: [] });
+        // Retour au panneau /config module:roles (onglet Role menus)
+        const panel = ctx.config ? await renderRoles('menus', { guild: interaction.guild, config: ctx.config, t, userId: interaction.user.id, notice: ok(t('roles.rolemenu.deleted', { name: menu.name })) }) : null;
+        await interaction.update(panel ? { content: '', ...panel } : { content: t('roles.rolemenu.deleted', { name: menu.name }), embeds: [], components: [] });
         return;
       }
       default:

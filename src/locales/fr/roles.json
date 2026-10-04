@@ -16,33 +16,16 @@
     "reaction": "🔘 Reaction role",
     "notification": "🔔 Notification"
   },
-  "autorole": {
-    "added": "Autorole {role} — `{type}` · délai : {delay}",
-    "removed": "Autorole {role} retiré ({count}).",
-    "immediate": "immédiat",
-    "list_title": "🎭 Rôles automatiques",
-    "empty": "Aucun rôle automatique. Ajoutez-en avec `/autorole add`.",
-    "types_title": "Déclencheurs",
-    "types_help": "`JOIN` arrivée (humains) · `BOT` arrivée (bots) · `VERIFIED` écran d'accueil validé · `SPECIAL` manuel"
-  },
   "rolemenu": {
     "default_name": "Menu de rôles",
     "default_placeholder": "Choisissez vos rôles…",
     "style_buttons": "Boutons",
     "style_select": "Menu déroulant",
-    "roles_word": "rôle(s)",
     "created": "Menu **{name}** créé. Ajoutez des rôles ci-dessous puis publiez.",
     "deleted": "Menu **{name}** supprimé.",
     "not_found": "Menu de rôles introuvable.",
-    "full": "Ce menu contient déjà 25 rôles (maximum).",
-    "no_options": "Ajoutez au moins un rôle avant de publier.",
-    "role_added": "{role} ajouté au menu **{name}**.",
-    "role_removed": "{role} retiré du menu **{name}**.",
-    "message_updated": "Le message publié a été mis à jour.",
     "published": "Menu publié dans {channel}.",
     "publish_failed": "Publication impossible : {error}",
-    "list_title": "🎭 Menus de rôles",
-    "empty": "Aucun menu. Créez-en un avec `/rolemenu create`.",
     "editor": {
       "title": "🎭 Éditeur — menu #{id}",
       "name": "Nom",
@@ -79,9 +62,7 @@
     "invalid_emoji": "Emoji invalide.",
     "message_not_found": "Message introuvable.",
     "react_failed": "Impossible d'ajouter la réaction (emoji inconnu ou permissions).",
-    "list_title": "🔘 Reaction roles",
-    "message": "message",
-    "empty": "Aucun reaction role. Créez-en un avec `/reactionrole create`."
+    "message": "message"
   },
   "notif": {
     "panel_title": "🔔 Notifications",
@@ -91,14 +72,9 @@
     "subscribed": "🔔 Abonné : **{label}**",
     "unsubscribed": "🔕 Désabonné : **{label}**",
     "unknown": "Notification inconnue.",
-    "setup_title": "🔔 Rôles de notification",
-    "setup_created": "Rôles créés",
-    "setup_linked": "Rôles existants",
-    "setup_footer": "{count} notifications par défaut · /notifications panel pour publier",
     "panel_published": "Panneau publié dans {channel} — [ouvrir]({url})",
     "added": "{emoji} **{label}** (`{key}`) → {role}",
     "removed": "Notification `{key}` retirée.",
-    "none_configured": "Aucune notification configurée. Lancez `/notifications setup`.",
-    "list_title": "🔔 Notifications"
+    "none_configured": "Aucune notification configurée : ajoutez-en depuis `/config module:roles` (onglet Notifications)."
   }
 }

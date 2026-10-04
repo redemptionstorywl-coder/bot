@@ -16,39 +16,49 @@ import {
 } from 'discord.js';
 import type { LeaveConfig, WelcomeConfig } from '@prisma/client';
 import { buildCustomId } from '../../utils/customId';
-import { MODULE_LABELS, TEMPLATE_VARIABLES } from '../../config/constants';
+import { TEMPLATE_VARIABLES } from '../../config/constants';
 import { env } from '../../config/env';
 import { hasInternalPermission } from '../../utils/permissions';
 import type { InteractionContext } from '../../structures/types';
 import { resolveLocalized, welcomeService, type Localized } from '../../services/WelcomeService';
 import { embedService, embedSpecSchema, type ButtonSpec, type EmbedSpec } from '../../services/EmbedService';
 import type { Translator } from '../../services/TranslationService';
+import { guildConfigService } from '../../services/GuildConfigService';
 
 /**
- * Panneau interactif `/welcome-config` (éphémère, sans session) :
+ * Panneau interactif `/config bienvenue` (éphémère, sans session) :
  *  - boutons   : `welcome:cfg:<action>:<tab>`           (src/buttons/welcome.ts)
  *  - select    : `welcome:cfg:channel:<tab>`            (src/selectMenus/welcome.ts)
  *  - modals    : `welcome:cfg:<kind>:<tab>`             (src/modals/welcome.ts)
  * Le panneau est entièrement re-rendu depuis la base après chaque action (pas d'état en mémoire).
+ * Les handlers ne sont pas liés au module : le panneau reste utilisable module désactivé, et le bouton
+ * d'activation active aussi le module (`welcome` / `leave`) — un seul interrupteur pour l'utilisateur.
  */
 
 /**
- * Vérifie que l'interaction vient d'un serveur, d'un admin (niveau interne ou ManageGuild) et que le module de l'onglet est actif.
+ * Vérifie que l'interaction vient d'un serveur et d'un admin (niveau interne ou ManageGuild).
+ * Le module n'est pas exigé : le panneau sert aussi à le réactiver.
  * Renvoie `null` si OK, sinon la clé/variables du message d'erreur à afficher (éphémère).
  */
-export function checkPanelAccess(
-  interaction: { inGuild(): boolean; member: unknown },
-  ctx: InteractionContext,
-  tab: WelcomeTab | undefined,
-): { key: string; vars?: Record<string, string> } | null {
+export function checkPanelAccess(interaction: { inGuild(): boolean; member: unknown }, ctx: InteractionContext): { key: string; vars?: Record<string, string> } | null {
   const { config } = ctx;
   if (!interaction.inGuild() || !config) return { key: 'core.guild_only' };
   const member = interaction.member instanceof GuildMember ? interaction.member : null;
   if (!hasInternalPermission({ member, config, ownerIds: env().OWNER_IDS, required: 'admin' }) && !member?.permissions.has(PermissionFlagsBits.ManageGuild)) {
     return { key: 'core.insufficient_level', vars: { level: 'admin' } };
   }
-  if (tab === 'leave' && !config.modules.leave) return { key: 'core.module_disabled', vars: { module: MODULE_LABELS.leave } };
   return null;
+}
+
+/** État du module lié à l'onglet (`welcome` / `leave`) ; vrai si la config du serveur est introuvable. */
+export async function isTabModuleEnabled(guildId: string, tab: WelcomeTab): Promise<boolean> {
+  const cfg = await guildConfigService.get(guildId);
+  return cfg ? cfg.modules[tab] : true;
+}
+
+/** Active le module de l'onglet s'il est désactivé (appelé quand l'admin active le message / choisit un salon). */
+export async function ensureTabModule(guildId: string, tab: WelcomeTab): Promise<void> {
+  if (!(await isTabModuleEnabled(guildId, tab))) await guildConfigService.setModule(guildId, tab, true);
 }
 
 export type WelcomeTab = 'welcome' | 'leave';
@@ -133,7 +143,8 @@ export async function renderPanel(opts: PanelRenderOptions): Promise<PanelPayloa
   lines.push(t('welcome.panel.hint'));
   embed.setDescription(lines.join('\n'));
 
-  const enabled = config?.enabled ?? false;
+  // Activé = message activé ET module du serveur actif (un seul interrupteur côté panneau).
+  const enabled = (config?.enabled ?? false) && (await isTabModuleEnabled(guild.id, tab));
   const channel = config?.channelId ? `<#${config.channelId}>` : t('welcome.panel.no_channel');
   const imageEnabled = config?.imageEnabled ?? false;
   const imageValue = `${onOff(imageEnabled, t)}${config?.imageBackgroundUrl ? `\n[${t('welcome.config.background')}](${config.imageBackgroundUrl})` : ''}`;

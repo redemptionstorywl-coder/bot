@@ -11,18 +11,10 @@
     "host": "Hôte"
   },
   "add": {
-    "done": "Serveur **{name}** ajouté (clé `{key}`, framework **{framework}**).",
-    "api_base": "URL de base de l’API",
-    "auth": "Authentification",
-    "auth_hint": "En-tête `{header}` = clé API globale (FIVEM_API_KEY) ou la clé propre à ce serveur.",
-    "docs": "Documentation complète : docs/FIVEM.md"
+    "done": "Serveur **{name}** ajouté (clé `{key}`, framework **{framework}**)."
   },
   "remove": {
     "done": "Serveur **{name}** retiré."
-  },
-  "list": {
-    "title": "🎮 Serveurs FiveM ({count})",
-    "empty": "Aucun serveur FiveM configuré. Utilisez `/fivem add`."
   },
   "maintenance": {
     "on": "🟠 Maintenance **activée** sur **{name}**.",
@@ -38,7 +30,7 @@
     "not_linked": "non lié"
   },
   "errors": {
-    "not_found": "Serveur introuvable. Vérifiez la clé avec `/fivem list`.",
+    "not_found": "Serveur introuvable (il a peut-être été supprimé). Voir `/config module:fivem`.",
     "duplicate": "Un serveur avec cette clé existe déjà.",
     "invalid_key": "Clé invalide : 2 à 64 caractères, lettres minuscules, chiffres, `-` ou `_`.",
     "no_host": "Aucun hôte configuré pour ce serveur.",
@@ -61,22 +53,12 @@
     "not_whitelisted": "Connexion refusée : vous n’êtes pas whitelisté. Faites une demande sur le Discord {server}."
   },
   "sync": {
-    "title": "🔄 Synchronisation — {name}",
     "updated": "🔄 Synchronisation mise à jour — {name}",
-    "on": "activé",
-    "off": "désactivé",
-    "bans_to_discord": "Ban jeu → Discord",
-    "bans_to_game": "Ban Discord → jeu",
-    "kicks": "Kick jeu → Discord",
-    "nicknames": "Pseudo jeu → surnom",
     "linked_role": "Rôle « compte lié »",
     "online_role": "Rôle « en jeu »",
     "counter_channel": "Salon compteur",
-    "require_discord": "Discord obligatoire",
     "require_role": "Rôle requis",
-    "require_whitelist": "Whitelist requise",
-    "footer": "Le bot doit avoir « Gérer les pseudos » / « Gérer les rôles » et être placé au-dessus des rôles concernés.",
-    "invalid": "Réglage invalide : {details}"
+    "footer": "Le bot doit avoir « Gérer les pseudos » / « Gérer les rôles » et être placé au-dessus des rôles concernés."
   },
   "link": {
     "done": "{user} est maintenant lié à `{license}`.",

@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ChannelType, GuildMember, MessageFlags, ModalBuilder, PermissionFlagsBits, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, GuildMember, MessageFlags, ModalBuilder, SlashCommandBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { GuildKind, ReviewStatus } from '@prisma/client';
 import { defineCommand } from '../../structures';
 import { whitelistService, WhitelistError, MAX_QUESTIONS, parseAnswers } from '../../services/WhitelistService';
@@ -13,7 +13,8 @@ import { discordTimestamp } from '../../utils/time';
 const STATUS_CHOICES = Object.values(ReviewStatus).map((s) => ({ name: s, value: s }));
 
 /**
- * /whitelist — candidature (modal), review staff, statut, liste, configuration.
+ * /whitelist — candidature (modal), review staff, statut, liste.
+ * La configuration (questions, salon de review, rôles, DM, ouverture) est dans `/config module:whitelist`.
  */
 export default defineCommand({
   data: new SlashCommandBuilder()
@@ -30,85 +31,18 @@ export default defineCommand({
         .addUserOption((o) => o.setName('user').setDescription('Candidat (dossier en attente)'))
         .addStringOption((o) => o.setName('note').setDescription('Note transmise au candidat').setMaxLength(500)),
     )
-    .addSubcommand((s) => s.setName('list').setDescription('[Staff] Lister les candidatures').addStringOption((o) => o.setName('status').setDescription('Filtrer par statut').addChoices(...STATUS_CHOICES)))
-    .addSubcommandGroup((g) =>
-      g
-        .setName('config')
-        .setDescription('[Admin] Configuration de la whitelist')
-        .addSubcommand((s) => s.setName('show').setDescription('Afficher la configuration'))
-        .addSubcommand((s) => s.setName('questions').setDescription('Définir les questions (jusqu’à 5, via formulaire)'))
-        .addSubcommand((s) => s.setName('review-channel').setDescription('Salon de review des candidatures').addChannelOption((o) => o.setName('channel').setDescription('Salon (vide = aucun)').addChannelTypes(ChannelType.GuildText)))
-        .addSubcommand((s) => s.setName('accepted-role').setDescription('Rôle donné aux acceptés').addRoleOption((o) => o.setName('role').setDescription('Rôle (vide = aucun)')))
-        .addSubcommand((s) => s.setName('pending-role').setDescription('Rôle donné pendant l’attente').addRoleOption((o) => o.setName('role').setDescription('Rôle (vide = aucun)')))
-        .addSubcommand((s) => s.setName('dm').setDescription('Envoyer un DM au candidat à la décision').addBooleanOption((o) => o.setName('enabled').setDescription('Activer ?').setRequired(true)))
-        .addSubcommand((s) => s.setName('enabled').setDescription('Ouvrir / fermer les candidatures').addBooleanOption((o) => o.setName('enabled').setDescription('Ouvert ?').setRequired(true))),
-    ),
+    .addSubcommand((s) => s.setName('list').setDescription('[Staff] Lister les candidatures').addStringOption((o) => o.setName('status').setDescription('Filtrer par statut').addChoices(...STATUS_CHOICES))),
   module: 'whitelist',
   guildKinds: [GuildKind.PRISON, GuildKind.SCHOOL],
   cooldown: 3,
   async execute(interaction, { t, lang, config }) {
     if (!interaction.guild || !config) return;
     const guildId = interaction.guild.id;
-    const group = interaction.options.getSubcommandGroup(false);
     const sub = interaction.options.getSubcommand();
     const ephemeral = { flags: MessageFlags.Ephemeral } as const;
     const member = interaction.member instanceof GuildMember ? interaction.member : null;
     const can = (required: 'staff' | 'admin') => hasInternalPermission({ member, config, ownerIds: env().OWNER_IDS, required });
     const deny = (level: string) => interaction.reply({ embeds: [embedService.error(t('core.insufficient_level', { level }))], ...ephemeral });
-
-    // ───── Config ─────
-    if (group === 'config') {
-      if (!can('admin')) return deny('admin');
-      switch (sub) {
-        case 'show': {
-          const s = await whitelistService.getConfig(guildId);
-          const questions = whitelistService.resolveQuestions(s, lang);
-          const embed = embedService.brand(t('whitelist.config.title')).addFields(
-            { name: t('whitelist.config.enabled'), value: s.enabled ? t('core.enabled') : t('core.disabled'), inline: true },
-            { name: t('whitelist.config.review_channel'), value: s.reviewChannelId ? `<#${s.reviewChannelId}>` : t('core.none'), inline: true },
-            { name: t('whitelist.config.dm'), value: s.dmOnDecision ? t('core.yes') : t('core.no'), inline: true },
-            { name: t('whitelist.config.accepted_role'), value: s.acceptedRoleId ? `<@&${s.acceptedRoleId}>` : t('core.none'), inline: true },
-            { name: t('whitelist.config.pending_role'), value: s.pendingRoleId ? `<@&${s.pendingRoleId}>` : t('core.none'), inline: true },
-            { name: t('whitelist.config.questions', { count: questions.length }), value: questions.map((q, i) => `${i + 1}. ${q.label}${s.questions.length ? '' : ` _(${t('whitelist.config.default')})_`}`).join('\n') || t('core.none') },
-          );
-          await interaction.reply({ embeds: [embed], ...ephemeral });
-          return;
-        }
-        case 'questions': {
-          const s = await whitelistService.getConfig(guildId);
-          const modal = new ModalBuilder().setCustomId(buildCustomId('whitelist', 'questions')).setTitle(t('whitelist.config.questions_modal_title').slice(0, 45));
-          for (let i = 0; i < MAX_QUESTIONS; i++) {
-            const existing = s.questions[i];
-            const input = new TextInputBuilder().setCustomId(`q${i + 1}`).setLabel(t('whitelist.config.question_n', { n: i + 1 }).slice(0, 45)).setStyle(TextInputStyle.Short).setRequired(i === 0).setMaxLength(45).setPlaceholder(t('whitelist.config.question_placeholder').slice(0, 100));
-            if (existing) input.setValue(existing.label);
-            modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(input));
-          }
-          await interaction.showModal(modal);
-          return;
-        }
-        case 'review-channel': {
-          const channel = interaction.options.getChannel('channel');
-          await whitelistService.updateConfig(guildId, { reviewChannelId: channel?.id ?? null });
-          await interaction.reply({ embeds: [embedService.success(t('whitelist.config.updated'))], ...ephemeral });
-          return;
-        }
-        case 'accepted-role':
-        case 'pending-role': {
-          const role = interaction.options.getRole('role');
-          await whitelistService.updateConfig(guildId, sub === 'accepted-role' ? { acceptedRoleId: role?.id ?? null } : { pendingRoleId: role?.id ?? null });
-          await interaction.reply({ embeds: [embedService.success(t('whitelist.config.updated'))], ...ephemeral });
-          return;
-        }
-        case 'dm':
-        case 'enabled': {
-          const enabled = interaction.options.getBoolean('enabled', true);
-          await whitelistService.updateConfig(guildId, sub === 'dm' ? { dmOnDecision: enabled } : { enabled });
-          await interaction.reply({ embeds: [embedService.success(t('whitelist.config.updated'))], ...ephemeral });
-          return;
-        }
-      }
-      return;
-    }
 
     switch (sub) {
       case 'apply': {

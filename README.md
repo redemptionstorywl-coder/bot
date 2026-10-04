@@ -32,7 +32,7 @@ Node.js 22 · TypeScript · discord.js v14 · Prisma · MySQL · Express · Sock
 
 | Module | Description |
 | --- | --- |
-| 🌍 Langue du bot | Le bot répond en français ou en anglais selon la langue du serveur (`/guild-config language`) |
+| 🌍 Langue du bot | Le bot répond en français ou en anglais selon la langue du serveur (`/config module:general`) |
 | 📢 Annonces | `/announce` : création interactive (embed, texte, mentions, boutons, salon), publication immédiate ou programmée, édition, duplication, archivage, aperçu |
 | 🎨 Embed Builder | `/embed` : création sans code, aperçu live, vos propres templates réutilisables, import/export JSON |
 | 👋 Bienvenue / Départ | Message, embed, image générée, DM, boutons, rôle automatique, variables documentées |
@@ -183,13 +183,11 @@ Le dashboard écoute automatiquement sur le port `PORT` fourni par l'hébergeur.
 
 ## Configuration du premier serveur
 
-1. `/guild-config type` → choisissez **Prison**, **Battle Royale**, **School** ou **Shop**. Les modules adaptés sont activés.
-2. `/guild-config language` → langue des réponses du bot (français ou anglais).
-3. `/guild-config staff-role` / `admin-role` → rôles autorisés à modérer / configurer. Un rôle nommé **🛡️ RS Team** est reconnu automatiquement comme équipe (accès à toutes les commandes staff et admin, sans permissions Discord particulières).
-4. `/guild-config log-channel` → un salon par catégorie de logs.
-5. `/welcome-config`, `/autorole`, `/ticket-config`, `/notifications setup`… ou **tout faire depuis le dashboard**.
+1. `/config module:general` → type de serveur (**Prison**, **Battle Royale**, **School** ou **Shop**), langue du bot, rôles admin et staff, modules actifs, couleur. Un rôle nommé **🛡️ RS Team** est reconnu automatiquement comme équipe sur tous les serveurs.
+2. `/config module:logs` → un salon par catégorie de logs, ou tout dans un salon privé créé en un clic.
+3. `/config module:bienvenue`, `/config module:tickets`, `/config module:moderation`, `/config module:roles`… : chaque module s'ouvre dans un panneau complet.
 
-`/guild-config show` affiche l'état complet. Chaque module s'active/désactive avec `/guild-config module` ou depuis la page **Paramètres** du dashboard.
+Tout est aussi modifiable depuis le dashboard.
 
 ---
 
@@ -207,23 +205,35 @@ Voir [`dashboard/README.md`](dashboard/README.md) pour la structure et l'ajout d
 
 ## Commandes
 
-La liste à jour est disponible avec `/help` (46 commandes). Principales commandes :
+Toute la configuration passe par **une seule commande** : `/config module:<module>` ouvre le panneau complet du module (boutons, menus, formulaires, aperçus). Les autres commandes sont des actions.
 
-| Catégorie | Commandes |
+| `/config module:` | Contenu du panneau |
 | --- | --- |
-| Administration | `/info` (fiche du serveur : catégories, salons, rôles avec IDs), `/dm user|all|status|cancel` (messages privés via le bot), `/guild-config type|show|language|staff-role|admin-role|log-channel|module|brand-color`, `/help`, `/status`, `/fivem add|remove|list|status|maintenance|status-channel|players` |
-| Rôles | `/autorole add|remove|list`, `/rolemenu create|add-role|remove-role|publish|edit|delete|list`, `/reactionrole create|remove|list`, `/notifications setup|panel|add|remove|list` |
-| Bienvenue / départ | `/welcome-config` — panneau interactif éphémère (onglets Bienvenue / Départ : activation, salon, message, embed, image, DM, boutons liens, logs des départs, test) |
-| Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |
-| Tickets | `/ticket-config` (panneau interactif : raisons, catégories, accès, questions, panneau), `/ticket close|add|remove|claim|transcript|rename|info|list` |
-| Modération | `/ban`, `/tempban`, `/unban`, `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/clear messages` (N messages, filtres), `/clear salon` (tout un salon, recréé à l'identique), `/clear serveur` (tous les messages du serveur, admin, confirmation par le nom exact du serveur, rapport en DM), `/slowmode`, `/lock`, `/unlock`, `/mute-salon [duration] [channel] [reason]` (sourdine programmée, déverrouillage automatique), `/lockdown on|off|status`, `/case`, `/history`, `/mod-config thresholds|mute-role|dm|show`, `/antiraid status|spam|mentions|links|whitelist|new-account|bots|mass-join|exempt`, `/antiraid nuke status|enable|disable|threshold|punishment|whitelist|lockdown|bot-add|options` |
-| Communauté | `/event create|edit|cancel|list|participants|remind`, `/giveaway create|end|reroll|cancel|list`, `/poll create|end|results|list` |
-| Whitelist (Prison / School) | `/whitelist apply|status|review|list|config` |
-| Battle Royale | `/profile`, `/leaderboard`, `/battlepass`, `/br-link`, `/br-admin season|stats|xp` |
-| School RP | `/school register|profile|apply|announce|class|house|club|config` |
-| Shop | `/shop catalog|announce|product|category|order` |
+| `general` | Type de serveur, langue du bot, rôles admin/staff, modules actifs, couleur, footer |
+| `logs` | Salon de chaque catégorie de logs, salon de logs privé en un clic |
+| `bienvenue` | Bienvenue et départ : salon, message, embed, image, DM, boutons, test |
+| `tickets` | Raisons de ticket, catégorie d'ouverture, rôles d'accès, questions, message d'accueil, panneau, salon des transcripts, relances automatiques |
+| `moderation` | Seuils de warns, rôle mute, anti-raid, anti-nuke, lockdown, salon piège `get-banned` |
+| `roles` | Auto-roles, role menus, reaction roles, rôles de notifications |
+| `fivem` | Serveurs FiveM, statut, synchronisation bans/pseudos/rôles, salon compteur, installation |
+| `battleroyale` | Saisons, Battle Pass, outils de stats et d'XP |
+| `whitelist` | Questions, salon de review, rôles, DM des décisions |
+| `school` | Salons, rôles, classes, maisons, clubs |
+| `shop` | Produits, catégories, Tebex, annonces produits |
 
-Les commandes Battle Royale, School RP et Shop ne sont proposées que sur les serveurs du type correspondant (`/guild-config type`).
+| Catégorie | Commandes d'action |
+| --- | --- |
+| Administration | `/info` (fiche du serveur avec IDs), `/dm user|all|status|cancel`, `/help`, `/status` |
+| Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |
+| Tickets | `/ticket close|add|remove|claim|transcript|rename|info|list` (+ boutons dans chaque ticket, dont 📌 « Ticket permanent ») |
+| Modération | `/ban`, `/tempban`, `/unban`, `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/clear messages|salon|serveur`, `/slowmode`, `/lock`, `/unlock`, `/mute-salon`, `/lockdown on|off|status`, `/case`, `/history` |
+| Communauté | `/event`, `/giveaway`, `/poll` |
+| Whitelist | `/whitelist apply|status|review|list` |
+| Battle Royale | `/profile`, `/leaderboard`, `/battlepass`, `/br-link` |
+| School RP | `/school register|profile|apply|announce|house|club` |
+| Shop | `/shop catalog|order` |
+
+Les commandes Battle Royale, School RP et Shop ne sont proposées que sur les serveurs du type correspondant (`/config module:general`).
 
 ---
 
@@ -262,7 +272,7 @@ Les frameworks **ESX**, **QBCore** et **custom** sont pris en charge via des ada
 
 Voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). En résumé :
 
-- **Ajouter un serveur Discord** : invitez le bot, `/guild-config type`. Rien à coder.
+- **Ajouter un serveur Discord** : invitez le bot, `/config module:general`. Rien à coder.
 - **Ajouter une commande** : un fichier dans `src/commands/<categorie>/` avec `defineCommand`. Elle est chargée et déployée automatiquement.
 - **Ajouter un type de ticket / un rôle / un embed** : depuis Discord ou le dashboard.
 - **Ajouter un module** : `src/modules/<nom>/index.ts` (`defineModule`) + clé dans `MODULE_KEYS`.

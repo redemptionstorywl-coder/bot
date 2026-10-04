@@ -73,8 +73,8 @@
     "invalid_timeout_duration": "Durée invalide : un timeout dure entre 1 minute et 28 jours (`10m`, `1h`, `7d`).",
     "not_timed_out": "Ce membre n'est pas exclu temporairement.",
     "not_banned": "Cet utilisateur n'est pas banni.",
-    "no_mute_role": "Aucun rôle mute n'est configuré. Utilisez `/mod-config mute-role`.",
-    "mute_role_missing": "Le rôle mute configuré n'existe plus. Reconfigurez-le avec `/mod-config mute-role`.",
+    "no_mute_role": "Aucun rôle mute n'est configuré. Définissez-le dans `/config moderation` (onglet Sanctions).",
+    "mute_role_missing": "Le rôle mute configuré n'existe plus. Redéfinissez-le dans `/config moderation` (onglet Sanctions).",
     "channel_unsupported": "Ce type de salon ne supporte pas cette action.",
     "missing_permissions": "Je n'ai pas les permissions nécessaires pour effectuer cette action.",
     "escalation_failed": "l'action automatique a échoué (permissions ou hiérarchie).",
@@ -137,7 +137,6 @@
     "cancelled": "Action annulée."
   },
   "config": {
-    "title": "Modération — {server}",
     "mute_role": "Rôle mute",
     "mute_role_set": "Rôle mute défini : {role}",
     "mute_role_removed": "Rôle mute retiré.",
@@ -147,13 +146,9 @@
     "no_thresholds": "Aucun seuil : les avertissements n'entraînent aucune action automatique.",
     "threshold_added": "Seuil enregistré : **{count}** avertissements → **{action}**.",
     "threshold_removed": "Seuil de **{count}** avertissements retiré.",
-    "threshold_not_found": "Aucun seuil pour **{count}** avertissements.",
-    "stats_title": "Statistiques (30 jours)",
-    "stats": "**{total}** sanction(s) • {warnings} avertissement(s) actif(s) • {bans} ban(s) actif(s) • {mutes} mute(s) actif(s)"
+    "threshold_not_found": "Aucun seuil pour **{count}** avertissements."
   },
   "antiraid": {
-    "status_title": "Anti-raid — {server}",
-    "updated": "✅ Configuration anti-raid mise à jour.",
     "log_title": "🚨 Anti-raid : {trigger}",
     "action_taken": "Action",
     "days": "{days} jour(s)",
@@ -209,11 +204,6 @@
       "quarantine_failed": "Attribution du rôle quarantaine impossible",
       "kicked_case": "Expulsé (case #{number})",
       "kick_failed": "Expulsion impossible"
-    },
-    "errors": {
-      "quarantine_role_required": "Un rôle quarantaine est requis pour l'action « Rôle quarantaine ».",
-      "not_a_bot": "L'utilisateur indiqué n'est pas un bot.",
-      "role_or_channel": "Indiquez un rôle ou un salon."
     }
   },
   "clear_channel": {
@@ -225,9 +215,6 @@
     "notice": "🧹 Ce salon a été vidé par {moderator}."
   },
   "antinuke": {
-    "status_title": "Anti-nuke — {server}",
-    "summary": "Protection contre les comptes compromis et les applications malveillantes",
-    "updated": "✅ Configuration anti-nuke mise à jour.",
     "names": {
       "thresholds": "Seuils (actions max / fenêtre)",
       "punishment": "Punition",

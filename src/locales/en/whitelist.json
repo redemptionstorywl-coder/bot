@@ -35,7 +35,6 @@
     "empty": "No application."
   },
   "config": {
-    "title": "📝 Whitelist configuration",
     "enabled": "Applications",
     "review_channel": "Review channel",
     "dm": "DM on decision",
@@ -45,7 +44,6 @@
     "default": "default",
     "questions_modal_title": "Application questions",
     "question_n": "Question {n}",
-    "question_placeholder": "Leave empty to skip this question",
     "questions_saved": "{count} question(s) saved.",
     "updated": "Whitelist configuration updated."
   },

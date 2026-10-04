@@ -4,10 +4,12 @@ import type { InteractionContext } from '../structures/types';
 import { embedService } from '../services/EmbedService';
 import { TicketError, ticketService } from '../services/TicketService';
 import { replyTicketError } from '../commands/tickets/_shared';
-import { getDraft, ko, ok, renderPanelView, renderType, setDraft } from '../commands/tickets/_configPanel';
+import { getDraft, isReminderPing, ko, loadOptions, ok, renderPanelView, renderType, setDraft } from '../commands/tickets/_configPanel';
+import { ticketReminderService } from '../services/TicketReminderService';
+import { guildConfigService } from '../services/GuildConfigService';
 
 /**
- * Menus du panneau `/ticket-config` (namespace `tcfg`, admin) :
+ * Menus du panneau `/config tickets` (namespace `tcfg`, admin ; utilisable module désactivé) :
  *  - `tcfg:pick`            (StringSelect)  → ouvre la vue d'une raison
  *  - `tcfg:category:<id>`   (ChannelSelect) → catégorie des tickets
  *  - `tcfg:archive:<id>`    (ChannelSelect) → catégorie d'archive
@@ -15,10 +17,11 @@ import { getDraft, ko, ok, renderPanelView, renderType, setDraft } from '../comm
  *  - `tcfg:pchannel`        (ChannelSelect) → salon du panneau (brouillon)
  *  - `tcfg:ptypes`          (StringSelect)  → raisons incluses (brouillon, vide = toutes)
  *  - `tcfg:pdelete`         (StringSelect)  → supprime un panneau publié
+ *  - `tcfg:translog`        (ChannelSelect) → salon des transcripts / logs tickets (log TICKET)
+ *  - `tcfg:rping`           (StringSelect)  → qui mentionner lors des relances (claimer / staff / none)
  */
 export default defineSelectMenu({
   id: 'tcfg',
-  module: 'tickets',
   permissions: { internal: 'admin' },
   cooldown: 1,
   async execute(interaction, args, ctx) {
@@ -96,6 +99,20 @@ async function handle(interaction: AnySelectMenuInteraction<'cached'>, action: s
       }
       await interaction.editReply(await renderPanelView({ guild, t, draft: getDraft(guildId, userId), notice }));
       return;
+    }
+    case 'translog': {
+      if (!interaction.isChannelSelectMenu()) return;
+      const channelId = interaction.values[0];
+      if (!channelId) return;
+      await guildConfigService.setLogChannel(guildId, 'TICKET', channelId);
+      return interaction.update(await loadOptions({ guild, t, fallback: ctx.config!, notice: ok(t('panels_core.tickets.transcripts_set', { channel: `<#${channelId}>` })) }));
+    }
+    case 'rping': {
+      if (!interaction.isStringSelectMenu()) return;
+      const reminderPing = interaction.values[0];
+      if (!isReminderPing(reminderPing)) return;
+      await ticketReminderService.updateSettings(guildId, { reminderPing });
+      return interaction.update(await loadOptions({ guild, t, fallback: ctx.config!, notice: ok(t('panels_core.tickets.ping_set', { ping: t(`panels_core.tickets.ping.${reminderPing}`) })) }));
     }
     default:
       await interaction.reply({ embeds: [embedService.error(t('core.invalid_input', { details: action }))], flags: MessageFlags.Ephemeral });

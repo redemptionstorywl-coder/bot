@@ -4,9 +4,12 @@ import { defineButton } from '../structures';
 import type { InteractionContext } from '../structures/types';
 import { embedService } from '../services/EmbedService';
 import { TicketError, ticketService } from '../services/TicketService';
+import { guildConfigService } from '../services/GuildConfigService';
+import { ticketReminderService } from '../services/TicketReminderService';
 import { replyTicketError } from '../commands/tickets/_shared';
 import {
   buildInfoModal,
+  buildReminderHoursModal,
   buildNewTypeModal,
   buildQuestionsModal,
   buildWelcomeModal,
@@ -16,6 +19,7 @@ import {
   ok,
   renderDeleteConfirm,
   renderMain,
+  loadOptions,
   renderPanelView,
   renderType,
   setDraft,
@@ -24,15 +28,16 @@ import {
 } from '../commands/tickets/_configPanel';
 
 /**
- * Boutons du panneau `/ticket-config` (namespace `tcfg`, admin) :
+ * Boutons du panneau `/config tickets` (namespace `tcfg`, admin ; utilisable module désactivé) :
  *  - vue principale : `tcfg:main`, `tcfg:new` (modal), `tcfg:defaults`, `tcfg:panelview`
  *  - vue d'une raison : `tcfg:type:<id>`, `tcfg:info:<id>` / `questions` / `welcome` (modals), `tcfg:toggle:<id>`,
  *    `tcfg:archivenone:<id>`, `tcfg:delete:<id>` → `tcfg:delete-confirm:<id>`
  *  - vue panneau : `tcfg:pstyle:<buttons|select>`, `tcfg:publish`
+ *  - vue options : `tcfg:options`, `tcfg:translog-off` (retire le salon des transcripts), `tcfg:module` (active / désactive le module),
+ *    `tcfg:rtoggle` (relances automatiques on/off), `tcfg:rhours` (modal délai des relances)
  */
 export default defineButton({
   id: 'tcfg',
-  module: 'tickets',
   permissions: { internal: 'admin' },
   cooldown: 1,
   async execute(interaction, args, ctx) {
@@ -66,6 +71,8 @@ async function handle(interaction: ButtonInteraction<'cached'>, action: string, 
   const main = (notice?: PanelNotice) => renderMain({ guild, t, notice });
   const typeView = async (id: number, notice?: PanelNotice) => renderType({ guild, type: (await loadType(interaction, String(id)))!, t, notice });
   const panelView = (notice?: PanelNotice) => renderPanelView({ guild, t, draft: getDraft(guildId, userId), notice });
+  const optionsView = (notice?: PanelNotice) => loadOptions({ guild, t, fallback: config!, notice });
+  const stateText = (enabled: boolean) => (enabled ? `🟢 ${t('core.enabled')}` : `🔴 ${t('core.disabled')}`);
 
   switch (action) {
     // ── Vue principale ──
@@ -79,6 +86,24 @@ async function handle(interaction: ButtonInteraction<'cached'>, action: string, 
     }
     case 'panelview':
       return show(interaction, await panelView());
+    case 'options':
+      return show(interaction, await optionsView());
+    case 'translog-off': {
+      await guildConfigService.setLogChannel(guildId, 'TICKET', null);
+      return show(interaction, await optionsView(ok(t('panels_core.tickets.transcripts_off'))));
+    }
+    case 'module': {
+      const enabled = !config!.modules.tickets;
+      await guildConfigService.setModule(guildId, 'tickets', enabled);
+      return show(interaction, await optionsView(ok(t('panels_core.common.module_set', { module: t('panels_core.modules.tickets'), state: stateText(enabled) }))));
+    }
+    case 'rtoggle': {
+      const current = await ticketReminderService.getSettings(guildId);
+      const updated = await ticketReminderService.updateSettings(guildId, { remindersEnabled: !current.remindersEnabled });
+      return show(interaction, await optionsView(ok(t('panels_core.tickets.reminders_set', { state: stateText(updated.remindersEnabled) }))));
+    }
+    case 'rhours':
+      return interaction.showModal(buildReminderHoursModal((await ticketReminderService.getSettings(guildId)).reminderHours, t));
 
     // ── Vue d'une raison ──
     case 'type':

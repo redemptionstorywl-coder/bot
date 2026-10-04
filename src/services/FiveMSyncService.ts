@@ -120,7 +120,7 @@ export class FiveMSyncService {
 
   // ───────────── Réglages ─────────────
 
-  /** Met à jour les options de synchronisation d'un serveur (validées par Zod). Utilisé par /fivem sync et le futur panneau /config. */
+  /** Met à jour les options de synchronisation d'un serveur (validées par Zod). Utilisé par le panneau `/config module:fivem` et le dashboard. */
   async updateSyncSettings(guildId: string, key: string, patch: unknown): Promise<FiveMServer> {
     const data: SyncSettingsPatch = syncSettingsSchema.parse(patch);
     const before = await fivemService.requireServer(guildId, key);
@@ -183,7 +183,7 @@ export class FiveMSyncService {
     return true;
   }
 
-  /** Liaison manuelle (/fivem link) : membre ⇄ licence, sur FiveMPlayer et le profil BR. */
+  /** Liaison manuelle (panneaux `/config module:fivem` et `battleroyale`) : membre ⇄ licence, sur FiveMPlayer et le profil BR. */
   async linkManually(guildId: string, userId: string, license: string, actorId: string): Promise<FiveMPlayer> {
     const lic = fivemIdentifierSchema.parse(license.trim());
     if (!lic.startsWith('license')) throw new FiveMError('invalid_key', 'license attendue');
@@ -689,7 +689,7 @@ export class FiveMSyncService {
     };
   }
 
-  /** Liaison Discord des joueurs listés (pour /fivem players). */
+  /** Liaison Discord des joueurs listés (bouton « Joueurs » du panneau `/config module:fivem`). */
   async discordIdsFor(guildId: string, players: ServerPlayer[]): Promise<Map<number, string | null>> {
     const licenses = players.map((p) => trackingLicense(parseIdentifiers(p.identifiers))).filter((l): l is string => !!l);
     const rows = licenses.length ? await prisma.fiveMPlayer.findMany({ where: { guildId, license: { in: licenses } }, select: { license: true, discordId: true } }) : [];

@@ -2,20 +2,19 @@ import { MessageFlags } from 'discord.js';
 import { defineSelectMenu } from '../structures';
 import { embedService } from '../services/EmbedService';
 import { welcomeService } from '../services/WelcomeService';
-import { checkPanelAccess, isWelcomeTab, renderPanel } from '../commands/roles/_welcomeShared';
+import { checkPanelAccess, ensureTabModule, isWelcomeTab, renderPanel } from '../commands/roles/_welcomeShared';
 
 /**
- * Menus du panneau `/welcome-config` :
- *  - `welcome:cfg:channel:<tab>` (ChannelSelect) → enregistre le salon de bienvenue / départ (et active le message).
+ * Menus du panneau `/config bienvenue` :
+ *  - `welcome:cfg:channel:<tab>` (ChannelSelect) → enregistre le salon de bienvenue / départ (et active le message + le module).
  */
 export default defineSelectMenu({
   id: 'welcome',
-  module: 'welcome',
   async execute(interaction, args, ctx) {
     const { t, config } = ctx;
     const [kind, action, tabArg] = args;
     const tab = isWelcomeTab(tabArg) ? tabArg : 'welcome';
-    const denied = checkPanelAccess(interaction, ctx, tab);
+    const denied = checkPanelAccess(interaction, ctx);
     if (denied) {
       await interaction.reply({ embeds: [embedService.error(t(denied.key, denied.vars))], flags: MessageFlags.Ephemeral });
       return;
@@ -28,6 +27,7 @@ export default defineSelectMenu({
     if (!channelId) return;
     const guildId = interaction.guild.id;
     const notice = { type: 'success' as const, text: '' };
+    await ensureTabModule(guildId, tab);
     if (tab === 'welcome') {
       await welcomeService.updateConfig(guildId, { channelId, enabled: true });
       notice.text = t('welcome.config.channel_set', { channel: `<#${channelId}>` });

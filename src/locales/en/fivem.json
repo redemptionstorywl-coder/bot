@@ -11,18 +11,10 @@
     "host": "Host"
   },
   "add": {
-    "done": "Server **{name}** added (key `{key}`, framework **{framework}**).",
-    "api_base": "API base URL",
-    "auth": "Authentication",
-    "auth_hint": "Header `{header}` = global API key (FIVEM_API_KEY) or this server's own key.",
-    "docs": "Full documentation: docs/FIVEM.md"
+    "done": "Server **{name}** added (key `{key}`, framework **{framework}**)."
   },
   "remove": {
     "done": "Server **{name}** removed."
-  },
-  "list": {
-    "title": "🎮 FiveM servers ({count})",
-    "empty": "No FiveM server configured. Use `/fivem add`."
   },
   "maintenance": {
     "on": "🟠 Maintenance **enabled** on **{name}**.",
@@ -38,7 +30,7 @@
     "not_linked": "not linked"
   },
   "errors": {
-    "not_found": "Server not found. Check the key with `/fivem list`.",
+    "not_found": "Server not found (it may have been deleted). See `/config module:fivem`.",
     "duplicate": "A server with this key already exists.",
     "invalid_key": "Invalid key: 2 to 64 characters, lowercase letters, digits, `-` or `_`.",
     "no_host": "No host configured for this server.",
@@ -61,22 +53,12 @@
     "not_whitelisted": "Connection refused: you are not whitelisted. Apply on the {server} Discord."
   },
   "sync": {
-    "title": "🔄 Synchronization — {name}",
     "updated": "🔄 Synchronization updated — {name}",
-    "on": "enabled",
-    "off": "disabled",
-    "bans_to_discord": "Game ban → Discord",
-    "bans_to_game": "Discord ban → game",
-    "kicks": "Game kick → Discord",
-    "nicknames": "In-game name → nickname",
     "linked_role": "“Linked account” role",
     "online_role": "“In game” role",
     "counter_channel": "Counter channel",
-    "require_discord": "Discord required",
     "require_role": "Required role",
-    "require_whitelist": "Whitelist required",
-    "footer": "The bot needs “Manage Nicknames” / “Manage Roles” and must be above the roles involved.",
-    "invalid": "Invalid setting: {details}"
+    "footer": "The bot needs “Manage Nicknames” / “Manage Roles” and must be above the roles involved."
   },
   "link": {
     "done": "{user} is now linked to `{license}`.",

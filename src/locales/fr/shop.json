@@ -14,8 +14,7 @@
     "category": "Catégorie",
     "added": "Produit **#{id} {name}** ajouté ({price}).",
     "edited": "Produit **#{id} {name}** modifié.",
-    "removed": "Produit **{name}** supprimé.",
-    "list_title": "🛒 Produits ({count})"
+    "removed": "Produit **{name}** supprimé."
   },
   "category": {
     "added": "Catégorie **{name}** ajoutée.",

@@ -27,7 +27,10 @@ export default defineModal({
       const name = field('name') || t('roles.rolemenu.default_name');
       const embed: EmbedSpec = { title: field('title') || name, description: field('description') || undefined };
       const menu = await roleService.createRoleMenu(interaction.guildId, { name, embed });
-      await interaction.reply({ ...roleService.buildRoleMenuEditor(menu, interaction.guild, t, t('roles.rolemenu.created', { name })), flags: MessageFlags.Ephemeral });
+      const editor = roleService.buildRoleMenuEditor(menu, interaction.guild, t, t('roles.rolemenu.created', { name }));
+      // Ouvert depuis le panneau /config module:roles : l'éditeur remplace le panneau.
+      if (interaction.isFromMessage()) await interaction.update(editor);
+      else await interaction.reply({ ...editor, flags: MessageFlags.Ephemeral });
       return;
     }
 

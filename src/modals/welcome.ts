@@ -8,7 +8,7 @@ import { optionalText } from '../services/EmbedBuilderSession';
 import { checkPanelAccess, isHttpUrl, isWelcomeTab, parseButtonLines, renderPanel, resolveForEdit, type PanelNotice, type WelcomeTab } from '../commands/roles/_welcomeShared';
 
 /**
- * Modals du panneau `/welcome-config` (admin) : `welcome:cfg:<kind>:<tab>`
+ * Modals du panneau `/config bienvenue` (admin) : `welcome:cfg:<kind>:<tab>`
  *  - message : texte (vide = message par défaut)
  *  - embed   : titre / description / couleur / image / vignette → EmbedSpec validé (tout vide = pas d'embed)
  *  - image   : fond (URL) + titre / sous-titre (bienvenue)
@@ -17,12 +17,11 @@ import { checkPanelAccess, isHttpUrl, isWelcomeTab, parseButtonLines, renderPane
  */
 export default defineModal({
   id: 'welcome',
-  module: 'welcome',
   async execute(interaction, args, ctx) {
     const { t, config } = ctx;
     const [kind, action, tabArg] = args;
     const tab: WelcomeTab = isWelcomeTab(tabArg) ? tabArg : 'welcome';
-    const denied = checkPanelAccess(interaction, ctx, tab);
+    const denied = checkPanelAccess(interaction, ctx);
     if (denied) {
       await interaction.reply({ embeds: [embedService.error(t(denied.key, denied.vars))], flags: MessageFlags.Ephemeral });
       return;

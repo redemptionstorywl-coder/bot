@@ -81,17 +81,6 @@ export const GUILD_KIND_LABELS: Record<GuildKind, string> = {
   SHOP: '🛒 Redemption Story Shop',
 };
 
-/** Alias acceptés par /guild-config */
-export const GUILD_KIND_ALIASES: Record<string, GuildKind> = {
-  prison: 'PRISON',
-  wl: 'PRISON',
-  'battle-royale': 'BATTLE_ROYALE',
-  br: 'BATTLE_ROYALE',
-  school: 'SCHOOL',
-  shop: 'SHOP',
-  generic: 'GENERIC',
-};
-
 export interface LanguageDefinition {
   code: string;
   label: string;

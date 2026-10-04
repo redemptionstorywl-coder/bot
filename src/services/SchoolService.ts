@@ -158,6 +158,17 @@ export class SchoolService {
     return c;
   }
 
+  async updateClass(guildId: string, id: number, patch: Partial<{ name: string; teacherId: string | null; roleId: string | null; channelId: string | null; capacity: number | null }>, actorId?: string): Promise<SchoolClass> {
+    const c = await this.requireClass(guildId, id);
+    if (patch.name !== undefined && patch.name.trim() !== c.name) {
+      const taken = await this.findClassByName(guildId, patch.name);
+      if (taken && taken.id !== id) throw new SchoolError('name_taken');
+    }
+    const updated = await prisma.schoolClass.update({ where: { id }, data: { ...patch, ...(patch.name !== undefined ? { name: patch.name.trim().slice(0, 60) } : {}) } });
+    await loggingService.log({ guildId, category: LogCategory.SCHOOL, action: 'school.class.update', title: `🎓 Classe modifiée : ${updated.name}`, actorId: actorId ?? null, data: { classId: id, patch }, skipDatabase: true });
+    return updated;
+  }
+
   /** Assigne un élève à une classe (retire le rôle de l'ancienne classe, donne le nouveau). */
   async assignClass(guildId: string, userId: string, classId: number | null, actorId?: string): Promise<ProfileFull> {
     const profile = await this.requireProfile(guildId, userId);
@@ -198,6 +209,17 @@ export class SchoolService {
     await prisma.schoolHouse.delete({ where: { id } });
     await loggingService.log({ guildId, category: LogCategory.SCHOOL, action: 'school.house.delete', title: `🎓 Maison supprimée : ${h.name}`, actorId: actorId ?? null, data: { houseId: id } });
     return h;
+  }
+
+  async updateHouse(guildId: string, id: number, patch: Partial<{ name: string; emoji: string | null; color: string | null; roleId: string | null }>, actorId?: string): Promise<SchoolHouse> {
+    const h = await this.requireHouse(guildId, id);
+    if (patch.name !== undefined && patch.name.trim() !== h.name) {
+      const taken = await this.findHouseByName(guildId, patch.name);
+      if (taken && taken.id !== id) throw new SchoolError('name_taken');
+    }
+    const updated = await prisma.schoolHouse.update({ where: { id }, data: { ...patch, ...(patch.name !== undefined ? { name: patch.name.trim().slice(0, 60) } : {}) } });
+    await loggingService.log({ guildId, category: LogCategory.SCHOOL, action: 'school.house.update', title: `🎓 Maison modifiée : ${updated.name}`, actorId: actorId ?? null, data: { houseId: id, patch }, skipDatabase: true });
+    return updated;
   }
 
   async assignHouse(guildId: string, userId: string, houseId: number | null, actorId?: string): Promise<ProfileFull> {
@@ -257,6 +279,17 @@ export class SchoolService {
     await prisma.schoolClub.delete({ where: { id } });
     await loggingService.log({ guildId, category: LogCategory.SCHOOL, action: 'school.club.delete', title: `🎓 Club supprimé : ${c.name}`, actorId: actorId ?? null, data: { clubId: id } });
     return c;
+  }
+
+  async updateClub(guildId: string, id: number, patch: Partial<{ name: string; description: string | null; leaderId: string | null; roleId: string | null; maxMembers: number | null }>, actorId?: string): Promise<SchoolClub> {
+    const c = await this.requireClub(guildId, id);
+    if (patch.name !== undefined && patch.name.trim() !== c.name) {
+      const taken = await this.findClubByName(guildId, patch.name);
+      if (taken && taken.id !== id) throw new SchoolError('name_taken');
+    }
+    const updated = await prisma.schoolClub.update({ where: { id }, data: { ...patch, ...(patch.name !== undefined ? { name: patch.name.trim().slice(0, 60) } : {}) } });
+    await loggingService.log({ guildId, category: LogCategory.SCHOOL, action: 'school.club.update', title: `🎓 Club modifié : ${updated.name}`, actorId: actorId ?? null, data: { clubId: id, patch }, skipDatabase: true });
+    return updated;
   }
 
   async joinClub(guildId: string, userId: string, clubId: number): Promise<SchoolClub> {

@@ -10,6 +10,8 @@ import {
   buildImageModal,
   buildMessageModal,
   checkPanelAccess,
+  ensureTabModule,
+  isTabModuleEnabled,
   isWelcomeTab,
   onOff,
   renderPanel,
@@ -20,13 +22,12 @@ import {
 
 /**
  * Boutons du namespace `welcome` :
- *  - `welcome:cfg:<action>:<tab>`      → panneau de configuration `/welcome-config` (admin, vérifié ici).
+ *  - `welcome:cfg:<action>:<tab>`      → panneau `/config bienvenue` (admin, vérifié ici ; utilisable module désactivé).
  *      tab ∈ welcome | leave ; actions : tab, toggle, test, message, embed, image, imgtoggle, dm, dmmsg, buttons, logs, vars.
  * Les autres boutons configurés par le staff utilisent leur propre namespace (ex. `rolemenu:toggle:<roleId>`) ou sont des liens.
  */
 export default defineButton({
   id: 'welcome',
-  module: 'welcome',
   cooldown: 1,
   async execute(interaction, args, ctx) {
     const [action, second, third] = args;
@@ -47,7 +48,7 @@ async function refresh(interaction: ButtonInteraction, tab: WelcomeTab, ctx: Int
 async function panelAction(interaction: ButtonInteraction, action: string, tabArg: string | undefined, ctx: InteractionContext): Promise<void> {
   const { t, config } = ctx;
   const tab: WelcomeTab = isWelcomeTab(tabArg) ? tabArg : 'welcome';
-  const denied = checkPanelAccess(interaction, ctx, tab);
+  const denied = checkPanelAccess(interaction, ctx);
   if (denied) {
     await interaction.reply({ embeds: [embedService.error(t(denied.key, denied.vars))], flags: MessageFlags.Ephemeral });
     return;
@@ -87,17 +88,14 @@ async function panelAction(interaction: ButtonInteraction, action: string, tabAr
       await interaction.reply({ embeds: [variablesEmbed(t)], flags: MessageFlags.Ephemeral });
       return;
     case 'toggle': {
-      if (tab === 'welcome') {
-        const c = await welcomeService.getConfig(guildId);
-        const enabled = !(c?.enabled ?? false);
-        await welcomeService.updateConfig(guildId, { enabled });
-        await refresh(interaction, tab, ctx, ok(t('welcome.config.enabled_set', { state: onOff(enabled, t) })));
-      } else {
-        const c = await welcomeService.getLeaveConfig(guildId);
-        const enabled = !(c?.enabled ?? false);
-        await welcomeService.updateLeaveConfig(guildId, { enabled });
-        await refresh(interaction, tab, ctx, ok(t('welcome.leave.config.enabled_set', { state: onOff(enabled, t) })));
-      }
+      // Un seul interrupteur : activer le message active aussi le module du serveur.
+      const moduleOn = await isTabModuleEnabled(guildId, tab);
+      const c = tab === 'welcome' ? await welcomeService.getConfig(guildId) : await welcomeService.getLeaveConfig(guildId);
+      const enabled = !((c?.enabled ?? false) && moduleOn);
+      if (tab === 'welcome') await welcomeService.updateConfig(guildId, { enabled });
+      else await welcomeService.updateLeaveConfig(guildId, { enabled });
+      if (enabled) await ensureTabModule(guildId, tab);
+      await refresh(interaction, tab, ctx, ok(t(tab === 'welcome' ? 'welcome.config.enabled_set' : 'welcome.leave.config.enabled_set', { state: onOff(enabled, t) })));
       return;
     }
     case 'imgtoggle': {

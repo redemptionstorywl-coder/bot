@@ -237,7 +237,7 @@
     "max_per_user": "Vous avez déjà {count} ticket(s) ouvert(s) de ce type (maximum : {max}). Fermez-en un avant d'en ouvrir un autre.",
     "type_not_found": "Type de ticket introuvable.",
     "type_disabled": "Ce type de ticket est désactivé.",
-    "no_types": "Aucun type de ticket disponible. Un administrateur doit en configurer via `/ticket-config`.",
+    "no_types": "Aucun type de ticket disponible. Un administrateur doit en configurer via `/config tickets`.",
     "already_closed": "Ce ticket est déjà fermé.",
     "not_closed": "Ce ticket n'est pas fermé.",
     "already_claimed": "Ce ticket est déjà pris en charge par {user}.",

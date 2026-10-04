@@ -22,22 +22,17 @@
     "clubs": "Clubs"
   },
   "class": {
-    "list_title": "📚 Classes",
-    "empty": "Aucune classe.",
     "students": "élève(s)",
     "created": "Classe **{name}** créée.",
-    "deleted": "Classe **{name}** supprimée.",
-    "assigned": "{user} assigné(e) à la classe **{name}**."
+    "deleted": "Classe **{name}** supprimée."
   },
   "house": {
-    "list_title": "🏠 Maisons",
     "leaderboard_title": "🏆 Classement des maisons",
     "empty": "Aucune maison.",
     "points": "pts",
     "members": "membre(s)",
     "created": "Maison **{name}** créée.",
     "deleted": "Maison **{name}** supprimée.",
-    "assigned": "{user} rejoint la maison **{name}**.",
     "points_updated": "{name} : **{delta}** → **{points}** points."
   },
   "club": {
@@ -78,10 +73,9 @@
   },
   "announce": {
     "done": "Annonce publiée dans {channel}.",
-    "no_channel": "Aucun salon indiqué et aucun salon d’annonces configuré (`/school config announce-channel`)."
+    "no_channel": "Aucun salon indiqué et aucun salon d’annonces configuré (`/config module:school`)."
   },
   "config": {
-    "title": "🎓 Configuration School RP",
     "application_channel": "Salon des candidatures",
     "announce_channel": "Salon d’annonces",
     "roles": "Rôles Discord",

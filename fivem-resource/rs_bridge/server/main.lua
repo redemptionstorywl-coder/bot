@@ -304,7 +304,7 @@ local function buildStatus()
     maxPlayers = GetConvarInt('sv_maxclients', 32),
     version = GetConvar('version', ''),
   }
-  -- Maintenance envoyée seulement si la convar est définie (sinon /fivem maintenance sur Discord fait foi).
+  -- Maintenance envoyée seulement si la convar est définie (sinon le bouton Maintenance de /config module:fivem fait foi).
   local maintenance = GetConvar(Config.MaintenanceConvar, '')
   if maintenance ~= '' then status.maintenance = (maintenance == 'true') end
   -- Tableau vide omis : le bot applique sa valeur par défaut (évite l'ambiguïté {} / [] en JSON).
@@ -321,7 +321,7 @@ CreateThread(function()
     elseif status == 401 then
       warn('Clé API refusée (401) : vérifiez Config.ApiKey / rs_bridge_api_key.')
     elseif status == 404 then
-      warn('Serveur inconnu (404) : vérifiez Config.GuildId et Config.ServerKey (/fivem list sur Discord).')
+      warn('Serveur inconnu (404) : vérifiez Config.GuildId et Config.ServerKey (/config module:fivem sur Discord).')
     else
       warn('Bot injoignable (%d) : vérifiez Config.BotUrl (%s).', status, Config.BotUrl)
     end

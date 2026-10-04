@@ -1,25 +1,6 @@
 {
-  "guild_config": {
-    "title": "⚙️ Configuration — {server}",
-    "kind": "Server type",
-    "default_language": "Default language",
-    "admin_roles": "Admin roles",
-    "staff_roles": "Staff roles",
-    "modules": "Modules",
-    "logs": "Log channels",
-    "dashboard": "Dashboard",
-    "kind_set": "Server type set: **{kind}**",
-    "language_set": "Default language: **{language}**",
-    "role_added": "Role {role} added.",
-    "role_removed": "Role {role} removed.",
-    "log_set": "**{category}** logs → {channel}",
-    "log_removed": "**{category}** logs disabled.",
-    "module_set": "Module {module}: {state}",
-    "color_set": "Default color: `{color}`"
-  },
   "help": {
-    "title": "📖 Help — Redemption Story Studio",
-    "description": "Here are the available commands. Full configuration is done on the dashboard: {dashboard}"
+    "title": "📖 Help — Redemption Story Studio"
   },
   "status": {
     "title": "📡 Bot status",

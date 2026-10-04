@@ -5,18 +5,19 @@ import type { InteractionContext } from '../structures/types';
 import { embedService, type EmbedSpec } from '../services/EmbedService';
 import { TicketError, parseEmbedSpec, ticketService, type TicketTypePatch } from '../services/TicketService';
 import { replyTicketError } from '../commands/tickets/_shared';
-import { getField, ko, ok, readQuestionsModal, renderMain, renderType, uniqueKey, type PanelNotice, type PanelPayload } from '../commands/tickets/_configPanel';
+import { REMINDER_HOURS, getField, ko, loadOptions, ok, parseReminderHours, readQuestionsModal, renderMain, renderType, uniqueKey, type PanelNotice, type PanelPayload } from '../commands/tickets/_configPanel';
+import { ticketReminderService } from '../services/TicketReminderService';
 
 /**
- * Modals du panneau `/ticket-config` (namespace `tcfg`, admin) :
+ * Modals du panneau `/config tickets` (namespace `tcfg`, admin ; utilisable module désactivé) :
  *  - `tcfg:new`            : nouvelle raison (label, emoji, description ; clé = slug du label)
  *  - `tcfg:info:<id>`      : label, emoji, description, format de nom, max par membre
  *  - `tcfg:questions:<id>` : 5 questions `Label | placeholder | short/paragraph | required/optional | maxLength`
  *  - `tcfg:welcome:<id>`   : message d'accueil + titre / description de l'embed d'ouverture
+ *  - `tcfg:rhours`         : délai des relances automatiques (heures, 1–168)
  */
 export default defineModal({
   id: 'tcfg',
-  module: 'tickets',
   permissions: { internal: 'admin' },
   async execute(interaction, args, ctx) {
     if (!interaction.inCachedGuild() || !ctx.config) return;
@@ -45,6 +46,14 @@ async function handle(interaction: ModalSubmitInteraction<'cached'>, action: str
   const guild = interaction.guild;
   const guildId = guild.id;
   const field = (id: string) => getField(interaction, id);
+
+  if (action === 'rhours') {
+    const hours = parseReminderHours(field('hours'));
+    const notice = hours === null
+      ? ko(t('panels_core.tickets.invalid_hours', { details: field('hours') ?? '—', min: REMINDER_HOURS.min, max: REMINDER_HOURS.max }))
+      : ok(t('panels_core.tickets.hours_set', { hours: (await ticketReminderService.updateSettings(guildId, { reminderHours: hours })).reminderHours }));
+    return respond(interaction, await loadOptions({ guild, t, fallback: ctx.config!, notice }));
+  }
 
   if (action === 'new') {
     const label = field('label');

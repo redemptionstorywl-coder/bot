@@ -63,7 +63,7 @@ export interface NotificationDefinition {
   label: string;
 }
 
-/** Rôles de notification créés par `/notifications setup`. */
+/** Rôles de notification créés par « Rôles par défaut » (panneau `/config module:roles`). */
 export const DEFAULT_NOTIFICATIONS: NotificationDefinition[] = [
   { key: 'announcements', emoji: '🔔', label: 'Announcements' },
   { key: 'battle-royale', emoji: '🎮', label: 'Battle Royale' },
@@ -479,8 +479,12 @@ export class RoleService {
         new ButtonBuilder().setCustomId(buildCustomId('rolemenu', 'publish', menu.id)).setLabel(t('roles.rolemenu.editor.publish')).setEmoji('📤').setStyle(ButtonStyle.Primary).setDisabled(!options.length),
         new ButtonBuilder().setCustomId(buildCustomId('rolemenu', 'delete', menu.id)).setLabel(t('core.delete')).setEmoji('🗑️').setStyle(ButtonStyle.Danger),
       ),
+      // Retour au panneau `/config module:roles` (onglet Role menus)
+      new ActionRowBuilder<MessageActionRowComponentBuilder>().addComponents(
+        new ButtonBuilder().setCustomId(buildCustomId('cfg-roles', 'tab', 'menus')).setLabel(t('panels_modules.roles.menus.back_to_panel').slice(0, 80)).setEmoji('↩️').setStyle(ButtonStyle.Secondary),
+      ),
     );
-    return { content: note, embeds: [status, preview], components };
+    return { content: note ?? '', embeds: [status, preview], components };
   }
 
   /** Sélecteur de salon pour publier un role menu. */

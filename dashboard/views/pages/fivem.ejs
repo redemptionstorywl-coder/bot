@@ -3,7 +3,7 @@
   <div class="page-actions"><a class="btn btn-primary" href="#fivem-add">+ Ajouter un serveur</a></div>
 </section>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module FiveM est désactivé sur ce serveur : les commandes <code>/fivem</code> ne répondent pas (l'API reste joignable). <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Gérer les modules</a></span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module FiveM est désactivé sur ce serveur : la synchronisation et les messages de statut sont inactifs (l'API reste joignable). <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Gérer les modules</a></span></div><% } %>
 
 <div class="stat-grid">
   <div class="stat-card"><span class="stat-label">Serveurs</span><span class="stat-value"><%= servers.length %></span></div>
@@ -13,7 +13,7 @@
 </div>
 
 <% if (!servers.length) { %>
-<div class="card empty-state"><p class="muted">Aucun serveur FiveM déclaré. Ajoutez-en un ci-dessous (ou avec <code>/fivem add</code>).</p></div>
+<div class="card empty-state"><p class="muted">Aucun serveur FiveM déclaré. Ajoutez-en un ci-dessous (ou depuis <code>/config module:fivem</code> sur Discord).</p></div>
 <% } else { %>
 <div class="server-grid">
   <% for (const s of servers) { %>

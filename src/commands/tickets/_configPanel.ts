@@ -22,10 +22,12 @@ import { TTLCache } from '../../utils/cache';
 import { embedService } from '../../services/EmbedService';
 import { TicketError, asStringArray, parseEmbedSpec, parseQuestions, ticketQuestionSchema, ticketService, type TicketQuestion } from '../../services/TicketService';
 import type { Translator } from '../../services/TranslationService';
+import { guildConfigService, type ResolvedGuildConfig } from '../../services/GuildConfigService';
+import { REMINDER_PING_MODES, ticketReminderService, type ReminderPingMode } from '../../services/TicketReminderService';
 
 /**
- * Panneau interactif `/ticket-config` (éphémère, re-rendu depuis la base après chaque action).
- * Namespace `tcfg` (admin uniquement — distinct de `ticket`, ouvert à tous) :
+ * Panneau interactif `/config tickets` (éphémère, re-rendu depuis la base après chaque action).
+ * Namespace `tcfg` (admin uniquement — distinct de `ticket`, ouvert à tous ; utilisable module désactivé) :
  *  - boutons : `tcfg:<action>:<typeId?>`      (src/buttons/tcfg.ts)
  *  - menus   : `tcfg:<action>:<typeId?>`      (src/selectMenus/tcfg.ts)
  *  - modals  : `tcfg:<kind>:<typeId?>`        (src/modals/tcfg.ts)
@@ -149,10 +151,11 @@ export function uniqueKey(label: string, existing: string[]): string {
 
 export async function renderMain(opts: { guild: Guild; t: Translator; notice?: PanelNotice }): Promise<PanelPayload> {
   const { guild, t, notice } = opts;
-  const [types, panels] = await Promise.all([ticketService.listTypes(guild.id), ticketService.listPanels(guild.id)]);
+  const [types, panels, gcfg] = await Promise.all([ticketService.listTypes(guild.id), ticketService.listPanels(guild.id), guildConfigService.get(guild.id)]);
 
   const embed = embedService.brand(t('tickets.config.title', { server: guild.name }));
-  embed.setDescription(description(notice, types.length ? t('tickets.config.hint') : t('tickets.config.empty')));
+  const hint = types.length ? t('tickets.config.hint') : t('tickets.config.empty');
+  embed.setDescription(description(notice, gcfg && !gcfg.modules.tickets ? `${t('panels_core.tickets.module_off')}\n\n${hint}` : hint));
   if (types.length) {
     const lines = types.map((ty) =>
       t('tickets.config.type_line', {
@@ -194,10 +197,99 @@ export async function renderMain(opts: { guild: Guild; t: Translator; notice?: P
       btn(cid('new'), t('tickets.config.btn_new'), ButtonStyle.Success, '➕'),
       btn(cid('defaults'), t('tickets.config.btn_defaults'), ButtonStyle.Secondary, '📦', types.length > 0),
       btn(cid('panelview'), t('tickets.config.btn_panel'), ButtonStyle.Primary, '📋'),
+      btn(cid('options'), t('panels_core.tickets.btn_options'), ButtonStyle.Secondary, '⚙️'),
       btn(cid('main'), t('tickets.config.btn_refresh'), ButtonStyle.Secondary, '🔄'),
     ),
   );
   return { embeds: [embed], components };
+}
+
+// ───── Vue « options » (module, salon des transcripts, relances) ─────
+
+/** Réglages des relances automatiques affichés dans les options. */
+export interface ReminderOptions {
+  remindersEnabled: boolean;
+  reminderHours: number;
+  reminderPing: string;
+}
+
+export const REMINDER_HOURS = { min: 1, max: 168 } as const;
+
+export const isReminderPing = (v: string | undefined): v is ReminderPingMode => REMINDER_PING_MODES.includes(v as ReminderPingMode);
+
+/** Délai de relance saisi dans le modal : entier 1–168 (suffixe « h » accepté) ; null si invalide. */
+export function parseReminderHours(raw: string | undefined): number | null {
+  const v = (raw ?? '').trim().replace(/\s*h$/i, '');
+  if (!/^\d{1,3}$/.test(v)) return null;
+  const n = Number(v);
+  return n >= REMINDER_HOURS.min && n <= REMINDER_HOURS.max ? n : null;
+}
+
+/** Options communes : module, salon des transcripts / logs tickets (log TICKET), relances automatiques, rappel des rôles staff. */
+export function renderOptions(opts: { guild: Guild; config: ResolvedGuildConfig; reminders: ReminderOptions; t: Translator; notice?: PanelNotice }): PanelPayload {
+  const { guild, config, reminders, t, notice } = opts;
+  const ping: ReminderPingMode = isReminderPing(reminders.reminderPing) ? reminders.reminderPing : 'claimer';
+  const enabled = config.modules.tickets;
+  const ticketLog = config.logChannels.TICKET;
+  const systemLog = config.logChannels.SYSTEM;
+  const transcripts = ticketLog ? `<#${ticketLog}>` : systemLog ? t('panels_core.tickets.transcripts_system', { channel: `<#${systemLog}>` }) : t('panels_core.tickets.transcripts_none');
+  const staff = config.staffRoleIds.length ? config.staffRoleIds.map((r) => `<@&${r}>`).join(' ') : t('core.none');
+
+  const embed = embedService.brand(t('panels_core.tickets.options_title', { server: guild.name }));
+  embed.setDescription(description(notice, `${t('panels_core.tickets.options_hint')}\n${t('panels_core.tickets.permanent_hint')}`));
+  embed.addFields(
+    { name: t('panels_core.tickets.field_module'), value: stateLabel(enabled, t), inline: true },
+    { name: t('panels_core.tickets.field_transcripts'), value: transcripts, inline: true },
+    {
+      name: t('panels_core.tickets.field_reminders'),
+      value: t('panels_core.tickets.reminders_value', { state: stateLabel(reminders.remindersEnabled, t), hours: reminders.reminderHours, ping: t(`panels_core.tickets.ping.${ping}`) }),
+    },
+    { name: t('panels_core.tickets.field_staff'), value: truncate(t('panels_core.tickets.staff_hint', { roles: staff }), 1024) },
+  );
+
+  const select = new ChannelSelectMenuBuilder().setCustomId(cid('translog')).setPlaceholder(t('panels_core.tickets.transcripts_placeholder').slice(0, 150)).addChannelTypes(ChannelType.GuildText).setMinValues(1).setMaxValues(1);
+  if (ticketLog && guild.channels.cache.get(ticketLog)?.type === ChannelType.GuildText) select.setDefaultChannels(ticketLog);
+  const pingSelect = new StringSelectMenuBuilder()
+    .setCustomId(cid('rping'))
+    .setPlaceholder(t('panels_core.tickets.ping_placeholder').slice(0, 150))
+    .setMinValues(1)
+    .setMaxValues(1)
+    .addOptions(
+      REMINDER_PING_MODES.map((m) =>
+        new StringSelectMenuOptionBuilder()
+          .setLabel(t(`panels_core.tickets.ping.${m}`).slice(0, 100))
+          .setValue(m)
+          .setDescription(t(`panels_core.tickets.ping_desc.${m}`).slice(0, 100))
+          .setDefault(m === ping),
+      ),
+    );
+  return {
+    embeds: [embed],
+    components: [
+      row(select),
+      row(pingSelect),
+      row(
+        btn(cid('rtoggle'), t('panels_core.tickets.btn_reminders', { state: reminders.remindersEnabled ? t('panels_core.common.on') : t('panels_core.common.off') }), reminders.remindersEnabled ? ButtonStyle.Success : ButtonStyle.Secondary, '🔔'),
+        btn(cid('rhours'), t('panels_core.tickets.btn_hours', { hours: reminders.reminderHours }), ButtonStyle.Primary, '⏱️'),
+        btn(cid('translog-off'), t('panels_core.tickets.btn_transcripts_off'), ButtonStyle.Secondary, '🚫', !ticketLog),
+        btn(cid('module'), enabled ? t('panels_core.common.module_on') : t('panels_core.common.module_off'), enabled ? ButtonStyle.Success : ButtonStyle.Danger, enabled ? '🟢' : '🔴'),
+        btn(cid('main'), t('core.back'), ButtonStyle.Secondary, '↩️'),
+      ),
+    ],
+  };
+}
+
+/** Relit la config du serveur et les réglages de relance, puis rend la vue options. */
+export async function loadOptions(opts: { guild: Guild; t: Translator; fallback: ResolvedGuildConfig; notice?: PanelNotice }): Promise<PanelPayload> {
+  const [config, reminders] = await Promise.all([guildConfigService.get(opts.guild.id), ticketReminderService.getSettings(opts.guild.id)]);
+  return renderOptions({ guild: opts.guild, config: config ?? opts.fallback, reminders, t: opts.t, notice: opts.notice });
+}
+
+/** ⏱️ Délai des relances (heures). */
+export function buildReminderHoursModal(current: number, t: Translator): ModalBuilder {
+  return modal('rhours', t('panels_core.tickets.modal_hours_title')).addLabelComponents(
+    labelled(t('panels_core.tickets.modal_hours_label'), input('hours', TextInputStyle.Short, { required: true, max: 4, value: String(current), placeholder: '24' }), t('panels_core.tickets.modal_hours_help', { min: REMINDER_HOURS.min, max: REMINDER_HOURS.max })),
+  );
 }
 
 // ───── Vue d'une raison ─────

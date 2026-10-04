@@ -1,4 +1,5 @@
-import { GuildMember, MessageFlags, type ButtonInteraction, type AnySelectMenuInteraction, type ModalSubmitInteraction } from 'discord.js';
+import { GuildMember, LabelBuilder, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, type ButtonInteraction, type AnySelectMenuInteraction, type ModalSubmitInteraction } from 'discord.js';
+import { buildCustomId } from '../utils/customId';
 import type { InteractionContext } from '../structures/types';
 import { env } from '../config/env';
 import { hasInternalPermission } from '../utils/permissions';
@@ -24,4 +25,16 @@ export async function assertRoleMenuEditor(interaction: EditorInteraction, ctx: 
 export function parseMenuId(value: string | undefined): number | null {
   const n = Number(value);
   return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+/** Modal de création d'un role menu (`rolemenu:create`) ouvert depuis le panneau `/config module:roles`. */
+export function buildRoleMenuCreateModal(t: (key: string) => string): ModalBuilder {
+  return new ModalBuilder()
+    .setCustomId(buildCustomId('rolemenu', 'create'))
+    .setTitle(t('roles.rolemenu.modal.create_title').slice(0, 45))
+    .addLabelComponents(
+      new LabelBuilder().setLabel(t('roles.rolemenu.modal.name').slice(0, 45)).setTextInputComponent(new TextInputBuilder().setCustomId('name').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(100)),
+      new LabelBuilder().setLabel(t('roles.rolemenu.modal.title').slice(0, 45)).setTextInputComponent(new TextInputBuilder().setCustomId('title').setStyle(TextInputStyle.Short).setRequired(false).setMaxLength(256)),
+      new LabelBuilder().setLabel(t('roles.rolemenu.modal.description').slice(0, 45)).setTextInputComponent(new TextInputBuilder().setCustomId('description').setStyle(TextInputStyle.Paragraph).setRequired(false).setMaxLength(4000)),
+    );
 }

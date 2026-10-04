@@ -6,13 +6,13 @@ vi.mock('../../src/database/client', () => ({ prisma: createPrismaMock() }));
 vi.mock('../../src/config/env', () => ({ env: () => ({ OWNER_IDS: [] }) }));
 
 import { prisma as prismaClient } from '../../src/database/client';
-import { buildInfoModal, buildNewTypeModal, buildQuestionsModal, parseQuestionSlots, renderMain, renderPanelView, renderType, serializeQuestion, slugifyKey, uniqueKey } from '../../src/commands/tickets/_configPanel';
+import { buildInfoModal, buildNewTypeModal, buildQuestionsModal, parseQuestionSlots, parseReminderHours, renderMain, renderOptions, renderPanelView, renderType, serializeQuestion, slugifyKey, uniqueKey } from '../../src/commands/tickets/_configPanel';
 import { PanelStyle } from '@prisma/client';
 
 const prisma = prismaClient as unknown as ReturnType<typeof createPrismaMock>;
 
 const t = (key: string, vars: Record<string, unknown> = {}) => `${key}${Object.keys(vars).length ? `[${Object.values(vars).join(',')}]` : ''}`;
-const guild = { id: '222222222222222222', name: 'Redemption Story', channels: { cache: new Map([['444444444444444444', { name: 'support' }]]) } } as unknown as Guild;
+const guild = { id: '222222222222222222', name: 'Redemption Story', channels: { cache: new Map([['444444444444444444', { name: 'support', type: 0 }]]) } } as unknown as Guild;
 
 const baseType = {
   id: 7,
@@ -89,7 +89,7 @@ describe('renderMain', () => {
     expect(select.options!.map((o) => o.value)).toEqual(['7', '8']);
     expect(select.options![1]!.label).toContain('core.disabled');
     const buttons = components.slice(1);
-    expect(buttons.map((b) => b.custom_id)).toEqual(['tcfg:new', 'tcfg:defaults', 'tcfg:panelview', 'tcfg:main']);
+    expect(buttons.map((b) => b.custom_id)).toEqual(['tcfg:new', 'tcfg:defaults', 'tcfg:panelview', 'tcfg:options', 'tcfg:main']);
     expect(buttons[1]!.disabled).toBe(true); // raisons par défaut désactivé : des types existent déjà
     expect(components.every((c) => !c.custom_id || c.custom_id.length < 100)).toBe(true);
     const embed = payload.embeds[0]!.toJSON();
@@ -107,6 +107,35 @@ describe('renderMain', () => {
     expect(defaults!.custom_id).toBe('tcfg:defaults');
     expect(defaults!.disabled).toBe(false);
     expect(payload.embeds[0]!.toJSON().description).toContain('tickets.config.empty');
+  });
+});
+
+describe('renderOptions', () => {
+  it('transcripts (log TICKET) pré-remplis, mention des relances pré-sélectionnée, 5 boutons', () => {
+    const config = { guildId: guild.id, modules: { tickets: false }, logChannels: { TICKET: '444444444444444444' }, staffRoleIds: ['555555555555555555'] } as never;
+    const payload = renderOptions({ guild, config, reminders: { remindersEnabled: true, reminderHours: 12, reminderPing: 'staff' }, t });
+    expect(payload.components.length).toBeLessThanOrEqual(5);
+    const rows = payload.components.map((r) => r.toJSON().components as (Component & { default_values?: { id: string }[]; style?: number; options?: { value: string; default?: boolean }[] })[]);
+    expect(rows[0]![0]!.custom_id).toBe('tcfg:translog');
+    expect(rows[0]![0]!.default_values).toEqual([{ id: '444444444444444444', type: 'channel' }]);
+    expect(rows[1]![0]!.custom_id).toBe('tcfg:rping');
+    expect(rows[1]![0]!.options!.find((o) => o.default)!.value).toBe('staff');
+    expect(rows[2]!.map((c) => c.custom_id)).toEqual(['tcfg:rtoggle', 'tcfg:rhours', 'tcfg:translog-off', 'tcfg:module', 'tcfg:main']);
+    expect(rows[2]![0]!.style).toBe(3); // Success : relances actives
+    expect(rows[2]![3]!.style).toBe(4); // Danger : module désactivé
+    const embed = payload.embeds[0]!.toJSON();
+    expect(embed.fields!.some((f) => f.value.includes('<@&555555555555555555>'))).toBe(true);
+    expect(embed.fields!.some((f) => f.value.includes('12'))).toBe(true);
+    expect(embed.description).toContain('panels_core.tickets.permanent_hint');
+  });
+
+  it('parseReminderHours : 1–168, suffixe h accepté', () => {
+    expect(parseReminderHours('24')).toBe(24);
+    expect(parseReminderHours(' 48h ')).toBe(48);
+    expect(parseReminderHours('0')).toBeNull();
+    expect(parseReminderHours('169')).toBeNull();
+    expect(parseReminderHours('abc')).toBeNull();
+    expect(parseReminderHours(undefined)).toBeNull();
   });
 });
 

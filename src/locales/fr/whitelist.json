@@ -35,7 +35,6 @@
     "empty": "Aucune candidature."
   },
   "config": {
-    "title": "📝 Configuration whitelist",
     "enabled": "Candidatures",
     "review_channel": "Salon de review",
     "dm": "DM à la décision",
@@ -45,7 +44,6 @@
     "default": "par défaut",
     "questions_modal_title": "Questions de la candidature",
     "question_n": "Question {n}",
-    "question_placeholder": "Laisser vide pour ne pas poser cette question",
     "questions_saved": "{count} question(s) enregistrée(s).",
     "updated": "Configuration whitelist mise à jour."
   },

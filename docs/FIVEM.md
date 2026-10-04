@@ -11,29 +11,22 @@ Une ressource prête à l'emploi est fournie : **`fivem-resource/rs_bridge/`** (
 
 ### 1.1 Côté Discord
 
-```
-/fivem add key:br name:"Redemption Battle Royale" framework:CUSTOM
-```
-- `key` : identifiant court unique (`[a-z0-9_-]{2,64}`), utilisé dans les URLs et dans `config.lua`.
-- `framework` : `CUSTOM` pour la ressource `rs_bridge` (payload normalisé). `ESX` / `QBCORE` acceptent en plus les formats natifs de ces frameworks (§ 7).
-- `host` (facultatif) : `http://IP:30120` pour que le bot lise aussi `/info.json` et `/players.json` toutes les 60 s.
-- `api_key` (facultatif) : clé propre au serveur ; sinon la clé globale `FIVEM_API_KEY` du `.env` du bot.
+`/config module:fivem` → **➕ Ajouter** :
+- **Clé du serveur** : identifiant court unique (`[a-z0-9_-]{2,64}`), utilisé dans les URLs et dans `config.lua` (`Config.ServerKey`).
+- **Framework** : `CUSTOM` pour la ressource `rs_bridge` (payload normalisé). `ESX` / `QBCORE` acceptent en plus les formats natifs de ces frameworks (§ 7).
+- **Hôte** (facultatif) : `http://IP:30120` pour que le bot lise aussi `/info.json` et `/players.json` toutes les 60 s.
+- **Clé API propre** (facultatif) : clé propre au serveur ; sinon la clé globale `FIVEM_API_KEY` du `.env` du bot.
 
-Le bot répond avec l'URL de base de l'API. Puis réglez la synchronisation :
-
-```
-/fivem sync key:br                                   → affiche les réglages
-/fivem sync key:br online_role:@En-jeu linked_role:@Lié counter_channel:#🟢-joueurs
-/fivem sync key:br nickname_format:"{name}" require_discord:true
-/fivem status-channel key:br channel:#statut-serveur  → embed de statut auto-mis à jour
-```
+La vue du serveur affiche l'encart **📦 Installation** (URL de l'API, GuildId, clé du serveur) et regroupe tous les réglages :
+maintenance, salon du message de statut (auto-mis à jour), salon compteur, options de synchronisation (menu « options actives »),
+format du pseudo, rôles « compte lié » / « en jeu » / « requis » (bouton 🎭 Rôles), liste des joueurs en ligne, test de connexion, suppression.
 
 ### 1.2 Côté serveur FiveM
 
 1. Copier le dossier `fivem-resource/rs_bridge` dans `resources/` (ou `resources/[redemption]/`).
 2. Éditer `rs_bridge/config.lua` :
    - `Config.BotUrl` = `DASHBOARD_URL` du bot (ex : `https://bot.mondomaine.fr`, sans `/` final) ;
-   - `Config.GuildId` = ID du serveur Discord ; `Config.ServerKey` = la `key` de `/fivem add` ;
+   - `Config.GuildId` = ID du serveur Discord ; `Config.ServerKey` = la clé déclarée dans `/config module:fivem` ;
    - `Config.Framework` = `standalone` | `esx` | `qbcore` ; `Config.Locale` = `fr` | `en`.
 3. Clé API **hors du code** (recommandé) dans `server.cfg` :
    ```cfg
@@ -44,7 +37,7 @@ Le bot répond avec l'URL de base de l'API. Puis réglez la synchronisation :
 5. Brancher votre menu admin sur les exports (§ 3) — ou laisser `Config.TxAdminHooks = true` si vous sanctionnez via txAdmin.
 6. Gamemode Battle Royale : appeler `exports.rs_bridge:AddMatchStats(source, {...})` à la fin de chaque partie et `exports.rs_bridge:SetPlayerName(source, pseudo)` quand le joueur choisit son pseudo.
 
-> Les joueurs n'ont **rien à faire** : si Discord est ouvert sur leur PC au lancement de FiveM, FiveM fournit l'identifiant `discord:<id>` et le bot lie automatiquement leur compte (profil Battle Royale, rôle, surnom). `/br-link` et `/fivem link` restent disponibles pour les cas manuels.
+> Les joueurs n'ont **rien à faire** : si Discord est ouvert sur leur PC au lancement de FiveM, FiveM fournit l'identifiant `discord:<id>` et le bot lie automatiquement leur compte (profil Battle Royale, rôle, surnom). `/br-link` (joueur) et le bouton **🔗 Lier un membre** de `/config module:fivem` (admin) restent disponibles pour les cas manuels.
 
 ### 1.3 Permissions Discord du bot
 
@@ -62,24 +55,24 @@ Intents requis (déjà activés dans `src/core/Client.ts`) : `Guilds`, `GuildMem
 
 ## 2. Synchronisation jeu ⇄ Discord
 
-### 2.1 Options par serveur (`/fivem sync`, `FiveMSyncService.updateSyncSettings`)
+### 2.1 Options par serveur (`/config module:fivem`, `FiveMSyncService.updateSyncSettings`)
 
-| Option (`/fivem sync`) | Champ `FiveMServer` | Défaut | Effet |
+| Réglage (panneau) | Champ `FiveMServer` | Défaut | Effet |
 |---|---|---|---|
-| `bans_to_discord` | `syncBansToDiscord` | ✅ | Ban / tempban / unban pris en jeu → appliqué sur Discord |
-| `bans_to_game` | `syncBansToGame` | ✅ | Ban / unban Discord (commande, clic droit, fin de tempban) → serveurs de jeu |
-| `kicks` | `syncKicks` | ❌ | Kick en jeu → kick Discord |
-| `nicknames` | `syncNicknames` | ✅ | Pseudo en jeu → surnom Discord |
-| `nickname_format` | `nicknameFormat` | `{name}` | Variables `{name}` `{id}` (ID serveur) `{level}` (niveau BR). 32 caractères max après rendu |
-| `linked_role` | `linkedRoleId` | — | Rôle donné quand le compte FiveM est lié |
-| `online_role` | `onlineRoleId` | — | Rôle « En jeu » donné à la connexion, retiré à la déconnexion / serveur hors ligne / démarrage du bot si le serveur est hors ligne |
-| `counter_channel` | `playerCountChannelId` | — | Salon vocal (ou catégorie) renommé `🟢 En ligne : 23/64` / `🔴 Hors ligne` / `🟠 Maintenance` |
-| `require_discord` | `requireDiscord` | ❌ | Refuse la connexion si aucun Discord lié ou si le joueur n'est pas membre du serveur Discord |
-| `require_role` | `requireRoleId` | — | Rôle Discord requis pour se connecter (implique Discord lié + membre) |
-| `require_whitelist` | `requireWhitelist` | ❌ | Candidature whitelist acceptée requise (`/whitelist`) |
-| `clear:` | — | — | Retire `linked_role`, `online_role`, `counter_channel` ou `require_role` |
+| Bans jeu → Discord | `syncBansToDiscord` | ✅ | Ban / tempban / unban pris en jeu → appliqué sur Discord |
+| Bans Discord → jeu | `syncBansToGame` | ✅ | Ban / unban Discord (commande, clic droit, fin de tempban) → serveurs de jeu |
+| Kicks jeu → Discord | `syncKicks` | ❌ | Kick en jeu → kick Discord |
+| Pseudos | `syncNicknames` | ✅ | Pseudo en jeu → surnom Discord |
+| Format du pseudo | `nicknameFormat` | `{name}` | Variables `{name}` `{id}` (ID serveur) `{level}` (niveau BR). 32 caractères max après rendu |
+| Rôle « compte lié » | `linkedRoleId` | — | Rôle donné quand le compte FiveM est lié |
+| Rôle « en jeu » | `onlineRoleId` | — | Rôle « En jeu » donné à la connexion, retiré à la déconnexion / serveur hors ligne / démarrage du bot si le serveur est hors ligne |
+| Salon compteur | `playerCountChannelId` | — | Salon vocal (ou catégorie) renommé `🟢 En ligne : 23/64` / `🔴 Hors ligne` / `🟠 Maintenance` |
+| Discord requis | `requireDiscord` | ❌ | Refuse la connexion si aucun Discord lié ou si le joueur n'est pas membre du serveur Discord |
+| Rôle requis | `requireRoleId` | — | Rôle Discord requis pour se connecter (implique Discord lié + membre) |
+| Whitelist requise | `requireWhitelist` | ❌ | Candidature whitelist acceptée requise (`/whitelist`) |
+| (sélecteur vidé) | — | — | Retire le rôle / salon correspondant |
 
-Le futur panneau `/config` appellera directement `fivemSyncService.updateSyncSettings(guildId, key, patch)` (patch validé par Zod `syncSettingsSchema`, `src/services/fivem/sync.ts`).
+Le panneau `/config module:fivem` (et le dashboard) appellent `fivemSyncService.updateSyncSettings(guildId, key, patch)` (patch validé par Zod `syncSettingsSchema`, `src/services/fivem/sync.ts`).
 
 ### 2.2 Flux
 
@@ -132,7 +125,7 @@ PSEUDO
 | `FiveMPlayer` | Un joueur suivi par licence : `discordId`, `steam`, `fivemId`, dernier `name`, `serverKey`, `lastSeenAt`, `sessionStartedAt`, `playtimeMinutes`, `online` |
 | `FiveMPendingAction` | File des actions Discord → jeu (`BAN`/`UNBAN`/`KICK`/`MESSAGE`), marquées `deliveredAt` lorsqu'elles sont servies. Délivrées purgées après 7 j ; non délivrées ignorées après 7 j |
 
-`/profile` affiche en plus le statut en jeu (serveur), la dernière connexion et le pseudo en jeu ; `/fivem players` affiche la liaison Discord de chaque joueur.
+`/profile` affiche en plus le statut en jeu (serveur), la dernière connexion et le pseudo en jeu ; le bouton **👥 Joueurs** de `/config module:fivem` affiche la liaison Discord de chaque joueur.
 
 ---
 
@@ -277,7 +270,7 @@ Sortants :
 | `ready` | `{ serverKey, guildId, maintenance }` | À la connexion |
 | `player:ban` / `player:unban` | `{ id?, discordId, license?, identifiers?, reason?, expiresAt?, staff }` | Ban / unban Discord (l'action est aussi tracée en base et marquée délivrée) |
 | `whitelist:updated` | `{ discordId, identifier, status }` | Candidature acceptée / refusée |
-| `maintenance` | `{ enabled }` | `/fivem maintenance` ou `POST /maintenance` |
+| `maintenance` | `{ enabled }` | bouton Maintenance de `/config module:fivem` ou `POST /maintenance` |
 | `error:event` | `{ event, error }` | Payload invalide |
 
 ---
@@ -288,7 +281,7 @@ Sortants :
 
 **Les rôles ne sont pas donnés.** *Gérer les rôles* + rôle du bot au-dessus de `linked_role` / `online_role` / rôles gérés. Le membre doit être sur le serveur Discord.
 
-**Le compte ne se lie pas automatiquement.** FiveM ne fournit `discord:<id>` que si l'application Discord **de bureau** est ouverte au lancement de FiveM. Sinon : `/br-link license:…` (joueur) ou `/fivem link membre license:…` (admin).
+**Le compte ne se lie pas automatiquement.** FiveM ne fournit `discord:<id>` que si l'application Discord **de bureau** est ouverte au lancement de FiveM. Sinon : `/br-link license:…` (joueur) ou **🔗 Lier un membre** dans `/config module:fivem` (admin).
 
 **Le salon compteur ne change pas tout de suite.** Discord limite le renommage d'un salon à 2 fois par 10 minutes : le bot renomme au plus toutes les 6 minutes et applique le dernier état connu ensuite.
 
@@ -324,7 +317,7 @@ Logique : commande retrouvée par `tebexTransactionId`, sinon dernière commande
 
 ## 11. Récapitulatif côté serveur de jeu
 
-1. `/fivem add key:<clé> …` puis `/fivem sync key:<clé> …` (rôles, salon compteur, options).
+1. `/config module:fivem` → ➕ Ajouter, puis régler la vue du serveur (rôles, salon compteur, options).
 2. Copier `fivem-resource/rs_bridge`, renseigner `config.lua`, `set rs_bridge_api_key "…"` et `ensure rs_bridge` dans `server.cfg`.
 3. Brancher le menu admin sur `BanPlayer` / `UnbanPlayer` / `KickPlayer` / `WarnPlayer` (ou laisser les hooks txAdmin).
 4. Gamemode BR : `AddMatchStats` en fin de partie, `SetPlayerName` quand le joueur choisit son pseudo.

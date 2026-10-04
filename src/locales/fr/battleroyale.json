@@ -32,7 +32,7 @@
   },
   "battlepass": {
     "title": "🎟️ Battle Pass — Saison {season} · {name}",
-    "none": "Aucune saison active. Un administrateur peut en créer une avec `/br-admin season new`.",
+    "none": "Aucune saison active. Un administrateur peut en créer une depuis `/config module:battleroyale`.",
     "tiers": "Paliers",
     "ends": "Fin de saison",
     "maxed": "Tous les paliers débloqués !"
@@ -47,7 +47,6 @@
   "admin": {
     "season_set": "Saison active : **{season}** ({name}).",
     "season_new": "Saison **{season}** « {name} » créée, fin le {ends}. Progression Battle Pass réinitialisée.",
-    "seasons_title": "📅 Saisons",
     "stat_set": "{user} : `{field}` = **{value}**.",
     "xp_added": "{user} : {amount} XP → **{xp} XP** (niveau {level})."
   },

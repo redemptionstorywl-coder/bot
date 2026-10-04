@@ -6,9 +6,14 @@ import { DEFAULT_TEAM_ROLE_NAMES } from '../config/constants';
 const normalizeRoleName = (n: string) => n.replace(/[\s・·|•-]+/g, ' ').trim().toLowerCase();
 const TEAM_NAMES = DEFAULT_TEAM_ROLE_NAMES.map(normalizeRoleName);
 
+/** Vrai si le nom de rôle est un nom « équipe » reconnu (ex. 🛡️ RS Team). */
+export function isTeamRoleName(name: string): boolean {
+  return TEAM_NAMES.includes(normalizeRoleName(name));
+}
+
 /** Vrai si le membre porte un rôle « équipe » reconnu par son nom (ex. 🛡️ RS Team). */
 export function hasTeamRole(member: GuildMember): boolean {
-  return member.roles.cache.some((r) => TEAM_NAMES.includes(normalizeRoleName(r.name)));
+  return member.roles.cache.some((r) => isTeamRoleName(r.name));
 }
 
 const LEVELS: Record<InternalPermission, number> = { everyone: 0, staff: 1, admin: 2, owner: 3 };

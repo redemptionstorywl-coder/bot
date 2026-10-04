@@ -1,13 +1,13 @@
 import { GuildMember, MessageFlags } from 'discord.js';
 import { defineModal } from '../structures';
-import { whitelistService, WhitelistError, MAX_QUESTIONS, type WhitelistAnswer, type WhitelistQuestion } from '../services/WhitelistService';
+import { whitelistService, WhitelistError, MAX_QUESTIONS, type WhitelistAnswer } from '../services/WhitelistService';
 import { embedService } from '../services/EmbedService';
 import { env } from '../config/env';
 import { hasInternalPermission } from '../utils/permissions';
 
 /**
- * Modals `whitelist:apply:<identifier?>` (candidature), `whitelist:reject:<id>` (note de refus, staff),
- * `whitelist:questions` (configuration des questions, admin).
+ * Modals `whitelist:apply:<identifier?>` (candidature) et `whitelist:reject:<id>` (note de refus, staff).
+ * Les questions se configurent dans `/config module:whitelist` (modal `cfg-whitelist:questions`).
  */
 export default defineModal({
   id: 'whitelist',
@@ -54,17 +54,6 @@ export default defineModal({
         throw err;
       }
       return;
-    }
-
-    if (action === 'questions') {
-      if (!can('admin')) return interaction.reply({ embeds: [embedService.error(t('core.insufficient_level', { level: 'admin' }))], ...ephemeral });
-      const questions: WhitelistQuestion[] = [];
-      for (let i = 1; i <= MAX_QUESTIONS; i++) {
-        const label = interaction.fields.fields.has(`q${i}`) ? interaction.fields.getTextInputValue(`q${i}`).trim() : '';
-        if (label) questions.push({ id: `q${i}`, label: label.slice(0, 45), required: true, style: 'paragraph' });
-      }
-      await whitelistService.updateConfig(guildId, { questions });
-      await interaction.reply({ embeds: [embedService.success(t('whitelist.config.questions_saved', { count: questions.length }))], ...ephemeral });
     }
   },
 });

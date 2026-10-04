@@ -1,6 +1,6 @@
 --[[
   rs_bridge — configuration
-  1. Sur Discord : /fivem add key:<ServerKey> name:"…" framework:CUSTOM   (ESX / QBCORE acceptés aussi)
+  1. Sur Discord : /config module:fivem → ➕ Ajouter (clé = ServerKey, framework CUSTOM / ESX / QBCORE)
   2. Copier l'URL du bot, l'ID du serveur Discord et la clé API ci-dessous.
   3. server.cfg : ensure rs_bridge   (après es_extended / qb-core si vous les utilisez)
   Documentation complète : docs/FIVEM.md du bot.
@@ -11,14 +11,14 @@ Config = {}
 -- URL publique du bot (DASHBOARD_URL), sans slash final. Ex : 'https://bot.mondomaine.fr'
 Config.BotUrl = 'https://bot.example.com'
 
--- Clé API : FIVEM_API_KEY du bot, ou la clé propre au serveur (/fivem add … api_key:)
+-- Clé API : FIVEM_API_KEY du bot, ou la clé propre au serveur (champ « Clé API propre » du panneau /config module:fivem)
 -- Conseil : laissez vide ici et définissez `set rs_bridge_api_key "…"` dans server.cfg (non versionné).
 Config.ApiKey = ''
 
 -- ID du serveur Discord (clic droit sur le serveur → Copier l'identifiant)
 Config.GuildId = '000000000000000000'
 
--- Clé du serveur déclarée avec /fivem add (ex : 'main', 'br-1')
+-- Clé du serveur déclarée dans /config module:fivem (ex : 'main', 'br-1')
 Config.ServerKey = 'main'
 
 -- Langue des messages affichés aux joueurs : 'fr' ou 'en'
@@ -55,7 +55,7 @@ Config.NotifyUnlinked = true
 -- Relayer automatiquement les sanctions txAdmin (ban / warn / kick / révocation de ban) vers le bot
 Config.TxAdminHooks = true
 
--- Convar signalant la maintenance dans le statut (set rs_maintenance true). Non définie = ignorée (/fivem maintenance fait foi).
+-- Convar signalant la maintenance dans le statut (set rs_maintenance true). Non définie = ignorée (le bouton Maintenance de /config module:fivem fait foi).
 Config.MaintenanceConvar = 'rs_maintenance'
 
 -- Logs détaillés dans la console serveur

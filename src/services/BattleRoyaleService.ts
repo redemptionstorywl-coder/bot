@@ -182,11 +182,11 @@ export class BattleRoyaleService {
   }
 
   /** Crée une nouvelle saison (Battle Pass) et désactive les précédentes. */
-  async newSeason(guildId: string, input: { name: string; durationDays: number; tiers?: BattlePassTier[]; actorId?: string }): Promise<BattlePass> {
+  async newSeason(guildId: string, input: { name: string; durationDays?: number; startsAt?: Date; endsAt?: Date; tiers?: BattlePassTier[]; actorId?: string }): Promise<BattlePass> {
     const agg = await prisma.battlePass.aggregate({ where: { guildId }, _max: { season: true } });
     const season = (agg._max.season ?? 0) + 1;
-    const startsAt = new Date();
-    const endsAt = new Date(startsAt.getTime() + Math.max(1, input.durationDays) * 86400_000);
+    const startsAt = input.startsAt ?? new Date();
+    const endsAt = input.endsAt ?? new Date(startsAt.getTime() + Math.max(1, input.durationDays ?? 90) * 86400_000);
     const tiers = input.tiers?.length ? battlePassTiersSchema.parse(input.tiers) : defaultTiers();
     const pass = await prisma.$transaction(async (tx) => {
       await tx.battlePass.updateMany({ where: { guildId, active: true }, data: { active: false } });
@@ -208,6 +208,23 @@ export class BattleRoyaleService {
       return tx.battlePass.create({ data: { guildId, season, name: `Season ${season}`, startsAt, endsAt: new Date(startsAt.getTime() + 90 * 86400_000), tiers: defaultTiers() as Prisma.InputJsonValue, active: true } });
     });
     await loggingService.log({ guildId, category: LogCategory.BATTLE_ROYALE, action: 'br.season.set', title: `⚔️ Saison active : ${season}`, actorId: actorId ?? null, data: { season } });
+    return pass;
+  }
+
+  /** Remplace les paliers d'une saison et recalcule le palier atteint des profils si c'est la saison active. */
+  async updateTiers(guildId: string, season: number, tiers: BattlePassTier[], actorId?: string): Promise<BattlePass> {
+    const existing = await prisma.battlePass.findUnique({ where: { guildId_season: { guildId, season } } });
+    if (!existing) throw new BattleRoyaleError('no_season');
+    const parsed = battlePassTiersSchema.parse(tiers);
+    const pass = await prisma.battlePass.update({ where: { id: existing.id }, data: { tiers: parsed as Prisma.InputJsonValue } });
+    if (pass.active) {
+      const profiles = await prisma.battleRoyaleProfile.findMany({ where: { guildId }, select: { id: true, battlePassXp: true, battlePassTier: true } });
+      for (const p of profiles) {
+        const tier = battlePassProgress(p.battlePassXp, parsed).tier;
+        if (tier !== p.battlePassTier) await prisma.battleRoyaleProfile.update({ where: { id: p.id }, data: { battlePassTier: tier } });
+      }
+    }
+    await loggingService.log({ guildId, category: LogCategory.BATTLE_ROYALE, action: 'br.season.tiers', title: `⚔️ Battle Pass — saison ${season} : ${parsed.length} paliers`, actorId: actorId ?? null, data: { season, tiers: parsed.length } });
     return pass;
   }
 

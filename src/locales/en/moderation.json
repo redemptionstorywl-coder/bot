@@ -73,8 +73,8 @@
     "invalid_timeout_duration": "Invalid duration: a timeout lasts between 1 minute and 28 days (`10m`, `1h`, `7d`).",
     "not_timed_out": "This member is not timed out.",
     "not_banned": "This user is not banned.",
-    "no_mute_role": "No mute role is configured. Use `/mod-config mute-role`.",
-    "mute_role_missing": "The configured mute role no longer exists. Set it again with `/mod-config mute-role`.",
+    "no_mute_role": "No mute role is configured. Set it in `/config moderation` (Sanctions tab).",
+    "mute_role_missing": "The configured mute role no longer exists. Set it again in `/config moderation` (Sanctions tab).",
     "channel_unsupported": "This channel type does not support this action.",
     "missing_permissions": "I do not have the permissions required for this action.",
     "escalation_failed": "the automatic action failed (permissions or hierarchy).",
@@ -137,7 +137,6 @@
     "cancelled": "Action cancelled."
   },
   "config": {
-    "title": "Moderation — {server}",
     "mute_role": "Mute role",
     "mute_role_set": "Mute role set: {role}",
     "mute_role_removed": "Mute role removed.",
@@ -147,13 +146,9 @@
     "no_thresholds": "No threshold: warnings trigger no automatic action.",
     "threshold_added": "Threshold saved: **{count}** warnings → **{action}**.",
     "threshold_removed": "Threshold of **{count}** warnings removed.",
-    "threshold_not_found": "No threshold for **{count}** warnings.",
-    "stats_title": "Statistics (30 days)",
-    "stats": "**{total}** sanction(s) • {warnings} active warning(s) • {bans} active ban(s) • {mutes} active mute(s)"
+    "threshold_not_found": "No threshold for **{count}** warnings."
   },
   "antiraid": {
-    "status_title": "Anti-raid — {server}",
-    "updated": "✅ Anti-raid configuration updated.",
     "log_title": "🚨 Anti-raid: {trigger}",
     "action_taken": "Action",
     "days": "{days} day(s)",
@@ -209,11 +204,6 @@
       "quarantine_failed": "Could not assign the quarantine role",
       "kicked_case": "Kicked (case #{number})",
       "kick_failed": "Kick failed"
-    },
-    "errors": {
-      "quarantine_role_required": "A quarantine role is required for the “Quarantine role” action.",
-      "not_a_bot": "The given user is not a bot.",
-      "role_or_channel": "Provide a role or a channel."
     }
   },
   "clear_channel": {
@@ -225,9 +215,6 @@
     "notice": "🧹 This channel was cleared by {moderator}."
   },
   "antinuke": {
-    "status_title": "Anti-nuke — {server}",
-    "summary": "Protection against compromised accounts and malicious applications",
-    "updated": "✅ Anti-nuke configuration updated.",
     "names": {
       "thresholds": "Thresholds (max actions / window)",
       "punishment": "Punishment",
