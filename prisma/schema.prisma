@@ -1127,3 +1127,17 @@ model FiveMPendingAction {
   @@index([guildId, serverKey, deliveredAt])
   @@index([createdAt])
 }
+
+// ──────────────── Salon piège anti-spam ────────────────
+
+/// Salon « get-banned » : tout message envoyé (hors staff) supprime les messages récents de l'auteur et l'expulse.
+model HoneypotChannel {
+  guildId             String   @id @db.VarChar(32)
+  channelId           String   @db.VarChar(32)
+  messageId           String?  @db.VarChar(32)
+  enabled             Boolean  @default(true)
+  /// Fenêtre de suppression des messages récents de l'auteur (minutes)
+  deleteWindowMinutes Int      @default(60)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}

@@ -463,6 +463,12 @@ export async function remapChannelReferences(guildId: string, map: Record<string
     count('channelMute', 1);
   }
 
+  // Salon piège anti-spam
+  for (const row of await prisma.honeypotChannel.findMany({ where: { guildId, channelId: inOld } })) {
+    await prisma.honeypotChannel.update({ where: { guildId: row.guildId }, data: { channelId: next(row.channelId)!, messageId: null } });
+    count('honeypotChannel', 1);
+  }
+
   // Tickets (uniquement si leurs salons ont été recréés)
   if (opts.includeTickets) {
     for (const row of await prisma.ticket.findMany({ where: { guildId, channelId: inOld, status: { not: 'DELETED' } } })) {

@@ -31,7 +31,7 @@ function resetPrisma() {
     if (!m || typeof m !== 'object') continue;
     for (const fn of Object.values(m)) fn?.mockReset?.();
   }
-  for (const model of ['logChannel', 'ticketPanel', 'roleMenu', 'announcement', 'event', 'giveaway', 'poll', 'schoolClass', 'channelMute', 'ticket']) {
+  for (const model of ['logChannel', 'ticketPanel', 'roleMenu', 'announcement', 'event', 'giveaway', 'poll', 'schoolClass', 'channelMute', 'honeypotChannel', 'ticket']) {
     prisma[model]!.findMany!.mockResolvedValue([]);
     prisma[model]!.update!.mockResolvedValue({});
   }
