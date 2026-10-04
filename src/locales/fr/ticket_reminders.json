@@ -1,0 +1,13 @@
+{
+  "title": "⏰ Ticket en attente du staff",
+  "description": "Ce ticket n'a pas reçu de réponse du staff depuis **{duration}** ({since}).\nMerci de le prendre en charge ou de répondre au membre.\n\nSi ce ticket doit rester ouvert sans activité (suivi long, contact permanent avec un lead…), cliquez sur **Ne plus relancer**.",
+  "footer": "Relance automatique toutes les {hours} h sans réponse du staff",
+  "btn_claim": "Je m'en occupe",
+  "btn_mute": "Ne plus relancer",
+  "btn_muted_control": "Relances coupées",
+  "btn_unmuted_control": "Ticket permanent",
+  "muted_confirm": "🔕 Relances désactivées pour ce ticket : il peut rester ouvert sans activité.",
+  "unmuted_confirm": "🔔 Relances réactivées pour ce ticket.",
+  "muted_notice": "🔕 {user} a marqué ce ticket comme **permanent** : plus de relance automatique.",
+  "unmuted_notice": "🔔 {user} a réactivé les relances automatiques de ce ticket."
+}

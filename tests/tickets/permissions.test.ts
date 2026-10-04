@@ -49,7 +49,7 @@ describe('Boutons de contrôle', () => {
   it('propose les actions de gestion sur un ticket ouvert', () => {
     const rows = ticketService.buildControls({ id: 5, status: 'OPEN', claimedById: null }, t);
     const ids = rows.flatMap((r) => r.components.map((c) => (c.toJSON() as { custom_id: string }).custom_id));
-    expect(ids).toEqual(['ticket:close:5', 'ticket:claim:5', 'ticket:transcript:5', 'ticket:add:5', 'ticket:remove:5', 'ticket:transfer:5', 'ticket:delete:5']);
+    expect(ids).toEqual(['ticket:close:5', 'ticket:claim:5', 'ticket:transcript:5', 'ticket:add:5', 'ticket:remove:5', 'ticket:transfer:5', 'ticket:mute:5', 'ticket:delete:5']);
   });
   it('désactive le claim une fois pris en charge', () => {
     const rows = ticketService.buildControls({ id: 5, status: 'CLAIMED', claimedById: 'mod' }, t);

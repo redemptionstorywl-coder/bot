@@ -130,7 +130,7 @@ export interface TicketActor {
 
 export type TicketBusEvent = 'ticket:open' | 'ticket:close' | 'ticket:update';
 
-/** Types par défaut (bouton « Raisons par défaut » de /ticket-config, dashboard). */
+/** Types par défaut (bouton « Raisons par défaut » de /config tickets, dashboard). */
 export const DEFAULT_TICKET_TYPES: { key: string; emoji: string }[] = [
   { key: 'support', emoji: '🎫' },
   { key: 'bug', emoji: '🐛' },
@@ -668,7 +668,7 @@ export class TicketService {
     return embed;
   }
 
-  buildControls(ticket: Pick<Ticket, 'id' | 'status' | 'claimedById'>, t: Translator): ActionRowBuilder<ButtonBuilder>[] {
+  buildControls(ticket: Pick<Ticket, 'id' | 'status' | 'claimedById'> & { remindersMuted?: boolean }, t: Translator): ActionRowBuilder<ButtonBuilder>[] {
     const id = ticket.id;
     const btn = (action: string, label: string, emoji: string, style: ButtonStyle, disabled = false) =>
       new ButtonBuilder().setCustomId(buildCustomId('ticket', action, id)).setLabel(label).setEmoji(emoji).setStyle(style).setDisabled(disabled);
@@ -681,7 +681,13 @@ export class TicketService {
           btn('add', t('tickets.buttons.add'), '👥', ButtonStyle.Secondary),
           btn('remove', t('tickets.buttons.remove'), '🚫', ButtonStyle.Secondary),
         ),
-        new ActionRowBuilder<ButtonBuilder>().addComponents(btn('transfer', t('tickets.buttons.transfer'), '🔄', ButtonStyle.Secondary), btn('delete', t('tickets.buttons.delete'), '🗑️', ButtonStyle.Danger)),
+        new ActionRowBuilder<ButtonBuilder>().addComponents(
+          btn('transfer', t('tickets.buttons.transfer'), '🔄', ButtonStyle.Secondary),
+          ticket.remindersMuted
+            ? btn('mute', t('ticket_reminders.btn_muted_control'), '🔕', ButtonStyle.Success)
+            : btn('mute', t('ticket_reminders.btn_unmuted_control'), '📌', ButtonStyle.Secondary),
+          btn('delete', t('tickets.buttons.delete'), '🗑️', ButtonStyle.Danger),
+        ),
       ];
     }
     if (ticket.status === TicketStatus.DELETED) return [];

@@ -306,6 +306,14 @@ model Ticket {
   /// IDs des membres ajoutés
   participants Json         @default("[]")
   language     String?      @db.VarChar(8)
+  /// Dernier message d'un membre du staff dans le ticket
+  lastStaffReplyAt    DateTime?
+  /// Dernier message du créateur / d'un participant non staff
+  lastMemberMessageAt DateTime?
+  /// Dernière relance envoyée par le bot
+  lastReminderAt      DateTime?
+  /// Ticket « permanent » : plus de relance automatique
+  remindersMuted      Boolean   @default(false)
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -1140,4 +1148,15 @@ model HoneypotChannel {
   deleteWindowMinutes Int      @default(60)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+/// Réglages des relances automatiques des tickets sans réponse du staff.
+model TicketSettings {
+  guildId          String   @id @db.VarChar(32)
+  remindersEnabled Boolean  @default(true)
+  /// Délai sans réponse du staff avant une relance (heures)
+  reminderHours    Int      @default(24)
+  /// Qui mentionner : staff (rôles du type) | claimer (staff ayant pris le ticket, sinon rôles) | none
+  reminderPing     String   @default("claimer") @db.VarChar(16)
+  updatedAt        DateTime @updatedAt
 }

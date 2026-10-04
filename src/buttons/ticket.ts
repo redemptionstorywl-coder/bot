@@ -4,6 +4,7 @@ import type { InteractionContext } from '../structures/types';
 import { embedService } from '../services/EmbedService';
 import { DELETE_COUNTDOWN_SECONDS, TicketError, canCloseTicket, canManageTicket, canViewTicket, ticketService } from '../services/TicketService';
 import { buildCustomId } from '../utils/customId';
+import { ticketReminderService } from '../services/TicketReminderService';
 import { sleep } from '../utils/time';
 import { EPHEMERAL, loadTicketContext, replyTicketError, startOpenFlow } from '../commands/tickets/_shared';
 
@@ -52,6 +53,20 @@ const handlers: Record<string, Handler> = {
     await interaction.deferReply(EPHEMERAL);
     const updated = await ticketService.claimTicket({ ticketId: ticket.id, staffId: interaction.user.id, message: interaction.message });
     await interaction.editReply({ embeds: [embedService.success(t('tickets.actions.claimed_confirm', { number: updated.number }))] });
+  },
+
+  /** Ticket permanent : coupe / réactive les relances automatiques (staff uniquement). */
+  async mute(interaction, arg, ctx) {
+    const { t } = ctx;
+    const { ticket, actor } = await loadTicketContext(interaction, arg, ctx);
+    if (!canManageTicket(ticket, actor)) throw new TicketError('staff_only');
+    await interaction.deferReply(EPHEMERAL);
+    const muted = !ticket.remindersMuted;
+    await ticketReminderService.setMuted(ticket.id, muted);
+    const channel = interaction.channel?.isTextBased() && interaction.channel.type === ChannelType.GuildText ? interaction.channel : null;
+    await ticketService.refreshControlMessage({ ...ticket, remindersMuted: muted }, channel).catch(() => null);
+    if (channel) await channel.send({ content: t(muted ? 'ticket_reminders.muted_notice' : 'ticket_reminders.unmuted_notice', { user: `<@${interaction.user.id}>` }), allowedMentions: { parse: [] } }).catch(() => null);
+    await interaction.editReply({ embeds: [embedService.success(t(muted ? 'ticket_reminders.muted_confirm' : 'ticket_reminders.unmuted_confirm'))] });
   },
 
   async add(interaction, arg, ctx) {
