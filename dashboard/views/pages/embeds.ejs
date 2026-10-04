@@ -1,7 +1,6 @@
 <section class="page-header">
   <div><h2 class="page-title">Embeds</h2><p class="muted">Templates réutilisables par <code>/embed</code>, les annonces et le dashboard. Aperçu fidèle au rendu Discord.</p></div>
   <div class="page-actions">
-    <form method="post" action="/guilds/<%= guild.id %>/embeds/defaults" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost">Créer les templates par défaut</button></form>
     <a class="btn btn-primary" href="/guilds/<%= guild.id %>/embeds/new">+ Nouveau template</a>
   </div>
 </section>
@@ -26,7 +25,7 @@
   <div>
     <div class="card">
       <div class="card-head"><h3 class="card-title">Templates (<%= templates.length %>)</h3><input type="search" class="input input-sm" placeholder="Filtrer…" data-filter="#template-list" aria-label="Filtrer les templates"></div>
-      <% if (!templates.length) { %><p class="muted">Aucun template. Créez-en un, importez un JSON ou générez les templates par défaut (maintenance, patch note, saison, tournoi…).</p><% } %>
+      <% if (!templates.length) { %><p class="muted">Aucun template. Créez-en un ou importez un JSON.</p><% } %>
       <div class="card-grid" id="template-list">
         <% for (const t of templates) { %>
           <article class="card card-compact" data-filter-item data-filter-text="<%= (t.name + ' ' + (t.description || '')).toLowerCase() %>">

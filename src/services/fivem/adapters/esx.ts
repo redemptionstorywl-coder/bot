@@ -1,5 +1,5 @@
 import { FiveMFramework } from '@prisma/client';
-import { asRecord, BaseAdapter, firstDefined, normalizeSanctionType } from './base';
+import { asRecord, BaseAdapter, firstDefined, identifierList, normalizeSanctionType } from './base';
 import type { NormalizedSanction, NormalizedStats } from '../schemas';
 
 /**
@@ -36,6 +36,7 @@ export class EsxAdapter extends BaseAdapter {
     return this.parseSanction({
       identifier: firstDefined(p, ['identifier', 'license']) ?? firstDefined(target, ['identifier', 'license']),
       discordId: firstDefined(p, ['discordId', 'discord']) ?? firstDefined(target, ['discordId', 'discord']),
+      identifiers: identifierList(firstDefined(p, ['identifiers']) ?? firstDefined(target, ['identifiers'])),
       type: normalizeSanctionType(firstDefined(p, ['type', 'action'])),
       reason: firstDefined(p, ['reason', 'motif']) ?? '',
       duration: firstDefined(p, ['duration', 'time', 'expire']),

@@ -1,11 +1,6 @@
 {
   "untitled": "Untitled announcement",
   "duplicate_suffix": "(copy)",
-  "language_header": "{flag} **{language}**",
-  "modes": {
-    "CHANNELS": "separate channels per language",
-    "PERMISSIONS": "one message per language in the channel"
-  },
   "status": {
     "DRAFT": "Draft",
     "SCHEDULED": "Scheduled",
@@ -15,17 +10,12 @@
   "builder": {
     "title": "📢 New announcement",
     "title_edit": "📢 Announcement #{id}",
-    "mode": "Server multilingual mode: **{mode}**",
-    "hint": "Edit the embed, pick the languages, enter translations, then publish or schedule.",
+    "hint": "Edit the embed, pick the channel and mentions, then publish or schedule.",
     "status": "Status",
     "channel": "Channel",
     "mentions": "Mentions",
-    "languages": "Target languages",
     "date": "Publication date",
-    "source_language": "source language",
     "btn_embed": "Edit embed",
-    "btn_languages": "Languages",
-    "btn_translations": "Translations",
     "btn_mentions": "Mentions",
     "btn_channel": "Channel",
     "btn_date": "Publication date",
@@ -34,27 +24,15 @@
     "btn_schedule": "Schedule",
     "btn_draft": "Save draft",
     "btn_everyone": "@everyone",
-    "languages_placeholder": "Target languages",
-    "translations_placeholder": "Pick a language to translate…",
-    "translation_done": "Translation entered",
-    "translation_missing": "Missing — the source language will be used",
-    "translation_saved": "**{language}** translation saved.",
-    "translation_removed": "**{language}** translation removed (falls back to the source language).",
     "roles_placeholder": "Roles to mention (optional)",
     "channel_placeholder": "Publication channel",
     "date_set": "Date saved. Click “Schedule” to confirm.",
     "draft_saved": "Draft saved (announcement #{id}).",
-    "published": "Announcement #{id} published ({count} message(s)):\n{links}",
+    "published": "Announcement #{id} published:\n{links}",
     "messages_updated": "Announcement #{id}: {count} message(s) updated.",
     "scheduled": "Announcement #{id} scheduled for {date} ({relative}).",
     "cancelled": "Editor closed. No announcement saved.",
-    "cancelled_saved": "Editor closed. Announcement #{id} remains available via `/announce edit`.",
-    "btn_auto_translate": "Auto-translate",
-    "translation_auto": "🤖 automatic translation",
-    "translation_missing_auto": "⬜ will be translated automatically on publish",
-    "auto_translated": "🤖 Translations generated: {languages}. Review them before publishing.",
-    "auto_translate_unavailable": "Automatic translation unavailable for: {languages} (source language will be used).",
-    "auto_translate_nothing": "Every target language already has a translation."
+    "cancelled_saved": "Editor closed. Announcement #{id} remains available via `/announce edit`."
   },
   "cmd": {
     "delete_confirm": "Delete announcement **#{id} — {title}**?\n{count} Discord message(s) will also be deleted. This cannot be undone.",
@@ -62,18 +40,12 @@
     "deleted": "Announcement #{id} deleted.",
     "duplicated": "Announcement #{source} duplicated → draft **#{id}**.",
     "scheduled": "Announcement #{id} scheduled for {date} ({relative}).",
-    "published": "Announcement #{id} published ({count} message(s)):\n{links}",
+    "published": "Announcement #{id} published:\n{links}",
     "archived": "Announcement #{id} archived.",
     "list_empty": "No announcement for this filter.",
     "list_title": "📢 Announcements ({count})"
   },
   "modal": {
-    "translation": {
-      "title": "{language} translation",
-      "field_title": "Translated title",
-      "field_description": "Translated description",
-      "field_content": "Translated content (above the embed)"
-    },
     "date": {
       "title": "Publication date",
       "field_date": "Date",
@@ -83,8 +55,7 @@
   "errors": {
     "not_found": "Announcement not found (`{details}`).",
     "already_published": "This announcement is already published. Use `/announce edit` to update its messages.",
-    "no_channel": "No publication channel: pick a channel or configure per-language channels.",
-    "no_targets": "No target language.",
+    "no_channel": "No publication channel: pick a channel.",
     "send_failed": "Sending failed: {details}",
     "invalid_status": "Status incompatible with this action.",
     "no_client": "The bot is not ready yet. Try again in a few seconds.",

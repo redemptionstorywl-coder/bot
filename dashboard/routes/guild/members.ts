@@ -3,7 +3,6 @@ import { z } from 'zod';
 import type { GuildMember } from 'discord.js';
 import type { RedemptionClient } from '../../../src/core/Client';
 import { prisma } from '../../../src/database/client';
-import { LANGUAGES } from '../../../src/config/constants';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
 import { validate, valid, discordIdSchema } from '../../lib/validate';
@@ -22,10 +21,9 @@ interface MemberRow {
   joinedAt: Date | null;
   roles: { id: string; name: string; color: string }[];
   roleCount: number;
-  language: string | null;
 }
 
-function toRow(member: GuildMember, language: string | null): MemberRow {
+function toRow(member: GuildMember): MemberRow {
   const roles = member.roles.cache
     .filter((r) => r.id !== member.guild.id)
     .sort((a, b) => b.position - a.position)
@@ -39,7 +37,6 @@ function toRow(member: GuildMember, language: string | null): MemberRow {
     joinedAt: member.joinedAt,
     roles: roles.slice(0, 4),
     roleCount: roles.length,
-    language,
   };
 }
 
@@ -68,15 +65,11 @@ export function createMembersRouter(client: RedemptionClient): Router {
         if (guild.members.cache.size < Math.min(LIMIT, guild.memberCount)) await guild.members.fetch({ limit: LIMIT }).catch(() => null);
         members = [...guild.members.cache.values()].sort((a, b) => (b.joinedTimestamp ?? 0) - (a.joinedTimestamp ?? 0)).slice(0, LIMIT);
       }
-      const ids = members.map((m) => m.id);
-      const langRows = ids.length ? await prisma.userLanguage.findMany({ where: { guildId: guild.id, userId: { in: ids } } }) : [];
-      const langMap = new Map(langRows.map((r) => [r.userId, r.language]));
       render(res, 'members', {
         title: 'Membres',
         page: 'members',
         q: query.q,
-        members: members.map((m) => toRow(m, langMap.get(m.id) ?? null)),
-        languages: Object.fromEntries(LANGUAGES.map((l) => [l.code, l])),
+        members: members.map((m) => toRow(m)),
         cached: guild.members.cache.size,
         total: guild.memberCount,
       });
@@ -94,8 +87,7 @@ export function createMembersRouter(client: RedemptionClient): Router {
       const member = await guild.members.fetch({ user: params.userId }).catch(() => null);
       const user = member?.user ?? (await client.users.fetch(params.userId).catch(() => null));
       if (!user) throw new HttpError(404, 'Membre introuvable.');
-      const [language, warnings, sanctions, tickets, dbUser] = await Promise.all([
-        prisma.userLanguage.findUnique({ where: { userId_guildId: { userId: params.userId, guildId: guild.id } } }),
+      const [warnings, sanctions, tickets, dbUser] = await Promise.all([
         prisma.warning.findMany({ where: { guildId: guild.id, userId: params.userId }, orderBy: { createdAt: 'desc' }, take: 50 }),
         prisma.sanction.findMany({ where: { guildId: guild.id, userId: params.userId }, orderBy: { createdAt: 'desc' }, take: 50 }),
         prisma.ticket.findMany({ where: { guildId: guild.id, userId: params.userId }, orderBy: { createdAt: 'desc' }, take: 50, include: { type: true } }),
@@ -121,10 +113,8 @@ export function createMembersRouter(client: RedemptionClient): Router {
           inGuild: Boolean(member),
           roles,
           timeoutUntil: member?.communicationDisabledUntil ?? null,
-          language: language?.language ?? null,
           knownSince: dbUser?.createdAt ?? null,
         },
-        languages: Object.fromEntries(LANGUAGES.map((l) => [l.code, l])),
         warnings,
         sanctions,
         tickets,

@@ -473,6 +473,18 @@ export class TicketService {
     return panel;
   }
 
+  /** Republie un panneau existant dans son salon (après recréation du salon) et mémorise le nouveau message. */
+  async republishPanel(panelId: number): Promise<TicketPanel | null> {
+    const panel = await prisma.ticketPanel.findUnique({ where: { id: panelId } });
+    if (!panel || !this.client) return null;
+    const channel = await this.client.channels.fetch(panel.channelId).catch(() => null);
+    if (!channel || (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement)) return null;
+    const config = await guildConfigService.get(panel.guildId);
+    const types = await this.getPanelTypes(panel);
+    const message = await channel.send(this.buildPanelMessage(panel, types, channel.guild, config?.defaultLanguage ?? 'fr', config?.brandColor ?? BRAND.colors.primary));
+    return prisma.ticketPanel.update({ where: { id: panel.id }, data: { messageId: message.id } });
+  }
+
   async deletePanel(guildId: string, id: number): Promise<TicketPanel> {
     const panel = await prisma.ticketPanel.findUnique({ where: { id } });
     if (!panel || panel.guildId !== guildId) throw new TicketError('panel_not_found');

@@ -66,7 +66,7 @@ export function createGiveawaysRouter(client: RedemptionClient): Router {
         winnersOf: (g: { winners: unknown }) => asStringArray(g.winners),
         channelName: (id: string) => guild.textChannels.find((c) => c.id === id)?.name ?? id,
         roleName: (id: string | null) => (id ? (guild.roles.find((r) => r.id === id)?.name ?? id) : null),
-        languages: LANGUAGES.filter((l) => config.enabledLanguages.includes(l.code)),
+        languages: LANGUAGES,
         minEnd: toLocalInputValue(new Date(Date.now() + 10 * 60_000), config.timezone),
         timezone: config.timezone,
         moduleEnabled: config.modules.giveaways,

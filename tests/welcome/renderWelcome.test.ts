@@ -37,7 +37,6 @@ function config(overrides: Partial<WelcomeConfig> = {}): WelcomeConfig {
     dmMessage: null,
     dmEmbed: null,
     buttons: [],
-    languagePromptEnabled: false,
     updatedAt: new Date(),
     ...overrides,
   };
@@ -52,7 +51,7 @@ describe('renderWelcome', () => {
     expect(r.components).toHaveLength(0);
   });
 
-  it('choisit la langue de l’utilisateur dans un message multilingue avec fallback serveur', () => {
+  it('lit un ancien message multilingue dans la langue demandée avec fallback serveur', () => {
     const cfg = config({ message: { fr: 'Salut {username}', en: 'Hi {username}' } });
     expect(renderWelcome(fakeMember(), cfg, { language: 'en', fallbackLanguage: 'fr' }).content).toBe('Hi alice');
     expect(renderWelcome(fakeMember(), cfg, { language: 'de', fallbackLanguage: 'fr' }).content).toBe('Salut alice');
@@ -76,9 +75,8 @@ describe('renderWelcome', () => {
     expect(renderWelcome(fakeMember(), config(), { language: 'en' }).content).toContain('Welcome');
   });
 
-  it('ajoute les boutons configurés et le bouton « Choisir ma langue »', () => {
+  it('ajoute les boutons configurés (valides uniquement)', () => {
     const cfg = config({
-      languagePromptEnabled: true,
       buttons: [
         { label: 'Site', style: 'link', url: 'https://redemption-story.example' },
         { label: 'Rôle', style: 'secondary', customId: 'rolemenu:toggle:444444444444444444' },
@@ -88,10 +86,9 @@ describe('renderWelcome', () => {
     const r = renderWelcome(fakeMember(), cfg, { language: 'fr' });
     expect(r.components).toHaveLength(1);
     const row = r.components[0]!.toJSON();
-    expect(row.components).toHaveLength(3);
+    expect(row.components).toHaveLength(2);
     const ids = row.components.map((c) => ('custom_id' in c ? c.custom_id : (c as { url?: string }).url));
     expect(ids).toContain('rolemenu:toggle:444444444444444444');
-    expect(ids).toContain('welcome:lang:222222222222222222');
     expect(ids).toContain('https://redemption-story.example');
     expect(renderWelcome(fakeMember(), cfg, { language: 'fr', withButtons: false }).components).toHaveLength(0);
   });

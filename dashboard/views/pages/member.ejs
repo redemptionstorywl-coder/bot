@@ -11,7 +11,6 @@
     <dl class="dl">
       <dt>Compte créé</dt><dd><%= fmt.date(member.createdAt) %></dd>
       <dt>Arrivée</dt><dd><%= fmt.dateTime(member.joinedAt) %></dd>
-      <dt>Langue</dt><dd><% if (member.language && languages[member.language]) { %><%= languages[member.language].flag %> <%= languages[member.language].nativeLabel %><% } else { %><span class="muted">non choisie</span><% } %></dd>
       <% if (member.timeoutUntil && new Date(member.timeoutUntil) > new Date()) { %><dt>Exclusion temporaire</dt><dd class="text-danger">jusqu'au <%= fmt.dateTime(member.timeoutUntil) %></dd><% } %>
     </dl>
     <h3 class="card-subtitle">Rôles (<%= member.roles.length %>)</h3>

@@ -13,12 +13,22 @@
     "battlepass": "🎟️ Battle Pass",
     "tier": "Palier",
     "identifier": "🔗 Identifiant FiveM",
-    "not_linked": "Non lié — `/br-link`"
+    "not_linked": "Non lié — lancez FiveM avec Discord ouvert ou `/br-link`",
+    "status": "🎮 Statut",
+    "in_game": "🟢 En jeu sur {server}",
+    "offline": "🔴 Hors ligne",
+    "last_seen": "🕒 Dernière connexion",
+    "ingame_name": "🏷️ Pseudo en jeu"
   },
   "leaderboard": {
     "title": "🏆 Classement {metric} — Saison {season}",
     "empty": "Aucune statistique pour la saison {season}.",
-    "metrics": { "wins": "Victoires", "kills": "Kills", "level": "Niveau", "kd": "K/D" }
+    "metrics": {
+      "wins": "Victoires",
+      "kills": "Kills",
+      "level": "Niveau",
+      "kd": "K/D"
+    }
   },
   "battlepass": {
     "title": "🎟️ Battle Pass — Saison {season} · {name}",

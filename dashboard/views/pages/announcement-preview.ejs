@@ -2,10 +2,7 @@
   <div>
     <a class="link" href="/guilds/<%= guild.id %>/announcements/<%= announcement.id %>">← Retour à l'annonce</a>
     <h2 class="page-title">Aperçu · <%= announcement.title %></h2>
-    <p class="muted">Rendu tel qu'il sera envoyé (variables remplacées, couleur de marque appliquée).<% if (!translated) { %> <strong>Aucune traduction pour cette langue : contenu source affiché.</strong><% } %></p>
-  </div>
-  <div class="page-actions">
-    <% for (const l of languages) { %><a class="btn btn-sm <%= l.code === lang ? 'btn-primary' : 'btn-ghost' %>" href="/guilds/<%= guild.id %>/announcements/<%= announcement.id %>/preview?lang=<%= l.code %>"><%= l.flag %> <%= l.code.toUpperCase() %></a><% } %>
+    <p class="muted">Rendu tel qu'il sera envoyé (variables remplacées, couleur de marque appliquée).</p>
   </div>
 </section>
 <div class="card">

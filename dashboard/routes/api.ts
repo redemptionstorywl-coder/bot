@@ -35,7 +35,7 @@ export function createApiRouter(client: RedemptionClient): Router {
   });
   guild.get('/config', (_req, res) => {
     const c = res.locals.config!;
-    res.json({ guildId: c.guildId, kind: c.kind, defaultLanguage: c.defaultLanguage, enabledLanguages: c.enabledLanguages, modules: c.modules, translationMode: c.translationMode, logChannels: c.logChannels, brandColor: c.brandColor });
+    res.json({ guildId: c.guildId, kind: c.kind, defaultLanguage: c.defaultLanguage, modules: c.modules, logChannels: c.logChannels, brandColor: c.brandColor });
   });
   guild.post('/modules/:key', toggleModuleHandler(client));
   router.use('/guilds/:guildId', guild);

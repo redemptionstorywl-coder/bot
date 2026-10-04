@@ -1,5 +1,5 @@
 import { FiveMFramework } from '@prisma/client';
-import { asRecord, BaseAdapter, firstDefined, normalizeSanctionType } from './base';
+import { asRecord, BaseAdapter, firstDefined, identifierList, normalizeSanctionType } from './base';
 import type { NormalizedSanction, NormalizedStats } from '../schemas';
 
 /**
@@ -42,6 +42,7 @@ export class QbCoreAdapter extends BaseAdapter {
     return this.parseSanction({
       identifier: this.resolveIdentifier(p),
       discordId: firstDefined(p, ['discordId', 'discord']),
+      identifiers: identifierList(firstDefined(p, ['identifiers'])),
       type: normalizeSanctionType(firstDefined(p, ['type', 'action'])),
       reason: firstDefined(p, ['reason']) ?? '',
       duration: firstDefined(p, ['duration', 'expire', 'time']),

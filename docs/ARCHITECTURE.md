@@ -10,10 +10,10 @@ Node 22 · TypeScript (CommonJS, `strict`) · discord.js v14 · Prisma 6 (MySQL)
 src/
   index.ts                 bootstrap (env → DB → client → loaders → login → dashboard)
   config/env.ts            variables d'env validées par Zod (env())
-  config/constants.ts      BRAND, MODULE_KEYS, LANGUAGES (+ IDs rôles BR), LOG_CATEGORY_LABELS, TEMPLATE_VARIABLES
+  config/constants.ts      BRAND, MODULE_KEYS, LANGUAGES (fr, en), LOG_CATEGORY_LABELS, TEMPLATE_VARIABLES
   core/Client.ts           RedemptionClient (collections commands/buttons/selectMenus/modals/modules, cooldowns, bus)
   core/loaders.ts          chargement récursif de commands/, buttons/, selectMenus/, modals/, events/, modules/
-  core/context.ts          resolveContext(client, interaction) → { client, config, lang, t }
+  core/context.ts          resolveContext(client, interaction) → { client, config, lang, t } (lang = langue du serveur)
   core/deploy.ts           déploiement des slash commands
   core/tasks.ts            tâches planifiées génériques
   structures/              types + helpers defineCommand/defineButton/defineSelectMenu/defineModal/defineEvent/defineModule
@@ -44,15 +44,15 @@ export default defineCommand({
   async execute(interaction, ctx) { const { t, lang, config, client } = ctx; /* … */ },
 });
 ```
-- `ctx.t(key, vars)` traduit dans la langue de l'utilisateur. **Aucun texte utilisateur en dur** : tout passe par `t()` avec les fichiers `locales/fr/<ns>.json` **et** `locales/en/<ns>.json` (les deux obligatoires ; les 8 autres langues sont générées ensuite).
-- `ctx.config` = `ResolvedGuildConfig` (kind, modules, staffRoleIds, adminRoleIds, brandColor, logChannels, enabledLanguages, translationMode, languageChannels).
+- `ctx.t(key, vars)` traduit dans la langue du serveur (`GuildSettings.defaultLanguage`, `fr` ou `en`). **Aucun texte utilisateur en dur** : tout passe par `t()` avec les fichiers `locales/fr/<ns>.json` **et** `locales/en/<ns>.json` (seules langues, parité des clés testée).
+- `ctx.config` = `ResolvedGuildConfig` (kind, modules, defaultLanguage, staffRoleIds, adminRoleIds, brandColor, logChannels).
 - Réponses de confirmation/erreur : `MessageFlags.Ephemeral`. Embeds : `embedService.brand/success/error/warning/info`. Couleur par défaut `config.brandColor`.
 - Permissions internes : `'everyone' | 'staff' | 'admin' | 'owner'` (staff = rôles staff configurés ou ModerateMembers/ManageGuild ; admin = rôles admin ou Administrator).
 
 ### Composants (boutons, menus, modals)
 - customId = `namespace:arg1:arg2` construit avec `buildCustomId('ticket', 'close', ticketId)` (`src/utils/customId.ts`). Max 100 caractères.
 - Handler : `export default defineButton({ id: 'ticket', module: 'tickets', async execute(interaction, args, ctx) { const [action, id] = args; } })`.
-- Un namespace par module (`ticket`, `rolemenu`, `giveaway`, `poll`, `event`, `announce`, `embed`, `lang`, `welcome`, `notif`, `whitelist`, `shop`, `school`, `br`…). **Ne réutilisez pas le namespace d'un autre module.**
+- Un namespace par module (`ticket`, `rolemenu`, `giveaway`, `poll`, `event`, `announce`, `embed`, `welcome`, `notif`, `whitelist`, `shop`, `school`, `br`…). **Ne réutilisez pas le namespace d'un autre module.**
 - Les namespaces `noop` et `pg` sont réservés.
 
 ### Services

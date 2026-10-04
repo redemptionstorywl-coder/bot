@@ -23,7 +23,7 @@
     "list_title": "🎭 Auto roles",
     "empty": "No auto role yet. Add one with `/autorole add`.",
     "types_title": "Triggers",
-    "types_help": "`JOIN` member joins · `BOT` bot joins · `VERIFIED` membership screening passed · `MEMBER` / `LANGUAGE` after choosing a language · `SPECIAL` manual"
+    "types_help": "`JOIN` member joins · `BOT` bot joins · `VERIFIED` membership screening passed · `SPECIAL` manual"
   },
   "rolemenu": {
     "default_name": "Role menu",

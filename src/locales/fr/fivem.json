@@ -17,7 +17,9 @@
     "auth_hint": "En-tête `{header}` = clé API globale (FIVEM_API_KEY) ou la clé propre à ce serveur.",
     "docs": "Documentation complète : docs/FIVEM.md"
   },
-  "remove": { "done": "Serveur **{name}** retiré." },
+  "remove": {
+    "done": "Serveur **{name}** retiré."
+  },
   "list": {
     "title": "🎮 Serveurs FiveM ({count})",
     "empty": "Aucun serveur FiveM configuré. Utilisez `/fivem add`."
@@ -32,7 +34,8 @@
   },
   "players": {
     "title": "👥 {name} — {count} joueur(s)",
-    "empty": "Aucun joueur connecté sur **{name}** (ou serveur hors ligne)."
+    "empty": "Aucun joueur connecté sur **{name}** (ou serveur hors ligne).",
+    "not_linked": "non lié"
   },
   "errors": {
     "not_found": "Serveur introuvable. Vérifiez la clé avec `/fivem list`.",
@@ -42,5 +45,42 @@
     "unreachable": "Serveur injoignable (timeout ou erreur HTTP).",
     "unauthorized": "Clé API invalide.",
     "disabled": "Ce serveur est désactivé."
+  },
+  "counter": {
+    "online": "🟢 En ligne : {players}/{max}",
+    "offline": "🔴 Hors ligne",
+    "maintenance": "🟠 Maintenance"
+  },
+  "check": {
+    "banned": "Vous êtes banni de {server}. Raison : {reason}.",
+    "until": "Fin du bannissement dans {duration}.",
+    "no_reason": "aucune raison précisée",
+    "discord_required": "Connexion refusée : ouvrez Discord sur votre PC avant de lancer FiveM pour lier votre compte, puis réessayez.",
+    "not_member": "Connexion refusée : rejoignez d’abord le serveur Discord {server}.",
+    "missing_role": "Connexion refusée : le rôle Discord « {role} » est requis sur {server}.",
+    "not_whitelisted": "Connexion refusée : vous n’êtes pas whitelisté. Faites une demande sur le Discord {server}."
+  },
+  "sync": {
+    "title": "🔄 Synchronisation — {name}",
+    "updated": "🔄 Synchronisation mise à jour — {name}",
+    "on": "activé",
+    "off": "désactivé",
+    "bans_to_discord": "Ban jeu → Discord",
+    "bans_to_game": "Ban Discord → jeu",
+    "kicks": "Kick jeu → Discord",
+    "nicknames": "Pseudo jeu → surnom",
+    "linked_role": "Rôle « compte lié »",
+    "online_role": "Rôle « en jeu »",
+    "counter_channel": "Salon compteur",
+    "require_discord": "Discord obligatoire",
+    "require_role": "Rôle requis",
+    "require_whitelist": "Whitelist requise",
+    "footer": "Le bot doit avoir « Gérer les pseudos » / « Gérer les rôles » et être placé au-dessus des rôles concernés.",
+    "invalid": "Réglage invalide : {details}"
+  },
+  "link": {
+    "done": "{user} est maintenant lié à `{license}`.",
+    "invalid": "Licence invalide. Format attendu : `license:0123abcd…`.",
+    "bot": "Impossible de lier un bot."
   }
 }

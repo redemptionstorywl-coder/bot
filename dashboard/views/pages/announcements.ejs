@@ -14,10 +14,9 @@
         <a class="status-item" href="/guilds/<%= guild.id %>/announcements/<%= a.id %>">
           <strong><%= a.title || 'Sans titre' %></strong>
           <small>
-            <%= a.sourceLanguage.toUpperCase() %> → <%= a.targetLanguages === '*' ? 'toutes' : a.targetLanguages.join(', ').toUpperCase() %>
-            <% if (a.channelId) { %>· #<%= channelName(a.channelId) %><% } %>
+            <% if (a.channelId) { %>#<%= channelName(a.channelId) %><% } else { %>Aucun salon<% } %>
             <% if (col.status === 'SCHEDULED' && scheduleMap[a.id]) { %>· 📅 <%= fmt.dateTime(scheduleMap[a.id]) %><% } %>
-            <% if (col.status === 'PUBLISHED') { %>· publiée <%= fmt.relative(a.publishedAt) %> (<%= a.messages.length %> msg)<% } %>
+            <% if (col.status === 'PUBLISHED') { %>· publiée <%= fmt.relative(a.publishedAt) %><% } %>
             <% if (col.status === 'ARCHIVED') { %>· archivée <%= fmt.relative(a.archivedAt) %><% } %>
             <% if (col.status === 'DRAFT') { %>· modifiée <%= fmt.relative(a.updatedAt) %><% } %>
           </small>

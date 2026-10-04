@@ -1,13 +1,16 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, GuildMember, MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { defineButton } from '../structures';
 import { ModerationError, moderationService } from '../services/ModerationService';
 import { embedService } from '../services/EmbedService';
 import { buildCustomId } from '../utils/customId';
 import { lockdownReasonKey, pendingLockdownReasons } from '../commands/moderation/_shared';
+import { hasInternalPermission } from '../utils/permissions';
+import { env } from '../config/env';
 
 /**
  * Boutons du module modération (namespace `mod`) :
  *  - mod:cancel                       → ferme la confirmation
+ *  - mod:nuke:<channelId>             → /clear salon : recrée le salon vide (admin)
  *  - mod:lockdown:<on|off>            → applique le lockdown (confirmation de /lockdown ; raison lue dans pendingLockdownReasons)
  *  - mod:clearwarns:<userId>          → demande confirmation
  *  - mod:clearwarns-confirm:<userId>  → retire tous les avertissements
@@ -29,6 +32,11 @@ export default defineButton({
         return;
       }
       case 'nuke': {
+        const member = interaction.member instanceof GuildMember ? interaction.member : null;
+        if (!hasInternalPermission({ member, config: ctx.config, ownerIds: env().OWNER_IDS, required: 'admin' })) {
+          await interaction.reply({ embeds: [embedService.error(t('moderation.nuke_guild.admin_only'))], flags: MessageFlags.Ephemeral });
+          return;
+        }
         const channel = await interaction.guild.channels.fetch(a1 ?? '').catch(() => null);
         if (!channel || !channel.isTextBased() || channel.isDMBased() || channel.isThread()) {
           await interaction.update({ embeds: [embedService.error(t('core.channel_not_found'))], components: [] });

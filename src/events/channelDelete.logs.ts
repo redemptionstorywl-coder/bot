@@ -1,13 +1,15 @@
 import { AuditLogEvent, ChannelType, Events } from 'discord.js';
 import { defineEvent } from '../structures';
 import { loggingService } from '../services/LoggingService';
+import { moderationService } from '../services/ModerationService';
 import { BRAND } from '../config/constants';
 import { fetchAudit, logContext, userLine } from './_logs.helpers';
 
 export default defineEvent({
   name: Events.ChannelDelete,
   async execute(_client, channel) {
-    if (channel.isDMBased()) return;
+    // Salons recréés par /clear : un seul rapport (case PURGE) au lieu d'un log par salon.
+    if (channel.isDMBased() || moderationService.isNukeDeletion(channel.id)) return;
     const ctx = await logContext(channel.guild.id);
     if (!ctx) return;
     const { t } = ctx;

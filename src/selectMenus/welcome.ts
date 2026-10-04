@@ -35,7 +35,7 @@ export default defineSelectMenu({
       await welcomeService.updateLeaveConfig(guildId, { channelId, enabled: true });
       notice.text = t('welcome.leave.config.channel_set', { channel: `<#${channelId}>` });
     }
-    const payload = await renderPanel({ guild: interaction.guild, tab, t, lang: ctx.lang, fallbackLang: config!.defaultLanguage, notice });
+    const payload = await renderPanel({ guild: interaction.guild, tab, t, lang: ctx.lang, notice });
     await interaction.update(payload);
   },
 });

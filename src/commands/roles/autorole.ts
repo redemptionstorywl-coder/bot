@@ -1,14 +1,14 @@
 import { MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import { AutoRoleType } from '@prisma/client';
 import { defineCommand } from '../../structures';
-import { roleService, MAX_AUTOROLE_DELAY_SECONDS } from '../../services/RoleService';
+import { roleService, ACTIVE_AUTOROLE_TYPES, MAX_AUTOROLE_DELAY_SECONDS } from '../../services/RoleService';
 import { embedService } from '../../services/EmbedService';
 import { canManageRole } from '../../utils/permissions';
 import { formatDuration, parseDuration } from '../../utils/time';
 
-const typeChoices = Object.values(AutoRoleType).map((v) => ({ name: v, value: v }));
+const typeChoices = ACTIVE_AUTOROLE_TYPES.map((v) => ({ name: v, value: v }));
 
-/** /autorole — rôles automatiques (JOIN, BOT, VERIFIED, MEMBER, LANGUAGE, SPECIAL) avec délai optionnel. */
+/** /autorole — rôles automatiques (JOIN, BOT, VERIFIED, SPECIAL) avec délai optionnel. */
 export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('autorole')

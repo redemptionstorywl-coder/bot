@@ -9,7 +9,6 @@ import { createGuildDashboardRouter } from './guild/dashboard';
 import { createSettingsRouter } from './guild/settings';
 import { createLogsRouter } from './guild/logs';
 import { createMembersRouter } from './guild/members';
-import { createTranslationsRouter } from './guild/translations';
 import { createTicketsRouter } from './guild/tickets';
 import { createEmbedsRouter } from './guild/embeds';
 import { createAnnouncementsRouter } from './guild/announcements';
@@ -48,7 +47,6 @@ export function mountRoutes(client: RedemptionClient): Router {
     createSettingsRouter,
     createLogsRouter,
     createMembersRouter,
-    createTranslationsRouter,
     createTicketsRouter,
     createEmbedsRouter,
     createAnnouncementsRouter,

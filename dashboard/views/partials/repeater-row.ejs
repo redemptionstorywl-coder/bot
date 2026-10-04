@@ -16,7 +16,7 @@
     </select>
     <input class="input input-sm" data-field="emoji" maxlength="64" placeholder="Emoji" value="<%= r.emoji || '' %>" aria-label="Emoji">
     <input class="input input-sm" data-field="url" type="url" maxlength="2048" placeholder="URL (style lien)" value="<%= r.url || '' %>" aria-label="URL du bouton">
-    <input class="input input-sm input-mono" data-field="customId" maxlength="100" placeholder="customId (ex. welcome:lang:ID)" value="<%= r.customId || '' %>" aria-label="Identifiant interne">
+    <input class="input input-sm input-mono" data-field="customId" maxlength="100" placeholder="customId (ex. rolemenu:toggle:ID)" value="<%= r.customId || '' %>" aria-label="Identifiant interne">
   <% } else if (kind === 'question') { %>
     <input class="input input-sm input-mono" data-field="id" maxlength="32" pattern="^[a-zA-Z0-9_-]+$" placeholder="identifiant (ex. details)" value="<%= r.id || '' %>" aria-label="Identifiant de la question">
     <input class="input input-sm" data-field="label" maxlength="45" placeholder="Question (45 car. max)" value="<%= r.label || '' %>" aria-label="Libellé de la question">

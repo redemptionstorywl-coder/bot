@@ -9,7 +9,7 @@ const prismaMock = prisma as unknown as ReturnType<typeof createPrismaMock>;
 vi.mock('../../src/services/LoggingService', () => ({ loggingService: { log: vi.fn(async () => undefined) } }));
 vi.mock('../../src/services/GuildConfigService', () => ({
   guildConfigService: {
-    get: vi.fn(async () => ({ guildId: 'g', defaultLanguage: 'fr', enabledLanguages: ['fr', 'en'], translationMode: 'CHANNELS', languageChannels: {}, brandColor: 0x7c3aed })),
+    get: vi.fn(async () => ({ guildId: 'g', defaultLanguage: 'fr', brandColor: 0x7c3aed })),
   },
 }));
 
@@ -25,9 +25,6 @@ function row(overrides: Record<string, unknown> = {}) {
     title: 'Hello',
     content: null,
     spec: { title: 'Hello' },
-    translations: {},
-    sourceLanguage: 'fr',
-    targetLanguages: '*',
     channelId: 'chan',
     mentionRoleIds: [],
     mentionEveryone: false,
@@ -81,7 +78,7 @@ describe('AnnouncementService.processDue', () => {
     const r = await service.processDue(now);
     expect(r).toEqual({ sent: 1, failed: 0 });
     expect(send).toHaveBeenCalledTimes(1);
-    expect(prismaMock.announcement.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 7 }, data: expect.objectContaining({ status: 'PUBLISHED', messages: [{ channelId: 'chan', messageId: 'msg1', language: 'fr' }] }) }));
+    expect(prismaMock.announcement.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 7 }, data: expect.objectContaining({ status: 'PUBLISHED', messages: [{ channelId: 'chan', messageId: 'msg1' }] }) }));
     expect(prismaMock.scheduledAnnouncement.update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 1 }, data: expect.objectContaining({ status: 'SENT' }) }));
     expect(loggingService.log).toHaveBeenCalledWith(expect.objectContaining({ category: 'ANNOUNCEMENT', action: 'announcement.publish_scheduled' }));
   });

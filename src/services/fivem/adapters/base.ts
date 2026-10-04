@@ -56,7 +56,14 @@ export function asRecord(payload: unknown): Record<string, unknown> {
   return payload && typeof payload === 'object' && !Array.isArray(payload) ? (payload as Record<string, unknown>) : {};
 }
 
-const SANCTION_ALIASES: Record<string, 'BAN' | 'KICK' | 'WARN'> = {
+/** Liste d'identifiants (tableau de chaînes) ou undefined. */
+export function identifierList(v: unknown): string[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const out = v.filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= 128).slice(0, 20);
+  return out.length ? out : undefined;
+}
+
+const SANCTION_ALIASES: Record<string, 'BAN' | 'KICK' | 'WARN' | 'UNBAN'> = {
   ban: 'BAN',
   banned: 'BAN',
   tempban: 'BAN',
@@ -65,6 +72,10 @@ const SANCTION_ALIASES: Record<string, 'BAN' | 'KICK' | 'WARN'> = {
   warn: 'WARN',
   warning: 'WARN',
   avertissement: 'WARN',
+  unban: 'UNBAN',
+  unbanned: 'UNBAN',
+  pardon: 'UNBAN',
+  deban: 'UNBAN',
 };
 
 export function normalizeSanctionType(v: unknown): string | undefined {

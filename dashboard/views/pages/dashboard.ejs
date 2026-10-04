@@ -1,7 +1,7 @@
 <section class="page-header">
   <div>
     <h2 class="page-title"><%= guild.name %></h2>
-    <p class="muted"><%= overview.kindLabel %> · langue par défaut <strong><%= overview.defaultLanguage.toUpperCase() %></strong> · <%= overview.enabledLanguages.length %> langue(s) activée(s)</p>
+    <p class="muted"><%= overview.kindLabel %> · langue du bot <strong><%= overview.defaultLanguage.toUpperCase() %></strong></p>
   </div>
   <div class="page-actions">
     <a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/settings">Paramètres</a>
@@ -22,20 +22,12 @@
 
 <div class="grid-2">
   <section class="card">
-    <div class="card-head"><h3 class="card-title">Membres par langue</h3><span class="muted"><%= fmt.number(overview.languageUsers) %> membres ont choisi une langue</span></div>
-    <% if (!overview.languages.length) { %>
-      <p class="muted">Aucune langue activée.</p>
-    <% } else { %>
-    <ul class="bars">
-      <% for (const l of overview.languages) { %>
-        <li class="bar-row">
-          <span class="bar-label"><span aria-hidden="true"><%= l.flag %></span> <%= l.label %> <% if (!overview.enabledLanguages.includes(l.code)) { %><span class="badge badge-muted">désactivée</span><% } %></span>
-          <span class="bar-track"><span class="bar-fill" data-pct="<%= l.percent %>"></span></span>
-          <span class="bar-value"><%= fmt.number(l.count) %> <small>(<%= l.percent %> %)</small></span>
-        </li>
-      <% } %>
-    </ul>
-    <% } %>
+    <div class="card-head"><h3 class="card-title">Activité</h3></div>
+    <dl class="kv-grid">
+      <div class="kv-row"><dt class="kv-key">Sanctions enregistrées</dt><dd><%= fmt.number(overview.counts.sanctions) %></dd></div>
+      <div class="kv-row"><dt class="kv-key">Logs enregistrés</dt><dd><%= fmt.number(overview.counts.logs) %></dd></div>
+      <div class="kv-row"><dt class="kv-key">Tâches planifiées</dt><dd><%= overview.tasks.length %></dd></div>
+    </dl>
   </section>
 
   <section class="card">

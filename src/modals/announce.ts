@@ -3,11 +3,9 @@ import { defineModal } from '../structures';
 import type { InteractionContext } from '../structures/types';
 import type { Translator } from '../services/TranslationService';
 import { embedService } from '../services/EmbedService';
-import { announcementTranslationSchema, resolveTranslation } from '../services/AnnouncementService';
 import { embedBuilderSessions, optionalText, renderBuilder, renderContextFromInteraction, type BuilderSession } from '../services/EmbedBuilderSession';
 import { buildCustomId } from '../utils/customId';
 import { parseDateInput } from '../utils/time';
-import { getLanguage } from '../config/constants';
 
 function text(id: string, style: TextInputStyle, opts: { value?: string; placeholder?: string; required?: boolean; max?: number } = {}): TextInputBuilder {
   const input = new TextInputBuilder().setCustomId(id).setStyle(style).setRequired(opts.required ?? false);
@@ -17,25 +15,8 @@ function text(id: string, style: TextInputStyle, opts: { value?: string; placeho
   return input;
 }
 
-function label(t: Translator, key: string, input: TextInputBuilder, vars?: Record<string, string>): LabelBuilder {
-  return new LabelBuilder().setLabel(t(key, vars).slice(0, 45)).setTextInputComponent(input);
-}
-
-/** Modal de traduction (titre / description / contenu) pour une langue, pré-rempli. */
-export function buildTranslationModal(session: BuilderSession, lang: string, t: Translator): ModalBuilder {
-  const ann = session.announcement!;
-  const existing = ann.translations[lang];
-  const def = getLanguage(lang);
-  const source = { spec: session.spec, content: session.content, translations: {}, sourceLanguage: ann.sourceLanguage };
-  const fallback = resolveTranslation(source, ann.sourceLanguage);
-  return new ModalBuilder()
-    .setCustomId(buildCustomId('announce', 'tr', session.id, lang))
-    .setTitle(t('announcements.modal.translation.title', { language: `${def?.flag ?? ''} ${def?.nativeLabel ?? lang}`.trim() }).slice(0, 45))
-    .addLabelComponents(
-      label(t, 'announcements.modal.translation.field_title', text('title', TextInputStyle.Short, { value: existing?.title, placeholder: fallback.spec.title, max: 256 })),
-      label(t, 'announcements.modal.translation.field_description', text('description', TextInputStyle.Paragraph, { value: existing?.description, placeholder: fallback.spec.description, max: 4000 })),
-      label(t, 'announcements.modal.translation.field_content', text('content', TextInputStyle.Paragraph, { value: existing?.content, placeholder: fallback.content, max: 2000 })),
-    );
+function label(t: Translator, key: string, input: TextInputBuilder): LabelBuilder {
+  return new LabelBuilder().setLabel(t(key).slice(0, 45)).setTextInputComponent(input);
 }
 
 /** Modal de date de publication. */
@@ -53,7 +34,7 @@ async function respond(interaction: ModalSubmitInteraction, session: BuilderSess
   else await interaction.reply({ ...payload, flags: MessageFlags.Ephemeral });
 }
 
-/** Modals des annonces : `announce:tr:<sid>:<lang>` et `announce:date:<sid>`. */
+/** Modal des annonces : `announce:date:<sid>` (date de publication programmée). */
 export default defineModal({
   id: 'announce',
   module: 'announcements',
@@ -61,7 +42,7 @@ export default defineModal({
   async execute(interaction, args, ctx) {
     const { t } = ctx;
     if (!interaction.guildId || !ctx.config) return;
-    const [kind = '', sid = '', extra = ''] = args;
+    const [kind = '', sid = ''] = args;
     const session = embedBuilderSessions.get(interaction.guildId, interaction.user.id, sid);
     if (!session?.announcement) {
       await interaction.reply({ embeds: [embedService.warning(t('embeds.errors.session_expired'))], flags: MessageFlags.Ephemeral });
@@ -71,29 +52,6 @@ export default defineModal({
     const f = (id: string) => optionalText(interaction.fields.getTextInputValue(id));
 
     switch (kind) {
-      case 'tr': {
-        const lang = extra;
-        if (!ctx.config.enabledLanguages.includes(lang)) {
-          session.notice = { type: 'error', text: t('core.invalid_input', { details: lang }) };
-          break;
-        }
-        const candidate = { title: f('title'), description: f('description'), content: f('content') };
-        if (!candidate.title && !candidate.description && !candidate.content) {
-          delete ann.translations[lang];
-          session.notice = { type: 'info', text: t('announcements.builder.translation_removed', { language: lang }) };
-        } else {
-          const r = announcementTranslationSchema.safeParse(candidate);
-          if (!r.success) {
-            session.notice = { type: 'error', text: t('embeds.errors.invalid_spec', { details: r.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('\n') }) };
-            break;
-          }
-          // Saisie manuelle : le marqueur « auto » est retiré pour que la traduction ne soit plus régénérée.
-          const { auto: _auto, sourceHash: _hash, ...existingPatch } = ann.translations[lang] ?? {};
-          ann.translations[lang] = { ...existingPatch, ...r.data };
-          session.notice = { type: 'success', text: t('announcements.builder.translation_saved', { language: lang }) };
-        }
-        break;
-      }
       case 'date': {
         const date = parseDateInput(f('date') ?? '');
         if (!date) {

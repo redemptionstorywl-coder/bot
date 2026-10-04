@@ -277,29 +277,6 @@
     });
   });
 
-  // ───── Formulaires de traduction (amélioration progressive) ─────
-  $$('[data-translation-form]').forEach(function (form) {
-    form.addEventListener('submit', function (e) {
-      var submitter = e.submitter;
-      var action = submitter && submitter.value === 'delete' ? 'delete' : 'save';
-      if (action === 'delete') return; // passe par la modale + soumission classique
-      e.preventDefault();
-      var fd = new FormData(form);
-      var payload = { _csrf: fd.get('_csrf'), lang: fd.get('lang'), key: fd.get('key'), value: fd.get('value'), _action: 'save' };
-      api('POST', form.action, payload)
-        .then(function (res) {
-          var row = form.closest('[data-translation-row]');
-          if (row) {
-            row.classList.add('row-overridden');
-            var state = $('.cell-state', row);
-            if (state) state.innerHTML = '<span class="badge badge-primary">personnalisé</span>';
-          }
-          toast('Traduction enregistrée (' + res.key + ').', 'success');
-        })
-        .catch(function (err) { toast(err.message || 'Enregistrement impossible.', 'error'); });
-    });
-  });
-
   // ───── Socket.IO ─────
   if (window.io && body.classList.contains('has-sidebar')) {
     var socket = window.io({ withCredentials: true, transports: ['websocket', 'polling'] });

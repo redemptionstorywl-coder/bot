@@ -74,7 +74,6 @@ export function createAdminRouter(client: RedemptionClient): Router {
     '/reload-locales',
     wrap(async (req, res) => {
       translationService.loadLocales();
-      for (const id of client.guilds.cache.keys()) translationService.invalidateGuild(id);
       flash(req, 'success', `Fichiers de langue rechargés (${translationService.availableLanguages.length} langues).`);
       res.redirect('/admin');
     }),

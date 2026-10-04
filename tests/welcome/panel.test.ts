@@ -50,10 +50,9 @@ describe('renderPanel', () => {
       dmMessage: null,
       dmEmbed: null,
       buttons: [{ label: 'Site', style: 'link', url: 'https://example.com' }],
-      languagePromptEnabled: true,
       updatedAt: new Date(),
     });
-    const payload = await renderPanel({ guild, tab: 'welcome', t, lang: 'en', fallbackLang: 'fr', notice: { type: 'success', text: 'OK' } });
+    const payload = await renderPanel({ guild, tab: 'welcome', t, lang: 'en', notice: { type: 'success', text: 'OK' } });
     expect(payload.components).toHaveLength(4);
     const rows = payload.components.map((r) => r.toJSON());
     const [welcomeTab, leaveTab] = rows[0]!.components as { custom_id: string; style: number }[];
@@ -61,7 +60,7 @@ describe('renderPanel', () => {
     expect(welcomeTab!.style).toBe(1); // Primary
     expect(leaveTab!.style).toBe(2); // Secondary
     expect((rows[1]!.components[0] as { custom_id: string }).custom_id).toBe('welcome:cfg:channel:welcome');
-    expect(rows[3]!.components).toHaveLength(5);
+    expect(rows[3]!.components).toHaveLength(4);
     const embed = payload.embeds[0]!.toJSON();
     expect(embed.description).toContain('✅ OK');
     const message = embed.fields!.find((f) => f.name.startsWith('welcome.config.kind_message'));
@@ -71,7 +70,7 @@ describe('renderPanel', () => {
 
   it('onglet départ : toggle logs présent, pas de rangée DM', async () => {
     prisma.leaveConfig.findUnique.mockResolvedValueOnce(null);
-    const payload = await renderPanel({ guild, tab: 'leave', t, lang: 'fr', fallbackLang: 'fr' });
+    const payload = await renderPanel({ guild, tab: 'leave', t, lang: 'fr' });
     const ids = payload.components.flatMap((r) => r.toJSON().components.map((c) => (c as { custom_id?: string }).custom_id));
     expect(ids).toContain('welcome:cfg:logs:leave');
     expect(ids).not.toContain('welcome:cfg:dm:leave');

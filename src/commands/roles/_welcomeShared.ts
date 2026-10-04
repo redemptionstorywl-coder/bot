@@ -16,11 +16,11 @@ import {
 } from 'discord.js';
 import type { LeaveConfig, WelcomeConfig } from '@prisma/client';
 import { buildCustomId } from '../../utils/customId';
-import { MODULE_LABELS, TEMPLATE_VARIABLES, getLanguage } from '../../config/constants';
+import { MODULE_LABELS, TEMPLATE_VARIABLES } from '../../config/constants';
 import { env } from '../../config/env';
 import { hasInternalPermission } from '../../utils/permissions';
 import type { InteractionContext } from '../../structures/types';
-import { isLocalizedMap, resolveLocalized, welcomeService, type Localized } from '../../services/WelcomeService';
+import { resolveLocalized, welcomeService, type Localized } from '../../services/WelcomeService';
 import { embedService, embedSpecSchema, type ButtonSpec, type EmbedSpec } from '../../services/EmbedService';
 import type { Translator } from '../../services/TranslationService';
 
@@ -68,10 +68,8 @@ export interface PanelRenderOptions {
   guild: Guild;
   tab: WelcomeTab;
   t: Translator;
-  /** Langue de l'utilisateur (aperçu du message) */
+  /** Langue du serveur */
   lang: string;
-  /** Langue du serveur (secours) */
-  fallbackLang: string;
   notice?: PanelNotice;
 }
 
@@ -101,22 +99,12 @@ export function isHttpUrl(v: string): boolean {
   }
 }
 
-/** Résumé d'une valeur multilingue (liste des langues ou « toutes les langues »). */
-export function summarizeLocalized(value: unknown, t: Translator): string {
-  if (value === null || value === undefined) return '—';
-  if (isLocalizedMap(value)) return Object.keys(value as Record<string, unknown>).map((k) => `${getLanguage(k)?.flag ?? ''} ${k}`).join(' · ');
-  return t('welcome.config.all_languages');
-}
-
-/** Valeur à pré-remplir dans un modal : la langue demandée, sinon la valeur unique / de secours. */
-export function resolveForEdit<T>(current: Localized<T> | null | undefined, lang: string | null, fallbackLang: string): T | undefined {
-  if (current === null || current === undefined) return undefined;
-  if (isLocalizedMap(current)) {
-    const map = current as Record<string, T>;
-    if (lang) return map[lang];
-    return map[fallbackLang] ?? Object.values(map)[0];
-  }
-  return lang ? undefined : (current as T);
+/**
+ * Valeur à pré-remplir dans un modal. Les anciennes configurations multilingues `{ [lang]: … }`
+ * sont lues dans la langue du serveur (sinon la première valeur).
+ */
+export function resolveForEdit<T>(current: Localized<T> | null | undefined, lang: string): T | undefined {
+  return resolveLocalized<T>(current, lang);
 }
 
 function truncate(s: string, max: number): string {
@@ -135,7 +123,7 @@ function row(...components: MessageActionRowComponentBuilder[]): ActionRowBuilde
 
 /** Construit l'embed de statut + les composants du panneau pour l'onglet demandé (lit la config en base). */
 export async function renderPanel(opts: PanelRenderOptions): Promise<PanelPayload> {
-  const { guild, tab, t, lang, fallbackLang, notice } = opts;
+  const { guild, tab, t, lang, notice } = opts;
   const id = (action: string) => buildCustomId('welcome', 'cfg', action, tab);
   const config = tab === 'welcome' ? await welcomeService.getConfig(guild.id) : await welcomeService.getLeaveConfig(guild.id);
 
@@ -149,8 +137,8 @@ export async function renderPanel(opts: PanelRenderOptions): Promise<PanelPayloa
   const channel = config?.channelId ? `<#${config.channelId}>` : t('welcome.panel.no_channel');
   const imageEnabled = config?.imageEnabled ?? false;
   const imageValue = `${onOff(imageEnabled, t)}${config?.imageBackgroundUrl ? `\n[${t('welcome.config.background')}](${config.imageBackgroundUrl})` : ''}`;
-  const message = resolveLocalized<string>((config?.message ?? null) as Localized<string> | null, lang, fallbackLang);
-  const embedSpec = safeSpec(resolveLocalized<unknown>((config?.embed ?? null) as Localized<unknown> | null, lang, fallbackLang));
+  const message = resolveLocalized<string>((config?.message ?? null) as Localized<string> | null, lang);
+  const embedSpec = safeSpec(resolveLocalized<unknown>((config?.embed ?? null) as Localized<unknown> | null, lang));
 
   embed.addFields({ name: t('welcome.config.field_enabled'), value: onOff(enabled, t), inline: true }, { name: t('core.channel'), value: channel, inline: true }, { name: t('welcome.config.field_image'), value: imageValue, inline: true });
 
@@ -158,8 +146,7 @@ export async function renderPanel(opts: PanelRenderOptions): Promise<PanelPayloa
     const c = config as WelcomeConfig | null;
     const buttons = Array.isArray(c?.buttons) ? c!.buttons.length : 0;
     embed.addFields(
-      { name: t('welcome.config.field_dm'), value: `${onOff(c?.dmEnabled ?? false, t)} · ${summarizeLocalized(c?.dmMessage, t)}`, inline: true },
-      { name: t('welcome.config.field_language_prompt'), value: onOff(c?.languagePromptEnabled ?? false, t), inline: true },
+      { name: t('welcome.config.field_dm'), value: onOff(c?.dmEnabled ?? false, t), inline: true },
       { name: t('welcome.config.field_buttons'), value: String(buttons), inline: true },
     );
   } else {
@@ -168,9 +155,9 @@ export async function renderPanel(opts: PanelRenderOptions): Promise<PanelPayloa
   }
 
   const messageValue = message ? `>>> ${truncate(message, 300)}` : t('welcome.panel.message_default');
-  embed.addFields({ name: `${t('welcome.config.kind_message')} (${summarizeLocalized(config?.message, t)})`, value: messageValue, inline: false });
+  embed.addFields({ name: t('welcome.config.kind_message'), value: messageValue, inline: false });
   const embedValue = embedSpec ? `**${truncate(embedSpec.title ?? embedSpec.description ?? '—', 100)}**` : t('welcome.panel.embed_none');
-  embed.addFields({ name: `${t('welcome.config.kind_embed')} (${summarizeLocalized(config?.embed, t)})`, value: embedValue, inline: false });
+  embed.addFields({ name: t('welcome.config.kind_embed'), value: embedValue, inline: false });
 
   // Rangée 1 : onglets + activation + test
   const tabs = WELCOME_TABS.map((k) => btn(buildCustomId('welcome', 'cfg', 'tab', k), t(`welcome.panel.tab_${k}`), k === tab ? ButtonStyle.Primary : ButtonStyle.Secondary, k === 'welcome' ? '👋' : '🚪'));
@@ -196,7 +183,6 @@ export async function renderPanel(opts: PanelRenderOptions): Promise<PanelPayloa
       row(
         btn(id('dm'), t('welcome.panel.btn_dm_toggle', { state: shortOnOff(c?.dmEnabled ?? false, t) }), c?.dmEnabled ? ButtonStyle.Success : ButtonStyle.Secondary, '💬'),
         btn(id('dmmsg'), t('welcome.panel.btn_dm_message'), ButtonStyle.Secondary, '✉️'),
-        btn(id('langprompt'), t('welcome.panel.btn_lang_prompt', { state: shortOnOff(c?.languagePromptEnabled ?? false, t) }), c?.languagePromptEnabled ? ButtonStyle.Success : ButtonStyle.Secondary, '🌍'),
         btn(id('buttons'), t('welcome.panel.btn_buttons'), ButtonStyle.Secondary, '🔘'),
         btn(id('vars'), t('welcome.panel.btn_variables'), ButtonStyle.Secondary, '📖'),
       ),
@@ -241,18 +227,17 @@ function modal(kind: PanelModalKind, tab: WelcomeTab, title: string): ModalBuild
   return new ModalBuilder().setCustomId(buildCustomId('welcome', 'cfg', kind, tab)).setTitle(title.slice(0, 45));
 }
 
-/** Modal « ✏️ Message » : texte (pré-rempli) + code langue optionnel. */
-export function buildMessageModal(tab: WelcomeTab, current: Localized<string> | null | undefined, t: Translator, fallbackLang: string): ModalBuilder {
-  const value = resolveForEdit<string>(current, null, fallbackLang);
+/** Modal « ✏️ Message » : texte (pré-rempli). */
+export function buildMessageModal(tab: WelcomeTab, current: Localized<string> | null | undefined, t: Translator, lang: string): ModalBuilder {
+  const value = resolveForEdit<string>(current, lang);
   return modal('message', tab, t('welcome.config.modal_title_message', { target: t(`welcome.config.target_${tab}`) })).addLabelComponents(
     labelled(t('welcome.config.modal_label_message'), input('value', TextInputStyle.Paragraph, { value: typeof value === 'string' ? value : undefined, max: 2000 }), t('welcome.config.modal_help_message')),
-    labelled(t('welcome.config.modal_label_language'), input('language', TextInputStyle.Short, { placeholder: 'fr, en, es…', max: 5 }), t('welcome.config.modal_help_language')),
   );
 }
 
 /** Modal « 🎨 Embed » : titre, description, couleur, image, vignette (5 champs max). */
-export function buildEmbedModal(tab: WelcomeTab, current: Localized<unknown> | null | undefined, t: Translator, fallbackLang: string): ModalBuilder {
-  const spec = safeSpec(resolveForEdit<unknown>(current, null, fallbackLang)) ?? {};
+export function buildEmbedModal(tab: WelcomeTab, current: Localized<unknown> | null | undefined, t: Translator, lang: string): ModalBuilder {
+  const spec = safeSpec(resolveForEdit<unknown>(current, lang)) ?? {};
   return modal('embed', tab, t('welcome.config.modal_title_embed', { target: t(`welcome.config.target_${tab}`) })).addLabelComponents(
     labelled(t('welcome.config.modal_label_embed_title'), input('title', TextInputStyle.Short, { value: spec.title, max: 256 }), t('welcome.config.modal_help_embed')),
     labelled(t('welcome.config.modal_label_embed_description'), input('description', TextInputStyle.Paragraph, { value: spec.description, max: 4000 })),
@@ -277,13 +262,12 @@ export function buildImageModal(tab: WelcomeTab, current: WelcomeConfig | LeaveC
   return m;
 }
 
-/** Modal « ✉️ Message DM » : texte + langue + embed simple (titre, description, couleur). */
-export function buildDmModal(current: WelcomeConfig | null, t: Translator, fallbackLang: string): ModalBuilder {
-  const message = resolveForEdit<string>(current?.dmMessage as Localized<string> | null, null, fallbackLang);
-  const spec = safeSpec(resolveForEdit<unknown>(current?.dmEmbed as Localized<unknown> | null, null, fallbackLang)) ?? {};
+/** Modal « ✉️ Message DM » : texte + embed simple (titre, description, couleur). */
+export function buildDmModal(current: WelcomeConfig | null, t: Translator, lang: string): ModalBuilder {
+  const message = resolveForEdit<string>(current?.dmMessage as Localized<string> | null, lang);
+  const spec = safeSpec(resolveForEdit<unknown>(current?.dmEmbed as Localized<unknown> | null, lang)) ?? {};
   return modal('dm', 'welcome', t('welcome.config.modal_title_dm')).addLabelComponents(
     labelled(t('welcome.config.modal_label_message'), input('value', TextInputStyle.Paragraph, { value: typeof message === 'string' ? message : undefined, max: 2000 }), t('welcome.config.modal_help_message')),
-    labelled(t('welcome.config.modal_label_language'), input('language', TextInputStyle.Short, { placeholder: 'fr, en, es…', max: 5 }), t('welcome.config.modal_help_language')),
     labelled(t('welcome.config.modal_label_embed_title'), input('title', TextInputStyle.Short, { value: spec.title, max: 256 }), t('welcome.config.modal_help_embed')),
     labelled(t('welcome.config.modal_label_embed_description'), input('description', TextInputStyle.Paragraph, { value: spec.description, max: 4000 })),
     labelled(t('welcome.config.modal_label_embed_color'), input('color', TextInputStyle.Short, { value: spec.color, placeholder: '#7C3AED', max: 7 })),

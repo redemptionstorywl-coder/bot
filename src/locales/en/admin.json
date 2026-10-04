@@ -3,25 +3,19 @@
     "title": "⚙️ Configuration — {server}",
     "kind": "Server type",
     "default_language": "Default language",
-    "enabled_languages": "Enabled languages",
     "admin_roles": "Admin roles",
     "staff_roles": "Staff roles",
-    "translation_mode": "Multilingual mode",
     "modules": "Modules",
     "logs": "Log channels",
-    "language_stats": "Members per language",
     "dashboard": "Dashboard",
     "kind_set": "Server type set: **{kind}**",
     "language_set": "Default language: **{language}**",
-    "languages_updated": "Enabled languages: {languages}",
     "role_added": "Role {role} added.",
     "role_removed": "Role {role} removed.",
     "log_set": "**{category}** logs → {channel}",
     "log_removed": "**{category}** logs disabled.",
     "module_set": "Module {module}: {state}",
-    "color_set": "Default color: `{color}`",
-    "translation_mode_set": "Multilingual mode: **{mode}**",
-    "language_channel_set": "Channel for **{language}**: {channel}"
+    "color_set": "Default color: `{color}`"
   },
   "help": {
     "title": "📖 Help — Redemption Story Studio",
@@ -54,78 +48,5 @@
     "channels_title": "📁 Categories and channels",
     "roles_title": "🎭 Roles ({from}–{to} / {total})",
     "role_members": "member(s)"
-  },
-  "template": {
-    "list_title": "🧩 Server templates",
-    "list_description": "A template deploys a complete, ready-to-use structure: missing categories and channels are created (permissions included), existing channels and roles are detected by name, the bot is configured in one go (type, roles, logs, welcome, tickets, languages, notifications) and the default messages are posted (rules, guides, payment, panels). Can be re-run without duplicates.",
-    "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
-    "unknown": "Unknown template: `{key}`.",
-    "plan_title": "📋 Plan — {emoji} {name}",
-    "plan_description": "**{ready}** step(s) ready · **{skipped}** skipped. A skipped step could not find its channel or role: rename or create it, then run again.",
-    "dry_run_footer": "Dry run: nothing was changed.",
-    "confirm": "Apply the **{name}** template to **{server}**? Existing configuration is updated; messages already posted by the bot are not posted again.",
-    "confirm_structure": "🏗️ **{created}** category(ies) / channel(s) will be created with their permissions; **{reused}** existing one(s) reused without changes.",
-    "confirm_no_structure": "No channel will be created (`create_missing:false`): only existing channels are used.",
-    "confirm_button": "Apply",
-    "cancel_button": "Cancel",
-    "cancelled": "Application cancelled.",
-    "not_author": "Only the person who ran the command can confirm.",
-    "applying": "⏳ Applying the **{name}** template… this may take a few seconds.",
-    "report_title": "🧩 Report — {emoji} {name}",
-    "report_description": "✅ **{done}** done · ⚠️ **{skipped}** skipped · ❌ **{failed}** failed",
-    "page_footer": "Page {page}/{pages}",
-    "recommended": "Recommended channels",
-    "recommended_giveaways": "🎁 Giveaways",
-    "recommended_polls": "📊 Polls",
-    "recommended_events": "📅 Events",
-    "recommended_hint": "Use them in the `channel` option of `/giveaway create`, `/poll create` and `/event create`.",
-    "structure_summary": "🆕 **{created}** to create · ♻️ **{reused}** existing",
-    "structure_report": "🆕 **{created}** created · ♻️ **{reused}** reused",
-    "structure_legend": "🆕 will be created · ♻️ existing (left untouched)",
-    "templates": {
-      "shop": {
-        "name": "Redemption Story Shop",
-        "description": "Script shop: support, orders, payments, bugs, partnerships, payment info."
-      },
-      "battle-royale": {
-        "name": "Redemption Story Battle Royale",
-        "description": "Multilingual Battle Royale (10 languages): tickets per category, guide, leaderboards, tournaments, FiveM status."
-      },
-      "prison": {
-        "name": "Redemption Story WL (Prison RP)",
-        "description": "Whitelisted Prison RP: applications, support, reports, staff logs."
-      },
-      "school": {
-        "name": "Redemption Story School RP",
-        "description": "School RP: registrations, support, reports, staff logs."
-      }
-    },
-    "steps": {
-      "kind": "Server type and languages",
-      "structure": "Structure (missing categories and channels)",
-      "roles": "Admin / staff roles",
-      "autorole": "Auto-roles (members / bots)",
-      "logs": "Log channels",
-      "moderation": "Moderation (sanction DMs, mute role)",
-      "embed_templates": "Default embed templates",
-      "welcome": "Welcome message",
-      "leave": "Leave message",
-      "rules": "Rules",
-      "tickets": "Ticket types",
-      "ticket_panel": "Ticket panel",
-      "language": "Languages (roles, per-language channels)",
-      "language_panel": "Language panel",
-      "notifications": "Notification roles",
-      "notification_panel": "Notification panel",
-      "fivem": "FiveM status",
-      "info": "Info message “{name}”"
-    },
-    "reasons": {
-      "channel_not_found": "Channel not found (looked for: {names})",
-      "role_not_found": "Role not found (looked for: {names})",
-      "no_fivem_server": "No FiveM server configured (`/fivem add`)",
-      "missing_permissions": "Insufficient bot permissions: {message}",
-      "error": "Error: {message}"
-    }
   }
 }

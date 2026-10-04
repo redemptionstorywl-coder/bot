@@ -5,7 +5,7 @@ import { prisma } from '../database/client';
 import { BRAND } from '../config/constants';
 import { loggingService } from './LoggingService';
 import { translationService } from './TranslationService';
-import { guildConfigService } from './GuildConfigService';
+import { CHANNELS_REMAPPED_EVENT, guildConfigService } from './GuildConfigService';
 import { TTLCache } from '../utils/cache';
 import { buildCustomId } from '../utils/customId';
 import { discordTimestamp } from '../utils/time';
@@ -69,6 +69,7 @@ export class SchoolService {
   private readonly configCache = new TTLCache<SchoolSettings>(5 * 60_000, 1000);
 
   attach(client: Client): void {
+    if (!this.client) guildConfigService.on(CHANNELS_REMAPPED_EVENT, (guildId: string) => this.configCache.delete(guildId));
     this.client = client;
   }
 
@@ -359,7 +360,7 @@ export class SchoolService {
 
   private async sendDecisionDm(app: SchoolApplication): Promise<void> {
     if (!this.client) return;
-    const lang = await translationService.resolveLanguage({ guildId: app.guildId, userId: app.userId, guildDefault: (await guildConfigService.get(app.guildId))?.defaultLanguage });
+    const lang = translationService.resolveLanguage((await guildConfigService.get(app.guildId))?.defaultLanguage);
     const t = translationService.bind(lang, app.guildId);
     const accepted = app.status === ReviewStatus.ACCEPTED;
     const guild = this.client.guilds.cache.get(app.guildId);

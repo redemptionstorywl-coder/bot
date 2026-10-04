@@ -299,5 +299,30 @@
     "notice_indefinite": "Channel muted until further notice.\nReason: {reason}",
     "reopened_title": "🔊 Channel reopened",
     "reopened": "The mute has expired: you can write here again."
+  },
+  "nuke_guild": {
+    "title": "🧨 Clear the whole server",
+    "confirm_hint": "Type the exact server name to confirm.",
+    "modal_title": "Clear the whole server",
+    "modal_label": "Exact server name",
+    "modal_help": "Every text and announcement channel will be recreated empty. Cannot be undone.",
+    "admin_only": "`/clear salon` and `/clear serveur` are restricted to administrators.",
+    "bot_missing": "The bot needs the “Manage Channels” permission (and “Manage Roles” to copy permissions).",
+    "already_running": "A `/clear serveur` is already running on this server.",
+    "mismatch": "Confirmation refused: the name you typed does not exactly match the server name. Nothing was deleted.",
+    "in_progress": "🧨 Deleting every message of the server… This channel will be recreated: the final report will be sent to you by DM.",
+    "done": "Server cleared: **{count}** channel(s) recreated in {duration} (case #{number}).",
+    "dm_title": "🧨 /clear serveur — {server}",
+    "dm_description": "Report of the deletion of all messages (case #{number}).",
+    "log_title": "🧨 Server cleared (case #{number})",
+    "log_description": "All text / announcement channels were recreated empty by {moderator}.",
+    "report_cleared": "✅ Channels cleared ({count})",
+    "report_skipped": "⏭️ Skipped channels ({count})",
+    "report_errors": "⚠️ Errors ({count})",
+    "report_remapped": "🔁 Updated references",
+    "report_duration": "⏱️ Duration",
+    "skip_ticket": "ticket",
+    "skip_no_permission": "missing permissions",
+    "failed": "`/clear serveur` failed: {error}"
   }
 }

@@ -13,7 +13,7 @@
   <% } else { %>
   <div class="table-wrap">
     <table class="table" id="members-table">
-      <thead><tr><th>Membre</th><th>Rôles</th><th>Langue</th><th>Arrivée</th><th></th></tr></thead>
+      <thead><tr><th>Membre</th><th>Rôles</th><th>Arrivée</th><th></th></tr></thead>
       <tbody>
         <% for (const m of members) { %>
           <tr>
@@ -30,7 +30,6 @@
                 <% if (!m.roleCount) { %><span class="muted">—</span><% } %>
               </div>
             </td>
-            <td><% if (m.language && languages[m.language]) { %><%= languages[m.language].flag %> <%= languages[m.language].nativeLabel %><% } else { %><span class="muted">non choisie</span><% } %></td>
             <td class="nowrap" title="<%= fmt.dateTime(m.joinedAt) %>"><%= fmt.date(m.joinedAt) %></td>
             <td class="right"><a class="btn btn-ghost btn-sm" href="/guilds/<%= guild.id %>/members/<%= m.id %>">Fiche</a></td>
           </tr>

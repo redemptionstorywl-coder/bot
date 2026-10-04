@@ -1,8 +1,6 @@
 import { MessageFlags, type ButtonInteraction } from 'discord.js';
 import { defineButton } from '../structures';
 import type { InteractionContext } from '../structures/types';
-import { languageService } from '../services/LanguageService';
-import { guildConfigService } from '../services/GuildConfigService';
 import { embedService } from '../services/EmbedService';
 import { welcomeService, type Localized } from '../services/WelcomeService';
 import {
@@ -22,9 +20,8 @@ import {
 
 /**
  * Boutons du namespace `welcome` :
- *  - `welcome:lang:<guildId>`          → « 🌍 Choisir ma langue » (tout le monde, fonctionne aussi en DM).
  *  - `welcome:cfg:<action>:<tab>`      → panneau de configuration `/welcome-config` (admin, vérifié ici).
- *      tab ∈ welcome | leave ; actions : tab, toggle, test, message, embed, image, imgtoggle, dm, dmmsg, langprompt, buttons, logs, vars.
+ *      tab ∈ welcome | leave ; actions : tab, toggle, test, message, embed, image, imgtoggle, dm, dmmsg, buttons, logs, vars.
  * Les autres boutons configurés par le staff utilisent leur propre namespace (ex. `rolemenu:toggle:<roleId>`) ou sont des liens.
  */
 export default defineButton({
@@ -33,10 +30,6 @@ export default defineButton({
   cooldown: 1,
   async execute(interaction, args, ctx) {
     const [action, second, third] = args;
-    if (action === 'lang') {
-      await chooseLanguage(interaction, second, ctx);
-      return;
-    }
     if (action === 'cfg') {
       await panelAction(interaction, second ?? '', third, ctx);
       return;
@@ -45,26 +38,8 @@ export default defineButton({
   },
 });
 
-async function chooseLanguage(interaction: ButtonInteraction, guildIdHint: string | undefined, ctx: InteractionContext): Promise<void> {
-  const guild = interaction.guild ?? languageService.resolveGuild(guildIdHint);
-  const config = guild ? await guildConfigService.get(guild.id) : null;
-  if (!guild || !config) {
-    await interaction.reply({ embeds: [embedService.error(ctx.t('language.guild_unavailable'))], flags: MessageFlags.Ephemeral });
-    return;
-  }
-  if (!config.modules.language) {
-    await interaction.reply({ embeds: [embedService.error(ctx.t('language.module_disabled'))], flags: MessageFlags.Ephemeral });
-    return;
-  }
-  await interaction.reply({
-    content: ctx.t('language.select.prompt'),
-    components: [languageService.buildSelectRow(config, ctx.t, interaction.guild ? undefined : guild.id)],
-    flags: MessageFlags.Ephemeral,
-  });
-}
-
 async function refresh(interaction: ButtonInteraction, tab: WelcomeTab, ctx: InteractionContext, notice?: PanelNotice): Promise<void> {
-  const payload = await renderPanel({ guild: interaction.guild!, tab, t: ctx.t, lang: ctx.lang, fallbackLang: ctx.config!.defaultLanguage, notice });
+  const payload = await renderPanel({ guild: interaction.guild!, tab, t: ctx.t, lang: ctx.lang, notice });
   if (interaction.deferred || interaction.replied) await interaction.editReply(payload);
   else await interaction.update(payload);
 }
@@ -79,7 +54,7 @@ async function panelAction(interaction: ButtonInteraction, action: string, tabAr
   }
   const guild = interaction.guild!;
   const guildId = guild.id;
-  const fallbackLang = config!.defaultLanguage;
+  const lang = ctx.lang;
   const ok = (text: string): PanelNotice => ({ type: 'success', text });
 
   // ── Modals ──
@@ -87,16 +62,16 @@ async function panelAction(interaction: ButtonInteraction, action: string, tabAr
     const current = tab === 'welcome' ? await welcomeService.getConfig(guildId) : await welcomeService.getLeaveConfig(guildId);
     switch (action) {
       case 'message':
-        await interaction.showModal(buildMessageModal(tab, current?.message as Localized<string> | null, t, fallbackLang));
+        await interaction.showModal(buildMessageModal(tab, current?.message as Localized<string> | null, t, lang));
         return;
       case 'embed':
-        await interaction.showModal(buildEmbedModal(tab, current?.embed, t, fallbackLang));
+        await interaction.showModal(buildEmbedModal(tab, current?.embed, t, lang));
         return;
       case 'image':
         await interaction.showModal(buildImageModal(tab, current, t));
         return;
       case 'dmmsg':
-        await interaction.showModal(buildDmModal(tab === 'welcome' ? (current as Awaited<ReturnType<typeof welcomeService.getConfig>>) : null, t, fallbackLang));
+        await interaction.showModal(buildDmModal(tab === 'welcome' ? (current as Awaited<ReturnType<typeof welcomeService.getConfig>>) : null, t, lang));
         return;
       case 'buttons':
         await interaction.showModal(buildButtonsModal(tab === 'welcome' ? (current as Awaited<ReturnType<typeof welcomeService.getConfig>>)?.buttons : [], t));
@@ -144,13 +119,6 @@ async function panelAction(interaction: ButtonInteraction, action: string, tabAr
       const dmEnabled = !(c?.dmEnabled ?? false);
       await welcomeService.updateConfig(guildId, { dmEnabled });
       await refresh(interaction, 'welcome', ctx, ok(t('welcome.config.dm_set', { state: onOff(dmEnabled, t) })));
-      return;
-    }
-    case 'langprompt': {
-      const c = await welcomeService.getConfig(guildId);
-      const languagePromptEnabled = !(c?.languagePromptEnabled ?? false);
-      await welcomeService.updateConfig(guildId, { languagePromptEnabled });
-      await refresh(interaction, 'welcome', ctx, ok(t('welcome.config.language_prompt_set', { state: onOff(languagePromptEnabled, t) })));
       return;
     }
     case 'logs': {

@@ -1,9 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import path from 'node:path';
-import { createPrismaMock } from '../helpers/prisma';
-
-vi.mock('../../src/database/client', () => ({ prisma: createPrismaMock() }));
-
 import { TranslationService } from '../../src/services/TranslationService';
 
 describe('TranslationService', () => {
@@ -20,6 +16,18 @@ describe('TranslationService', () => {
   it('retombe sur en puis sur la clé', () => {
     expect(service.translate('xx', 'core.yes')).toBe('Yes');
     expect(service.translate('fr', 'does.not.exist')).toBe('does.not.exist');
+  });
+  it('resolveLanguage : langue du serveur si supportée, sinon fr', () => {
+    expect(service.resolveLanguage('en')).toBe('en');
+    expect(service.resolveLanguage('fr')).toBe('fr');
+    expect(service.resolveLanguage('de')).toBe('fr');
+    expect(service.resolveLanguage(null)).toBe('fr');
+    expect(service.resolveLanguage(undefined)).toBe('fr');
+  });
+  it('seules fr et en sont supportées', () => {
+    expect(service.isSupported('fr')).toBe(true);
+    expect(service.isSupported('en')).toBe(true);
+    expect(service.isSupported('es')).toBe(false);
   });
   it('bind() lie la langue', () => {
     const t = service.bind('fr');

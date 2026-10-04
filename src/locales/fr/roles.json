@@ -23,7 +23,7 @@
     "list_title": "🎭 Rôles automatiques",
     "empty": "Aucun rôle automatique. Ajoutez-en avec `/autorole add`.",
     "types_title": "Déclencheurs",
-    "types_help": "`JOIN` arrivée (humains) · `BOT` arrivée (bots) · `VERIFIED` écran d'accueil validé · `MEMBER` / `LANGUAGE` après le choix de langue · `SPECIAL` manuel"
+    "types_help": "`JOIN` arrivée (humains) · `BOT` arrivée (bots) · `VERIFIED` écran d'accueil validé · `SPECIAL` manuel"
   },
   "rolemenu": {
     "default_name": "Menu de rôles",

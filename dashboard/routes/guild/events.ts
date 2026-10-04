@@ -110,7 +110,7 @@ export function createEventsRouter(client: RedemptionClient): Router {
         polls: polls.map((p) => ({ ...p, optionList: parsePollOptions(p.options), voters: new Set(p.votes.map((v) => v.userId)).size })),
         names,
         channelName: (id: string) => guild.textChannels.find((c) => c.id === id)?.name ?? id,
-        languages: LANGUAGES.filter((l) => config.enabledLanguages.includes(l.code)),
+        languages: LANGUAGES,
         pollTypes: [{ value: 'MULTIPLE', label: 'Choix multiples (options personnalisées)' }, { value: 'YES_NO', label: 'Oui / Non' }],
         modules: { events: config.modules.events, polls: config.modules.polls },
       });
@@ -129,7 +129,7 @@ export function createEventsRouter(client: RedemptionClient): Router {
       endsAtValue: toLocalInputValue(event?.endsAt ?? null, config.timezone),
       reminderValue: offsets.join(', '),
       remindersSent: Array.isArray(event?.remindersSent) ? (event!.remindersSent as number[]) : [],
-      languages: LANGUAGES.filter((l) => config.enabledLanguages.includes(l.code)),
+      languages: LANGUAGES,
       timezone: config.timezone,
       statusLabels: EVENT_STATUS_LABELS,
     };

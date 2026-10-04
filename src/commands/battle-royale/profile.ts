@@ -3,7 +3,8 @@ import { GuildKind } from '@prisma/client';
 import { defineCommand } from '../../structures';
 import { battleRoyaleService, computeKd, levelProgress, progressBar } from '../../services/BattleRoyaleService';
 import { embedService } from '../../services/EmbedService';
-import { formatDuration } from '../../utils/time';
+import { fivemSyncService } from '../../services/FiveMSyncService';
+import { discordTimestamp, formatDuration } from '../../utils/time';
 
 /** /profile [user] — profil Battle Royale : niveau, XP, stats de la saison courante, Battle Pass. */
 export default defineCommand({
@@ -27,6 +28,7 @@ export default defineCommand({
     const pass = await battleRoyaleService.getActiveBattlePass(guildId);
     const bp = battleRoyaleService.getBattlePassProgress(profile, pass);
     const lp = levelProgress(profile.xp);
+    const player = await fivemSyncService.getPlayerSummary(guildId, target.id);
     const kills = stats?.kills ?? 0;
     const deaths = stats?.deaths ?? 0;
     const embed = embedService
@@ -44,6 +46,13 @@ export default defineCommand({
         { name: t('battleroyale.profile.battlepass'), value: `${t('battleroyale.profile.tier')} ${bp.tier}${profile.battlePassPremium ? ' ⭐' : ''}${bp.nextTier ? ` · \`${progressBar(bp.ratio, 8)}\` ${bp.current}/${bp.needed}` : bp.maxed ? ` · ${t('battleroyale.battlepass.maxed')}` : ''}`, inline: true },
         { name: t('battleroyale.profile.identifier'), value: profile.identifier ? `\`${profile.identifier}\`` : t('battleroyale.profile.not_linked'), inline: true },
       );
+    if (player) {
+      embed.addFields(
+        { name: t('battleroyale.profile.status'), value: player.online ? t('battleroyale.profile.in_game', { server: player.serverName ?? '—' }) : t('battleroyale.profile.offline'), inline: true },
+        { name: t('battleroyale.profile.last_seen'), value: player.lastSeenAt ? discordTimestamp(player.lastSeenAt, 'R') : '—', inline: true },
+        { name: t('battleroyale.profile.ingame_name'), value: player.name && player.name !== '—' ? player.name : '—', inline: true },
+      );
+    }
     await interaction.editReply({ embeds: [embed] });
   },
 });

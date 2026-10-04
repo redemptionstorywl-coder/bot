@@ -17,7 +17,9 @@
     "auth_hint": "Header `{header}` = global API key (FIVEM_API_KEY) or this server's own key.",
     "docs": "Full documentation: docs/FIVEM.md"
   },
-  "remove": { "done": "Server **{name}** removed." },
+  "remove": {
+    "done": "Server **{name}** removed."
+  },
   "list": {
     "title": "🎮 FiveM servers ({count})",
     "empty": "No FiveM server configured. Use `/fivem add`."
@@ -32,7 +34,8 @@
   },
   "players": {
     "title": "👥 {name} — {count} player(s)",
-    "empty": "No player connected on **{name}** (or server offline)."
+    "empty": "No player connected on **{name}** (or server offline).",
+    "not_linked": "not linked"
   },
   "errors": {
     "not_found": "Server not found. Check the key with `/fivem list`.",
@@ -42,5 +45,42 @@
     "unreachable": "Server unreachable (timeout or HTTP error).",
     "unauthorized": "Invalid API key.",
     "disabled": "This server is disabled."
+  },
+  "counter": {
+    "online": "🟢 Online: {players}/{max}",
+    "offline": "🔴 Offline",
+    "maintenance": "🟠 Maintenance"
+  },
+  "check": {
+    "banned": "You are banned from {server}. Reason: {reason}.",
+    "until": "Ban ends in {duration}.",
+    "no_reason": "no reason given",
+    "discord_required": "Connection refused: open Discord on your PC before launching FiveM to link your account, then try again.",
+    "not_member": "Connection refused: join the {server} Discord server first.",
+    "missing_role": "Connection refused: the Discord role “{role}” is required on {server}.",
+    "not_whitelisted": "Connection refused: you are not whitelisted. Apply on the {server} Discord."
+  },
+  "sync": {
+    "title": "🔄 Synchronization — {name}",
+    "updated": "🔄 Synchronization updated — {name}",
+    "on": "enabled",
+    "off": "disabled",
+    "bans_to_discord": "Game ban → Discord",
+    "bans_to_game": "Discord ban → game",
+    "kicks": "Game kick → Discord",
+    "nicknames": "In-game name → nickname",
+    "linked_role": "“Linked account” role",
+    "online_role": "“In game” role",
+    "counter_channel": "Counter channel",
+    "require_discord": "Discord required",
+    "require_role": "Required role",
+    "require_whitelist": "Whitelist required",
+    "footer": "The bot needs “Manage Nicknames” / “Manage Roles” and must be above the roles involved.",
+    "invalid": "Invalid setting: {details}"
+  },
+  "link": {
+    "done": "{user} is now linked to `{license}`.",
+    "invalid": "Invalid license. Expected format: `license:0123abcd…`.",
+    "bot": "Bots cannot be linked."
   }
 }

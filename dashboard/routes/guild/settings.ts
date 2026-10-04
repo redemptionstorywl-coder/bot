@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { GuildKind, TranslationMode, type Prisma } from '@prisma/client';
+import { GuildKind, type Prisma } from '@prisma/client';
 import type { RedemptionClient } from '../../../src/core/Client';
 import { prisma } from '../../../src/database/client';
 import { guildConfigService } from '../../../src/services/GuildConfigService';
@@ -10,7 +10,7 @@ import { LANGUAGE_CODES, MODULE_KEYS, MODULE_LABELS, GUILD_KIND_LABELS, LANGUAGE
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
 import { flash } from '../../lib/flash';
-import { validate, valid, stringArray, discordIdArray, hexColorSchema, optionalText, checkbox } from '../../lib/validate';
+import { validate, valid, discordIdArray, hexColorSchema, optionalText } from '../../lib/validate';
 import { toggleModuleHandler } from './modules';
 
 const languageCode = z.enum(LANGUAGE_CODES as [string, ...string[]]);
@@ -19,17 +19,9 @@ const settingsBody = z.object({
   kind: z.nativeEnum(GuildKind),
   displayName: optionalText(100),
   defaultLanguage: languageCode,
-  enabledLanguages: stringArray.pipe(z.array(languageCode).min(1, 'activez au moins une langue')),
   brandColor: hexColorSchema,
   adminRoleIds: discordIdArray,
   staffRoleIds: discordIdArray,
-  translationMode: z.nativeEnum(TranslationMode),
-  autoTranslate: checkbox,
-  languageChannels: z.preprocess((v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {}), z.record(z.string(), z.string())).transform((map) => {
-    const out: Record<string, string> = {};
-    for (const [lang, channelId] of Object.entries(map)) if (LANGUAGE_CODES.includes(lang) && /^\d{15,22}$/.test(channelId)) out[lang] = channelId;
-    return out;
-  }),
   footerText: optionalText(200),
   footerIconUrl: z.preprocess((v) => (typeof v === 'string' && v.trim() === '' ? null : v), z.string().url('URL invalide').max(500).nullable().optional()),
   timezone: z.string().trim().min(1).max(64).default('Europe/Paris'),
@@ -91,24 +83,19 @@ export function createSettingsRouter(client: RedemptionClient): Router {
       const guild = res.locals.guild!;
       const config = res.locals.config!;
       const { body } = valid<z.infer<typeof settingsBody>>(req);
-      const enabledLanguages = body.enabledLanguages.includes(body.defaultLanguage) ? body.enabledLanguages : [body.defaultLanguage, ...body.enabledLanguages];
       const data: Prisma.GuildSettingsUpdateInput = {
         displayName: body.displayName ?? null,
         defaultLanguage: body.defaultLanguage,
-        enabledLanguages,
         brandColor: body.brandColor,
         adminRoleIds: body.adminRoleIds,
         staffRoleIds: body.staffRoleIds,
-        translationMode: body.translationMode,
-        autoTranslate: body.autoTranslate,
-        languageChannels: body.languageChannels,
         footerText: body.footerText ?? null,
         footerIconUrl: body.footerIconUrl ?? null,
         timezone: body.timezone,
       };
       if (body.kind !== config.kind) await guildConfigService.setKind(guild.id, body.kind);
       await guildConfigService.updateSettings(guild.id, data);
-      void loggingService.log({ guildId: guild.id, category: 'SYSTEM', action: 'settings.update', title: 'Paramètres mis à jour depuis le dashboard', actorId: req.session.user?.id ?? null, data: { kind: body.kind, defaultLanguage: body.defaultLanguage, enabledLanguages, translationMode: body.translationMode } });
+      void loggingService.log({ guildId: guild.id, category: 'SYSTEM', action: 'settings.update', title: 'Paramètres mis à jour depuis le dashboard', actorId: req.session.user?.id ?? null, data: { kind: body.kind, defaultLanguage: body.defaultLanguage } });
       flash(req, 'success', 'Paramètres enregistrés.');
       res.redirect(`/guilds/${guild.id}/settings`);
     }),

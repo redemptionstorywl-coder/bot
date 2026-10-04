@@ -5,28 +5,17 @@ import { guildConfigService } from '../services/GuildConfigService';
 import { translationService } from '../services/TranslationService';
 
 /**
- * Résout le contexte d'une interaction : config du serveur + langue + traducteur.
+ * Résout le contexte d'une interaction : config du serveur + langue (celle du serveur) + traducteur.
  */
 export async function resolveContext(client: RedemptionClient, interaction: BaseInteraction): Promise<InteractionContext> {
   const config = interaction.guild ? await guildConfigService.getOrCreate(interaction.guild) : null;
-  const lang = await translationService.resolveLanguage({
-    guildId: interaction.guildId,
-    userId: interaction.user.id,
-    discordLocale: interaction.locale,
-    guildDefault: config?.defaultLanguage,
-    enabledLanguages: config?.enabledLanguages,
-  });
-  return { client, config, lang, t: translationService.bind(lang, interaction.guildId) };
+  const lang = translationService.resolveLanguage(config?.defaultLanguage);
+  return { client, config, lang, t: translationService.bind(lang) };
 }
 
 /** Contexte pour un membre hors interaction (bienvenue, logs…). */
 export async function resolveMemberContext(client: RedemptionClient, member: GuildMember | { guild: { id: string }; id: string; user?: { id: string } }): Promise<InteractionContext> {
   const config = await guildConfigService.get(member.guild.id);
-  const lang = await translationService.resolveLanguage({
-    guildId: member.guild.id,
-    userId: member.id,
-    guildDefault: config?.defaultLanguage,
-    enabledLanguages: config?.enabledLanguages,
-  });
-  return { client, config, lang, t: translationService.bind(lang, member.guild.id) };
+  const lang = translationService.resolveLanguage(config?.defaultLanguage);
+  return { client, config, lang, t: translationService.bind(lang) };
 }

@@ -108,20 +108,6 @@ export function createEmbedsRouter(client: RedemptionClient): Router {
   );
 
   router.post(
-    '/embeds/defaults',
-    formAction(
-      (_req, res) => base(res.locals.guild!.id),
-      async (req, res) => {
-        const guild = res.locals.guild!;
-        embedTemplateService.invalidateDefaults(guild.id);
-        const created = await embedTemplateService.ensureDefaults(guild.id, req.session.user!.id, res.locals.config!.defaultLanguage);
-        broadcastToGuild(guild.id, 'embed:update', { guildId: guild.id });
-        flash(req, created ? 'success' : 'info', created ? `${created} templates par défaut créés.` : 'Tous les templates par défaut existent déjà.');
-      },
-    ),
-  );
-
-  router.post(
     '/embeds/import',
     validate({ body: importBody }),
     formAction(
@@ -169,7 +155,6 @@ export function createEmbedsRouter(client: RedemptionClient): Router {
         const { params } = valid<unknown, unknown, z.infer<typeof idParams>>(req);
         const template = await loadTemplate(guild.id, params.templateId);
         await embedTemplateService.delete(template.id);
-        embedTemplateService.invalidateDefaults(guild.id);
         broadcastToGuild(guild.id, 'embed:update', { guildId: guild.id, templateId: template.id, deleted: true });
         flash(req, 'success', `Template « ${template.name} » supprimé.`);
       },

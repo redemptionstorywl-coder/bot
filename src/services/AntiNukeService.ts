@@ -421,7 +421,7 @@ export class AntiNukeService {
 
   private async dmExecutor(guild: Guild, user: User, evaluation: Evaluation, outcome: PunishmentOutcome, caseNumber: number | null): Promise<boolean> {
     const gcfg = await guildConfigService.get(guild.id);
-    const lang = await translationService.resolveLanguage({ guildId: guild.id, userId: user.id, guildDefault: gcfg?.defaultLanguage, enabledLanguages: gcfg?.enabledLanguages });
+    const lang = translationService.resolveLanguage(gcfg?.defaultLanguage);
     const t = translationService.bind(lang, guild.id);
     const embed = new EmbedBuilder()
       .setColor(BRAND.colors.danger)

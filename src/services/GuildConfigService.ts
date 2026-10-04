@@ -1,5 +1,5 @@
 import type { Guild as DiscordGuild } from 'discord.js';
-import { GuildKind, Prisma, type Guild, type GuildSettings, type LogChannel, type TranslationMode } from '@prisma/client';
+import { GuildKind, Prisma, type Guild, type GuildSettings, type LogChannel } from '@prisma/client';
 import { prisma } from '../database/client';
 import { DEFAULT_MODULES_BY_KIND, MODULE_KEYS, type ModuleKey } from '../config/constants';
 import { TTLCache } from '../utils/cache';
@@ -8,21 +8,19 @@ import { EventEmitter } from 'node:events';
 
 const log = childLogger('GuildConfigService');
 
+/** Émis (guildId) après la recréation de salons (/clear serveur) : les services gardant des IDs de salons en cache les invalident. */
+export const CHANNELS_REMAPPED_EVENT = 'channels:remapped';
+
 export interface ResolvedGuildConfig {
   guildId: string;
   kind: GuildKind;
   name: string;
   defaultLanguage: string;
-  enabledLanguages: string[];
   timezone: string;
   brandColor: number;
   adminRoleIds: string[];
   staffRoleIds: string[];
   modules: Record<ModuleKey, boolean>;
-  translationMode: TranslationMode;
-  languageChannels: Record<string, string>;
-  /** Traduction automatique des annonces pour les langues sans traduction manuelle */
-  autoTranslate: boolean;
   logChannels: Partial<Record<string, string>>;
   footerText: string | null;
   footerIconUrl: string | null;
@@ -31,13 +29,6 @@ export interface ResolvedGuildConfig {
 
 function asStringArray(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
-}
-
-function asRecord(v: unknown): Record<string, string> {
-  if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
-  const out: Record<string, string> = {};
-  for (const [k, val] of Object.entries(v as Record<string, unknown>)) if (typeof val === 'string') out[k] = val;
-  return out;
 }
 
 /**
@@ -105,16 +96,12 @@ export class GuildConfigService extends EventEmitter {
       guildId: raw.id,
       kind: raw.kind,
       name: raw.name,
-      defaultLanguage: s?.defaultLanguage ?? 'fr',
-      enabledLanguages: asStringArray(s?.enabledLanguages).length ? asStringArray(s?.enabledLanguages) : ['fr', 'en'],
+      defaultLanguage: s?.defaultLanguage === 'en' ? 'en' : 'fr',
       timezone: s?.timezone ?? 'Europe/Paris',
       brandColor: parseInt(brand.replace('#', ''), 16) || 0x7c3aed,
       adminRoleIds: asStringArray(s?.adminRoleIds),
       staffRoleIds: asStringArray(s?.staffRoleIds),
       modules,
-      translationMode: s?.translationMode ?? 'CHANNELS',
-      languageChannels: asRecord(s?.languageChannels),
-      autoTranslate: s?.autoTranslate ?? true,
       logChannels,
       footerText: s?.footerText ?? null,
       footerIconUrl: s?.footerIconUrl ?? null,

@@ -1,48 +1,171 @@
 # Intégration FiveM — Redemption Story Bot
 
-Ce document décrit **tout ce qu'il faut brancher côté serveur de jeu** pour relier un serveur FiveM (ESX, QBCore ou framework custom) au bot : statut en temps réel, statistiques Battle Royale, whitelist, sanctions, maintenance, webhook Tebex.
+Ce document décrit comment relier un serveur FiveM (Battle Royale, ESX, QBCore ou standalone) au bot :
+**bans synchronisés dans les deux sens, pseudo en jeu → surnom Discord, liaison automatique des comptes, rôles « compte lié » / « en jeu », salon compteur de joueurs, contrôle à la connexion (ban, Discord requis, rôle requis, whitelist), temps de jeu, statistiques Battle Royale, statut en temps réel, maintenance, webhook Tebex.**
+
+Une ressource prête à l'emploi est fournie : **`fivem-resource/rs_bridge/`** (Lua, aucune dépendance obligatoire).
 
 ---
 
-## 1. Vue d'ensemble
+## 1. Installation (5 minutes)
+
+### 1.1 Côté Discord
 
 ```
-FiveM (Lua)  ──REST (x-api-key)──▶  /api/fivem/servers/:guildId/:serverKey/…   ──▶ FiveMService ──▶ Discord
-             ◀──Socket.IO /fivem──▶  (événements temps réel, optionnel)
-Tebex        ──Webhook────────────▶  /api/shop/tebex  (x-webhook-secret)         ──▶ ShopService
-Bot          ──polling 60 s──────▶  http://<host>/info.json + /players.json      (si `host` configuré)
+/fivem add key:br name:"Redemption Battle Royale" framework:CUSTOM
+```
+- `key` : identifiant court unique (`[a-z0-9_-]{2,64}`), utilisé dans les URLs et dans `config.lua`.
+- `framework` : `CUSTOM` pour la ressource `rs_bridge` (payload normalisé). `ESX` / `QBCORE` acceptent en plus les formats natifs de ces frameworks (§ 7).
+- `host` (facultatif) : `http://IP:30120` pour que le bot lise aussi `/info.json` et `/players.json` toutes les 60 s.
+- `api_key` (facultatif) : clé propre au serveur ; sinon la clé globale `FIVEM_API_KEY` du `.env` du bot.
+
+Le bot répond avec l'URL de base de l'API. Puis réglez la synchronisation :
+
+```
+/fivem sync key:br                                   → affiche les réglages
+/fivem sync key:br online_role:@En-jeu linked_role:@Lié counter_channel:#🟢-joueurs
+/fivem sync key:br nickname_format:"{name}" require_discord:true
+/fivem status-channel key:br channel:#statut-serveur  → embed de statut auto-mis à jour
 ```
 
-Deux modes complémentaires :
+### 1.2 Côté serveur FiveM
 
-| Mode | Quand l'utiliser | Ce que fait le bot |
-|------|------------------|--------------------|
-| **Push (REST / Socket.IO)** | Toujours recommandé | Le serveur envoie son statut, ses stats, ses sanctions. |
-| **Polling** | Si `host` est renseigné (`/fivem add … host:`) | Toutes les 60 s le bot lit `/info.json` et `/players.json` (endpoints natifs FiveM, timeout 5 s). |
+1. Copier le dossier `fivem-resource/rs_bridge` dans `resources/` (ou `resources/[redemption]/`).
+2. Éditer `rs_bridge/config.lua` :
+   - `Config.BotUrl` = `DASHBOARD_URL` du bot (ex : `https://bot.mondomaine.fr`, sans `/` final) ;
+   - `Config.GuildId` = ID du serveur Discord ; `Config.ServerKey` = la `key` de `/fivem add` ;
+   - `Config.Framework` = `standalone` | `esx` | `qbcore` ; `Config.Locale` = `fr` | `en`.
+3. Clé API **hors du code** (recommandé) dans `server.cfg` :
+   ```cfg
+   set rs_bridge_api_key "votre-clé-FIVEM_API_KEY"
+   ensure rs_bridge          # après es_extended / qb-core si utilisés
+   ```
+4. Redémarrer. La console affiche `[rs_bridge] Connecté au bot (…)` ou la cause exacte (401 clé refusée, 404 GuildId/ServerKey inconnus, bot injoignable).
+5. Brancher votre menu admin sur les exports (§ 3) — ou laisser `Config.TxAdminHooks = true` si vous sanctionnez via txAdmin.
+6. Gamemode Battle Royale : appeler `exports.rs_bridge:AddMatchStats(source, {...})` à la fin de chaque partie et `exports.rs_bridge:SetPlayerName(source, pseudo)` quand le joueur choisit son pseudo.
 
-Un serveur sans nouvelles depuis **3 minutes** est marqué 🔴 hors ligne automatiquement.
+> Les joueurs n'ont **rien à faire** : si Discord est ouvert sur leur PC au lancement de FiveM, FiveM fournit l'identifiant `discord:<id>` et le bot lie automatiquement leur compte (profil Battle Royale, rôle, surnom). `/br-link` et `/fivem link` restent disponibles pour les cas manuels.
+
+### 1.3 Permissions Discord du bot
+
+| Permission | Pour |
+|------------|------|
+| **Gérer les pseudos** (Manage Nicknames) | Pseudo en jeu → surnom |
+| **Gérer les rôles** | Rôles « compte lié » / « en jeu » |
+| **Bannir / Expulser des membres**, **Exclure temporairement** | Bans / kicks venant du jeu |
+| **Gérer les salons** | Renommer le salon compteur |
+
+L'URL d'invitation du bot (`README.md`, `npm run setup`, dashboard) demande `permissions=8` (Administrateur), qui inclut tout ce qui précède.
+Intents requis (déjà activés dans `src/core/Client.ts`) : `Guilds`, `GuildMembers` (**intent privilégié** « Server Members » à cocher dans le portail développeur), `GuildModeration` (événements de ban).
 
 ---
 
-## 2. Déclarer le serveur dans Discord
+## 2. Synchronisation jeu ⇄ Discord
+
+### 2.1 Options par serveur (`/fivem sync`, `FiveMSyncService.updateSyncSettings`)
+
+| Option (`/fivem sync`) | Champ `FiveMServer` | Défaut | Effet |
+|---|---|---|---|
+| `bans_to_discord` | `syncBansToDiscord` | ✅ | Ban / tempban / unban pris en jeu → appliqué sur Discord |
+| `bans_to_game` | `syncBansToGame` | ✅ | Ban / unban Discord (commande, clic droit, fin de tempban) → serveurs de jeu |
+| `kicks` | `syncKicks` | ❌ | Kick en jeu → kick Discord |
+| `nicknames` | `syncNicknames` | ✅ | Pseudo en jeu → surnom Discord |
+| `nickname_format` | `nicknameFormat` | `{name}` | Variables `{name}` `{id}` (ID serveur) `{level}` (niveau BR). 32 caractères max après rendu |
+| `linked_role` | `linkedRoleId` | — | Rôle donné quand le compte FiveM est lié |
+| `online_role` | `onlineRoleId` | — | Rôle « En jeu » donné à la connexion, retiré à la déconnexion / serveur hors ligne / démarrage du bot si le serveur est hors ligne |
+| `counter_channel` | `playerCountChannelId` | — | Salon vocal (ou catégorie) renommé `🟢 En ligne : 23/64` / `🔴 Hors ligne` / `🟠 Maintenance` |
+| `require_discord` | `requireDiscord` | ❌ | Refuse la connexion si aucun Discord lié ou si le joueur n'est pas membre du serveur Discord |
+| `require_role` | `requireRoleId` | — | Rôle Discord requis pour se connecter (implique Discord lié + membre) |
+| `require_whitelist` | `requireWhitelist` | ❌ | Candidature whitelist acceptée requise (`/whitelist`) |
+| `clear:` | — | — | Retire `linked_role`, `online_role`, `counter_channel` ou `require_role` |
+
+Le futur panneau `/config` appellera directement `fivemSyncService.updateSyncSettings(guildId, key, patch)` (patch validé par Zod `syncSettingsSchema`, `src/services/fivem/sync.ts`).
+
+### 2.2 Flux
 
 ```
-/fivem add key:main name:"Redemption Prison" framework:ESX host:http://1.2.3.4:30120 api_key:<clé optionnelle>
-/fivem status-channel key:main channel:#statut-serveur
+BAN JEU → DISCORD
+  menu admin / txAdmin ──exports.rs_bridge:BanPlayer──▶ ban local KVP + DropPlayer
+                         └─POST /sanctions {type:BAN, identifiers, duration?, staff}
+  bot : discordId ← payload.discordId | identifiant discord: | FiveMPlayer/profil BR/whitelist par licence
+        syncBansToDiscord ? moderationService.ban(reason "[FiveM] raison (staff)", duration)  → case #, DM, log
+                          : Sanction enregistrée seule
+        anti-écho : marqueur mémoire fromGame:ban:<guild>:<user> (30 s) → l'écouteur Discord→jeu ignore ce ban
+        relais : BAN poussé aux AUTRES serveurs FiveM du guild (syncBansToGame)
+  KICK → kick Discord si syncKicks · WARN → avertissement Discord si le membre est présent · UNBAN → unban Discord
+
+BAN DISCORD → JEU
+  /ban, clic droit Bannir, escalade d'avertissements, fin de tempban (unban)
+  GuildBanAdd / GuildBanRemove (src/events/guild*.fivem.ts)
+  └─ pour chaque serveur du guild avec syncBansToGame :
+       socket `player:ban|player:unban` si un pont Socket.IO est connecté
+       + FiveMPendingAction (file persistée) ─── GET /actions (rs_bridge, toutes les 10 s)
+            BAN   → ban local KVP (discord:<id> + licences connues) + DropPlayer des joueurs connectés
+            UNBAN → suppression des bans locaux
+  À la connexion, POST /check refuse de toute façon un membre banni de Discord (ban vérifié via l'API, cache 60 s).
+
+CONNEXION
+  playerConnecting → ban local KVP ? refus
+                   → POST /check {identifiers} → { allowed, reason, message, banned, whitelisted, linked, discordId }
+                     ordre : ban Discord → Discord requis (non lié / pas membre) → rôle requis → whitelist
+                     bot injoignable : Config.FailOpen (true = laisser entrer)
+  playerJoining    → POST /players/join → FiveMPlayer (licence, steam, fivem, nom, session)
+                     identifiant discord: + membre présent → profil BR lié automatiquement (identifier = licence)
+                     rôles linkedRole + onlineRole, surnom formaté
+  playerDropped    → POST /players/leave → durée de session ajoutée à FiveMPlayer.playtimeMinutes
+                     et BattleRoyaleProfile.playtimeMinutes, rôle « en jeu » retiré
+  POST /status (30 s) → diff de la liste : arrivées / départs manqués rattrapés, compteur mis à jour
+  Serveur sans nouvelles 3 min → hors ligne : toutes les sessions fermées, rôle « en jeu » retiré à tous
+
+PSEUDO
+  SetPlayerName(source, nom) / nom FiveM / nom du personnage ESX-QBCore (Config.NameSource)
+  └─ POST /players/name (ou join / status) → nettoyage (codes ^1, ~r~, contrôles, invisibles ; liens,
+     @everyone et noms vides ignorés) → format → 32 caractères → member.setNickname si différent
+     Jamais le propriétaire du serveur ni un membre dont le rôle le plus haut ≥ celui du bot.
 ```
 
-- `key` : identifiant court unique par Discord (`[a-z0-9_-]{2,64}`), utilisé dans toutes les URLs.
-- `framework` : `ESX` · `QBCORE` · `CUSTOM` — choisit l'**adaptateur** qui normalise vos payloads (§ 5).
-- `host` : active le polling (facultatif).
-- `api_key` : clé propre au serveur. Sinon la clé globale `FIVEM_API_KEY` (fichier `.env`) est utilisée.
+### 2.3 Données
 
-Autres commandes : `/fivem list`, `/fivem status [key]`, `/fivem maintenance <key> on|off`, `/fivem players <key>`, `/fivem remove <key>`.
+| Modèle | Rôle |
+|--------|------|
+| `FiveMServer` (+ champs de sync) | Réglages par serveur |
+| `FiveMPlayer` | Un joueur suivi par licence : `discordId`, `steam`, `fivemId`, dernier `name`, `serverKey`, `lastSeenAt`, `sessionStartedAt`, `playtimeMinutes`, `online` |
+| `FiveMPendingAction` | File des actions Discord → jeu (`BAN`/`UNBAN`/`KICK`/`MESSAGE`), marquées `deliveredAt` lorsqu'elles sont servies. Délivrées purgées après 7 j ; non délivrées ignorées après 7 j |
 
-Le message de statut (embed violet 🟢 / 🔴 / 🟠, joueurs x/y, version, dernière mise à jour `<t:R>`, uptime) est **édité** toutes les 60 s, jamais reposté.
+`/profile` affiche en plus le statut en jeu (serveur), la dernière connexion et le pseudo en jeu ; `/fivem players` affiche la liaison Discord de chaque joueur.
 
 ---
 
-## 3. Authentification REST
+## 3. Exports de la ressource `rs_bridge`
+
+| Export | Effet |
+|--------|-------|
+| `BanPlayer(source, reason, durationSeconds?, staffName?)` | Ban local + DropPlayer + `POST /sanctions` BAN (durée nulle = permanent) |
+| `BanIdentifier(identifier, reason, durationSeconds?, staffName?)` | Idem pour un joueur hors ligne (`license:…`, `discord:…`, `steam:…`) |
+| `UnbanPlayer(identifier, staffName?, reason?)` | Supprime le ban local + `POST /sanctions` UNBAN |
+| `KickPlayer(source, reason, staffName?)` | DropPlayer + `POST /sanctions` KICK |
+| `WarnPlayer(source, reason, staffName?)` | Notification en jeu + `POST /sanctions` WARN |
+| `SetPlayerName(source, name)` | Pseudo choisi en jeu → surnom Discord |
+| `AddMatchStats(source, { kills, deaths, win, damage, top10, xp, season? })` | Stats de fin de partie → `POST /stats` |
+| `AddMatchStatsBatch({ { source, kills, … }, … })` | Idem en une requête (max 200) |
+
+Événement local : `AddEventHandler('rs_bridge:action', function(action) … end)` est déclenché pour chaque action reçue du bot (pour l'appliquer aussi dans votre système de ban ESX/QBCore).
+Console : `rsbridge` (test de connexion), `rsbridge unban <identifiant>`.
+Hooks txAdmin (`Config.TxAdminHooks`) : `txAdmin:events:playerBanned`, `playerWarned`, `playerKicked`, `actionRevoked` (révocation de ban → UNBAN).
+
+Exemples :
+```lua
+-- ESX (esx_adminplus, menu perso…)
+exports.rs_bridge:BanPlayer(targetId, 'Cheat', 7 * 86400, GetPlayerName(adminId))
+-- QBCore : dans qb-adminmenu, après l'insertion en base du ban
+exports.rs_bridge:BanPlayer(targetId, reason, banTime - os.time(), GetPlayerName(src))
+-- Battle Royale : fin de partie
+exports.rs_bridge:AddMatchStats(src, { kills = 7, deaths = 1, win = true, damage = 1540, top10 = true, xp = 350 })
+```
+
+---
+
+## 4. Authentification REST
 
 | En-tête | Valeur |
 |---------|--------|
@@ -50,7 +173,7 @@ Le message de statut (embed violet 🟢 / 🔴 / 🟠, joueurs x/y, version, der
 | `x-server-key` | Optionnel. S'il est présent, il doit être identique au `:serverKey` de l'URL. |
 | `Content-Type` | `application/json` |
 
-Le serveur est identifié par l'URL : `/servers/:guildId/:serverKey/…`.
+Le serveur est identifié par l'URL : `/servers/:guildId/:serverKey/…`. Base URL : `${DASHBOARD_URL}/api/fivem`.
 
 Réponses : toujours JSON. Erreurs : `{ "error": "<code>", "message": "<lisible>" }` — jamais de stack trace.
 
@@ -62,252 +185,124 @@ Réponses : toujours JSON. Erreurs : `{ "error": "<code>", "message": "<lisible>
 | 403 | `disabled` | Serveur désactivé |
 | 404 | `not_found` | Serveur / route inconnue |
 | 413 | `payload_too_large` | Corps > 512 ko |
-| 429 | `rate_limited` | > **120 requêtes / minute / IP** (`Retry-After` fourni) |
+| 429 | `rate_limited` | > **120 requêtes / minute / IP** (`Retry-After` fourni). `rs_bridge` en consomme ~8/min + 1 par connexion. |
 | 500 | `internal` | Erreur interne (loguée côté bot) |
-
-Base URL : `${DASHBOARD_URL}/api/fivem` (le dashboard monte `createFiveMRouter(client)` sur `/api/fivem`).
 
 ---
 
-## 4. Endpoints
+## 5. Endpoints
 
 Préfixe commun : `B = /api/fivem/servers/:guildId/:serverKey`
 
-### 4.1 `POST B/status` — heartbeat / statut
+| Méthode | Route | Corps | Réponse |
+|---------|-------|-------|---------|
+| POST | `B/status` | `{ online, players, maxPlayers, version?, maintenance?, playerList?: [{ id, name, identifiers, ping? }] }` | `{ ok, status }` — heartbeat 30–60 s, diff des joueurs |
+| GET | `B/status` | — | Statut résolu sans la liste des joueurs |
+| POST | `B/check` | `{ identifiers: [...], name? }` | `{ ok, allowed, reason?, message?, banned, banReason?, banExpiresAt?, whitelisted, linked, discordId }` |
+| POST | `B/players/join` | `{ id, name, identifiers, ping? }` | `{ ok, players, discordId, linked, member, nickname }` |
+| POST | `B/players/leave` | `{ id, name?, identifiers?, reason? }` | `{ ok, players, minutes, discordId }` |
+| POST | `B/players/name` | `{ discordId? \| identifiers, name, id? }` | `{ ok, discordId, nickname }` (`nickname` null = ignoré : nom invalide, hiérarchie, option désactivée) |
+| GET | `B/players` | — | Joueurs connus (dernier statut ou `players.json`) |
+| GET | `B/actions` | — | `{ ok, count, actions: [{ id, type: BAN\|UNBAN\|KICK\|MESSAGE, discordId?, license?, identifiers?, reason?, expiresAt?, staff?, message?, createdAt }] }` — max 50, marquées délivrées |
+| GET | `B/bans/:discordId` | — | `{ ok, discordId, banned, reason, expiresAt }` (ban Discord, cache 60 s) |
+| POST | `B/sanctions` | `{ identifier?, identifiers?, discordId?, type: BAN\|KICK\|WARN\|UNBAN, reason, duration?, staff }` | `201 { ok, caseNumber, userId, discord: banned\|unbanned\|kicked\|warned\|recorded, propagated }` |
+| POST | `B/stats` | Objet ou tableau (max 200) de stats normalisées (§ 5.1) | `{ ok, applied, unlinked, unlinkedIdentifiers, results }` (`202` si non lié) |
+| GET | `B/whitelist/:identifier` | — | `{ ok, identifier, whitelisted, status, discordId }` |
+| GET | `B/whitelist` | — | `{ ok, count, whitelist: [{ discordId, identifier, acceptedAt }] }` |
+| POST | `B/maintenance` | `{ enabled }` | `{ ok, maintenance }` |
+| GET | `/api/fivem/health` | — | `{ ok, service, uptime }` (sans auth) |
+
+### 5.1 Stats Battle Royale
 
 ```json
-{
-  "online": true,
-  "players": 42,
-  "maxPlayers": 64,
-  "version": "FXServer 7290",
-  "maintenance": false,
-  "playerList": [
-    { "id": 1, "name": "John", "identifiers": ["license:abc…", "discord:123456789012345678"], "ping": 45 }
-  ]
-}
+{ "identifier": "license:abc…", "season": 3, "mode": "increment", "wins": 1, "kills": 7, "deaths": 1, "matches": 1, "damage": 1540, "top10": 1, "xp": 350, "playtimeMinutes": 0 }
 ```
-Tous les champs sauf `online` ont une valeur par défaut. Réponse `200 { ok, status }`. Met à jour `lastStatus`, `lastSeenAt` et le message Discord. Envoyer toutes les **30–60 s**.
+- `mode` : `increment` (défaut) ou `set`. `season` : facultatif → saison courante.
+- Profil retrouvé par `identifier` (licence) — lié automatiquement dès que le joueur se connecte avec Discord ouvert. Sinon `202 unlinked`.
+- **Temps de jeu** : calculé par le bot à partir des sessions (join/leave). N'envoyez `playtimeMinutes` que si vous n'utilisez pas `/players/join|leave` (sinon double comptage).
+- Formules : `level = floor(sqrt(xp / 100)) + 1`, `K/D = kills / max(1, deaths)`. L'XP alimente aussi le Battle Pass.
 
-### 4.2 `GET B/status`
-Retourne le statut résolu (`online` tient compte de la fraîcheur), sans la liste des joueurs.
+### 5.2 Sanctions
 
-### 4.3 `POST B/stats` — statistiques Battle Royale (fin de partie)
-
-Payload **normalisé** (framework `CUSTOM`) — un objet ou un tableau (max 200) :
-```json
-{
-  "identifier": "license:abc…",
-  "season": 3,
-  "mode": "increment",
-  "wins": 1, "kills": 7, "deaths": 1, "matches": 1, "damage": 1540, "top10": 1,
-  "xp": 350, "playtimeMinutes": 18
-}
-```
-- `mode` : `increment` (défaut, valeurs **ajoutées**) ou `set` (valeurs remplacées).
-- `season` : facultatif → saison courante (Battle Pass actif, sinon la plus récente).
-- Le profil est retrouvé par `identifier`. **Si le joueur n'a pas lié son identifiant via `/br-link`**, la réponse est `202` avec `unlinked: true` et `unlinkedIdentifiers: [...]` ; les stats ne sont pas conservées — affichez-lui un message en jeu l'invitant à faire `/br-link license:…` sur Discord.
-- Formules : `level = floor(sqrt(xp / 100)) + 1`, `K/D = kills / max(1, deaths)`. L'XP alimente aussi le Battle Pass (`battlePassXp` → palier).
-
-Réponse : `{ ok, applied, unlinked, unlinkedIdentifiers, results: [{ applied, profileId?, season?, level? }] }`.
-
-### 4.4 `GET B/whitelist/:identifier`
-`identifier` = `license:…`, ou un **Discord ID** (`123…` ou `discord:123…`).
-```json
-{ "ok": true, "identifier": "license:abc", "whitelisted": true, "status": "ACCEPTED", "discordId": "1234567890" }
-```
-`status` ∈ `PENDING | ACCEPTED | REJECTED | null`.
-
-### 4.5 `GET B/whitelist`
-Liste des acceptés : `{ ok, count, whitelist: [{ discordId, identifier, acceptedAt }] }` — pratique pour un cache local au démarrage de la ressource.
-
-### 4.6 `POST B/sanctions` — sanction prise en jeu
-
-```json
-{ "identifier": "license:abc…", "discordId": "1234567890", "type": "BAN", "reason": "Cheat", "duration": 86400, "staff": "Admin Bob" }
-```
-- `identifier` **ou** `discordId` requis ; `type` ∈ `BAN | KICK | WARN` ; `duration` en secondes (BAN + duration ⇒ `TEMPBAN`).
-- Crée un `Sanction` (métadonnées `{ source: "fivem", serverKey, identifier, staff }`) et un log **MODERATION**. Le Discord ID est déduit du profil BR ou de la whitelist si absent.
-- Réponse `201 { ok, caseNumber, userId }`.
-
-### 4.7 `GET B/players`
-Liste des joueurs connus (dernier statut, ou `players.json` si `host` configuré).
-
-### 4.8 `POST B/maintenance`
-```json
-{ "enabled": true }
-```
-Bascule la maintenance (embed 🟠) et émet `maintenance` aux sockets du serveur.
-
-### 4.9 `GET /api/fivem/health`
-`{ ok: true, service: "fivem", uptime }` — sans auth.
+- Cible : `discordId` explicite, sinon identifiant `discord:` dans `identifiers`, sinon liaison connue de la licence.
+- `BAN` + `duration` (secondes) ⇒ tempban (levé automatiquement sur Discord, puis UNBAN relayé aux serveurs).
+- La raison Discord est `[FiveM] <raison> (<staff>)`. Si l'action Discord est impossible (membre absent, hiérarchie, option désactivée, déjà banni), la sanction est **enregistrée** (`discord: "recorded"`) avec un log MODERATION.
 
 ---
 
-## 5. Adaptateurs (ESX / QBCore / Custom)
+## 6. Curl
+
+```bash
+BASE="https://bot.example.com/api/fivem/servers/123456789012345678/br"
+KEY="change-me-fivem-api-key"
+H=(-H "x-api-key: $KEY" -H "content-type: application/json")
+
+curl -s -X POST "$BASE/check" "${H[@]}" -d '{"identifiers":["license:abc","discord:222222222222222222"]}'
+curl -s -X POST "$BASE/players/join" "${H[@]}" -d '{"id":1,"name":"John","identifiers":["license:abc","discord:222222222222222222"]}'
+curl -s -X POST "$BASE/players/name" "${H[@]}" -d '{"identifiers":["license:abc"],"name":"^1Viper"}'
+curl -s -X POST "$BASE/sanctions" "${H[@]}" -d '{"identifiers":["license:abc","discord:222222222222222222"],"type":"BAN","reason":"Cheat","duration":86400,"staff":"Bob"}'
+curl -s "$BASE/actions" -H "x-api-key: $KEY"
+curl -s "$BASE/bans/222222222222222222" -H "x-api-key: $KEY"
+curl -s -X POST "$BASE/players/leave" "${H[@]}" -d '{"id":1,"identifiers":["license:abc"]}'
+```
+
+---
+
+## 7. Adaptateurs (ESX / QBCore / Custom)
 
 L'adaptateur est choisi par `FiveMServer.framework`. Il **normalise** les payloads `stats` et `sanctions` ; `status` et `maintenance` ont toujours le format normalisé.
 
 | Framework | Stats acceptées | Sanctions acceptées |
 |-----------|-----------------|---------------------|
 | **CUSTOM** | Payload normalisé strict (§ 4.3) | Payload normalisé strict (§ 4.6) |
-| **ESX** | `identifier`/`license`, `season?`, champs à plat ou dans `stats`/`data` : `wins|victories`, `kills`, `deaths`, `matches|played|games`, `damage|damage_dealt`, `top10`, `xp|experience`, `playtimeMinutes|playtime` | `identifier`, `type|action` (`ban|kick|warn`, insensible à la casse), `reason|motif`, `duration|time|expire`, `staff|admin|author` ; `target: { identifier, discord }` accepté |
-| **QBCORE** | `license|identifier` ou `citizenid` (→ `citizenid:<cid>`), champs à plat ou dans `metadata`/`stats` : `wins`, `kills`, `deaths`, `matches|games|rounds`, `damage`, `top10`, `xp`, `playtime` | `license|citizenid`, `action|type`, `reason`, `expire|duration`, `admin|staff` |
+| **ESX** | `identifier`/`license`, `season?`, champs à plat ou dans `stats`/`data` : `wins|victories`, `kills`, `deaths`, `matches|played|games`, `damage|damage_dealt`, `top10`, `xp|experience`, `playtimeMinutes|playtime` | `identifier`, `type|action` (`ban|kick|warn|unban`, insensible à la casse), `identifiers` (liste), `reason|motif`, `duration|time|expire`, `staff|admin|author` ; `target: { identifier, discord }` accepté |
+| **QBCORE** | `license|identifier` ou `citizenid` (→ `citizenid:<cid>`), champs à plat ou dans `metadata`/`stats` : `wins`, `kills`, `deaths`, `matches|games|rounds`, `damage`, `top10`, `xp`, `playtime` | `license|citizenid`, `action|type` (`ban|kick|warn|unban`), `identifiers`, `reason`, `expire|duration`, `admin|staff` |
 
 Convar de maintenance lue en polling : `maintenance`/`sv_maintenance` (tous), `esx_maintenance` (ESX), `qb_maintenance` (QBCore).
 
 ---
 
-## 6. Socket.IO — namespace `/fivem` (optionnel, temps réel)
+---
 
-Connexion : `io("${DASHBOARD_URL}/fivem", { auth: { apiKey, serverKey, guildId } })`.
+## 8. Socket.IO — namespace `/fivem` (optionnel, temps réel)
 
-Événements **entrants** (mêmes schémas Zod que REST, réponse via *ack* `{ ok, … }` ou `{ ok:false, error, message }`) :
+Connexion : `io("${DASHBOARD_URL}/fivem", { auth: { apiKey, serverKey, guildId } })`. FiveM n'a pas de client Socket.IO Lua : `rs_bridge` utilise uniquement REST (polling `/actions` 10 s). Un pont Node (`socket.io-client`) reste possible pour du temps réel.
 
-| Événement | Payload |
-|-----------|---------|
-| `status` | § 4.1 |
-| `stats` | § 4.3 (objet ou tableau) |
-| `sanction` | § 4.6 |
-| `player:join` | `{ id, name, identifiers, ping? }` → ajouté à la liste, compteur mis à jour |
-| `player:leave` | `{ id, name?, reason? }` |
-| `whitelist:check` | `"license:…"` ou `{ identifier }` → ack `{ ok, whitelisted, status, discordId }` |
+Entrants (mêmes schémas que REST, ack `{ ok, … }` ou `{ ok:false, error, message }`) : `status`, `stats`, `sanction`, `player:join`, `player:leave`, `player:name`, `check`, `whitelist:check`.
 
-Événements **sortants** (du bot vers le serveur) :
+Sortants :
 
 | Événement | Payload | Quand |
 |-----------|---------|-------|
 | `ready` | `{ serverKey, guildId, maintenance }` | À la connexion |
-| `whitelist:updated` | `{ discordId, identifier, status }` | Une candidature est acceptée / refusée dans Discord |
+| `player:ban` / `player:unban` | `{ id?, discordId, license?, identifiers?, reason?, expiresAt?, staff }` | Ban / unban Discord (l'action est aussi tracée en base et marquée délivrée) |
+| `whitelist:updated` | `{ discordId, identifier, status }` | Candidature acceptée / refusée |
 | `maintenance` | `{ enabled }` | `/fivem maintenance` ou `POST /maintenance` |
 | `error:event` | `{ event, error }` | Payload invalide |
 
-> FiveM n'a pas de client Socket.IO Lua natif. Deux options : utiliser **REST depuis Lua** (recommandé, § 7) et un **pont Node.js** (`socket.io-client`) côté machine de jeu pour recevoir `whitelist:updated` / `maintenance`, ou une ressource Node (FXServer supporte les ressources JS côté serveur : `server_script 'bridge.js'` avec `socket.io-client` bundlé).
+---
+
+## 9. FAQ
+
+**Le surnom n'est pas appliqué.** Le bot doit avoir *Gérer les pseudos* et son rôle le plus haut doit être **au-dessus** du rôle le plus haut du membre. Le **propriétaire du serveur** ne peut jamais être renommé par un bot (limite Discord). Les noms vides, faits uniquement de symboles/emojis, contenant un lien, une invitation ou `@everyone` sont ignorés. Un échec est retenté au plus toutes les 30 min.
+
+**Les rôles ne sont pas donnés.** *Gérer les rôles* + rôle du bot au-dessus de `linked_role` / `online_role` / rôles gérés. Le membre doit être sur le serveur Discord.
+
+**Le compte ne se lie pas automatiquement.** FiveM ne fournit `discord:<id>` que si l'application Discord **de bureau** est ouverte au lancement de FiveM. Sinon : `/br-link license:…` (joueur) ou `/fivem link membre license:…` (admin).
+
+**Le salon compteur ne change pas tout de suite.** Discord limite le renommage d'un salon à 2 fois par 10 minutes : le bot renomme au plus toutes les 6 minutes et applique le dernier état connu ensuite.
+
+**Intents.** `GuildMembers` (privilégié, à activer dans le portail développeur Discord → Bot → *Server Members Intent*) pour lire les membres et rôles ; `GuildModeration` pour recevoir les bans/unbans.
+
+**Boucles ban jeu ↔ Discord ?** Non : un ban venant du jeu pose un marqueur de 30 s (`fromGame:ban:<guild>:<user>`) ; l'écouteur Discord → jeu l'ignore. Il est relayé directement aux *autres* serveurs du guild.
+
+**Le bot est hors ligne pendant une connexion.** `Config.FailOpen = true` laisse entrer (les bans locaux KVP restent appliqués) ; `false` refuse. Les actions Discord → jeu attendent dans `FiveMPendingAction` (7 jours).
+
+**Double comptage du temps de jeu.** N'envoyez pas `playtimeMinutes` dans `/stats` si `rs_bridge` gère les connexions.
 
 ---
 
-## 7. Exemples
-
-### 7.1 curl
-
-```bash
-BASE="https://bot.example.com/api/fivem/servers/123456789012345678/main"
-KEY="change-me-fivem-api-key"
-
-# Heartbeat
-curl -s -X POST "$BASE/status" -H "x-api-key: $KEY" -H "content-type: application/json" \
-  -d '{"online":true,"players":2,"maxPlayers":64,"version":"7290","playerList":[{"id":1,"name":"John","identifiers":["license:abc"]}]}'
-
-# Stats fin de partie (lot)
-curl -s -X POST "$BASE/stats" -H "x-api-key: $KEY" -H "content-type: application/json" \
-  -d '[{"identifier":"license:abc","wins":1,"kills":5,"deaths":1,"matches":1,"xp":300,"playtimeMinutes":15}]'
-
-# Whitelist
-curl -s "$BASE/whitelist/license:abc" -H "x-api-key: $KEY"
-curl -s "$BASE/whitelist" -H "x-api-key: $KEY"
-
-# Sanction
-curl -s -X POST "$BASE/sanctions" -H "x-api-key: $KEY" -H "content-type: application/json" \
-  -d '{"identifier":"license:abc","type":"KICK","reason":"AFK","staff":"Bob"}'
-
-# Maintenance
-curl -s -X POST "$BASE/maintenance" -H "x-api-key: $KEY" -H "content-type: application/json" -d '{"enabled":true}'
-```
-
-### 7.2 Ressource Lua (serveur) — `rs_bridge/server.lua`
-
-```lua
--- fxmanifest.lua : fx_version 'cerulean' / game 'gta5' / server_script 'server.lua'
-local BASE   = GetConvar('rs_api_base', 'https://bot.example.com/api/fivem/servers/<GUILD_ID>/<SERVER_KEY>')
-local APIKEY = GetConvar('rs_api_key', 'change-me-fivem-api-key')
-local HEADERS = { ['content-type'] = 'application/json', ['x-api-key'] = APIKEY }
-
-local function post(path, body, cb)
-  PerformHttpRequest(BASE .. path, function(status, text)
-    if cb then cb(status, text and json.decode(text) or nil) end
-    if status >= 400 then print(('[rs_bridge] %s -> %s %s'):format(path, status, text or '')) end
-  end, 'POST', json.encode(body), HEADERS)
-end
-
-local function get(path, cb)
-  PerformHttpRequest(BASE .. path, function(status, text) cb(status, text and json.decode(text) or nil) end, 'GET', '', HEADERS)
-end
-
-local function license(src)
-  for _, id in ipairs(GetPlayerIdentifiers(src)) do if id:sub(1, 8) == 'license:' then return id end end
-end
-
--- 1) Heartbeat toutes les 45 s
-CreateThread(function()
-  while true do
-    local list = {}
-    for _, src in ipairs(GetPlayers()) do
-      list[#list + 1] = { id = tonumber(src), name = GetPlayerName(src), identifiers = GetPlayerIdentifiers(src), ping = GetPlayerPing(src) }
-    end
-    post('/status', {
-      online = true, players = #list, maxPlayers = GetConvarInt('sv_maxClients', 32),
-      version = GetConvar('version', ''), maintenance = GetConvar('maintenance', 'false') == 'true', playerList = list,
-    })
-    Wait(45000)
-  end
-end)
-
--- 2) Whitelist à la connexion (deferrals)
-AddEventHandler('playerConnecting', function(name, setKick, deferrals)
-  local src = source
-  deferrals.defer()
-  Wait(0)
-  deferrals.update('Vérification whitelist…')
-  local lic = license(src)
-  if not lic then return deferrals.done('Licence introuvable.') end
-  get('/whitelist/' .. lic, function(status, data)
-    if status == 200 and data and data.whitelisted then
-      deferrals.done()
-    else
-      deferrals.done('Vous n\'êtes pas whitelisté. Faites /whitelist apply sur Discord.')
-    end
-  end)
-end)
-
--- 3) Stats de fin de partie (appelé par votre gamemode)
--- exports['rs_bridge']:ReportMatch({ { identifier = 'license:…', wins = 1, kills = 5, deaths = 1, matches = 1, damage = 900, top10 = 1, xp = 300, playtimeMinutes = 15 }, ... })
-exports('ReportMatch', function(rows)
-  post('/stats', rows, function(status, data)
-    if data and data.unlinked then
-      for _, lic in ipairs(data.unlinkedIdentifiers or {}) do
-        for _, src in ipairs(GetPlayers()) do
-          if license(src) == lic then
-            TriggerClientEvent('chat:addMessage', src, { args = { 'Redemption', 'Liez votre compte sur Discord : /br-link ' .. lic } })
-          end
-        end
-      end
-    end
-  end)
-end)
-
--- 4) Sanctions (ex: depuis votre menu admin)
--- exports['rs_bridge']:ReportSanction(targetSrc, 'BAN', 'Cheat', 86400, GetPlayerName(adminSrc))
-exports('ReportSanction', function(target, kind, reason, duration, staff)
-  post('/sanctions', { identifier = license(target), type = kind, reason = reason, duration = duration, staff = staff })
-end)
-```
-
-Convars à ajouter dans `server.cfg` : `set rs_api_base "https://…/api/fivem/servers/<GUILD_ID>/<SERVER_KEY>"` et `set rs_api_key "<clé>"`.
-
-### 7.3 Pont Node.js Socket.IO (optionnel)
-
-```js
-const { io } = require('socket.io-client');
-const socket = io('https://bot.example.com/fivem', { auth: { apiKey: process.env.RS_API_KEY, serverKey: 'main', guildId: '123456789012345678' } });
-socket.on('ready', (info) => console.log('connected', info));
-socket.on('whitelist:updated', ({ discordId, identifier, status }) => { /* rafraîchir le cache whitelist du serveur */ });
-socket.on('maintenance', ({ enabled }) => { /* ExecuteCommand(`set maintenance ${enabled}`) via RCON / ressource */ });
-socket.emit('status', { online: true, players: 0, maxPlayers: 64 }, (ack) => console.log(ack));
-```
-
----
-
-## 8. Webhook Tebex — `/api/shop/tebex`
+## 10. Webhook Tebex — `/api/shop/tebex`
 
 Monté par le dashboard via `createShopWebhookRouter()` sur `/api/shop`.
 
@@ -325,11 +320,13 @@ Logique : commande retrouvée par `tebexTransactionId`, sinon dernière commande
 
 ---
 
-## 9. Récapitulatif côté serveur de jeu
+---
 
-1. Déclarer le serveur : `/fivem add`, noter l'URL de base et la clé.
-2. Installer la ressource `rs_bridge` (§ 7.2) : heartbeat `/status`, vérification `/whitelist/:identifier` dans `playerConnecting`, appel de `ReportMatch` à la fin de chaque partie, `ReportSanction` depuis le menu admin.
-3. (Optionnel) Renseigner `host` pour le polling `info.json` / `players.json` — ouvrir le port HTTP du serveur FiveM au bot.
-4. (Optionnel) Pont Socket.IO pour recevoir `whitelist:updated` / `maintenance` en temps réel.
-5. Demander aux joueurs Battle Royale de lier leur identifiant : `/br-link license:…`.
-6. Shop : configurer `tebexPackageId` sur chaque produit (`/shop product add … tebex_package:`) et relayer les webhooks Tebex vers `/api/shop/tebex`.
+## 11. Récapitulatif côté serveur de jeu
+
+1. `/fivem add key:<clé> …` puis `/fivem sync key:<clé> …` (rôles, salon compteur, options).
+2. Copier `fivem-resource/rs_bridge`, renseigner `config.lua`, `set rs_bridge_api_key "…"` et `ensure rs_bridge` dans `server.cfg`.
+3. Brancher le menu admin sur `BanPlayer` / `UnbanPlayer` / `KickPlayer` / `WarnPlayer` (ou laisser les hooks txAdmin).
+4. Gamemode BR : `AddMatchStats` en fin de partie, `SetPlayerName` quand le joueur choisit son pseudo.
+5. Bot : rôle placé au-dessus des rôles gérés et des membres à renommer ; intent *Server Members* activé.
+6. Shop : `tebexPackageId` sur chaque produit et webhooks Tebex relayés vers `/api/shop/tebex`.

@@ -6,7 +6,20 @@ import type { FiveMServer } from '@prisma/client';
 import { fivemService, FiveMError } from '../services/FiveMService';
 import { whitelistService } from '../services/WhitelistService';
 import { battleRoyaleService } from '../services/BattleRoyaleService';
-import { formatZodError, maintenanceSchema, playerJoinSchema, playerLeaveSchema, serverStatusSchema, socketAuthSchema, statsBatchSchema, type NormalizedStats } from '../services/fivem/schemas';
+import { fivemSyncService } from '../services/FiveMSyncService';
+import {
+  connectionCheckSchema,
+  formatZodError,
+  maintenanceSchema,
+  playerJoinSchema,
+  playerLeaveSchema,
+  playerNameSchema,
+  serverStatusSchema,
+  socketAuthSchema,
+  statsBatchSchema,
+  type NormalizedStats,
+  type ServerPlayer,
+} from '../services/fivem/schemas';
 import { childLogger } from '../utils/logger';
 
 const log = childLogger('FiveMApi');
@@ -114,9 +127,31 @@ async function handleStats(server: FiveMServer, payload: unknown): Promise<{ app
   return { applied: results.filter((r) => r.applied).length, unlinked, results };
 }
 
+/** Sanction prise en jeu → Sanction + action Discord selon la config de synchronisation du serveur. */
 async function handleSanction(server: FiveMServer, payload: unknown) {
   const sanction = fivemService.getAdapter(server.framework).normalizeSanction(payload);
-  return fivemService.recordSanction(server, sanction);
+  return fivemSyncService.handleSanction(server, sanction);
+}
+
+/** Arrivée en jeu : liaison / rôles / surnom, puis ajout à la liste des joueurs du statut. */
+async function handleJoin(server: FiveMServer, payload: unknown) {
+  const player: ServerPlayer = playerJoinSchema.parse(payload);
+  const result = await fivemSyncService.handleJoin(server, player);
+  const current = fivemService.getResolvedStatus(server);
+  const playerList = [...current.playerList.filter((p) => p.id !== player.id), player];
+  const updated = await fivemService.applyStatus(server, { ...current, online: true, players: playerList.length, playerList }, 'rest');
+  return { updated, players: playerList.length, ...result };
+}
+
+/** Départ : temps de session comptabilisé, rôle « en jeu » retiré, joueur retiré du statut. */
+async function handleLeave(server: FiveMServer, payload: unknown) {
+  const leave = playerLeaveSchema.parse(payload);
+  const current = fivemService.getResolvedStatus(server);
+  const known = current.playerList.find((p) => p.id === leave.id);
+  const r = await fivemSyncService.handleLeave(server, { id: leave.id, identifiers: leave.identifiers ?? known?.identifiers });
+  const playerList = current.playerList.filter((p) => p.id !== leave.id);
+  const updated = await fivemService.applyStatus(server, { ...current, online: true, players: playerList.length, playerList }, 'rest');
+  return { updated, players: playerList.length, minutes: r.minutes, discordId: r.discordId };
 }
 
 // ───────────── Router ─────────────
@@ -127,6 +162,7 @@ async function handleSanction(server: FiveMServer, payload: unknown) {
  */
 export function createFiveMRouter(client: RedemptionClient): Router {
   fivemService.attach(client);
+  fivemSyncService.attach(client);
   const router = Router();
   router.use(rateLimit);
   router.use(express.json({ limit: '512kb' }));
@@ -192,6 +228,68 @@ export function createFiveMRouter(client: RedemptionClient): Router {
     }),
   );
 
+  router.post(
+    `${base}/players/join`,
+    authenticate,
+    wrap(async (req, res) => {
+      const { updated: _u, ...r } = await handleJoin(req.server, req.body);
+      res.json({ ok: true, ...r });
+    }),
+  );
+
+  router.post(
+    `${base}/players/leave`,
+    authenticate,
+    wrap(async (req, res) => {
+      const { updated: _u, ...r } = await handleLeave(req.server, req.body);
+      res.json({ ok: true, ...r });
+    }),
+  );
+
+  router.post(
+    `${base}/players/name`,
+    authenticate,
+    wrap(async (req, res) => {
+      const input = playerNameSchema.parse(req.body);
+      const r = await fivemSyncService.handleNameChange(req.server, input);
+      res.json({ ok: true, ...r });
+    }),
+  );
+
+  router.post(
+    `${base}/check`,
+    authenticate,
+    wrap(async (req, res) => {
+      const { identifiers } = connectionCheckSchema.parse(req.body);
+      const r = await fivemSyncService.checkConnection(req.server, identifiers);
+      res.json({ ok: true, ...r });
+    }),
+  );
+
+  router.get(
+    `${base}/bans/:discordId`,
+    authenticate,
+    wrap(async (req, res) => {
+      const discordId = String(req.params.discordId ?? '').replace(/^discord:/, '');
+      if (!/^\d{15,22}$/.test(discordId)) {
+        res.status(400).json({ error: 'validation', message: 'discordId invalide' });
+        return;
+      }
+      const ban = await fivemSyncService.getDiscordBan(req.server.guildId, discordId);
+      res.json({ ok: true, discordId, banned: ban.active, reason: ban.reason, expiresAt: ban.expiresAt?.toISOString() ?? null });
+    }),
+  );
+
+  router.get(
+    `${base}/actions`,
+    authenticate,
+    wrap(async (req, res) => {
+      // Le polling des actions sert aussi de heartbeat léger.
+      const actions = await fivemSyncService.takeActions(req.server);
+      res.json({ ok: true, count: actions.length, actions });
+    }),
+  );
+
   router.get(
     `${base}/players`,
     authenticate,
@@ -237,6 +335,7 @@ function withAck(socket: Socket, event: string, fn: (payload: unknown) => Promis
 /** Namespace Socket.IO `/fivem` : auth par handshake.auth { apiKey, serverKey, guildId }. */
 export function attachFiveMSocket(io: SocketServer, client: RedemptionClient): void {
   fivemService.attach(client);
+  fivemSyncService.attach(client);
   const nsp = io.of('/fivem');
 
   nsp.use(async (socket, next) => {
@@ -253,6 +352,8 @@ export function attachFiveMSocket(io: SocketServer, client: RedemptionClient): v
 
   nsp.on('connection', (socket) => {
     const server = socket.data.server as FiveMServer;
+    /** Configuration à jour (les options de synchronisation peuvent changer pendant la connexion). */
+    const fresh = async (): Promise<FiveMServer> => Object.assign(server, (await fivemService.getServer(server.guildId, server.key)) ?? {});
     fivemService.registerSocket(server, socket);
     socket.emit('ready', { serverKey: server.key, guildId: server.guildId, maintenance: server.maintenance });
 
@@ -269,26 +370,29 @@ export function attachFiveMSocket(io: SocketServer, client: RedemptionClient): v
     });
 
     withAck(socket, 'sanction', async (payload) => {
-      const r = await handleSanction(server, payload);
+      const r = await handleSanction(await fresh(), payload);
       return { ...r };
     });
 
     withAck(socket, 'player:join', async (payload) => {
-      const player = playerJoinSchema.parse(payload);
-      const current = fivemService.getResolvedStatus(server);
-      const playerList = [...current.playerList.filter((p) => p.id !== player.id), player];
-      const updated = await fivemService.applyStatus(server, { ...current, online: true, players: playerList.length, playerList }, 'socket');
+      const { updated, ...r } = await handleJoin(await fresh(), payload);
       Object.assign(server, updated);
-      return { players: playerList.length };
+      return { ...r };
     });
 
     withAck(socket, 'player:leave', async (payload) => {
-      const leave = playerLeaveSchema.parse(payload);
-      const current = fivemService.getResolvedStatus(server);
-      const playerList = current.playerList.filter((p) => p.id !== leave.id);
-      const updated = await fivemService.applyStatus(server, { ...current, online: true, players: playerList.length, playerList }, 'socket');
+      const { updated, ...r } = await handleLeave(await fresh(), payload);
       Object.assign(server, updated);
-      return { players: playerList.length };
+      return { ...r };
+    });
+
+    withAck(socket, 'player:name', async (payload) => {
+      return { ...(await fivemSyncService.handleNameChange(await fresh(), playerNameSchema.parse(payload))) };
+    });
+
+    withAck(socket, 'check', async (payload) => {
+      const { identifiers } = connectionCheckSchema.parse(payload);
+      return { ...(await fivemSyncService.checkConnection(await fresh(), identifiers)) };
     });
 
     withAck(socket, 'whitelist:check', async (payload) => {

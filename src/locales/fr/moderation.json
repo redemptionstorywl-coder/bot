@@ -299,5 +299,30 @@
     "notice_indefinite": "Salon mis en sourdine jusqu'à nouvel ordre.\nRaison : {reason}",
     "reopened_title": "🔊 Salon rouvert",
     "reopened": "La sourdine a expiré : vous pouvez de nouveau écrire ici."
+  },
+  "nuke_guild": {
+    "title": "🧨 Vider tout le serveur",
+    "confirm_hint": "Tapez exactement le nom du serveur pour confirmer.",
+    "modal_title": "Vider tout le serveur",
+    "modal_label": "Nom exact du serveur",
+    "modal_help": "Tous les salons texte et annonces seront recréés vides. Irréversible.",
+    "admin_only": "`/clear salon` et `/clear serveur` sont réservés aux administrateurs.",
+    "bot_missing": "Le bot doit avoir la permission « Gérer les salons » (et « Gérer les rôles » pour copier les permissions).",
+    "already_running": "Un `/clear serveur` est déjà en cours sur ce serveur.",
+    "mismatch": "Confirmation refusée : le nom saisi ne correspond pas exactement au nom du serveur. Rien n'a été supprimé.",
+    "in_progress": "🧨 Suppression de tous les messages du serveur en cours… Ce salon va être recréé : le rapport final vous sera envoyé en message privé.",
+    "done": "Serveur vidé : **{count}** salon(s) recréé(s) en {duration} (case #{number}).",
+    "dm_title": "🧨 /clear serveur — {server}",
+    "dm_description": "Rapport de la suppression de tous les messages (case #{number}).",
+    "log_title": "🧨 Serveur vidé (case #{number})",
+    "log_description": "Tous les salons texte / annonces ont été recréés vides par {moderator}.",
+    "report_cleared": "✅ Salons vidés ({count})",
+    "report_skipped": "⏭️ Salons ignorés ({count})",
+    "report_errors": "⚠️ Erreurs ({count})",
+    "report_remapped": "🔁 Références mises à jour",
+    "report_duration": "⏱️ Durée",
+    "skip_ticket": "ticket",
+    "skip_no_permission": "permissions insuffisantes",
+    "failed": "Le `/clear serveur` a échoué : {error}"
   }
 }

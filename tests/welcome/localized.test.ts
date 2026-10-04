@@ -3,7 +3,7 @@ import { createPrismaMock } from '../helpers/prisma';
 
 vi.mock('../../src/database/client', () => ({ prisma: createPrismaMock() }));
 
-import { isLocalizedMap, resolveLocalized, setLocalized } from '../../src/services/WelcomeService';
+import { isLocalizedMap, resolveLocalized } from '../../src/services/WelcomeService';
 
 describe('resolveLocalized', () => {
   it('renvoie une chaîne simple telle quelle', () => {
@@ -13,12 +13,12 @@ describe('resolveLocalized', () => {
     const spec = { title: 'Hello', description: 'World' };
     expect(resolveLocalized(spec, 'fr')).toBe(spec);
   });
-  it('choisit la langue de l’utilisateur', () => {
+  it('choisit la langue demandée (langue du serveur)', () => {
     expect(resolveLocalized({ fr: 'Salut', en: 'Hi' }, 'en', 'fr')).toBe('Hi');
   });
   it('retombe sur la langue du serveur puis sur la première valeur', () => {
-    expect(resolveLocalized({ fr: 'Salut', en: 'Hi' }, 'de', 'fr')).toBe('Salut');
-    expect(resolveLocalized({ es: 'Hola' }, 'de', 'fr')).toBe('Hola');
+    expect(resolveLocalized({ fr: 'Salut' }, 'en', 'fr')).toBe('Salut');
+    expect(resolveLocalized({ en: 'Hi' }, 'fr', 'fr')).toBe('Hi');
   });
   it('gère null / undefined', () => {
     expect(resolveLocalized(null, 'fr')).toBeUndefined();
@@ -30,22 +30,5 @@ describe('resolveLocalized', () => {
     expect(isLocalizedMap({ fr: 'a', title: 'b' })).toBe(false);
     expect(isLocalizedMap({})).toBe(false);
     expect(isLocalizedMap(['fr'])).toBe(false);
-  });
-});
-
-describe('setLocalized', () => {
-  it('remplace tout sans langue', () => {
-    expect(setLocalized({ fr: 'a' }, 'b', null, 'fr')).toBe('b');
-    expect(setLocalized('a', null, undefined, 'fr')).toBeNull();
-  });
-  it('fusionne dans un dictionnaire existant', () => {
-    expect(setLocalized({ fr: 'a' }, 'b', 'en', 'fr')).toEqual({ fr: 'a', en: 'b' });
-  });
-  it('rattache une valeur simple existante à la langue de base', () => {
-    expect(setLocalized('Salut', 'Hi', 'en', 'fr')).toEqual({ fr: 'Salut', en: 'Hi' });
-  });
-  it('supprime une langue et renvoie null quand vide', () => {
-    expect(setLocalized({ fr: 'a', en: 'b' }, null, 'en', 'fr')).toEqual({ fr: 'a' });
-    expect(setLocalized({ en: 'b' }, null, 'en', 'fr')).toBeNull();
   });
 });

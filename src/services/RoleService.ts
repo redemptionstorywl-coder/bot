@@ -34,6 +34,8 @@ import { translationService, type Translator } from './TranslationService';
 const log = childLogger('RoleService');
 
 export const MAX_AUTOROLE_DELAY_SECONDS = 24 * 3600;
+/** Déclencheurs d'autorole utilisables (MEMBER / LANGUAGE de l'enum ne sont plus déclenchés : système de langue retiré). */
+export const ACTIVE_AUTOROLE_TYPES = ['JOIN', 'BOT', 'VERIFIED', 'SPECIAL'] as const satisfies readonly AutoRoleType[];
 const SNOWFLAKE = /^\d{17,20}$/;
 
 // ───────────────────────── Schémas JSON ─────────────────────────
@@ -181,7 +183,7 @@ export interface NotificationRoleInput {
 }
 
 /**
- * Rôles : autorole (JOIN/BOT/VERIFIED/MEMBER/LANGUAGE/SPECIAL), role menus, reaction roles, notifications.
+ * Rôles : autorole (JOIN/BOT/VERIFIED/SPECIAL), role menus, reaction roles, notifications.
  * Toute modification de rôle passe par `changeRoles()` (hiérarchie vérifiée, un seul appel API, log ROLE).
  */
 export class RoleService {

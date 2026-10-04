@@ -1,5 +1,5 @@
 <section class="page-header">
-  <div><h2 class="page-title">Bienvenue</h2><p class="muted">Messages d'arrivée et de départ (multilingues, image générée, DM), rôles et panneau de langue.</p></div>
+  <div><h2 class="page-title">Bienvenue</h2><p class="muted">Messages d'arrivée et de départ (image générée, DM).</p></div>
 </section>
 
 <% const w = welcome; const lv = leave; %>
@@ -14,7 +14,6 @@
   <div class="tab-list" role="tablist">
     <button type="button" class="tab" role="tab" data-tab="welcome">👋 Bienvenue <% if (w && w.enabled) { %><span class="badge badge-primary">actif</span><% } %></button>
     <button type="button" class="tab" role="tab" data-tab="leave">🚪 Départ <% if (lv && lv.enabled) { %><span class="badge badge-primary">actif</span><% } %></button>
-    <button type="button" class="tab" role="tab" data-tab="languages">🌍 Langues</button>
   </div>
 
   <!-- ─── Bienvenue ─── -->
@@ -27,31 +26,22 @@
           <h3 class="card-title">Salon &amp; message</h3>
           <label class="check"><input type="checkbox" name="enabled" <%= w && w.enabled ? 'checked' : '' %>><span>Activer le message de bienvenue</span></label>
           <div class="field"><label for="w-channel">Salon</label><select id="w-channel" name="channelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: w ? w.channelId : '', allowEmpty: true }) %></select></div>
-          <label class="check"><input type="checkbox" name="sameMessage" data-check-toggle="#w-msg-single" data-check-hide="#w-msg-langs" <%= welcomeMessage.same ? 'checked' : '' %>><span>Message identique pour toutes les langues</span></label>
-          <div class="field" id="w-msg-single"><label for="w-message">Message</label><textarea id="w-message" name="message" class="textarea" rows="3" maxlength="2000" placeholder="Bienvenue {user} sur {server} ! Tu es le membre n°{memberCount}."><%= welcomeMessage.single %></textarea></div>
-          <div id="w-msg-langs">
-            <% for (const l of enabledLanguages) { %>
-              <div class="field"><label for="w-message-<%= l.code %>"><%= l.flag %> Message (<%= l.nativeLabel %>)</label><textarea id="w-message-<%= l.code %>" name="messages[<%= l.code %>]" class="textarea" rows="2" maxlength="2000"><%= welcomeMessage.perLang[l.code] || '' %></textarea></div>
-            <% } %>
-          </div>
-          <small class="hint">Sans message ni embed, un message par défaut traduit est envoyé.</small>
+          <div class="field"><label for="w-message">Message</label><textarea id="w-message" name="message" class="textarea" rows="3" maxlength="2000" placeholder="Bienvenue {user} sur {server} ! Tu es le membre n°{memberCount}."><%= welcomeMessage %></textarea></div>
+          <small class="hint">Sans message ni embed, un message par défaut est envoyé.</small>
           <%- varsHelp() %>
         </div>
         <div class="card">
-          <h3 class="card-title">Image &amp; langue</h3>
+          <h3 class="card-title">Image</h3>
           <label class="check"><input type="checkbox" name="imageEnabled" <%= w && w.imageEnabled ? 'checked' : '' %>><span>Générer une image de bienvenue (avatar + titre)</span></label>
           <div class="field"><label for="w-bg">Image de fond (URL, optionnelle)</label><input id="w-bg" name="imageBackgroundUrl" type="url" class="input" maxlength="500" value="<%= w && w.imageBackgroundUrl ? w.imageBackgroundUrl : '' %>" placeholder="https://…/fond.png"></div>
           <div class="grid-2 grid-tight">
             <div class="field"><label for="w-title">Titre de l'image</label><input id="w-title" name="imageTitle" class="input" maxlength="60" value="<%= w ? w.imageTitle : 'BIENVENUE' %>"></div>
             <div class="field"><label for="w-subtitle">Sous-titre</label><input id="w-subtitle" name="imageSubtitle" class="input" maxlength="80" value="<%= w ? w.imageSubtitle : '{username} · membre #{memberCount}' %>"></div>
           </div>
-          <label class="check"><input type="checkbox" name="languagePromptEnabled" <%= w && w.languagePromptEnabled ? 'checked' : '' %>><span>Ajouter le bouton « 🌍 Choisir ma langue »</span></label>
           <h3 class="card-title">Message privé (DM)</h3>
           <label class="check"><input type="checkbox" name="dmEnabled" data-check-toggle="#w-dm" <%= w && w.dmEnabled ? 'checked' : '' %>><span>Envoyer un DM à l'arrivée</span></label>
           <div id="w-dm">
-            <label class="check"><input type="checkbox" name="dmSameMessage" data-check-toggle="#w-dm-single" data-check-hide="#w-dm-langs" <%= dmMessage.same ? 'checked' : '' %>><span>DM identique pour toutes les langues</span></label>
-            <div class="field" id="w-dm-single"><label for="w-dm-message">Message du DM</label><textarea id="w-dm-message" name="dmMessage" class="textarea" rows="2" maxlength="2000"><%= dmMessage.single %></textarea></div>
-            <div id="w-dm-langs"><% for (const l of enabledLanguages) { %><div class="field"><label for="w-dm-<%= l.code %>"><%= l.flag %> DM (<%= l.nativeLabel %>)</label><textarea id="w-dm-<%= l.code %>" name="dmMessages[<%= l.code %>]" class="textarea" rows="2" maxlength="2000"><%= dmMessage.perLang[l.code] || '' %></textarea></div><% } %></div>
+            <div class="field"><label for="w-dm-message">Message du DM</label><textarea id="w-dm-message" name="dmMessage" class="textarea" rows="2" maxlength="2000"><%= dmMessage %></textarea></div>
             <div class="field"><label for="w-dm-embed">Embed du DM (JSON, optionnel)</label><textarea id="w-dm-embed" name="dmEmbedJson" class="textarea textarea-sm input-mono" rows="4" placeholder='{"title": "Bienvenue !", "description": "…"}'><%= dmEmbedJson %></textarea></div>
           </div>
         </div>
@@ -62,12 +52,12 @@
           <div class="tag-list">
             <label class="check check-sm"><input type="radio" name="embedMode" value="none" data-radio-toggle="#w-embed-none" <%= welcomeEmbed.mode === 'none' ? 'checked' : '' %>><span>Aucun</span></label>
             <label class="check check-sm"><input type="radio" name="embedMode" value="form" data-radio-toggle="#w-embed-form" <%= welcomeEmbed.mode === 'form' ? 'checked' : '' %>><span>Formulaire</span></label>
-            <label class="check check-sm"><input type="radio" name="embedMode" value="json" data-radio-toggle="#w-embed-jsonwrap" <%= welcomeEmbed.mode === 'json' ? 'checked' : '' %>><span>JSON avancé (par langue)</span></label>
+            <label class="check check-sm"><input type="radio" name="embedMode" value="json" data-radio-toggle="#w-embed-jsonwrap" <%= welcomeEmbed.mode === 'json' ? 'checked' : '' %>><span>JSON avancé</span></label>
           </div>
         </div>
         <p class="muted" id="w-embed-none">Aucun embed : seul le message texte (et l'image éventuelle) est envoyé. Les boutons configurés en mode « Formulaire » restent envoyés.</p>
         <div id="w-embed-form"><%- include('../partials/embed-editor', { prefix: 'embed', spec: welcomeEmbed.spec, id: 'w-embed', buttons: buttons, buttonsName: 'buttonsJson', withPreview: true, withJson: false, compact: true, contentSource: '#w-message' }) %></div>
-        <div class="field" id="w-embed-jsonwrap"><label for="w-embed-json">JSON avancé — EmbedSpec ou dictionnaire <code>{ "fr": {…}, "en": {…} }</code></label><textarea id="w-embed-json" name="embedJson" class="textarea textarea-sm input-mono" rows="8"><%= welcomeEmbed.json %></textarea></div>
+        <div class="field" id="w-embed-jsonwrap"><label for="w-embed-json">JSON avancé (EmbedSpec)</label><textarea id="w-embed-json" name="embedJson" class="textarea textarea-sm input-mono" rows="8"><%= welcomeEmbed.json %></textarea></div>
       </div>
 
       <div class="form-actions sticky-actions">
@@ -91,14 +81,12 @@
           <h3 class="card-title">Salon &amp; message</h3>
           <label class="check"><input type="checkbox" name="enabled" <%= lv && lv.enabled ? 'checked' : '' %>><span>Activer le message de départ</span></label>
           <div class="field"><label for="l-channel">Salon</label><select id="l-channel" name="channelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: lv ? lv.channelId : '', allowEmpty: true }) %></select></div>
-          <label class="check"><input type="checkbox" name="sameMessage" data-check-toggle="#l-msg-single" data-check-hide="#l-msg-langs" <%= leaveMessage.same ? 'checked' : '' %>><span>Message identique pour toutes les langues</span></label>
-          <div class="field" id="l-msg-single"><label for="l-message">Message</label><textarea id="l-message" name="message" class="textarea" rows="3" maxlength="2000" placeholder="{username} a quitté le serveur. Nous sommes désormais {memberCount}."><%= leaveMessage.single %></textarea></div>
-          <div id="l-msg-langs"><% for (const l of enabledLanguages) { %><div class="field"><label for="l-message-<%= l.code %>"><%= l.flag %> Message (<%= l.nativeLabel %>)</label><textarea id="l-message-<%= l.code %>" name="messages[<%= l.code %>]" class="textarea" rows="2" maxlength="2000"><%= leaveMessage.perLang[l.code] || '' %></textarea></div><% } %></div>
+          <div class="field"><label for="l-message">Message</label><textarea id="l-message" name="message" class="textarea" rows="3" maxlength="2000" placeholder="{username} a quitté le serveur. Nous sommes désormais {memberCount}."><%= leaveMessage %></textarea></div>
           <label class="check"><input type="checkbox" name="logEnabled" <%= !lv || lv.logEnabled ? 'checked' : '' %>><span>Journaliser les départs dans les logs « Membres »</span></label>
         </div>
         <div class="card">
           <h3 class="card-title">Embed &amp; image</h3>
-          <div class="field"><label for="l-embed">Embed (JSON, optionnel — EmbedSpec ou dictionnaire par langue)</label><textarea id="l-embed" name="embedJson" class="textarea input-mono" rows="8" placeholder='{"title": "Au revoir {username}", "description": "Nous sommes désormais {memberCount}."}'><%= leaveEmbedJson %></textarea></div>
+          <div class="field"><label for="l-embed">Embed (JSON, optionnel)</label><textarea id="l-embed" name="embedJson" class="textarea input-mono" rows="8" placeholder='{"title": "Au revoir {username}", "description": "Nous sommes désormais {memberCount}."}'><%= leaveEmbedJson %></textarea></div>
           <label class="check"><input type="checkbox" name="imageEnabled" <%= lv && lv.imageEnabled ? 'checked' : '' %>><span>Générer une image de départ</span></label>
           <div class="field"><label for="l-bg">Image de fond (URL, optionnelle)</label><input id="l-bg" name="imageBackgroundUrl" type="url" class="input" maxlength="500" value="<%= lv && lv.imageBackgroundUrl ? lv.imageBackgroundUrl : '' %>"></div>
           <%- varsHelp() %>
@@ -112,45 +100,4 @@
     </form>
   </section>
 
-  <!-- ─── Langues ─── -->
-  <section class="tab-panel" data-tab-panel="languages" role="tabpanel">
-    <% if (!modules.language) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le module Multilingue est désactivé : le panneau et les boutons de langue ne répondent pas.</span></div><% } %>
-    <div class="grid-2">
-      <form method="post" action="/guilds/<%= guild.id %>/welcome/languages" class="card form">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <div class="card-head"><h3 class="card-title">Rôles de langue</h3><a class="link" href="/guilds/<%= guild.id %>/settings">Langues activées →</a></div>
-        <p class="muted">Rôle attribué quand un membre choisit sa langue (les autres rôles de langue sont retirés).</p>
-        <div class="table-wrap"><table class="table table-compact">
-          <thead><tr><th>Langue</th><th>Rôle</th></tr></thead>
-          <tbody>
-            <% for (const l of languageRoles) { %>
-              <tr class="<%= l.enabled ? '' : 'row-disabled' %>">
-                <td><%= l.flag %> <%= l.nativeLabel %> <small class="muted">(<%= l.code %>)</small><% if (!l.enabled) { %> <span class="badge badge-muted">désactivée</span><% } %></td>
-                <td><select name="roles[<%= l.code %>]" class="select select-sm"><option value="">— Aucun —</option><%- include('../partials/role-options', { roles: guild.roles, selected: l.roleId }) %></select></td>
-              </tr>
-            <% } %>
-          </tbody>
-        </table></div>
-        <div class="form-actions"><button type="submit" class="btn btn-primary">Enregistrer les rôles</button></div>
-      </form>
-      <div class="stack">
-        <div class="card">
-          <h3 class="card-title">Rôles par défaut</h3>
-          <p class="muted">Remplace la configuration par les rôles de langue standard (IDs Battle Royale) présents sur ce serveur : <%= languageRoles.filter((l) => l.defaultPresent).length %> trouvé(s).</p>
-          <form method="post" action="/guilds/<%= guild.id %>/welcome/languages/reset"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost" data-confirm="Remplacer les rôles de langue configurés par les rôles par défaut ?" <%= botReady ? '' : 'disabled' %>>Réinitialiser aux rôles par défaut</button></form>
-        </div>
-        <div class="card">
-          <h3 class="card-title">Panneau « Choisir sa langue »</h3>
-          <% if (panel) { %><p>Publié dans <strong>#<%= (guild.textChannels.find((c) => c.id === panel.channelId) || { name: panel.channelId }).name %></strong><% if (panel.messageId) { %> · <a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= panel.channelId %>/<%= panel.messageId %>" target="_blank" rel="noopener noreferrer">voir ↗</a><% } %></p><% } else { %><p class="muted">Aucun panneau publié.</p><% } %>
-          <form method="post" action="/guilds/<%= guild.id %>/welcome/languages/publish" class="inline-fields">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <div class="field"><label for="lp-channel">Salon</label><select id="lp-channel" name="channelId" class="select" required><%- include('../partials/channel-options', { channels: guild.textChannels, selected: panel ? panel.channelId : '', allowEmpty: true, emptyLabel: '— Choisir —' }) %></select></div>
-            <div class="field"><label for="lp-style">Style</label><select id="lp-style" name="style" class="select"><option value="BUTTONS">Boutons</option><option value="SELECT">Menu déroulant</option></select></div>
-            <div class="field field-fixed"><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>><%= panel ? 'Republier' : 'Publier' %></button></div>
-          </form>
-          <% if (panel) { %><form method="post" action="/guilds/<%= guild.id %>/welcome/languages/refresh" class="card-actions"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-ghost btn-sm" <%= botReady ? '' : 'disabled' %>>Rafraîchir le panneau (langues activées)</button></form><% } %>
-        </div>
-      </div>
-    </div>
-  </section>
 </div>

@@ -40,7 +40,6 @@ export const NAVIGATION: NavEntry[] = [
   { key: 'battleRoyale', label: 'Battle Royale', icon: '⚔️', path: 'battle-royale', module: 'battleRoyale', group: 'modules' },
   { key: 'school', label: 'School RP', icon: '🎓', path: 'school', module: 'school', group: 'modules' },
   { key: 'shop', label: 'Shop', icon: '🛒', path: 'shop', module: 'shop', group: 'modules' },
-  { key: 'translations', label: 'Traductions', icon: '🌍', path: 'translations', group: 'advanced' },
   { key: 'settings', label: 'Paramètres', icon: '⚙️', path: 'settings', group: 'advanced' },
   { key: 'admin', label: 'Administration', icon: '🛠️', path: null, ownerOnly: true, group: 'global' },
 ];

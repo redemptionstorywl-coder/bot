@@ -15,11 +15,16 @@ describe('locales', () => {
     expect(frFiles.length).toBeGreaterThan(10);
   });
 
+  it('seules les locales fr et en existent', () => {
+    expect(languages.sort()).toEqual(['en', 'fr']);
+  });
+
   for (const lang of languages.filter((l) => l !== 'fr')) {
     const dir = path.join(root, lang);
-    const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json'));
-    if (files.length === 0) continue; // langue pas encore générée
     describe(lang, () => {
+      it('aucun fichier en trop', () => {
+        expect(fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort()).toEqual([...frFiles].sort());
+      });
       for (const file of frFiles) {
         it(`${file} : mêmes clés et mêmes placeholders que fr`, () => {
           const fr = Object.fromEntries(flat(JSON.parse(fs.readFileSync(path.join(root, 'fr', file), 'utf8'))));

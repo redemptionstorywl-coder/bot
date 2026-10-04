@@ -1,7 +1,13 @@
 import { ChannelType, MessageFlags, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import { FiveMFramework } from '@prisma/client';
 import { defineCommand } from '../../structures';
+import { ZodError } from 'zod';
+import type { FiveMServer } from '@prisma/client';
 import { fivemService, FiveMError } from '../../services/FiveMService';
+import { fivemSyncService } from '../../services/FiveMSyncService';
+import { BattleRoyaleError } from '../../services/BattleRoyaleService';
+import type { SyncSettingsPatch } from '../../services/fivem/sync';
+import type { Translator } from '../../services/TranslationService';
 import { embedService } from '../../services/EmbedService';
 import { env } from '../../config/env';
 import { discordTimestamp } from '../../utils/time';
@@ -43,7 +49,42 @@ export default defineCommand({
         .addStringOption((o) => o.setName('key').setDescription('Clé du serveur').setRequired(true).setAutocomplete(true))
         .addChannelOption((o) => o.setName('channel').setDescription('Salon (vide = désactiver)').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)),
     )
-    .addSubcommand((s) => s.setName('players').setDescription('Joueurs connectés').addStringOption((o) => o.setName('key').setDescription('Clé du serveur').setRequired(true).setAutocomplete(true))),
+    .addSubcommand((s) => s.setName('players').setDescription('Joueurs connectés').addStringOption((o) => o.setName('key').setDescription('Clé du serveur').setRequired(true).setAutocomplete(true)))
+    .addSubcommand((s) =>
+      s
+        .setName('sync')
+        .setDescription('Synchronisation jeu ⇄ Discord (sans option = afficher)')
+        .addStringOption((o) => o.setName('key').setDescription('Clé du serveur').setRequired(true).setAutocomplete(true))
+        .addBooleanOption((o) => o.setName('bans_to_discord').setDescription('Ban en jeu → ban Discord'))
+        .addBooleanOption((o) => o.setName('bans_to_game').setDescription('Ban Discord → ban en jeu'))
+        .addBooleanOption((o) => o.setName('kicks').setDescription('Kick en jeu → kick Discord'))
+        .addBooleanOption((o) => o.setName('nicknames').setDescription('Pseudo en jeu → surnom Discord'))
+        .addStringOption((o) => o.setName('nickname_format').setDescription('Format du surnom : {name} {id} {level}').setMaxLength(64))
+        .addRoleOption((o) => o.setName('linked_role').setDescription('Rôle donné quand le compte est lié'))
+        .addRoleOption((o) => o.setName('online_role').setDescription('Rôle « En jeu »'))
+        .addChannelOption((o) => o.setName('counter_channel').setDescription('Salon vocal / catégorie renommé avec le nombre de joueurs').addChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice, ChannelType.GuildCategory))
+        .addBooleanOption((o) => o.setName('require_discord').setDescription('Refuser la connexion sans Discord lié / membre'))
+        .addRoleOption((o) => o.setName('require_role').setDescription('Rôle Discord requis pour se connecter'))
+        .addBooleanOption((o) => o.setName('require_whitelist').setDescription('Whitelist acceptée requise pour se connecter'))
+        .addStringOption((o) =>
+          o
+            .setName('clear')
+            .setDescription('Retirer un rôle / salon configuré')
+            .addChoices(
+              { name: 'linked_role', value: 'linkedRoleId' },
+              { name: 'online_role', value: 'onlineRoleId' },
+              { name: 'counter_channel', value: 'playerCountChannelId' },
+              { name: 'require_role', value: 'requireRoleId' },
+            ),
+        ),
+    )
+    .addSubcommand((s) =>
+      s
+        .setName('link')
+        .setDescription('Lier manuellement un membre à une licence FiveM')
+        .addUserOption((o) => o.setName('member').setDescription('Membre Discord').setRequired(true))
+        .addStringOption((o) => o.setName('license').setDescription('license:xxxxxxxx…').setRequired(true).setMaxLength(128)),
+    ),
   module: 'fivem',
   permissions: { internal: 'admin', discord: [PermissionFlagsBits.Administrator] },
   cooldown: 2,
@@ -128,16 +169,80 @@ export default defineCommand({
             return;
           }
           const status = fivemService.getResolvedStatus(server);
+          const links = await fivemSyncService.discordIdsFor(guildId, players);
           const pages = chunk(players, 20).map((group, i, all) =>
             embedService
-              .brand(t('fivem.players.title', { name: server.name, count: players.length }), group.map((p) => `\`${String(p.id).padStart(3, ' ')}\` **${p.name}**${p.ping !== undefined ? ` · ${p.ping} ms` : ''}`).join('\n'))
+              .brand(
+                t('fivem.players.title', { name: server.name, count: players.length }),
+                group
+                  .map((p) => {
+                    const discordId = links.get(p.id);
+                    return `\`${String(p.id).padStart(3, ' ')}\` **${p.name}**${p.ping !== undefined ? ` · ${p.ping} ms` : ''} · ${discordId ? `<@${discordId}>` : t('fivem.players.not_linked')}`;
+                  })
+                  .join('\n'),
+              )
               .setFooter({ text: `${t('core.page', { current: i + 1, total: all.length })}${status.lastSeenAt ? ` • ${t('fivem.status.last_update')} ${discordTimestamp(status.lastSeenAt, 'R')}` : ''}` }),
           );
           await paginate(interaction, { pages, userId: interaction.user.id, ephemeral: true });
           return;
         }
+        case 'sync': {
+          const key = interaction.options.getString('key', true);
+          const o = interaction.options;
+          const patch: SyncSettingsPatch = {};
+          const bool = (name: string, field: keyof SyncSettingsPatch) => {
+            const v = o.getBoolean(name);
+            if (v !== null) (patch as Record<string, unknown>)[field] = v;
+          };
+          bool('bans_to_discord', 'syncBansToDiscord');
+          bool('bans_to_game', 'syncBansToGame');
+          bool('kicks', 'syncKicks');
+          bool('nicknames', 'syncNicknames');
+          bool('require_discord', 'requireDiscord');
+          bool('require_whitelist', 'requireWhitelist');
+          const format = o.getString('nickname_format');
+          if (format !== null) patch.nicknameFormat = format;
+          const linkedRole = o.getRole('linked_role');
+          if (linkedRole) patch.linkedRoleId = linkedRole.id;
+          const onlineRole = o.getRole('online_role');
+          if (onlineRole) patch.onlineRoleId = onlineRole.id;
+          const requireRole = o.getRole('require_role');
+          if (requireRole) patch.requireRoleId = requireRole.id;
+          const counter = o.getChannel('counter_channel');
+          if (counter) patch.playerCountChannelId = counter.id;
+          const clear = o.getString('clear') as 'linkedRoleId' | 'onlineRoleId' | 'playerCountChannelId' | 'requireRoleId' | null;
+          if (clear) patch[clear] = null;
+          const changed = Object.keys(patch).length > 0;
+          if (changed) await interaction.deferReply(ephemeral);
+          const server = changed ? await fivemSyncService.updateSyncSettings(guildId, key, patch) : await fivemService.requireServer(guildId, key);
+          const embed = buildSyncEmbed(server, t, changed);
+          if (changed) await interaction.editReply({ embeds: [embed] });
+          else await interaction.reply({ embeds: [embed], ...ephemeral });
+          return;
+        }
+        case 'link': {
+          const user = interaction.options.getUser('member', true);
+          if (user.bot) return fail('fivem.link.bot');
+          const license = interaction.options.getString('license', true).trim();
+          if (!/^license2?:[a-z0-9]{8,64}$/i.test(license)) return fail('fivem.link.invalid');
+          await fivemSyncService.linkManually(guildId, user.id, license, interaction.user.id);
+          await interaction.reply({ embeds: [embedService.success(t('fivem.link.done', { user: `<@${user.id}>`, license }))], ...ephemeral });
+          return;
+        }
       }
     } catch (err) {
+      if (err instanceof ZodError) {
+        const embeds = [embedService.error(t('fivem.sync.invalid', { details: err.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ').slice(0, 500) }))];
+        if (interaction.deferred || interaction.replied) await interaction.editReply({ embeds });
+        else await interaction.reply({ embeds, ...ephemeral });
+        return;
+      }
+      if (err instanceof BattleRoyaleError) {
+        const embeds = [embedService.error(t(`battleroyale.errors.${err.code}`))];
+        if (interaction.deferred || interaction.replied) await interaction.editReply({ embeds });
+        else await interaction.reply({ embeds, ...ephemeral });
+        return;
+      }
       if (err instanceof FiveMError) {
         const embeds = [embedService.error(t(`fivem.errors.${err.code}`))];
         if (interaction.deferred || interaction.replied) await interaction.editReply({ embeds });
@@ -148,3 +253,24 @@ export default defineCommand({
     }
   },
 });
+
+/** Récapitulatif des options de synchronisation d'un serveur. */
+function buildSyncEmbed(server: FiveMServer, t: Translator, updated: boolean) {
+  const yes = (v: boolean) => (v ? `✅ ${t('fivem.sync.on')}` : `➖ ${t('fivem.sync.off')}`);
+  const role = (id: string | null) => (id ? `<@&${id}>` : '—');
+  return embedService
+    .brand(t(updated ? 'fivem.sync.updated' : 'fivem.sync.title', { name: server.name }))
+    .addFields(
+      { name: t('fivem.sync.bans_to_discord'), value: yes(server.syncBansToDiscord), inline: true },
+      { name: t('fivem.sync.bans_to_game'), value: yes(server.syncBansToGame), inline: true },
+      { name: t('fivem.sync.kicks'), value: yes(server.syncKicks), inline: true },
+      { name: t('fivem.sync.nicknames'), value: `${yes(server.syncNicknames)}\n\`${server.nicknameFormat}\``, inline: true },
+      { name: t('fivem.sync.linked_role'), value: role(server.linkedRoleId), inline: true },
+      { name: t('fivem.sync.online_role'), value: role(server.onlineRoleId), inline: true },
+      { name: t('fivem.sync.counter_channel'), value: server.playerCountChannelId ? `<#${server.playerCountChannelId}>` : '—', inline: true },
+      { name: t('fivem.sync.require_discord'), value: yes(server.requireDiscord), inline: true },
+      { name: t('fivem.sync.require_role'), value: role(server.requireRoleId), inline: true },
+      { name: t('fivem.sync.require_whitelist'), value: yes(server.requireWhitelist), inline: true },
+    )
+    .setFooter({ text: t('fivem.sync.footer') });
+}

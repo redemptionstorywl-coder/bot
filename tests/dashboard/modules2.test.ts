@@ -70,7 +70,7 @@ async function follow(r: { location: string | null }) {
 }
 
 const MODELS = [
-  'dashboardSession', 'guild', 'guildSettings', 'logChannel', 'log', 'commandPermission', 'userLanguage', 'user', 'translation', 'sanction',
+  'dashboardSession', 'guild', 'guildSettings', 'logChannel', 'log', 'commandPermission', 'user', 'sanction',
   'fiveMServer', 'whitelist', 'whitelistConfig', 'battleRoyaleProfile', 'battleRoyaleStats', 'battlePass',
   'schoolConfig', 'schoolProfile', 'schoolClass', 'schoolHouse', 'schoolClub', 'schoolClubMember', 'schoolApplication',
   'shopCategory', 'shopProduct', 'shopOrder',

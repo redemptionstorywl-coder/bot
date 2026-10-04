@@ -81,7 +81,6 @@ export default defineCommand({
     const { t, config, lang } = ctx;
     if (!interaction.guild || !config) return;
     const guildId = interaction.guild.id;
-    await embedTemplateService.ensureDefaults(guildId, interaction.user.id, config.defaultLanguage);
     const group = interaction.options.getSubcommandGroup(false);
     const sub = interaction.options.getSubcommand();
 

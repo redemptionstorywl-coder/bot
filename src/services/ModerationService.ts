@@ -13,10 +13,16 @@ import {
 import { Prisma, SanctionType, type Sanction, type Warning } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../database/client';
-import { guildConfigService } from './GuildConfigService';
+import { CHANNELS_REMAPPED_EVENT, guildConfigService } from './GuildConfigService';
 import { loggingService } from './LoggingService';
 import { translationService, type Translator } from './TranslationService';
 import { scheduler } from './SchedulerService';
+import { welcomeService } from './WelcomeService';
+import { roleService } from './RoleService';
+import { ticketService } from './TicketService';
+import { eventService } from './EventService';
+import { giveawayService } from './GiveawayService';
+import { pollService } from './PollService';
 import { BRAND } from '../config/constants';
 import { TTLCache } from '../utils/cache';
 import { discordTimestamp, formatDuration } from '../utils/time';
@@ -285,6 +291,208 @@ export function resolveEscalation(activeCount: number, thresholds: WarnThreshold
 export function auditReason(moderator: { id: string; tag?: string; username?: string }, reason?: string | null): string {
   const who = moderator.tag ?? moderator.username ?? moderator.id;
   return `${who} (${moderator.id})${reason ? ` • ${reason}` : ''}`.slice(0, 512);
+}
+
+// ─────────────────────────── /clear serveur (nuke) : fonctions pures + remap base ───────────────────────────
+
+/** Types de salons vidés par /clear serveur (forums, vocaux, catégories et threads sont ignorés). */
+export const NUKE_CHANNEL_TYPES: ReadonlySet<ChannelType> = new Set<ChannelType>([ChannelType.GuildText, ChannelType.GuildAnnouncement]);
+/** Pause entre deux salons (limites de débit Discord sur la création / suppression de salons). */
+export const NUKE_DELAY_MS = 1500;
+
+export interface NukeChannelInfo {
+  id: string;
+  name: string;
+  type: ChannelType;
+  /** Position du salon dans sa catégorie */
+  position: number;
+  /** Position de la catégorie parente (-1 sans catégorie) */
+  parentPosition: number;
+  /** Le bot peut gérer (cloner / supprimer) ce salon */
+  manageable: boolean;
+}
+
+export type NukeSkipReason = 'ticket' | 'no_permission';
+
+/**
+ * Sélectionne les salons à recréer, dans l'ordre d'affichage (catégorie puis position).
+ * Seuls les salons texte / annonces sont concernés ; les salons de tickets sont ignorés sauf `includeTickets`.
+ */
+export function selectNukeTargets(
+  channels: NukeChannelInfo[],
+  opts: { ticketChannelIds: ReadonlySet<string>; includeTickets: boolean },
+): { targets: NukeChannelInfo[]; skipped: { id: string; name: string; reason: NukeSkipReason }[] } {
+  const targets: NukeChannelInfo[] = [];
+  const skipped: { id: string; name: string; reason: NukeSkipReason }[] = [];
+  for (const c of channels) {
+    if (!NUKE_CHANNEL_TYPES.has(c.type)) continue;
+    if (!opts.includeTickets && opts.ticketChannelIds.has(c.id)) skipped.push({ id: c.id, name: c.name, reason: 'ticket' });
+    else if (!c.manageable) skipped.push({ id: c.id, name: c.name, reason: 'no_permission' });
+    else targets.push(c);
+  }
+  targets.sort((a, b) => a.parentPosition - b.parentPosition || a.position - b.position || a.id.localeCompare(b.id));
+  return { targets, skipped };
+}
+
+/** Confirmation de /clear serveur : le nom saisi doit être EXACTEMENT celui du serveur (espaces de bord ignorés). */
+export function isGuildNameConfirmed(input: string | null | undefined, guildName: string): boolean {
+  if (typeof input !== 'string') return false;
+  const typed = input.trim();
+  return typed.length > 0 && typed === guildName.trim();
+}
+
+/** Lignes de base remappées par table + éléments à republier. */
+export interface ChannelRemapResult {
+  counts: Record<string, number>;
+  ticketPanelIds: number[];
+  roleMenuIds: number[];
+  eventIds: number[];
+  giveawayIds: number[];
+  pollIds: number[];
+}
+
+/**
+ * Remplace en base toutes les références aux anciens salons (`map` : ancien ID → nouvel ID) d'un serveur.
+ *  - salons de logs, bienvenue / départ, whitelist (review), School RP (config + classes), sourdines de salon ;
+ *  - panneaux de tickets et role menus : salon remappé, messageId remis à null (à republier) ;
+ *  - annonces : salon remappé, messages publiés oubliés ;
+ *  - événements / giveaways / sondages ACTIFS : salon remappé, messageId à null (à republier) ;
+ *  - statut FiveM : statusChannelId remappé, statusMessageId à null (le service republie le statut) ;
+ *  - reaction roles des salons recréés : supprimés (leurs messages n'existent plus) ;
+ *  - tickets : uniquement si `includeTickets`.
+ */
+export async function remapChannelReferences(guildId: string, map: Record<string, string>, opts: { includeTickets?: boolean } = {}): Promise<ChannelRemapResult> {
+  const oldIds = Object.keys(map);
+  const result: ChannelRemapResult = { counts: {}, ticketPanelIds: [], roleMenuIds: [], eventIds: [], giveawayIds: [], pollIds: [] };
+  if (!oldIds.length) return result;
+  const next = (id: string | null | undefined): string | null => (id && map[id] ? map[id]! : null);
+  const count = (table: string, n: number) => {
+    if (n) result.counts[table] = (result.counts[table] ?? 0) + n;
+  };
+  const inOld = { in: oldIds };
+
+  // Salons de logs
+  for (const row of await prisma.logChannel.findMany({ where: { guildId, channelId: inOld } })) {
+    await prisma.logChannel.update({ where: { id: row.id }, data: { channelId: next(row.channelId)! } });
+    count('logChannel', 1);
+  }
+
+  // Bienvenue / départ
+  const welcome = await prisma.welcomeConfig.findUnique({ where: { guildId } });
+  if (next(welcome?.channelId)) {
+    await prisma.welcomeConfig.update({ where: { guildId }, data: { channelId: next(welcome!.channelId) } });
+    count('welcomeConfig', 1);
+  }
+  const leave = await prisma.leaveConfig.findUnique({ where: { guildId } });
+  if (next(leave?.channelId)) {
+    await prisma.leaveConfig.update({ where: { guildId }, data: { channelId: next(leave!.channelId) } });
+    count('leaveConfig', 1);
+  }
+
+  // Panneaux de tickets (republiés ensuite)
+  for (const row of await prisma.ticketPanel.findMany({ where: { guildId, channelId: inOld } })) {
+    await prisma.ticketPanel.update({ where: { id: row.id }, data: { channelId: next(row.channelId)!, messageId: null } });
+    result.ticketPanelIds.push(row.id);
+    count('ticketPanel', 1);
+  }
+
+  // Role menus (republiés ensuite)
+  for (const row of await prisma.roleMenu.findMany({ where: { guildId, channelId: inOld } })) {
+    await prisma.roleMenu.update({ where: { id: row.id }, data: { channelId: next(row.channelId), messageId: null } });
+    result.roleMenuIds.push(row.id);
+    count('roleMenu', 1);
+  }
+
+  // Reaction roles : les messages ont disparu avec l'ancien salon
+  const rr = await prisma.reactionRole.deleteMany({ where: { guildId, channelId: inOld } });
+  count('reactionRole', rr.count ?? 0);
+
+  // Annonces : nouveau salon, anciens messages oubliés
+  for (const row of await prisma.announcement.findMany({ where: { guildId, channelId: inOld } })) {
+    await prisma.announcement.update({ where: { id: row.id }, data: { channelId: next(row.channelId), messages: [] } });
+    count('announcement', 1);
+  }
+
+  // Événements / giveaways / sondages actifs (republiés ensuite)
+  for (const row of await prisma.event.findMany({ where: { guildId, channelId: inOld, status: { in: ['SCHEDULED', 'ONGOING'] } } })) {
+    await prisma.event.update({ where: { id: row.id }, data: { channelId: next(row.channelId)!, messageId: null } });
+    result.eventIds.push(row.id);
+    count('event', 1);
+  }
+  for (const row of await prisma.giveaway.findMany({ where: { guildId, channelId: inOld, ended: false } })) {
+    await prisma.giveaway.update({ where: { id: row.id }, data: { channelId: next(row.channelId)!, messageId: null } });
+    result.giveawayIds.push(row.id);
+    count('giveaway', 1);
+  }
+  for (const row of await prisma.poll.findMany({ where: { guildId, channelId: inOld, ended: false } })) {
+    await prisma.poll.update({ where: { id: row.id }, data: { channelId: next(row.channelId)!, messageId: null } });
+    result.pollIds.push(row.id);
+    count('poll', 1);
+  }
+
+  // Statut FiveM (seules les colonnes statusChannelId / statusMessageId sont modifiées)
+  for (const [oldId, newId] of Object.entries(map)) {
+    const r = await prisma.fiveMServer.updateMany({ where: { guildId, statusChannelId: oldId }, data: { statusChannelId: newId, statusMessageId: null } });
+    count('fiveMServer', r.count ?? 0);
+  }
+
+  // School RP
+  for (const row of await prisma.schoolClass.findMany({ where: { guildId, channelId: inOld } })) {
+    await prisma.schoolClass.update({ where: { id: row.id }, data: { channelId: next(row.channelId) } });
+    count('schoolClass', 1);
+  }
+  const school = await prisma.schoolConfig.findUnique({ where: { guildId } });
+  if (school && (next(school.applicationChannelId) || next(school.announceChannelId))) {
+    await prisma.schoolConfig.update({
+      where: { guildId },
+      data: { applicationChannelId: next(school.applicationChannelId) ?? school.applicationChannelId, announceChannelId: next(school.announceChannelId) ?? school.announceChannelId },
+    });
+    count('schoolConfig', 1);
+  }
+
+  // Whitelist (salon de review)
+  const whitelist = await prisma.whitelistConfig.findUnique({ where: { guildId } });
+  if (next(whitelist?.reviewChannelId)) {
+    await prisma.whitelistConfig.update({ where: { guildId }, data: { reviewChannelId: next(whitelist!.reviewChannelId) } });
+    count('whitelistConfig', 1);
+  }
+
+  // Sourdines de salon programmées (/mute-salon)
+  for (const row of await prisma.channelMute.findMany({ where: { guildId, channelId: inOld } })) {
+    await prisma.channelMute.update({ where: { id: row.id }, data: { channelId: next(row.channelId)! } });
+    count('channelMute', 1);
+  }
+
+  // Tickets (uniquement si leurs salons ont été recréés)
+  if (opts.includeTickets) {
+    for (const row of await prisma.ticket.findMany({ where: { guildId, channelId: inOld, status: { not: 'DELETED' } } })) {
+      await prisma.ticket.update({ where: { id: row.id }, data: { channelId: next(row.channelId)! } });
+      count('ticket', 1);
+    }
+  }
+  return result;
+}
+
+export interface NukeGuildReport {
+  cleared: { oldId: string; newId: string; name: string }[];
+  skipped: { id: string; name: string; reason: NukeSkipReason }[];
+  errors: { id: string; name: string; error: string }[];
+  remap: ChannelRemapResult;
+  durationMs: number;
+  sanction: Sanction;
+}
+
+/** Champs d'embed du rapport de /clear serveur (DM à l'exécuteur + salon de logs). */
+export function nukeReportFields(t: Translator, lang: string, report: Omit<NukeGuildReport, 'sanction'>): { name: string; value: string; inline: boolean }[] {
+  const list = (items: string[]) => (items.length ? items.join(', ').slice(0, 1000) : '—');
+  const remapped = Object.entries(report.remap.counts).map(([table, n]) => `${table} ×${n}`);
+  return [
+    { name: t('moderation.nuke_guild.report_cleared', { count: report.cleared.length }), value: list(report.cleared.map((c) => `#${c.name}`)), inline: false },
+    { name: t('moderation.nuke_guild.report_skipped', { count: report.skipped.length }), value: list(report.skipped.map((c) => `#${c.name} (${t(`moderation.nuke_guild.skip_${c.reason}`)})`)), inline: false },
+    { name: t('moderation.nuke_guild.report_errors', { count: report.errors.length }), value: list(report.errors.map((e) => `${e.name === 'republish' ? '' : `#${e.name} : `}${e.error}`)), inline: false },
+    { name: t('moderation.nuke_guild.report_remapped'), value: list(remapped), inline: false },
+    { name: t('moderation.nuke_guild.report_duration'), value: formatDuration(Math.max(1, Math.round(report.durationMs / 1000)), lang), inline: true },
+  ];
 }
 
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -784,10 +992,8 @@ export class ModerationService {
   async nukeChannel(opts: { channel: GuildTextBasedChannel; moderator: User; reason?: string | null }): Promise<{ channel: GuildTextBasedChannel; sanction: Sanction }> {
     const { channel, moderator } = opts;
     if (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement) throw new ModerationError('moderation.errors.channel_type');
-    const position = channel.position;
-    const clone = await channel.clone({ reason: auditReason(moderator, opts.reason ?? 'clear-salon') });
-    await clone.setPosition(position).catch(() => null);
-    await channel.delete(auditReason(moderator, opts.reason ?? 'clear-salon'));
+    const clone = await this.recreateChannel(channel, auditReason(moderator, opts.reason ?? 'clear salon'));
+    await remapChannelReferences(channel.guild.id, { [channel.id]: clone.id }).then((r) => this.afterRemap(channel.guild, r)).catch((err) => log.warn({ err, channel: channel.id }, 'Remap après /clear salon incomplet'));
     const sanction = await this.createSanction({
       guildId: channel.guild.id,
       type: 'PURGE',
@@ -798,7 +1004,156 @@ export class ModerationService {
       metadata: { nuke: true, oldChannelId: channel.id, name: channel.name },
     });
     await this.logSanction(channel.guild.id, sanction, { moderator, extraFields: [{ key: 'channel', value: `<#${clone.id}> (${channel.name})`, inline: true }] });
-    return { channel: clone as GuildTextBasedChannel, sanction };
+    return { channel: clone, sanction };
+  }
+
+  /** Salons en cours de suppression par /clear (les listeners channelDelete les ignorent : pas de ticket « supprimé », pas de log). */
+  private readonly nukeDeletions = new TTLCache<true>(15 * 60_000, 5000);
+  private readonly nukingGuilds = new Set<string>();
+
+  isNukeDeletion(channelId: string): boolean {
+    return this.nukeDeletions.has(channelId);
+  }
+
+  isNukingGuild(guildId: string): boolean {
+    return this.nukingGuilds.has(guildId);
+  }
+
+  /**
+   * Clone un salon texte / annonces à l'identique puis supprime l'original.
+   * Les salons système (règles, mises à jour, alertes, messages système) sont réassignés au clone avant suppression.
+   * En cas d'échec de suppression, le clone est supprimé et l'erreur relancée.
+   */
+  private async recreateChannel(channel: GuildTextBasedChannel, reason: string): Promise<GuildTextBasedChannel> {
+    if (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement) throw new ModerationError('moderation.errors.channel_type');
+    const guild = channel.guild;
+    const position = channel.position;
+    const clone = await channel.clone({ reason });
+    await clone.setPosition(position).catch(() => null);
+    const systemPatch: { rulesChannel?: string; publicUpdatesChannel?: string; safetyAlertsChannel?: string; systemChannel?: string } = {};
+    if (guild.rulesChannelId === channel.id) systemPatch.rulesChannel = clone.id;
+    if (guild.publicUpdatesChannelId === channel.id) systemPatch.publicUpdatesChannel = clone.id;
+    if (guild.safetyAlertsChannelId === channel.id) systemPatch.safetyAlertsChannel = clone.id;
+    if (guild.systemChannelId === channel.id) systemPatch.systemChannel = clone.id;
+    if (Object.keys(systemPatch).length) await guild.edit({ ...systemPatch, reason }).catch((err) => log.warn({ err, channel: channel.id }, 'Réassignation des salons système impossible'));
+    this.nukeDeletions.set(channel.id, true);
+    try {
+      await channel.delete(reason);
+    } catch (err) {
+      this.nukeDeletions.delete(channel.id);
+      await clone.delete(reason).catch(() => null);
+      throw err;
+    }
+    return clone as GuildTextBasedChannel;
+  }
+
+  /** Invalide les caches et republie ce qui dépendait des anciens salons. Ne lance jamais. */
+  private async afterRemap(guild: Guild, remap: ChannelRemapResult, opts: { includeTickets?: boolean } = {}): Promise<string[]> {
+    const errors: string[] = [];
+    const attempt = async (label: string, run: () => Promise<unknown>) => {
+      try {
+        await run();
+      } catch (err) {
+        errors.push(`${label}: ${(err as Error).message ?? String(err)}`.slice(0, 200));
+        log.warn({ err, guild: guild.id, label }, 'Republication après recréation de salon impossible');
+      }
+    };
+    guildConfigService.invalidate(guild.id);
+    guildConfigService.emit(CHANNELS_REMAPPED_EVENT, guild.id);
+    welcomeService.invalidate(guild.id);
+    roleService.invalidate(guild.id); // vide aussi le cache des role menus et recharge les reaction roles suivis
+    if (opts.includeTickets) await attempt('tickets', () => ticketService.loadOpenChannels());
+    for (const id of remap.ticketPanelIds) await attempt(`ticket panel #${id}`, () => ticketService.republishPanel(id));
+    for (const id of remap.roleMenuIds) {
+      await attempt(`role menu #${id}`, async () => {
+        const menu = await roleService.getRoleMenu(id);
+        if (menu?.channelId) await roleService.publishRoleMenu(id, menu.channelId);
+      });
+    }
+    for (const id of remap.eventIds) await attempt(`event #${id}`, async () => {
+      const ev = await eventService.get(id);
+      if (ev) await eventService.publish(ev);
+    });
+    for (const id of remap.giveawayIds) await attempt(`giveaway #${id}`, async () => {
+      const g = await giveawayService.get(id);
+      if (g) await giveawayService.publish(g);
+    });
+    for (const id of remap.pollIds) await attempt(`poll #${id}`, async () => {
+      const p = await pollService.get(id);
+      if (p) await pollService.publish(p);
+    });
+    return errors;
+  }
+
+  /**
+   * /clear serveur : recrée à l'identique chaque salon texte / annonces gérable (dans l'ordre d'affichage,
+   * pause de 1,5 s entre deux salons), puis remappe toutes les références de salons en base et republie
+   * panneaux, role menus, événements, giveaways et sondages. Un seul nuke à la fois par serveur.
+   * Les salons de tickets sont ignorés sauf `includeTickets`. Enregistre une case PURGE { nukeGuild: true }.
+   */
+  async nukeGuild(guild: Guild, moderator: User, opts: { includeTickets?: boolean; reason?: string | null; delayMs?: number } = {}): Promise<NukeGuildReport> {
+    if (this.nukingGuilds.has(guild.id)) throw new ModerationError('moderation.nuke_guild.already_running');
+    this.nukingGuilds.add(guild.id);
+    const started = Date.now();
+    const includeTickets = opts.includeTickets ?? false;
+    const delayMs = opts.delayMs ?? NUKE_DELAY_MS;
+    const reason = auditReason(moderator, opts.reason ?? 'clear serveur');
+    try {
+      const channels = await guild.channels.fetch();
+      const ticketRows = await prisma.ticket.findMany({ where: { guildId: guild.id, status: { not: 'DELETED' } }, select: { channelId: true } });
+      const infos: NukeChannelInfo[] = [];
+      for (const c of channels.values()) {
+        if (!c || c.isThread()) continue;
+        infos.push({ id: c.id, name: c.name, type: c.type, position: c.position, parentPosition: c.parent?.position ?? -1, manageable: c.manageable && c.viewable });
+      }
+      const { targets, skipped } = selectNukeTargets(infos, { ticketChannelIds: new Set(ticketRows.map((r) => r.channelId)), includeTickets });
+      const cleared: NukeGuildReport['cleared'] = [];
+      const errors: NukeGuildReport['errors'] = [];
+      for (const [index, info] of targets.entries()) {
+        if (index > 0 && delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));
+        const channel = channels.get(info.id);
+        if (!channel || !channel.isTextBased() || channel.isThread()) continue;
+        try {
+          const clone = await this.recreateChannel(channel as GuildTextBasedChannel, reason);
+          cleared.push({ oldId: info.id, newId: clone.id, name: info.name });
+        } catch (err) {
+          errors.push({ id: info.id, name: info.name, error: ((err as Error).message ?? String(err)).slice(0, 200) });
+          log.warn({ err, guild: guild.id, channel: info.id }, '/clear serveur : salon non recréé');
+        }
+      }
+      const map = Object.fromEntries(cleared.map((c) => [c.oldId, c.newId]));
+      const remap = await remapChannelReferences(guild.id, map, { includeTickets });
+      const republishErrors = await this.afterRemap(guild, remap, { includeTickets });
+      for (const e of republishErrors) errors.push({ id: '-', name: 'republish', error: e });
+      const durationMs = Date.now() - started;
+      const sanction = await this.createSanction({
+        guildId: guild.id,
+        type: 'PURGE',
+        userId: null,
+        moderatorId: moderator.id,
+        reason: opts.reason ?? null,
+        channelId: null,
+        metadata: { nukeGuild: true, includeTickets, channels: cleared.length, skipped: skipped.length, errors: errors.length, durationMs, map },
+      });
+      const report: NukeGuildReport = { cleared, skipped, errors, remap, durationMs, sanction };
+      // Rapport dans le (nouveau) salon de logs Modération, sinon Sécurité.
+      const { t, lang } = await this.guildTranslator(guild.id);
+      const fresh = await guildConfigService.get(guild.id);
+      await loggingService.log({
+        guildId: guild.id,
+        category: fresh?.logChannels.MODERATION || !fresh?.logChannels.SECURITY ? 'MODERATION' : 'SECURITY',
+        action: 'mod.nuke_guild',
+        title: t('moderation.nuke_guild.log_title', { number: sanction.caseNumber }),
+        description: t('moderation.nuke_guild.log_description', { moderator: `<@${moderator.id}>` }),
+        fields: nukeReportFields(t, lang, report),
+        actorId: moderator.id,
+        color: BRAND.colors.danger,
+        data: { caseNumber: sanction.caseNumber, type: 'PURGE', metadata: sanction.metadata },
+      });
+      return report;
+    } finally {
+      this.nukingGuilds.delete(guild.id);
+    }
   }
 
   async lockChannel(opts: { channel: GuildTextBasedChannel; moderator: User; reason?: string | null }): Promise<Sanction> {
@@ -1083,7 +1438,7 @@ export class ModerationService {
     const cfg = await this.getConfig(guild.id);
     if (!cfg.dmOnSanction) return false;
     const gcfg = await guildConfigService.get(guild.id);
-    const lang = await translationService.resolveLanguage({ guildId: guild.id, userId: user.id, guildDefault: gcfg?.defaultLanguage, enabledLanguages: gcfg?.enabledLanguages });
+    const lang = translationService.resolveLanguage(gcfg?.defaultLanguage);
     const t = translationService.bind(lang, guild.id);
     const embed = this.buildSanctionEmbed(t, lang, sanction, { serverName: guild.name, forDm: true });
     if (sanction.type === 'WARN' && opts.extra?.count !== undefined) embed.addFields({ name: t('moderation.warn_count'), value: String(opts.extra.count), inline: true });

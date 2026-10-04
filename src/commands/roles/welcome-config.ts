@@ -13,7 +13,7 @@ export default defineCommand({
   cooldown: 2,
   async execute(interaction, { t, lang, config }) {
     if (!interaction.guild || !config) return;
-    const payload = await renderPanel({ guild: interaction.guild, tab: 'welcome', t, lang, fallbackLang: config.defaultLanguage });
+    const payload = await renderPanel({ guild: interaction.guild, tab: 'welcome', t, lang });
     await interaction.reply({ ...payload, flags: MessageFlags.Ephemeral });
   },
 });

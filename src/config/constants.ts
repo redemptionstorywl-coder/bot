@@ -18,7 +18,6 @@ export const BRAND = {
 
 /** Clés des modules activables / désactivables par serveur. */
 export const MODULE_KEYS = [
-  'language',
   'welcome',
   'leave',
   'autorole',
@@ -43,7 +42,6 @@ export const MODULE_KEYS = [
 export type ModuleKey = (typeof MODULE_KEYS)[number];
 
 export const MODULE_LABELS: Record<ModuleKey, string> = {
-  language: '🌍 Multilingue',
   welcome: '👋 Bienvenue',
   leave: '👋 Départ',
   autorole: '🎭 Auto Role',
@@ -68,11 +66,11 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
 
 /** Modules activés par défaut selon le type de serveur. */
 export const DEFAULT_MODULES_BY_KIND: Record<GuildKind, Partial<Record<ModuleKey, boolean>>> = {
-  GENERIC: { language: true, welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true },
-  PRISON: { language: true, welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, whitelist: true, fivem: true },
-  BATTLE_ROYALE: { language: true, welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, fivem: true, battleRoyale: true },
-  SCHOOL: { language: true, welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, whitelist: true, fivem: true, school: true },
-  SHOP: { language: true, welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, shop: true },
+  GENERIC: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true },
+  PRISON: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, whitelist: true, fivem: true },
+  BATTLE_ROYALE: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, fivem: true, battleRoyale: true },
+  SCHOOL: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, whitelist: true, fivem: true, school: true },
+  SHOP: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, shop: true },
 };
 
 export const GUILD_KIND_LABELS: Record<GuildKind, string> = {
@@ -99,25 +97,14 @@ export interface LanguageDefinition {
   label: string;
   nativeLabel: string;
   flag: string;
-  /** Code Discord (Locale) pour les traductions de commandes */
+  /** Code Discord (Locale) */
   discordLocale?: string;
-  rtl?: boolean;
-  /** ID de rôle par défaut (Battle Royale) — modifiable par serveur via LanguageRole */
-  defaultRoleId?: string;
 }
 
-/** Langues supportées. Pour en ajouter une : ajouter ici + créer src/locales/<code>.json */
+/** Langues de l'interface du bot (réponses, embeds). Une langue = src/locales/<code>/. */
 export const LANGUAGES: LanguageDefinition[] = [
-  { code: 'fr', label: 'French', nativeLabel: 'Français', flag: '🇫🇷', discordLocale: 'fr', defaultRoleId: '1553402752879693824' },
-  { code: 'en', label: 'English', nativeLabel: 'English', flag: '🇺🇸', discordLocale: 'en-US', defaultRoleId: '1553403814088806442' },
-  { code: 'es', label: 'Spanish', nativeLabel: 'Español', flag: '🇪🇸', discordLocale: 'es-ES', defaultRoleId: '1553403895571554455' },
-  { code: 'de', label: 'German', nativeLabel: 'German', flag: '🇩🇪', discordLocale: 'de', defaultRoleId: '1553403983425437706' },
-  { code: 'it', label: 'Italian', nativeLabel: 'Italiano', flag: '🇮🇹', discordLocale: 'it', defaultRoleId: '1553404038970867952' },
-  { code: 'ar', label: 'Arabic', nativeLabel: 'العربية', flag: '🇸🇦', rtl: true, defaultRoleId: '1553404184747970690' },
-  { code: 'ru', label: 'Russian', nativeLabel: 'Русский', flag: '🇷🇺', discordLocale: 'ru', defaultRoleId: '1553404265618210936' },
-  { code: 'pt', label: 'Portuguese', nativeLabel: 'Português', flag: '🇧🇷', discordLocale: 'pt-BR', defaultRoleId: '1553405303033167892' },
-  { code: 'tr', label: 'Turkish', nativeLabel: 'Türkçe', flag: '🇹🇷', discordLocale: 'tr', defaultRoleId: '1553405405953134632' },
-  { code: 'pl', label: 'Polish', nativeLabel: 'Polski', flag: '🇵🇱', discordLocale: 'pl', defaultRoleId: '1553405565072580749' },
+  { code: 'fr', label: 'French', nativeLabel: 'Français', flag: '🇫🇷', discordLocale: 'fr' },
+  { code: 'en', label: 'English', nativeLabel: 'English', flag: '🇺🇸', discordLocale: 'en-US' },
 ];
 
 export const LANGUAGE_CODES = LANGUAGES.map((l) => l.code);
@@ -166,7 +153,7 @@ export const TEMPLATE_VARIABLES: Record<string, string> = {
   '{userId}': 'ID de l’utilisateur',
   '{createdAt}': 'Date de création du compte',
   '{joinedAt}': 'Date d’arrivée sur le serveur',
-  '{language}': 'Langue de l’utilisateur',
+  '{language}': 'Langue du serveur',
   '{avatar}': 'URL de l’avatar',
   '{date}': 'Date du jour',
   '{time}': 'Heure actuelle',

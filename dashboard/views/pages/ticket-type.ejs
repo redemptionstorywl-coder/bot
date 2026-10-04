@@ -18,7 +18,7 @@
       <div class="field"><label for="t-key">Clé (unique, utilisée par les commandes)</label><input id="t-key" name="key" class="input input-mono" maxlength="32" required pattern="^[a-z0-9-]{2,32}$" value="<%= type ? type.key : '' %>" placeholder="support"><small class="hint">Lettres minuscules, chiffres et tirets.</small></div>
       <div class="field"><label for="t-description">Description (100 caractères, affichée sur le panneau)</label><input id="t-description" name="description" class="input" maxlength="100" value="<%= type && type.description ? type.description : '' %>"></div>
       <div class="grid-2 grid-tight">
-        <div class="field"><label for="t-language">Langue des messages</label><select id="t-language" name="language" class="select"><option value="">Langue de l'utilisateur / serveur</option><% for (const l of languages) { %><option value="<%= l.code %>" <%= type && type.language === l.code ? 'selected' : '' %>><%= l.flag %> <%= l.nativeLabel %></option><% } %></select></div>
+        <div class="field"><label for="t-language">Langue des messages</label><select id="t-language" name="language" class="select"><option value="">Langue du serveur</option><% for (const l of languages) { %><option value="<%= l.code %>" <%= type && type.language === l.code ? 'selected' : '' %>><%= l.flag %> <%= l.nativeLabel %></option><% } %></select></div>
         <div class="field"><label for="t-order">Ordre d'affichage</label><input id="t-order" name="order" type="number" class="input" min="-1000" max="1000" value="<%= type ? type.order : nextOrder %>"></div>
       </div>
       <div class="grid-2 grid-tight">

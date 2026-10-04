@@ -68,44 +68,12 @@
       </div>
 
       <div class="card">
-        <h3 class="card-title">Langues</h3>
-        <div class="grid-2">
-          <div class="field">
-            <label for="defaultLanguage">Langue par défaut</label>
-            <select id="defaultLanguage" name="defaultLanguage" class="select">
-              <% for (const l of languages) { %><option value="<%= l.code %>" <%= config.defaultLanguage === l.code ? 'selected' : '' %>><%= l.flag %> <%= l.nativeLabel %></option><% } %>
-            </select>
-          </div>
-          <div class="field">
-            <label for="translationMode">Mode multilingue</label>
-            <select id="translationMode" name="translationMode" class="select" data-toggle-target="[data-language-channels]" data-toggle-value="CHANNELS">
-              <option value="CHANNELS" <%= config.translationMode === 'CHANNELS' ? 'selected' : '' %>>Salons par langue (un salon d'annonces par langue)</option>
-              <option value="PERMISSIONS" <%= config.translationMode === 'PERMISSIONS' ? 'selected' : '' %>>Permissions (rôles de langue, mêmes salons)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label class="check check-tall"><input type="checkbox" name="autoTranslate" value="1" <%= config.autoTranslate ? 'checked' : '' %>><span>🤖 Traduction automatique des annonces <small class="muted">(les langues sans traduction manuelle sont traduites à la publication)</small></span></label>
-          </div>
-        </div>
-        <fieldset class="field">
-          <legend>Langues activées</legend>
-          <div class="check-grid">
-            <% for (const l of languages) { %>
-              <label class="check"><input type="checkbox" name="enabledLanguages" value="<%= l.code %>" <%= config.enabledLanguages.includes(l.code) ? 'checked' : '' %>><span><%= l.flag %> <%= l.nativeLabel %> <small class="muted">(<%= l.code %>)</small></span></label>
-            <% } %>
-          </div>
-        </fieldset>
-        <div class="field" data-language-channels <%= config.translationMode === 'CHANNELS' ? '' : 'hidden' %>>
-          <label>Salon par langue (mode « Salons »)</label>
-          <div class="kv-grid">
-            <% for (const l of languages) { %>
-              <label class="kv-row"><span class="kv-key"><%= l.flag %> <%= l.nativeLabel %></span>
-                <select name="languageChannels[<%= l.code %>]" class="select">
-                  <%- include('../partials/channel-options', { channels: guild.textChannels, selected: config.languageChannels[l.code] || '', allowEmpty: true }) %>
-                </select>
-              </label>
-            <% } %>
-          </div>
+        <h3 class="card-title">Langue du bot</h3>
+        <div class="field">
+          <label for="defaultLanguage">Langue des réponses et messages du bot</label>
+          <select id="defaultLanguage" name="defaultLanguage" class="select">
+            <% for (const l of languages) { %><option value="<%= l.code %>" <%= config.defaultLanguage === l.code ? 'selected' : '' %>><%= l.flag %> <%= l.nativeLabel %></option><% } %>
+          </select>
         </div>
       </div>
 

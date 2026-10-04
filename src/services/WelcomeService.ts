@@ -5,7 +5,6 @@ import { BRAND, LANGUAGE_CODES } from '../config/constants';
 import { TTLCache } from '../utils/cache';
 import { childLogger } from '../utils/logger';
 import { renderTemplate, type TemplateContext } from '../utils/variables';
-import { buildCustomId } from '../utils/customId';
 import { colorToHex, embedService, embedSpecSchema, buttonSpecSchema, type ButtonSpec, type EmbedSpec } from './EmbedService';
 import { guildConfigService } from './GuildConfigService';
 import { loggingService } from './LoggingService';
@@ -14,7 +13,7 @@ import { welcomeImageService } from './WelcomeImageService';
 
 const log = childLogger('WelcomeService');
 
-/** Valeur unique ou dictionnaire `{ [lang]: valeur }`. */
+/** Valeur unique (ou ancien dictionnaire `{ [lang]: valeur }`, encore lu pour compatibilité). */
 export type Localized<T> = T | Record<string, T>;
 
 export const WELCOME_IMAGE_FILENAME = 'welcome.png';
@@ -28,7 +27,8 @@ export function isLocalizedMap(value: unknown): value is Record<string, unknown>
 }
 
 /**
- * Résout une valeur multilingue : `value[lang]` → `value[fallback]` → première valeur disponible.
+ * Résout une valeur éventuellement stockée sous l'ancien format multilingue `{ [lang]: valeur }` :
+ * `value[lang]` → `value[fallback]` → première valeur disponible.
  * Une valeur simple (chaîne, EmbedSpec) est renvoyée telle quelle. `null`/`undefined` → undefined.
  */
 export function resolveLocalized<T>(value: Localized<T> | null | undefined, lang: string, fallback?: string): T | undefined {
@@ -41,21 +41,6 @@ export function resolveLocalized<T>(value: Localized<T> | null | undefined, lang
   return first;
 }
 
-/**
- * Met à jour une valeur multilingue de façon immuable.
- *  - `lang` absent : remplace tout (null = effacer).
- *  - `lang` présent : fusionne dans le dictionnaire (une valeur simple existante est rattachée à `baseLang`).
- */
-export function setLocalized<T>(current: Localized<T> | null | undefined, value: T | null, lang: string | null | undefined, baseLang: string): Localized<T> | null {
-  if (!lang) return value;
-  let map: Record<string, T> = {};
-  if (isLocalizedMap(current)) map = { ...(current as Record<string, T>) };
-  else if (current !== null && current !== undefined) map = { [baseLang]: current as T };
-  if (value === null) delete map[lang];
-  else map[lang] = value;
-  return Object.keys(map).length ? map : null;
-}
-
 export interface RenderedMessage {
   content?: string;
   embeds: EmbedBuilder[];
@@ -64,9 +49,9 @@ export interface RenderedMessage {
 }
 
 export interface RenderOptions {
-  /** Langue de rendu (langue de l'utilisateur) */
+  /** Langue de rendu (langue du serveur) */
   language: string;
-  /** Langue de secours pour les dictionnaires (langue du serveur) */
+  /** Langue de secours pour les anciens dictionnaires `{ [lang]: … }` */
   fallbackLanguage?: string;
   /** Image générée (PNG) à joindre */
   image?: Buffer | null;
@@ -76,8 +61,6 @@ export interface RenderOptions {
   brandColor?: number;
   /** Inclure les boutons (false pour l'aperçu éphémère) */
   withButtons?: boolean;
-  /** Inclure le bouton « Choisir ma langue » quand activé */
-  withLanguagePrompt?: boolean;
 }
 
 type AnyMember = GuildMember | PartialGuildMember;
@@ -125,11 +108,7 @@ export function renderWelcome(member: AnyMember, config: WelcomeConfig, opts: Re
 
   const components: ActionRowBuilder<ButtonBuilder>[] = [];
   if (opts.withButtons !== false) {
-    const buttons = safeButtons(config.buttons);
-    if (opts.withLanguagePrompt !== false && config.languagePromptEnabled) {
-      buttons.push({ label: t('welcome.buttons.choose_language'), style: 'primary', emoji: '🌍', customId: buildCustomId('welcome', 'lang', member.guild.id) });
-    }
-    components.push(...embedService.buildButtons(buttons, ctx));
+    components.push(...embedService.buildButtons(safeButtons(config.buttons), ctx));
   }
   return { content, embeds, files, components };
 }
@@ -200,16 +179,16 @@ export class WelcomeService {
 
   // ───── Rendu complet (avec image) ─────
 
-  private async resolveLanguages(guildId: string, userId: string): Promise<{ language: string; fallback: string; brandColor: number }> {
+  /** Langue du serveur (rendu) + couleur de marque. */
+  private async resolveLanguages(guildId: string): Promise<{ language: string; fallback: string; brandColor: number }> {
     const cfg = await guildConfigService.get(guildId);
-    const fallback = cfg?.defaultLanguage ?? 'fr';
-    const language = await translationService.resolveLanguage({ guildId, userId, guildDefault: fallback, enabledLanguages: cfg?.enabledLanguages });
-    return { language, fallback, brandColor: cfg?.brandColor ?? BRAND.colors.primary };
+    const language = translationService.resolveLanguage(cfg?.defaultLanguage);
+    return { language, fallback: language, brandColor: cfg?.brandColor ?? BRAND.colors.primary };
   }
 
   /** Construit le message de bienvenue complet (image générée si activée). */
   async buildWelcome(member: AnyMember, config: WelcomeConfig, opts: Partial<RenderOptions> = {}): Promise<RenderedMessage> {
-    const langs = await this.resolveLanguages(member.guild.id, member.id);
+    const langs = await this.resolveLanguages(member.guild.id);
     const language = opts.language ?? langs.language;
     const ctx = templateContext(member, language);
     const image =
@@ -229,8 +208,8 @@ export class WelcomeService {
 
   /** Construit le message de départ complet. */
   async buildLeave(member: AnyMember, config: LeaveConfig, opts: Partial<RenderOptions> = {}): Promise<RenderedMessage> {
-    const langs = await this.resolveLanguages(member.guild.id, member.id);
-    const language = opts.language ?? langs.fallback; // le départ est rendu dans la langue du serveur
+    const langs = await this.resolveLanguages(member.guild.id);
+    const language = opts.language ?? langs.language;
     const t = opts.t ?? translationService.bind(language, member.guild.id);
     const ctx = templateContext(member, language);
     const image =
@@ -270,21 +249,16 @@ export class WelcomeService {
     return true;
   }
 
-  /** Envoie le DM de bienvenue (dmMessage / dmEmbed, multilingues). Ne lance jamais. */
+  /** Envoie le DM de bienvenue (dmMessage / dmEmbed). Ne lance jamais. */
   async sendDm(member: GuildMember, config: WelcomeConfig, language: string, fallback: string): Promise<boolean> {
     if (!config.dmEnabled) return false;
     const ctx = templateContext(member, language);
-    const t = translationService.bind(language, member.guild.id);
     const message = resolveLocalized<string>(config.dmMessage as Localized<string> | null, language, fallback);
     const embedSpec = safeEmbed(resolveLocalized<unknown>(config.dmEmbed as Localized<unknown> | null, language, fallback));
     if (!message && !embedSpec) return false;
     const embeds = embedSpec ? [embedService.build(embedSpec, ctx)] : [];
-    const components: ActionRowBuilder<ButtonBuilder>[] = [];
-    if (config.languagePromptEnabled) {
-      components.push(...embedService.buildButtons([{ label: t('welcome.buttons.choose_language'), style: 'primary', emoji: '🌍', customId: buildCustomId('welcome', 'lang', member.guild.id) }], ctx));
-    }
     try {
-      await member.send({ content: message ? renderTemplate(message, ctx) : undefined, embeds, components });
+      await member.send({ content: message ? renderTemplate(message, ctx) : undefined, embeds });
       return true;
     } catch (err) {
       log.debug({ err, user: member.id }, 'DM de bienvenue impossible (DM fermés ?)');
@@ -297,7 +271,7 @@ export class WelcomeService {
     try {
       const config = await this.getConfig(member.guild.id);
       if (!config?.enabled) return;
-      const langs = await this.resolveLanguages(member.guild.id, member.id);
+      const langs = await this.resolveLanguages(member.guild.id);
       if (config.channelId) {
         const payload = await this.buildWelcome(member, config, { language: langs.language, fallbackLanguage: langs.fallback });
         const sent = await this.sendToChannel(member.guild, config.channelId, payload).catch((err) => {

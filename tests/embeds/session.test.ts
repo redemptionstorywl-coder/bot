@@ -13,9 +13,6 @@ const translator = new TranslationService(path.resolve(__dirname, '../../src/loc
 const config = {
   guildId: 'g',
   brandColor: 0x7c3aed,
-  enabledLanguages: ['fr', 'en', 'es'],
-  translationMode: 'CHANNELS',
-  languageChannels: {},
   defaultLanguage: 'fr',
 } as unknown as ResolvedGuildConfig;
 
@@ -68,13 +65,15 @@ describe('renderBuilder', () => {
       userId: 'u1',
       mode: 'announce',
       spec: { title: 'Maintenance' },
-      announcement: { status: 'DRAFT', sourceLanguage: 'fr', targetLanguages: '*', translations: { en: { title: 'Maintenance (EN)' } }, mentionRoleIds: ['1'], mentionEveryone: true, channelId: '42' },
+      announcement: { status: 'DRAFT', mentionRoleIds: ['1'], mentionEveryone: true, channelId: '42' },
     });
-    for (const view of ['main', 'embed', 'buttons', 'languages', 'translations', 'mentions', 'channel'] as const) {
+    for (const view of ['main', 'embed', 'buttons', 'color', 'mentions', 'channel'] as const) {
       session.view = view;
       const payload = renderBuilder(session, { t: translator.bind('fr'), lang: 'fr', config, guild: null, member: null, user });
       expect(payload.components.length).toBeGreaterThan(0);
       expect(payload.components.length).toBeLessThanOrEqual(5);
+      const ids = payload.components.flatMap((r) => r.toJSON().components.map((c) => (c as { custom_id?: string }).custom_id ?? ''));
+      expect(ids.some((id) => /^announce:(languages|translations|langs|trsel|autotr):/.test(id))).toBe(false);
     }
   });
 

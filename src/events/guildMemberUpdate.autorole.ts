@@ -10,7 +10,6 @@ const log = childLogger('GuildMemberUpdate');
 /**
  * Quand le membre a validé l'écran d'accueil (`pending` passe de true à false) :
  * autoroles VERIFIED + JOIN (différés à l'arrivée car Discord refuse les rôles sur un membre `pending`).
- * (MEMBER / LANGUAGE sont appliqués par LanguageService lors du choix de langue.)
  */
 export default defineEvent({
   name: Events.GuildMemberUpdate,

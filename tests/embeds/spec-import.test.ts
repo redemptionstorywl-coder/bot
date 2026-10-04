@@ -71,17 +71,3 @@ describe('EmbedTemplateService.parseMessageReference', () => {
     expect(service.parseMessageReference('nope')).toBeNull();
   });
 });
-
-describe('EmbedTemplateService.buildDefaultTemplates', () => {
-  it('construit 8 templates valides en français et en anglais', () => {
-    for (const lang of ['fr', 'en']) {
-      const templates = service.buildDefaultTemplates(lang);
-      expect(templates).toHaveLength(8);
-      for (const tpl of templates) {
-        expect(() => service.validateSpec(tpl.spec)).not.toThrow();
-        expect(tpl.name).not.toMatch(/^embeds\./);
-        expect(tpl.spec.description).toContain('{server}');
-      }
-    }
-  });
-});

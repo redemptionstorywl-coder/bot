@@ -36,7 +36,7 @@
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <h3 class="card-title">Ajouter un auto-role</h3>
         <div class="field"><label for="ar-role">Rôle</label><select id="ar-role" name="roleId" class="select" required><option value="">— Choisir —</option><%- include('../partials/role-options', { roles: guild.roles.filter((r) => !r.managed), selected: '' }) %></select></div>
-        <div class="field"><label for="ar-type">Déclencheur</label><select id="ar-type" name="type" class="select"><% for (const t of autoroleTypes) { %><option value="<%= t.value %>"><%= t.label %></option><% } %></select></div>
+        <div class="field"><label for="ar-type">Déclencheur</label><select id="ar-type" name="type" class="select"><% for (const t of autoroleTypes.filter((x) => x.active)) { %><option value="<%= t.value %>"><%= t.label %></option><% } %></select></div>
         <div class="field"><label for="ar-delay">Délai (minutes, 0 = immédiat, max 1440)</label><input id="ar-delay" name="delayMinutes" type="number" class="input" min="0" max="1440" value="0"></div>
         <div class="form-actions"><button type="submit" class="btn btn-primary">Ajouter</button></div>
       </form>

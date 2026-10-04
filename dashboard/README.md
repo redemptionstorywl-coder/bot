@@ -52,11 +52,10 @@ dashboard/
       settings.ts      GET/POST /settings, POST /modules/:key, POST /commands
       logs.ts          GET /logs, POST /logs/channels
       members.ts       GET /members, GET /members/:userId
-      translations.ts  GET/POST /translations, GET /translations/export
       tickets.ts       /tickets (liste, fiche, close/claim/delete, transcript protégé), /tickets/types (CRUD), /tickets/panels
-      embeds.ts        /embeds (templates, éditeur, import/export JSON, envoi dans un salon, templates par défaut)
-      announcements.ts /announcements (colonnes par statut, éditeur multilingue, publish/schedule/duplicate/archive/delete, preview)
-      welcome.ts       /welcome (bienvenue, départ, test, rôles de langue + panneau)
+      embeds.ts        /embeds (templates, éditeur, import/export JSON, envoi dans un salon)
+      announcements.ts /announcements (colonnes par statut, éditeur, publish/schedule/duplicate/archive/delete, preview)
+      welcome.ts       /welcome (bienvenue, départ, test)
       roles.ts         /roles (auto-roles, role menus + publication, notifications)
       reactionroles.ts /reaction-roles (liste, ajout avec réaction du bot, suppression)
       moderation.ts    /moderation (config warns, anti-raid, lockdown, sanctions, warnings, stats 30 j)
@@ -73,7 +72,7 @@ dashboard/
     layouts/main.ejs   layout : <head>, sidebar, topbar, flash, <%- body %>, footer, toasts, modale
     partials/          sidebar, header, footer, flash, modal, pagination, channel-options, role-options, logo,
                        embed-preview (rendu façon Discord), embed-editor (formulaire complet + aperçu live), repeater / repeater-row (listes dynamiques)
-    pages/             landing, guilds, dashboard, settings, logs, members, member, translations, admin, coming, error, config-missing,
+    pages/             landing, guilds, dashboard, settings, logs, members, member, admin, coming, error, config-missing,
                        tickets, ticket, ticket-type, embeds, embed-form, announcements, announcement-form, announcement-preview, welcome,
                        roles, role-menu, reactionroles, moderation, giveaways, giveaway, events, event-form, poll,
                        fivem, whitelist, battleroyale, school, shop

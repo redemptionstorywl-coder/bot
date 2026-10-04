@@ -22,9 +22,6 @@ export function toDraft(ann: AnnouncementData, scheduledAt?: Date | null): Annou
     id: ann.id,
     status: ann.status,
     title: ann.title,
-    sourceLanguage: ann.sourceLanguage,
-    targetLanguages: ann.targetLanguages,
-    translations: ann.translations,
     channelId: ann.channelId ?? undefined,
     mentionRoleIds: ann.mentionRoleIds,
     mentionEveryone: ann.mentionEveryone,
@@ -55,7 +52,7 @@ async function getForGuild(id: number, guildId: string): Promise<AnnouncementDat
 const idOption = (o: import('discord.js').SlashCommandIntegerOption) => o.setName('id').setDescription('Annonce').setRequired(true).setAutocomplete(true).setMinValue(1);
 
 /**
- * /announce — annonces multilingues (brouillons, programmation, publication par langue).
+ * /announce — annonces (brouillons, programmation, publication, édition).
  */
 export default defineCommand({
   data: new SlashCommandBuilder()
@@ -72,7 +69,7 @@ export default defineCommand({
         .addIntegerOption(idOption)
         .addStringOption((o) => o.setName('date').setDescription('Ex : 31/01/2025 20:00 ou in 2h').setRequired(true)),
     )
-    .addSubcommand((s) => s.setName('preview').setDescription('Prévisualiser une annonce dans votre langue').addIntegerOption(idOption))
+    .addSubcommand((s) => s.setName('preview').setDescription('Prévisualiser une annonce').addIntegerOption(idOption))
     .addSubcommand((s) => s.setName('publish').setDescription('Publier une annonce maintenant').addIntegerOption(idOption))
     .addSubcommand((s) => s.setName('archive').setDescription('Archiver une annonce').addIntegerOption(idOption))
     .addSubcommand((s) =>
@@ -111,7 +108,7 @@ export default defineCommand({
             guildId,
             userId: interaction.user.id,
             mode: 'announce',
-            announcement: { status: AnnouncementStatus.DRAFT, sourceLanguage: lang, targetLanguages: '*', translations: {}, mentionRoleIds: [], mentionEveryone: false },
+            announcement: { status: AnnouncementStatus.DRAFT, mentionRoleIds: [], mentionEveryone: false },
           });
           await interaction.reply({ ...renderBuilder(session, renderContextFromInteraction(interaction, ctx)), ...EPHEMERAL });
           return;
@@ -159,7 +156,7 @@ export default defineCommand({
         }
         case 'preview': {
           const ann = await getForGuild(interaction.options.getInteger('id', true), guildId);
-          const spec = await announcementService.preview(ann.id, lang);
+          const spec = await announcementService.preview(ann.id);
           const built = buildMessageWithBrand(spec, { guild: interaction.guild, language: lang }, config.brandColor);
           await interaction.reply({ content: built.content || undefined, embeds: built.embeds, components: built.components, allowedMentions: { parse: [] }, ...EPHEMERAL });
           return;
@@ -168,8 +165,8 @@ export default defineCommand({
           const ann = await getForGuild(interaction.options.getInteger('id', true), guildId);
           await interaction.deferReply(EPHEMERAL);
           const published = await announcementService.publish(ann.id, { actorId: interaction.user.id });
-          const links = published.messages.map((m) => `${m.language} → https://discord.com/channels/${guildId}/${m.channelId}/${m.messageId}`).join('\n');
-          await interaction.editReply({ embeds: [embedService.success(t('announcements.cmd.published', { id: ann.id, count: published.messages.length, links }))] });
+          const links = published.messages.map((m) => `https://discord.com/channels/${guildId}/${m.channelId}/${m.messageId}`).join('\n');
+          await interaction.editReply({ embeds: [embedService.success(t('announcements.cmd.published', { id: ann.id, links }))] });
           return;
         }
         case 'archive': {

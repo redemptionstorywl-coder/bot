@@ -3,25 +3,19 @@
     "title": "⚙️ Configuration — {server}",
     "kind": "Type de serveur",
     "default_language": "Langue par défaut",
-    "enabled_languages": "Langues activées",
     "admin_roles": "Rôles admin",
     "staff_roles": "Rôles staff",
-    "translation_mode": "Mode multilingue",
     "modules": "Modules",
     "logs": "Salons de logs",
-    "language_stats": "Membres par langue",
     "dashboard": "Dashboard",
     "kind_set": "Type de serveur défini : **{kind}**",
     "language_set": "Langue par défaut : **{language}**",
-    "languages_updated": "Langues activées : {languages}",
     "role_added": "Rôle {role} ajouté.",
     "role_removed": "Rôle {role} retiré.",
     "log_set": "Logs **{category}** → {channel}",
     "log_removed": "Logs **{category}** désactivés.",
     "module_set": "Module {module} : {state}",
-    "color_set": "Couleur par défaut : `{color}`",
-    "translation_mode_set": "Mode multilingue : **{mode}**",
-    "language_channel_set": "Salon pour **{language}** : {channel}"
+    "color_set": "Couleur par défaut : `{color}`"
   },
   "help": {
     "title": "📖 Aide — Redemption Story Studio",
@@ -54,78 +48,5 @@
     "channels_title": "📁 Catégories et salons",
     "roles_title": "🎭 Rôles ({from}–{to} / {total})",
     "role_members": "membre(s)"
-  },
-  "template": {
-    "list_title": "🧩 Modèles de serveur",
-    "list_description": "Un modèle déploie une structure complète prête à l’emploi : les catégories et salons manquants sont créés (permissions comprises), les salons et rôles existants sont détectés par nom, le bot est configuré en une fois (type, rôles, logs, bienvenue, tickets, langues, notifications) et les messages par défaut sont publiés (règlement, guides, paiement, panneaux). Réexécutable sans doublon.",
-    "list_item": "{emoji} **{name}** — {description}\n`/template apply template:{key}`",
-    "unknown": "Modèle inconnu : `{key}`.",
-    "plan_title": "📋 Plan — {emoji} {name}",
-    "plan_description": "**{ready}** étape(s) prête(s) · **{skipped}** ignorée(s). Une étape ignorée n’a pas trouvé son salon ou rôle : renommez-le ou créez-le, puis relancez.",
-    "dry_run_footer": "Simulation : rien n’a été modifié.",
-    "confirm": "Appliquer le modèle **{name}** à **{server}** ? La configuration existante est mise à jour ; les messages déjà publiés par le bot ne sont pas republiés.",
-    "confirm_structure": "🏗️ **{created}** catégorie(s) / salon(s) seront créés avec leurs permissions ; **{reused}** existant(s) réutilisé(s) sans modification.",
-    "confirm_no_structure": "Aucun salon ne sera créé (`create_missing:false`) : seuls les salons existants sont utilisés.",
-    "confirm_button": "Appliquer",
-    "cancel_button": "Annuler",
-    "cancelled": "Application annulée.",
-    "not_author": "Seule la personne ayant lancé la commande peut confirmer.",
-    "applying": "⏳ Application du modèle **{name}**… cela peut prendre quelques secondes.",
-    "report_title": "🧩 Rapport — {emoji} {name}",
-    "report_description": "✅ **{done}** réussie(s) · ⚠️ **{skipped}** ignorée(s) · ❌ **{failed}** en échec",
-    "page_footer": "Page {page}/{pages}",
-    "recommended": "Salons recommandés",
-    "recommended_giveaways": "🎁 Giveaways",
-    "recommended_polls": "📊 Sondages",
-    "recommended_events": "📅 Événements",
-    "recommended_hint": "À indiquer dans l’option `channel` de `/giveaway create`, `/poll create` et `/event create`.",
-    "structure_summary": "🆕 **{created}** à créer · ♻️ **{reused}** existant(s)",
-    "structure_report": "🆕 **{created}** créé(s) · ♻️ **{reused}** réutilisé(s)",
-    "structure_legend": "🆕 sera créé · ♻️ existant (laissé tel quel)",
-    "templates": {
-      "shop": {
-        "name": "Redemption Story Shop",
-        "description": "Boutique de scripts : support, commandes, paiements, bugs, partenariats, infos paiement."
-      },
-      "battle-royale": {
-        "name": "Redemption Story Battle Royale",
-        "description": "Battle Royale multilingue (10 langues) : tickets par catégorie, guide, classements, tournois, statut FiveM."
-      },
-      "prison": {
-        "name": "Redemption Story WL (Prison RP)",
-        "description": "Prison RP whitelist : candidatures, support, signalements, logs staff."
-      },
-      "school": {
-        "name": "Redemption Story School RP",
-        "description": "School RP : inscriptions, support, signalements, logs staff."
-      }
-    },
-    "steps": {
-      "kind": "Type de serveur et langues",
-      "structure": "Structure (catégories et salons manquants)",
-      "roles": "Rôles admin / staff",
-      "autorole": "Auto-rôles (membres / bots)",
-      "logs": "Salons de logs",
-      "moderation": "Modération (DM sanctions, rôle mute)",
-      "embed_templates": "Templates d’embeds par défaut",
-      "welcome": "Message de bienvenue",
-      "leave": "Message de départ",
-      "rules": "Règlement",
-      "tickets": "Types de tickets",
-      "ticket_panel": "Panneau de tickets",
-      "language": "Langues (rôles, salons par langue)",
-      "language_panel": "Panneau de langue",
-      "notifications": "Rôles de notification",
-      "notification_panel": "Panneau de notifications",
-      "fivem": "Statut FiveM",
-      "info": "Message d’information « {name} »"
-    },
-    "reasons": {
-      "channel_not_found": "Salon introuvable (cherché : {names})",
-      "role_not_found": "Rôle introuvable (cherché : {names})",
-      "no_fivem_server": "Aucun serveur FiveM configuré (`/fivem add`)",
-      "missing_permissions": "Permissions du bot insuffisantes : {message}",
-      "error": "Erreur : {message}"
-    }
   }
 }

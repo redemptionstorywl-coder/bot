@@ -5,7 +5,7 @@ import { prisma } from '../database/client';
 import { BRAND } from '../config/constants';
 import { loggingService } from './LoggingService';
 import { translationService } from './TranslationService';
-import { guildConfigService } from './GuildConfigService';
+import { CHANNELS_REMAPPED_EVENT, guildConfigService } from './GuildConfigService';
 import { fivemService } from './FiveMService';
 import { TTLCache } from '../utils/cache';
 import { buildCustomId } from '../utils/customId';
@@ -71,6 +71,7 @@ export class WhitelistService {
   private readonly configCache = new TTLCache<WhitelistSettings>(5 * 60_000, 1000);
 
   attach(client: Client): void {
+    if (!this.client) guildConfigService.on(CHANNELS_REMAPPED_EVENT, (guildId: string) => this.configCache.delete(guildId));
     this.client = client;
   }
 
@@ -258,7 +259,7 @@ export class WhitelistService {
 
   private async sendDecisionDm(row: Whitelist): Promise<void> {
     if (!this.client) return;
-    const lang = await translationService.resolveLanguage({ guildId: row.guildId, userId: row.userId, guildDefault: (await guildConfigService.get(row.guildId))?.defaultLanguage });
+    const lang = translationService.resolveLanguage((await guildConfigService.get(row.guildId))?.defaultLanguage);
     const t = translationService.bind(lang, row.guildId);
     const guild = this.client.guilds.cache.get(row.guildId);
     const accepted = row.status === ReviewStatus.ACCEPTED;

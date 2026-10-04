@@ -16,8 +16,7 @@ import {
 } from 'discord.js';
 import type { AnnouncementStatus } from '@prisma/client';
 import { embedService, type ButtonSpec, type EmbedSpec } from './EmbedService';
-import type { AnnouncementTranslations } from './AnnouncementService';
-import { resolveTargetLanguages, translationKind, withDefaultColor } from './AnnouncementService';
+import { withDefaultColor } from './AnnouncementService';
 import { EMBED_COLOR_PALETTE } from '../config/constants';
 import { colorToHex } from './EmbedService';
 import type { Translator } from './TranslationService';
@@ -25,7 +24,7 @@ import type { ResolvedGuildConfig } from './GuildConfigService';
 import { TTLCache } from '../utils/cache';
 import { buildCustomId } from '../utils/customId';
 import { discordTimestamp } from '../utils/time';
-import { BRAND, LANGUAGES, getLanguage } from '../config/constants';
+import { BRAND } from '../config/constants';
 
 export const BUILDER_SESSION_TTL_MS = 30 * 60_000;
 export const MAX_EMBED_FIELDS = 25;
@@ -37,18 +36,14 @@ export type BuilderMode = 'embed' | 'announce';
  *  - main        : vue principale (embed → édition complète ; announce → récapitulatif + étapes)
  *  - embed       : (announce uniquement) édition de l'embed
  *  - buttons     : gestion des boutons
- *  - languages / translations / mentions / channel : étapes propres aux annonces
+ *  - mentions / channel : étapes propres aux annonces
  */
-export type BuilderView = 'main' | 'embed' | 'buttons' | 'color' | 'languages' | 'translations' | 'mentions' | 'channel';
+export type BuilderView = 'main' | 'embed' | 'buttons' | 'color' | 'mentions' | 'channel';
 
 export interface AnnouncementDraft {
   id?: number;
   status: AnnouncementStatus;
   title?: string;
-  sourceLanguage: string;
-  /** '*' = toutes les langues activées sur le serveur */
-  targetLanguages: string[] | '*';
-  translations: AnnouncementTranslations;
   channelId?: string;
   mentionRoleIds: string[];
   mentionEveryone: boolean;
@@ -235,26 +230,9 @@ function embedStatusEmbed(session: BuilderSession, rc: BuilderRenderContext): Em
     .setTimestamp(embedBuilderSessions.expiresAt(session));
 }
 
-function languageLabel(code: string): string {
-  const def = getLanguage(code);
-  return def ? `${def.flag} ${def.nativeLabel}` : code;
-}
-
-/** Icône d'état d'une traduction : ✅ manuelle · 🤖 automatique · ⬜ manquante. */
-export function translationIcon(kind: ReturnType<typeof translationKind>): string {
-  return kind === 'manual' ? '✅' : kind === 'auto' ? '🤖' : '⬜';
-}
-
 function announceStatusEmbed(session: BuilderSession, rc: BuilderRenderContext): EmbedBuilder {
-  const { t, config } = rc;
+  const { t } = rc;
   const ann = session.announcement!;
-  const targets = resolveTargetLanguages({ targetLanguages: ann.targetLanguages, sourceLanguage: ann.sourceLanguage }, config.enabledLanguages);
-  const langLines = targets
-    .map((code) => {
-      if (code === ann.sourceLanguage) return `🏠 ${languageLabel(code)} — ${t('announcements.builder.source_language')}`;
-      return `${translationIcon(translationKind({ translations: ann.translations }, code))} ${languageLabel(code)}`;
-    })
-    .join('\n');
   const mentions = [ann.mentionEveryone ? '@everyone' : null, ...ann.mentionRoleIds.map((r) => `<@&${r}>`)].filter(Boolean).join(' ') || '—';
   const title = ann.id ? t('announcements.builder.title_edit', { id: ann.id }) : t('announcements.builder.title');
   const embed = new EmbedBuilder()
@@ -262,7 +240,6 @@ function announceStatusEmbed(session: BuilderSession, rc: BuilderRenderContext):
     .setTitle(title)
     .setDescription(
       noticeLine(session) +
-        `${t('announcements.builder.mode', { mode: t(`announcements.modes.${config.translationMode}`) })}\n` +
         `💬 **${t('embeds.builder.content')}** : ${session.content ? truncate(session.content.replace(/\n/g, ' '), 150) : '—'}\n` +
         `🔘 **${t('embeds.builder.buttons')}** : ${session.buttons.length ? session.buttons.map(describeButton).join(' • ') : '—'}\n\n_${t('announcements.builder.hint')}_`,
     )
@@ -270,7 +247,6 @@ function announceStatusEmbed(session: BuilderSession, rc: BuilderRenderContext):
       { name: t('announcements.builder.status'), value: t(`announcements.status.${ann.status}`), inline: true },
       { name: t('announcements.builder.channel'), value: ann.channelId ? `<#${ann.channelId}>` : `⚠️ ${t('core.none')}`, inline: true },
       { name: t('announcements.builder.mentions'), value: mentions, inline: true },
-      { name: t('announcements.builder.languages'), value: langLines || '—', inline: false },
       { name: t('announcements.builder.date'), value: ann.scheduledAt ? `${discordTimestamp(ann.scheduledAt, 'F')} (${discordTimestamp(ann.scheduledAt, 'R')})` : '—', inline: false },
     )
     .setFooter({ text: t('embeds.builder.footer', { id: session.id }) })
@@ -378,8 +354,6 @@ function announceMainRows(session: BuilderSession, rc: BuilderRenderContext): Ro
   return [
     row(
       button('announce', 'embed', sid, t('announcements.builder.btn_embed'), ButtonStyle.Primary, '🎨'),
-      button('announce', 'languages', sid, t('announcements.builder.btn_languages'), ButtonStyle.Secondary, '🌍'),
-      button('announce', 'translations', sid, t('announcements.builder.btn_translations'), ButtonStyle.Secondary, '🗣️'),
       button('announce', 'mentions', sid, t('announcements.builder.btn_mentions'), ButtonStyle.Secondary, '📣'),
       button('announce', 'channel', sid, t('announcements.builder.btn_channel'), ann.channelId ? ButtonStyle.Secondary : ButtonStyle.Danger, '📍'),
     ),
@@ -391,41 +365,6 @@ function announceMainRows(session: BuilderSession, rc: BuilderRenderContext): Ro
       button('announce', 'cancel', sid, t('core.cancel'), ButtonStyle.Danger, '✖️'),
     ),
   ];
-}
-
-function announceLanguagesRows(session: BuilderSession, rc: BuilderRenderContext): Row[] {
-  const { t, config } = rc;
-  const ann = session.announcement!;
-  const enabled = LANGUAGES.filter((l) => config.enabledLanguages.includes(l.code));
-  const selected = new Set(resolveTargetLanguages({ targetLanguages: ann.targetLanguages, sourceLanguage: ann.sourceLanguage }, config.enabledLanguages));
-  const options = enabled.map((l) => new StringSelectMenuOptionBuilder().setLabel(l.nativeLabel).setValue(l.code).setEmoji(l.flag).setDefault(selected.has(l.code)));
-  return [
-    row(new StringSelectMenuBuilder().setCustomId(buildCustomId('announce', 'langs', session.id)).setPlaceholder(t('announcements.builder.languages_placeholder')).setMinValues(1).setMaxValues(options.length).addOptions(options)),
-    row(button('announce', 'back', session.id, t('core.back'), ButtonStyle.Secondary, '↩️')),
-  ];
-}
-
-function announceTranslationsRows(session: BuilderSession, rc: BuilderRenderContext): Row[] {
-  const { t, config } = rc;
-  const ann = session.announcement!;
-  const targets = resolveTargetLanguages({ targetLanguages: ann.targetLanguages, sourceLanguage: ann.sourceLanguage }, config.enabledLanguages).filter((c) => c !== ann.sourceLanguage);
-  const rows: Row[] = [];
-  if (targets.length) {
-    const options = targets.map((code) => {
-      const kind = translationKind({ translations: ann.translations }, code);
-      const desc = kind === 'manual' ? t('announcements.builder.translation_done') : kind === 'auto' ? t('announcements.builder.translation_auto') : config.autoTranslate ? t('announcements.builder.translation_missing_auto') : t('announcements.builder.translation_missing');
-      return new StringSelectMenuOptionBuilder().setLabel(truncate(`${translationIcon(kind)} ${languageLabel(code)}`, 100)).setValue(code).setDescription(truncate(desc, 100));
-    });
-    rows.push(row(new StringSelectMenuBuilder().setCustomId(buildCustomId('announce', 'trsel', session.id)).setPlaceholder(t('announcements.builder.translations_placeholder')).addOptions(options)));
-  }
-  const pending = targets.some((code) => translationKind({ translations: ann.translations }, code) !== 'manual');
-  rows.push(
-    row(
-      button('announce', 'autotr', session.id, t('announcements.builder.btn_auto_translate'), ButtonStyle.Primary, '🤖').setDisabled(!targets.length || !pending),
-      button('announce', 'back', session.id, t('core.back'), ButtonStyle.Secondary, '↩️'),
-    ),
-  );
-  return rows;
 }
 
 function announceMentionsRows(session: BuilderSession, rc: BuilderRenderContext): Row[] {
@@ -468,12 +407,6 @@ export function renderBuilder(session: BuilderSession, rc: BuilderRenderContext)
         break;
       case 'color':
         components = colorViewRows(session, rc);
-        break;
-      case 'languages':
-        components = announceLanguagesRows(session, rc);
-        break;
-      case 'translations':
-        components = announceTranslationsRows(session, rc);
         break;
       case 'mentions':
         components = announceMentionsRows(session, rc);

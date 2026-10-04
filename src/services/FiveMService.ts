@@ -14,6 +14,7 @@ import { discordTimestamp, formatDuration } from '../utils/time';
 import { childLogger } from '../utils/logger';
 import { getAdapter, AdapterError, type FrameworkAdapter } from './fivem/adapters';
 import { serverStatusSchema, type NormalizedSanction, type ServerPlayer, type ServerStatus } from './fivem/schemas';
+import { parseIdentifiers, type GameActionPayload } from './fivem/sync';
 
 const log = childLogger('FiveMService');
 
@@ -34,7 +35,15 @@ export interface ResolvedStatus extends ServerStatus {
 export interface SocketEvents {
   'whitelist:updated': { discordId: string; identifier: string | null; status: 'PENDING' | 'ACCEPTED' | 'REJECTED' };
   maintenance: { enabled: boolean };
+  /** Actions poussées par le bot (ban/unban Discord → jeu). `id` = FiveMPendingAction.id si persistée. */
+  'player:ban': GameActionPayload & { id?: number };
+  'player:unban': GameActionPayload & { id?: number };
+  'player:kick': GameActionPayload & { id?: number };
+  'player:message': GameActionPayload & { id?: number };
 }
+
+/** Écouteur appelé après chaque statut appliqué (synchronisation joueurs / rôles / salon compteur). */
+export type StatusListener = (server: FiveMServer, status: ServerStatus, previous: FiveMServer) => Promise<void>;
 
 export class FiveMError extends Error {
   constructor(readonly code: 'not_found' | 'duplicate' | 'no_host' | 'unreachable' | 'invalid_key' | 'unauthorized' | 'disabled', message?: string) {
@@ -67,9 +76,15 @@ export class FiveMService {
   /** serverId → sockets connectés */
   private readonly sockets = new Map<number, Set<Socket>>();
   private tasksRegistered = false;
+  private readonly statusListeners: StatusListener[] = [];
 
   attach(client: Client): void {
     this.client = client;
+  }
+
+  /** Enregistre un écouteur de statut (idempotent par référence). */
+  onStatus(listener: StatusListener): void {
+    if (!this.statusListeners.includes(listener)) this.statusListeners.push(listener);
   }
 
   /** Enregistre la tâche de polling / rafraîchissement des messages de statut (idempotent). */
@@ -178,6 +193,7 @@ export class FiveMService {
     this.invalidate(updated);
     log.debug({ server: server.key, guildId: server.guildId, source, players: status.players }, 'Statut appliqué');
     await this.updateStatusMessage(updated).catch((err) => log.warn({ err, server: server.key }, 'Message de statut non mis à jour'));
+    for (const listener of this.statusListeners) await listener(updated, status, server).catch((err) => log.warn({ err, server: server.key }, 'Écouteur de statut en erreur'));
     return updated;
   }
 
@@ -340,13 +356,32 @@ export class FiveMService {
 
   // ───── Sanctions distantes ─────
 
-  /** Enregistre une sanction venant du serveur de jeu (table Sanction + log MODERATION). */
-  async recordSanction(server: FiveMServer, sanction: NormalizedSanction): Promise<{ caseNumber: number; userId: string | null }> {
-    let userId = sanction.discordId ?? null;
-    if (!userId && sanction.identifier) {
-      const profile = await prisma.battleRoyaleProfile.findFirst({ where: { guildId: server.guildId, identifier: sanction.identifier }, select: { userId: true } });
-      userId = profile?.userId ?? (await prisma.whitelist.findFirst({ where: { guildId: server.guildId, identifier: sanction.identifier }, select: { userId: true } }))?.userId ?? null;
-    }
+  /**
+   * ID Discord d'une licence FiveM connue : FiveMPlayer (liaison auto/manuelle), puis profil BR, puis whitelist.
+   */
+  async findDiscordIdByLicense(guildId: string, license: string): Promise<string | null> {
+    const player = await prisma.fiveMPlayer.findUnique({ where: { guildId_license: { guildId, license } }, select: { discordId: true } }).catch(() => null);
+    if (player?.discordId) return player.discordId;
+    const profile = await prisma.battleRoyaleProfile.findFirst({ where: { guildId, identifier: license }, select: { userId: true } });
+    if (profile?.userId) return profile.userId;
+    return (await prisma.whitelist.findFirst({ where: { guildId, identifier: license }, select: { userId: true } }))?.userId ?? null;
+  }
+
+  /** Résout l'ID Discord visé par une sanction : discordId explicite → identifiant `discord:` → liaison de la licence. */
+  async resolveSanctionTarget(guildId: string, sanction: NormalizedSanction): Promise<string | null> {
+    if (sanction.discordId) return sanction.discordId;
+    const parsed = parseIdentifiers([...(sanction.identifiers ?? []), ...(sanction.identifier ? [sanction.identifier] : [])]);
+    if (parsed.discordId) return parsed.discordId;
+    const license = sanction.identifier?.startsWith('license') ? sanction.identifier : (parsed.license ?? parsed.license2 ?? sanction.identifier);
+    return license ? this.findDiscordIdByLicense(guildId, license) : null;
+  }
+
+  /**
+   * Enregistre une sanction venant du serveur de jeu (table Sanction + log MODERATION), sans action Discord.
+   * `resolvedUserId` : cible déjà résolue (sinon résolution automatique).
+   */
+  async recordSanction(server: FiveMServer, sanction: NormalizedSanction, resolvedUserId?: string | null): Promise<{ caseNumber: number; userId: string | null }> {
+    const userId = resolvedUserId !== undefined ? resolvedUserId : await this.resolveSanctionTarget(server.guildId, sanction);
     const type: SanctionType = sanction.type === 'BAN' && sanction.duration ? SanctionType.TEMPBAN : (sanction.type as SanctionType);
     // Même numérotation (et même retry sur collision P2002) que les sanctions Discord.
     const created = await moderationService.createSanction({

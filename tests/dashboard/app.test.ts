@@ -108,7 +108,7 @@ const guildRow = {
   leftAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
-  settings: { guildId: GUILD_ID, defaultLanguage: 'fr', timezone: 'Europe/Paris', brandColor: '#7C3AED', adminRoleIds: [], staffRoleIds: ['400000000000000001'], modules: { tickets: true, logs: true }, translationMode: 'CHANNELS', languageChannels: {}, enabledLanguages: ['fr', 'en'], displayName: null, footerText: null, footerIconUrl: null },
+  settings: { guildId: GUILD_ID, defaultLanguage: 'fr', timezone: 'Europe/Paris', brandColor: '#7C3AED', adminRoleIds: [], staffRoleIds: ['400000000000000001'], modules: { tickets: true, logs: true }, displayName: null, footerText: null, footerIconUrl: null },
   logChannels: [{ id: 1, guildId: GUILD_ID, category: 'TICKET', channelId: '300000000000000002', enabled: true }],
 };
 
@@ -189,7 +189,7 @@ async function post(path: string, body: Record<string, string> | object, opts: {
   return r;
 }
 
-const MODELS = ['dashboardSession', 'guild', 'guildSettings', 'logChannel', 'log', 'commandPermission', 'userLanguage', 'user', 'translation', 'ticket', 'warning', 'sanction', 'fiveMServer', 'whitelist', 'whitelistConfig'];
+const MODELS = ['dashboardSession', 'guild', 'guildSettings', 'logChannel', 'log', 'commandPermission', 'user', 'ticket', 'warning', 'sanction', 'fiveMServer', 'whitelist', 'whitelistConfig'];
 const METHODS = ['findUnique', 'findFirst', 'findMany', 'create', 'createMany', 'update', 'updateMany', 'upsert', 'delete', 'deleteMany', 'count', 'groupBy', 'aggregate'];
 
 /** vitest `restoreMocks` efface les implémentations avant chaque test : on les réarme ici. */
@@ -204,10 +204,6 @@ function primeMocks(): void {
   prisma.guild.findMany.mockResolvedValue([guildRow]);
   prisma.log.findMany.mockResolvedValue([{ id: 1, guildId: GUILD_ID, category: 'TICKET', action: 'ticket.open', actorId: USER_ID, targetId: null, data: { title: 'Ticket #1 ouvert' }, createdAt: new Date() }]);
   prisma.log.count.mockResolvedValue(1);
-  prisma.userLanguage.groupBy.mockResolvedValue([{ language: 'fr', _count: { _all: 10 } }, { language: 'en', _count: { _all: 5 } }]);
-  prisma.userLanguage.findMany.mockResolvedValue([{ userId: USER_ID, guildId: GUILD_ID, language: 'fr' }]);
-  prisma.userLanguage.findUnique.mockResolvedValue({ userId: USER_ID, guildId: GUILD_ID, language: 'fr' });
-  prisma.translation.findMany.mockResolvedValue([{ id: 1, guildId: GUILD_ID, language: 'fr', key: 'core.yes', value: 'Ouais' }]);
   prisma.warning.findMany.mockResolvedValue([{ id: 1, guildId: GUILD_ID, userId: USER_ID, moderatorId: '1', reason: 'Spam', active: true, createdAt: new Date() }]);
 }
 
@@ -282,11 +278,11 @@ describe('Dashboard — pages connectées', () => {
     expect(r.text).toContain('Inviter le bot');
     expect(r.text).toContain('guild_id=100000000000000002');
   });
-  it('GET /guilds/:id rend le dashboard avec stats et barres de langues', async () => {
+  it('GET /guilds/:id rend le dashboard avec stats et activité', async () => {
     const r = await get(`/guilds/${GUILD_ID}`, { auth: true });
     expect(r.status).toBe(200);
-    expect(r.text).toContain('Membres par langue');
-    expect(r.text).toContain('data-pct="66.7"');
+    expect(r.text).toContain('Activité');
+    expect(r.text).not.toContain('Membres par langue');
     expect(r.text).toContain('ticket.open');
     expect(r.text).toContain('aria-current="page"');
   });
@@ -299,7 +295,7 @@ describe('Dashboard — pages connectées', () => {
     const r = await get('/guilds/abc', { auth: true });
     expect(r.status).toBe(400);
   });
-  it('GET settings / logs / members / translations / fivem / whitelist se rendent', async () => {
+  it('GET settings / logs / members / fivem / whitelist se rendent', async () => {
     for (const [path, needle] of [
       ['/settings', 'Permissions par commande'],
       ['/settings?tab=modules', 'data-module-toggle="tickets"'],
@@ -308,8 +304,6 @@ describe('Dashboard — pages connectées', () => {
       ['/members', 'Tester'],
       ['/members?q=test', '@tester'],
       [`/members/${USER_ID}`, 'Avertissements'],
-      ['/translations?only=overrides', 'Ouais'],
-      ['/translations?lang=en&q=yes&only=all', 'Traductions'],
       ['/fivem', 'Intégration — API REST'],
       ['/whitelist', 'Questions du formulaire'],
     ] as const) {
@@ -324,10 +318,9 @@ describe('Dashboard — pages connectées', () => {
     expect(r.text).toContain('Données invalides');
     expect(r.text).not.toContain('at Object.');
   });
-  it('export des traductions en JSON', async () => {
-    const r = await get(`/guilds/${GUILD_ID}/translations/export?lang=fr&scope=overrides`, { auth: true });
-    expect(r.status).toBe(200);
-    expect(JSON.parse(r.text)).toEqual({ 'core.yes': 'Ouais' });
+  it('la page Traductions n’existe plus', async () => {
+    const r = await get(`/guilds/${GUILD_ID}/translations`, { auth: true });
+    expect(r.status).toBe(404);
   });
   it('/admin refuse un non-owner et accepte un owner', async () => {
     const denied = await get('/admin', { auth: true });
@@ -342,7 +335,7 @@ describe('Dashboard — pages connectées', () => {
     expect(overview.status).toBe(200);
     const o = JSON.parse(overview.text);
     expect(o.members).toBe(42);
-    expect(o.modules.total).toBe(21);
+    expect(o.modules.total).toBe(20);
     const channels = JSON.parse((await get(`/api/guilds/${GUILD_ID}/channels`, { auth: true })).text);
     expect(channels.text.map((c: { name: string }) => c.name)).toEqual(['annonces']);
     const roles = JSON.parse((await get(`/api/guilds/${GUILD_ID}/roles`, { auth: true })).text);
@@ -368,13 +361,13 @@ describe('Dashboard — mutations', () => {
     expect(r.status).toBe(400);
   });
   it('enregistre les paramètres puis redirige', async () => {
-    const r = await post(`/guilds/${GUILD_ID}/settings`, { kind: 'PRISON', defaultLanguage: 'fr', enabledLanguages: 'en', brandColor: '#123abc', translationMode: 'PERMISSIONS', timezone: 'Europe/Paris', displayName: '', footerText: '', footerIconUrl: '' });
+    const r = await post(`/guilds/${GUILD_ID}/settings`, { kind: 'PRISON', defaultLanguage: 'fr', brandColor: '#123abc', timezone: 'Europe/Paris', displayName: '', footerText: '', footerIconUrl: '' });
     expect(r.status).toBe(302);
     expect(r.location).toBe(`/guilds/${GUILD_ID}/settings`);
     expect(prisma.guild.update).toHaveBeenCalledWith({ where: { id: GUILD_ID }, data: { kind: 'PRISON' } });
   });
   it('refuse des paramètres invalides (400 lisible)', async () => {
-    const r = await post(`/guilds/${GUILD_ID}/settings`, { kind: 'NOPE', defaultLanguage: 'fr', brandColor: 'rouge', translationMode: 'CHANNELS' });
+    const r = await post(`/guilds/${GUILD_ID}/settings`, { kind: 'NOPE', defaultLanguage: 'fr', brandColor: 'rouge' });
     expect(r.status).toBe(400);
     expect(r.text).toContain('kind');
   });
@@ -383,15 +376,6 @@ describe('Dashboard — mutations', () => {
     expect(r.status).toBe(302);
     expect(prisma.logChannel.upsert).toHaveBeenCalled();
     expect(prisma.logChannel.deleteMany).toHaveBeenCalled();
-  });
-  it('enregistre une traduction et supprime un override', async () => {
-    const save = await post(`/guilds/${GUILD_ID}/translations`, { lang: 'fr', key: 'core.yes', value: 'Yep', _action: 'save' });
-    expect(save.status).toBe(302);
-    const del = await post(`/guilds/${GUILD_ID}/translations`, { lang: 'fr', key: 'core.yes', value: '', _action: 'delete' });
-    expect(del.status).toBe(302);
-    expect(prisma.translation.deleteMany).toHaveBeenCalled();
-    const unknown = await post(`/guilds/${GUILD_ID}/translations`, { lang: 'fr', key: 'nope.key', value: 'x', _action: 'save' }, { json: true });
-    expect(unknown.status).toBe(400);
   });
   it('enregistre les permissions de commandes', async () => {
     const r = await post(`/guilds/${GUILD_ID}/commands`, { 'perms[ping][enabled]': 'on', 'perms[ticket][roleIds]': '400000000000000001', 'perms[ticket][enabled]': 'on' });

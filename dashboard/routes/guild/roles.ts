@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { AutoRoleType, PanelStyle } from '@prisma/client';
 import type { RedemptionClient } from '../../../src/core/Client';
-import { roleService, roleMenuOptionSchema, parseRoleMenuOptions, MAX_AUTOROLE_DELAY_SECONDS, DEFAULT_NOTIFICATIONS } from '../../../src/services/RoleService';
+import { roleService, roleMenuOptionSchema, parseRoleMenuOptions, MAX_AUTOROLE_DELAY_SECONDS, ACTIVE_AUTOROLE_TYPES, DEFAULT_NOTIFICATIONS } from '../../../src/services/RoleService';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
 import { flash } from '../../lib/flash';
@@ -22,14 +22,14 @@ export const AUTOROLE_TYPE_LABELS: Record<AutoRoleType, string> = {
   JOIN: "À l'arrivée",
   BOT: 'Bots',
   VERIFIED: 'Après vérification',
-  MEMBER: 'Après choix de langue (membre)',
-  LANGUAGE: 'Après choix de langue',
+  MEMBER: 'Membre (obsolète)',
+  LANGUAGE: 'Langue (obsolète)',
   SPECIAL: 'Spécial (manuel)',
 };
 
 const autoroleBody = z.object({
   roleId: discordIdSchema,
-  type: z.nativeEnum(AutoRoleType),
+  type: z.enum(ACTIVE_AUTOROLE_TYPES),
   delayMinutes: z.coerce.number().int().min(0).max(MAX_AUTOROLE_DELAY_SECONDS / 60).default(0),
 });
 const autoroleDeleteBody = z.object({ roleId: discordIdSchema, type: z.nativeEnum(AutoRoleType) });
@@ -90,7 +90,7 @@ export function createRolesRouter(client: RedemptionClient): Router {
         page: 'roles',
         tab: query.tab,
         autoroles,
-        autoroleTypes: Object.values(AutoRoleType).map((t) => ({ value: t, label: AUTOROLE_TYPE_LABELS[t] })),
+        autoroleTypes: Object.values(AutoRoleType).map((t) => ({ value: t, label: AUTOROLE_TYPE_LABELS[t], active: (ACTIVE_AUTOROLE_TYPES as readonly string[]).includes(t) })),
         menus: menus.map((m) => ({ ...m, optionList: parseRoleMenuOptions(m.options) })),
         notifications,
         defaultNotifications: DEFAULT_NOTIFICATIONS,

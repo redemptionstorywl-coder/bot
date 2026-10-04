@@ -3,7 +3,7 @@
   <div>
     <a class="link" href="/guilds/<%= guild.id %>/announcements">← Retour aux annonces</a>
     <h2 class="page-title"><%= a ? a.title : 'Nouvelle annonce' %> <% if (a) { %><span class="badge badge-status-<%= a.status %>"><%= statusLabel %></span><% } %></h2>
-    <p class="muted"><% if (a) { %>Créée le <%= fmt.dateTime(a.createdAt) %><% if (a.publishedAt) { %> · publiée le <%= fmt.dateTime(a.publishedAt) %> (<%= a.messages.length %> message(s))<% } %><% if (pendingSchedule) { %> · programmée pour le <strong><%= fmt.dateTime(pendingSchedule.scheduledAt) %></strong><% } %><% } else { %>Rédigez l'annonce dans la langue source, ajoutez des traductions par langue puis publiez ou programmez.<% } %></p>
+    <p class="muted"><% if (a) { %>Créée le <%= fmt.dateTime(a.createdAt) %><% if (a.publishedAt) { %> · publiée le <%= fmt.dateTime(a.publishedAt) %><% } %><% if (pendingSchedule) { %> · programmée pour le <strong><%= fmt.dateTime(pendingSchedule.scheduledAt) %></strong><% } %><% } else { %>Rédigez l'annonce, choisissez son salon puis publiez ou programmez.<% } %></p>
   </div>
   <% if (a) { %>
   <div class="page-actions">
@@ -23,17 +23,8 @@
     <div class="card">
       <h3 class="card-title">Général</h3>
       <div class="field"><label for="a-title">Titre interne</label><input id="a-title" name="title" class="input" maxlength="190" required value="<%= a ? a.title : '' %>" placeholder="Nouvelle saison"></div>
-      <div class="field"><label for="a-content">Texte au-dessus de l'embed (langue source)</label><textarea id="a-content" name="content" class="textarea" rows="3" maxlength="2000" placeholder="Texte optionnel, variables acceptées"><%= a && a.content ? a.content : '' %></textarea></div>
-      <div class="grid-2 grid-tight">
-        <div class="field"><label for="a-source">Langue source</label><select id="a-source" name="sourceLanguage" class="select"><% for (const l of enabledLanguages) { %><option value="<%= l.code %>" <%= sourceLanguage === l.code ? 'selected' : '' %>><%= l.flag %> <%= l.nativeLabel %></option><% } %></select></div>
-        <div class="field"><label for="a-channel">Salon de publication</label><select id="a-channel" name="channelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: a ? a.channelId : '', allowEmpty: true, emptyLabel: '— Salons par langue (paramètres) —' }) %></select><small class="hint">Vide = salons configurés par langue (mode « Salons ») ou refus si aucun.</small></div>
-      </div>
-      <fieldset class="field"><legend>Langues cibles</legend>
-        <label class="check"><input type="checkbox" name="targetAll" data-check-toggle="#target-langs" data-check-toggle-invert <%= targetAll ? 'checked' : '' %>><span>Toutes les langues activées</span></label>
-        <div class="check-grid" id="target-langs">
-          <% for (const l of enabledLanguages) { %><label class="check"><input type="checkbox" name="targetLanguages" value="<%= l.code %>" <%= targetLanguages.includes(l.code) ? 'checked' : '' %>><span><%= l.flag %> <%= l.nativeLabel %></span></label><% } %>
-        </div>
-      </fieldset>
+      <div class="field"><label for="a-content">Texte au-dessus de l'embed</label><textarea id="a-content" name="content" class="textarea" rows="3" maxlength="2000" placeholder="Texte optionnel, variables acceptées"><%= a && a.content ? a.content : '' %></textarea></div>
+      <div class="field"><label for="a-channel">Salon de publication</label><select id="a-channel" name="channelId" class="select"><%- include('../partials/channel-options', { channels: guild.textChannels, selected: a ? a.channelId : '', allowEmpty: true, emptyLabel: '— Choisir un salon —' }) %></select><small class="hint">Obligatoire pour publier ou programmer.</small></div>
     </div>
     <div class="card">
       <h3 class="card-title">Mentions</h3>
@@ -43,26 +34,8 @@
   </div>
 
   <div class="card">
-    <h3 class="card-title">Embed (langue source)</h3>
+    <h3 class="card-title">Embed</h3>
     <%- include('../partials/embed-editor', { prefix: 'embed', spec, id: 'ann-embed', buttons, buttonsName: 'buttonsJson', withPreview: true, withJson: true, contentSource: '#a-content' }) %>
-  </div>
-
-  <div class="card">
-    <div class="card-head"><h3 class="card-title">Traductions</h3><span class="muted">Un onglet par langue activée · champs vides = texte source</span></div>
-    <% const others = enabledLanguages.filter((l) => l.code !== sourceLanguage); %>
-    <% if (!others.length) { %><p class="muted">Activez d'autres langues dans les paramètres pour traduire cette annonce.</p><% } else { %>
-    <div class="tabs lang-tabs" data-tabs data-tab-param="lang" data-active="<%= others[0].code %>">
-      <div class="tab-list" role="tablist"><% for (const l of others) { %><button type="button" class="tab" role="tab" data-tab="<%= l.code %>"><%= l.flag %> <%= l.nativeLabel %><% if (translations[l.code]) { %> ✓<% } %></button><% } %></div>
-      <% for (const l of others) { %>
-        <% const tr = translations[l.code] || {}; %>
-        <section class="tab-panel" data-tab-panel="<%= l.code %>" role="tabpanel">
-          <div class="field"><label for="tr-<%= l.code %>-title">Titre de l'embed (<%= l.code %>)</label><input id="tr-<%= l.code %>-title" name="translations[<%= l.code %>][title]" class="input" maxlength="256" value="<%= tr.title || '' %>"></div>
-          <div class="field"><label for="tr-<%= l.code %>-description">Description (<%= l.code %>)</label><textarea id="tr-<%= l.code %>-description" name="translations[<%= l.code %>][description]" class="textarea" rows="5" maxlength="4096"><%= tr.description || '' %></textarea></div>
-          <div class="field"><label for="tr-<%= l.code %>-content">Texte au-dessus de l'embed (<%= l.code %>)</label><textarea id="tr-<%= l.code %>-content" name="translations[<%= l.code %>][content]" class="textarea" rows="2" maxlength="2000"><%= tr.content || '' %></textarea></div>
-        </section>
-      <% } %>
-    </div>
-    <% } %>
   </div>
 
   <div class="form-actions sticky-actions">
@@ -77,7 +50,7 @@
     <h3 class="card-title">Publier maintenant</h3>
     <% if (!botReady) { %><div class="alert alert-warning"><span class="alert-icon" aria-hidden="true">⚠</span><span class="alert-text">Le bot n'est pas connecté : la publication est indisponible pour le moment.</span></div><% } %>
     <% if (isPublished) { %><p class="muted">Déjà publiée. Modifiez le contenu ci-dessus puis enregistrez pour synchroniser les messages.</p><% } else { %>
-    <p class="muted">Envoie un message par langue cible (salons par langue) ou un message unique dans le salon choisi. Les mentions sont incluses.</p>
+    <p class="muted">Envoie l'annonce dans le salon choisi. Les mentions sont incluses.</p>
     <form method="post" action="/guilds/<%= guild.id %>/announcements/<%= a.id %>/publish" data-confirm="Publier l'annonce « <%= a.title %> » maintenant ?"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>>Publier</button></form>
     <% } %>
   </div>

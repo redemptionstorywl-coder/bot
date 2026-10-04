@@ -50,18 +50,20 @@ export type NormalizedStats = z.infer<typeof normalizedStatsSchema>;
 
 export const statsBatchSchema = z.union([normalizedStatsSchema, z.array(normalizedStatsSchema).min(1).max(200)]);
 
-export const sanctionTypeSchema = z.enum(['BAN', 'KICK', 'WARN']);
+export const sanctionTypeSchema = z.enum(['BAN', 'KICK', 'WARN', 'UNBAN']);
 export const normalizedSanctionSchema = z
   .object({
     identifier: fivemIdentifierSchema.optional(),
     discordId: discordId.optional(),
+    /** Tous les identifiants du joueur (GetPlayerIdentifiers) : permet de retrouver `discord:` automatiquement. */
+    identifiers: z.array(z.string().max(128)).max(20).optional(),
     type: sanctionTypeSchema,
     reason: z.string().min(1).max(1000),
     /** Durée en secondes (bans temporaires) */
     duration: z.coerce.number().int().min(1).optional(),
     staff: z.string().min(1).max(128),
   })
-  .refine((s) => s.identifier || s.discordId, { message: '`identifier` ou `discordId` requis' });
+  .refine((s) => s.identifier || s.discordId || s.identifiers?.length, { message: '`identifier`, `identifiers` ou `discordId` requis' });
 export type NormalizedSanction = z.infer<typeof normalizedSanctionSchema>;
 
 export const maintenanceSchema = z.object({ enabled: z.boolean() });
@@ -71,6 +73,24 @@ export const playerLeaveSchema = z.object({
   id: z.coerce.number().int().min(0),
   name: z.string().max(128).optional(),
   reason: z.string().max(256).optional(),
+  /** Identifiants du joueur (recommandé : permet de clore la session même après un redémarrage du bot) */
+  identifiers: z.array(z.string().max(128)).max(20).optional(),
+});
+
+/** `POST /players/name` : pseudo choisi en jeu → surnom Discord. */
+export const playerNameSchema = z
+  .object({
+    discordId: discordId.optional(),
+    identifiers: z.array(z.string().max(128)).max(20).default([]),
+    name: z.string().min(1).max(128),
+    id: z.coerce.number().int().min(0).optional(),
+  })
+  .refine((p) => p.discordId || p.identifiers.length > 0, { message: '`discordId` ou `identifiers` requis' });
+
+/** `POST /check` : vérification à la connexion (deferrals). */
+export const connectionCheckSchema = z.object({
+  identifiers: z.array(z.string().max(128)).min(1).max(20),
+  name: z.string().max(128).optional(),
 });
 
 export const socketAuthSchema = z.object({

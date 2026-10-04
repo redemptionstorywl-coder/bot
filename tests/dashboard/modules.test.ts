@@ -71,14 +71,6 @@ vi.mock('../../src/services/RoleService', async (importOriginal) => {
   return mod;
 });
 
-vi.mock('../../src/services/LanguageService', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../../src/services/LanguageService')>();
-  const svc = mod.languageService;
-  svc.publishPanel = vi.fn(async () => ({ id: '600000000000000001' })) as never;
-  svc.refreshPanel = vi.fn(async () => true) as never;
-  return mod;
-});
-
 vi.mock('../../src/services/ModerationService', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../../src/services/ModerationService')>();
   const svc = mod.moderationService;
@@ -131,7 +123,6 @@ import { env } from '../../src/config/env';
 import { ticketService } from '../../src/services/TicketService';
 import { announcementService } from '../../src/services/AnnouncementService';
 import { roleService } from '../../src/services/RoleService';
-import { languageService } from '../../src/services/LanguageService';
 import { moderationService } from '../../src/services/ModerationService';
 import { giveawayService } from '../../src/services/GiveawayService';
 import { eventService } from '../../src/services/EventService';
@@ -180,17 +171,17 @@ async function follow(r: { location: string | null }) {
 }
 
 const MODELS = [
-  'dashboardSession', 'guild', 'guildSettings', 'logChannel', 'log', 'commandPermission', 'userLanguage', 'user', 'translation',
+  'dashboardSession', 'guild', 'guildSettings', 'logChannel', 'log', 'commandPermission', 'user',
   'ticket', 'ticketType', 'ticketPanel', 'ticketTranscript', 'ticketMessage', 'warning', 'sanction', 'ban', 'mute', 'moderationConfig',
   'embedTemplate', 'announcement', 'scheduledAnnouncement', 'welcomeConfig', 'leaveConfig', 'autoRole', 'roleMenu', 'reactionRole',
-  'notificationRole', 'languageRole', 'giveaway', 'giveawayEntry', 'event', 'eventParticipant', 'poll', 'pollVote',
+  'notificationRole', 'giveaway', 'giveawayEntry', 'event', 'eventParticipant', 'poll', 'pollVote',
 ];
 
 const ticketType = { id: 1, guildId: GUILD_ID, key: 'support', label: 'Support', emoji: '🎫', description: 'Aide', categoryId: CATEGORY_ID, archiveCategoryId: null, staffRoleIds: [STAFF_ROLE_ID], questions: [{ id: 'details', label: 'Détails', style: 'paragraph', required: true }], embed: null, welcomeMessage: null, language: 'fr', nameFormat: 'ticket-{number}', maxPerUser: 1, enabled: true, order: 0, createdAt: new Date(), updatedAt: new Date() };
 const ticketRow = { id: 10, guildId: GUILD_ID, number: 7, channelId: TEXT_CHANNEL_ID, typeId: 1, userId: USER_ID, status: 'OPEN', claimedById: null, closedById: null, closeReason: null, closedAt: null, formAnswers: [{ question: 'Détails', answer: 'Mon souci' }], participants: [], language: 'fr', createdAt: new Date(), updatedAt: new Date(), type: ticketType, transcript: null };
 const embedTemplate = { id: 5, guildId: GUILD_ID, name: 'Maintenance', description: 'Annonce de maintenance', spec: { title: '🛠️ Maintenance', description: 'Le serveur sera indisponible.', color: '#7C3AED' }, buttons: [{ label: 'Statut', style: 'link', url: 'https://example.com' }], createdById: USER_ID, createdAt: new Date(), updatedAt: new Date() };
-const announcementRow = { id: 4, guildId: GUILD_ID, title: 'Nouvelle saison', content: 'Hello', spec: { title: 'Saison 2', description: 'C’est parti !' }, translations: { en: { title: 'Season 2' } }, sourceLanguage: 'fr', targetLanguages: '*', channelId: TEXT_CHANNEL_ID, mentionRoleIds: [], mentionEveryone: false, buttons: [], status: 'DRAFT', messages: [], createdById: USER_ID, publishedAt: null, archivedAt: null, createdAt: new Date(), updatedAt: new Date() };
-const welcomeRow = { guildId: GUILD_ID, enabled: true, channelId: TEXT_CHANNEL_ID, message: { fr: 'Bienvenue {user}', en: 'Welcome {user}' }, embed: null, imageEnabled: false, imageBackgroundUrl: null, imageTitle: 'BIENVENUE', imageSubtitle: '{username}', dmEnabled: false, dmMessage: null, dmEmbed: null, buttons: [], languagePromptEnabled: true, updatedAt: new Date() };
+const announcementRow = { id: 4, guildId: GUILD_ID, title: 'Nouvelle saison', content: 'Hello', spec: { title: 'Saison 2', description: 'C’est parti !' }, channelId: TEXT_CHANNEL_ID, mentionRoleIds: [], mentionEveryone: false, buttons: [], status: 'DRAFT', messages: [], createdById: USER_ID, publishedAt: null, archivedAt: null, createdAt: new Date(), updatedAt: new Date() };
+const welcomeRow = { guildId: GUILD_ID, enabled: true, channelId: TEXT_CHANNEL_ID, message: { fr: 'Bienvenue {user}', en: 'Welcome {user}' }, embed: null, imageEnabled: false, imageBackgroundUrl: null, imageTitle: 'BIENVENUE', imageSubtitle: '{username}', dmEnabled: false, dmMessage: null, dmEmbed: null, buttons: [], updatedAt: new Date() };
 const roleMenuRow = { id: 2, guildId: GUILD_ID, name: 'Couleurs', channelId: TEXT_CHANNEL_ID, messageId: '600000000000000001', style: 'BUTTONS', embed: { title: 'Choisis ta couleur' }, options: [{ roleId: STAFF_ROLE_ID, label: 'Staff' }], minValues: 0, maxValues: 25, exclusive: false, placeholder: null, createdAt: new Date(), updatedAt: new Date() };
 const sanctionRow = { id: 1, guildId: GUILD_ID, caseNumber: 12, type: 'WARN', userId: USER_ID, moderatorId: USER_ID, reason: 'Spam', duration: null, channelId: null, metadata: null, createdAt: new Date() };
 const giveawayRow = { id: 8, guildId: GUILD_ID, channelId: TEXT_CHANNEL_ID, messageId: '600000000000000001', prize: 'Nitro', description: null, winnersCount: 1, endsAt: new Date(Date.now() + 3600_000), requiredRoleId: null, minMessages: 0, language: null, hostId: USER_ID, ended: false, winners: [], createdAt: new Date(), entries: [{ id: 1, giveawayId: 8, userId: USER_ID, createdAt: new Date() }] };
@@ -224,10 +215,8 @@ function primeMocks(): void {
   prisma.welcomeConfig.upsert.mockImplementation(async (args: { update: Record<string, unknown> }) => ({ ...welcomeRow, ...args.update }));
   prisma.leaveConfig.findUnique.mockResolvedValue(null);
   prisma.leaveConfig.upsert.mockImplementation(async (args: { update: Record<string, unknown> }) => ({ guildId: GUILD_ID, enabled: false, channelId: null, message: null, embed: null, imageEnabled: false, imageBackgroundUrl: null, logEnabled: true, updatedAt: new Date(), ...args.update }));
-  prisma.languageRole.findMany.mockResolvedValue([{ id: 1, guildId: GUILD_ID, language: 'fr', roleId: STAFF_ROLE_ID, emoji: '🇫🇷', label: 'Français', enabled: true }]);
-  prisma.languageRole.upsert.mockResolvedValue({ id: 1, guildId: GUILD_ID, language: 'en', roleId: STAFF_ROLE_ID, emoji: null, label: null, enabled: true });
   prisma.autoRole.findMany.mockResolvedValue([{ id: 1, guildId: GUILD_ID, roleId: STAFF_ROLE_ID, type: 'JOIN', delaySeconds: 0, enabled: true, createdAt: new Date() }]);
-  prisma.autoRole.upsert.mockResolvedValue({ id: 2, guildId: GUILD_ID, roleId: STAFF_ROLE_ID, type: 'MEMBER', delaySeconds: 60, enabled: true, createdAt: new Date() });
+  prisma.autoRole.upsert.mockResolvedValue({ id: 2, guildId: GUILD_ID, roleId: STAFF_ROLE_ID, type: 'VERIFIED', delaySeconds: 60, enabled: true, createdAt: new Date() });
   prisma.autoRole.deleteMany.mockResolvedValue({ count: 1 });
   prisma.roleMenu.findMany.mockResolvedValue([roleMenuRow]);
   prisma.roleMenu.findUnique.mockResolvedValue(roleMenuRow);
@@ -427,8 +416,7 @@ describe('Embeds', () => {
     expect(last.content).toBe('Annonce');
     expect(last.embeds).toHaveLength(1);
     const defaults = await post(`/guilds/${GUILD_ID}/embeds/defaults`, {});
-    expect(defaults.status).toBe(302);
-    expect(prisma.embedTemplate.create).toHaveBeenCalled();
+    expect(defaults.status).not.toBe(302);
   });
 });
 
@@ -472,28 +460,28 @@ describe('Annonces', () => {
     expect(r.text).toContain('Brouillons');
     expect(r.text).toContain('Nouvelle saison');
   });
-  it('GET /announcements/:id rend l’éditeur avec traductions et aperçu', async () => {
+  it('GET /announcements/:id rend l’éditeur et l’aperçu', async () => {
     const r = await get(`/guilds/${GUILD_ID}/announcements/4`);
     expect(r.status).toBe(200);
-    expect(r.text).toContain('value="Season 2"');
+    expect(r.text).toContain('Saison 2');
     expect(r.text).toContain('Programmer');
-    const preview = await get(`/guilds/${GUILD_ID}/announcements/4/preview?lang=en`);
+    expect(r.text).not.toContain('Traductions');
+    const preview = await get(`/guilds/${GUILD_ID}/announcements/4/preview`);
     expect(preview.status).toBe(200);
-    expect(preview.text).toContain('Season 2');
+    expect(preview.text).toContain('Saison 2');
   });
-  it('crée une annonce multilingue puis la met à jour', async () => {
+  it('crée une annonce puis la met à jour', async () => {
     const r = await post(`/guilds/${GUILD_ID}/announcements`, {
-      title: 'Maintenance', content: 'Ce soir', sourceLanguage: 'fr', targetLanguages: ['fr', 'en'], channelId: TEXT_CHANNEL_ID, mentionRoleIds: STAFF_ROLE_ID, mentionEveryone: 'on',
+      title: 'Maintenance', content: 'Ce soir', channelId: TEXT_CHANNEL_ID, mentionRoleIds: STAFF_ROLE_ID, mentionEveryone: 'on',
       'embed[title]': 'Maintenance', 'embed[description]': 'Serveur fermé', 'embed[fieldsJson]': '[]', buttonsJson: '[]',
-      'translations[en][title]': 'Maintenance (EN)', 'translations[en][description]': '', 'translations[en][content]': 'Tonight',
     });
     expect(r.status).toBe(302);
     expect(r.location).toBe(`/guilds/${GUILD_ID}/announcements/11`);
-    const created = prisma.announcement.create.mock.calls[0][0] as { data: { translations: Record<string, unknown>; targetLanguages: unknown; mentionRoleIds: string[]; mentionEveryone: boolean } };
-    expect(created.data.translations).toEqual({ en: { title: 'Maintenance (EN)', content: 'Tonight' } });
-    expect(created.data.targetLanguages).toEqual(['fr', 'en']);
+    const created = prisma.announcement.create.mock.calls[0][0] as { data: Record<string, unknown> & { mentionEveryone: boolean; channelId: string } };
+    expect(created.data).not.toHaveProperty('translations');
+    expect(created.data.channelId).toBe(TEXT_CHANNEL_ID);
     expect(created.data.mentionEveryone).toBe(true);
-    const upd = await post(`/guilds/${GUILD_ID}/announcements/4`, { title: 'Nouvelle saison 2', sourceLanguage: 'fr', targetAll: 'on', 'embed[title]': 'Saison 2', 'embed[fieldsJson]': '[]', buttonsJson: '[]' });
+    const upd = await post(`/guilds/${GUILD_ID}/announcements/4`, { title: 'Nouvelle saison 2', 'embed[title]': 'Saison 2', 'embed[fieldsJson]': '[]', buttonsJson: '[]' });
     expect(upd.status).toBe(302);
     expect(prisma.announcement.update).toHaveBeenCalled();
   });
@@ -520,27 +508,28 @@ describe('Annonces', () => {
 });
 
 describe('Bienvenue', () => {
-  it('GET /welcome rend les trois onglets', async () => {
-    const r = await get(`/guilds/${GUILD_ID}/welcome?tab=languages`);
+  it('GET /welcome rend les onglets bienvenue / départ (sans onglet Langues)', async () => {
+    const r = await get(`/guilds/${GUILD_ID}/welcome`);
     expect(r.status).toBe(200);
     expect(r.text).toContain('Bienvenue {user}');
-    expect(r.text).toContain('Rôles de langue');
+    expect(r.text).not.toContain('Rôles de langue');
     expect(r.text).toContain('{memberCount}');
   });
-  it('enregistre la configuration de bienvenue (messages par langue + embed formulaire)', async () => {
+  it('enregistre la configuration de bienvenue (message unique + embed formulaire)', async () => {
     const r = await post(`/guilds/${GUILD_ID}/welcome`, {
-      enabled: 'on', channelId: TEXT_CHANNEL_ID, 'messages[fr]': 'Salut {user}', 'messages[en]': 'Hi {user}', embedMode: 'form', 'embed[title]': 'Bienvenue', 'embed[fieldsJson]': '[]',
-      imageEnabled: 'on', imageTitle: 'BIENVENUE', imageSubtitle: '{username}', dmEnabled: 'on', dmSameMessage: 'on', dmMessage: 'Bienvenue en DM', buttonsJson: JSON.stringify([{ label: 'Règles', style: 'link', url: 'https://example.com' }]), languagePromptEnabled: 'on',
+      enabled: 'on', channelId: TEXT_CHANNEL_ID, message: 'Salut {user}', embedMode: 'form', 'embed[title]': 'Bienvenue', 'embed[fieldsJson]': '[]',
+      imageEnabled: 'on', imageTitle: 'BIENVENUE', imageSubtitle: '{username}', dmEnabled: 'on', dmMessage: 'Bienvenue en DM', buttonsJson: JSON.stringify([{ label: 'Règles', style: 'link', url: 'https://example.com' }]),
     });
     expect(r.status).toBe(302);
-    const call = prisma.welcomeConfig.upsert.mock.calls[0][0] as { update: { message: unknown; embed: unknown; dmMessage: unknown; buttons: unknown[] } };
-    expect(call.update.message).toEqual({ fr: 'Salut {user}', en: 'Hi {user}' });
+    const call = prisma.welcomeConfig.upsert.mock.calls[0][0] as { update: Record<string, unknown> & { message: unknown; embed: unknown; dmMessage: unknown; buttons: unknown[] } };
+    expect(call.update.message).toBe('Salut {user}');
+    expect(call.update).not.toHaveProperty('languagePromptEnabled');
     expect(call.update.embed).toEqual({ title: 'Bienvenue' });
     expect(call.update.dmMessage).toBe('Bienvenue en DM');
     expect(call.update.buttons).toHaveLength(1);
   });
   it('enregistre le départ et envoie un test', async () => {
-    const leave = await post(`/guilds/${GUILD_ID}/welcome/leave`, { enabled: 'on', channelId: TEXT_CHANNEL_ID, sameMessage: 'on', message: 'Bye {username}', embedJson: '{"title":"Au revoir"}', logEnabled: 'on' });
+    const leave = await post(`/guilds/${GUILD_ID}/welcome/leave`, { enabled: 'on', channelId: TEXT_CHANNEL_ID, message: 'Bye {username}', embedJson: '{"title":"Au revoir"}', logEnabled: 'on' });
     expect(leave.status).toBe(302);
     expect(prisma.leaveConfig.upsert).toHaveBeenCalled();
     const before = guild.sent.length;
@@ -550,20 +539,6 @@ describe('Bienvenue', () => {
     expect(guild.sent.length).toBe(before + 1);
     const page = await follow(test);
     expect(page.text).toContain('test envoyé');
-  });
-  it('gère les rôles de langue et le panneau', async () => {
-    const roles = await post(`/guilds/${GUILD_ID}/welcome/languages`, { 'roles[fr]': STAFF_ROLE_ID, 'roles[en]': '' });
-    expect(roles.status).toBe(302);
-    expect(prisma.languageRole.upsert).toHaveBeenCalled();
-    expect(prisma.languageRole.deleteMany).toHaveBeenCalledWith({ where: { guildId: GUILD_ID, language: 'en' } });
-    const publish = await post(`/guilds/${GUILD_ID}/welcome/languages/publish`, { channelId: TEXT_CHANNEL_ID, style: 'SELECT' });
-    expect(publish.status).toBe(302);
-    expect(languageService.publishPanel).toHaveBeenCalledWith(expect.objectContaining({ id: GUILD_ID }), TEXT_CHANNEL_ID, 'SELECT');
-    const refresh = await post(`/guilds/${GUILD_ID}/welcome/languages/refresh`, {});
-    expect(refresh.status).toBe(302);
-    const reset = await post(`/guilds/${GUILD_ID}/welcome/languages/reset`, {});
-    expect(reset.status).toBe(302);
-    expect(prisma.languageRole.deleteMany).toHaveBeenCalledWith({ where: { guildId: GUILD_ID } });
   });
 });
 
@@ -576,9 +551,9 @@ describe('Rôles', () => {
     expect(r.text).toContain('arrivée');
   });
   it('ajoute et retire un auto-role', async () => {
-    const add = await post(`/guilds/${GUILD_ID}/roles/autoroles`, { roleId: STAFF_ROLE_ID, type: 'MEMBER', delayMinutes: '5' });
+    const add = await post(`/guilds/${GUILD_ID}/roles/autoroles`, { roleId: STAFF_ROLE_ID, type: 'VERIFIED', delayMinutes: '5' });
     expect(add.status).toBe(302);
-    expect(prisma.autoRole.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: { guildId: GUILD_ID, roleId: STAFF_ROLE_ID, type: 'MEMBER', delaySeconds: 300 } }));
+    expect(prisma.autoRole.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: { guildId: GUILD_ID, roleId: STAFF_ROLE_ID, type: 'VERIFIED', delaySeconds: 300 } }));
     const managed = await post(`/guilds/${GUILD_ID}/roles/autoroles`, { roleId: '400000000000000002', type: 'JOIN', delayMinutes: '0' });
     const page = await follow(managed);
     expect(page.text).toContain('géré par une intégration');

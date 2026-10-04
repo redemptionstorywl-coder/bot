@@ -3,9 +3,7 @@ import type { EmbedTemplate, Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../database/client';
 import { buttonSpecSchema, embedService, embedSpecSchema, messageSpecSchema, type ButtonSpec, type EmbedSpec, type MessageSpec } from './EmbedService';
-import { translationService } from './TranslationService';
 import type { TemplateContext } from '../utils/variables';
-import { TTLCache } from '../utils/cache';
 import { childLogger } from '../utils/logger';
 
 const log = childLogger('EmbedTemplateService');
@@ -39,35 +37,6 @@ export interface MessageReference {
   messageId: string;
 }
 
-/** Noms-clés des templates par défaut (les libellés viennent des fichiers de langue). */
-export const DEFAULT_TEMPLATE_KEYS = ['maintenance', 'patch_note', 'new_season', 'tournament', 'important', 'giveaway', 'event', 'recruitment'] as const;
-export type DefaultTemplateKey = (typeof DEFAULT_TEMPLATE_KEYS)[number];
-
-const DEFAULT_TEMPLATE_EMOJI: Record<DefaultTemplateKey, string> = {
-  maintenance: '🛠️',
-  patch_note: '📝',
-  new_season: '🌟',
-  tournament: '🏆',
-  important: '📢',
-  giveaway: '🎁',
-  event: '📅',
-  recruitment: '🤝',
-};
-
-/** Champs des templates par défaut (clé de traduction → inline). */
-const DEFAULT_TEMPLATE_FIELDS: Record<DefaultTemplateKey, string[]> = {
-  maintenance: ['start', 'duration'],
-  patch_note: ['new', 'fixes'],
-  new_season: ['start', 'rewards'],
-  tournament: ['date', 'registration'],
-  important: [],
-  giveaway: ['prize', 'end'],
-  event: ['date', 'location'],
-  recruitment: ['positions', 'apply'],
-};
-
-const BRAND_HEX = '#7C3AED';
-
 /** Accepte soit un EmbedSpec seul, soit un MessageSpec { content, embeds, buttons }. */
 const importSchema = z.union([messageSpecSchema.strict(), embedSpecSchema.strict()]);
 
@@ -88,7 +57,6 @@ function isSendable(channel: unknown): channel is TextBasedChannel & { send: (o:
  */
 export class EmbedTemplateService {
   private client: Client | null = null;
-  private readonly defaultsEnsured = new TTLCache<boolean>(60 * 60_000, 5000);
 
   attach(client: Client): void {
     this.client = client;
@@ -276,53 +244,6 @@ export class EmbedTemplateService {
       allowedMentions: { parse: ['roles', 'everyone'] },
     };
     return message.edit(payload);
-  }
-
-  // ───── Templates par défaut ─────
-
-  /** Construit la liste des templates par défaut dans la langue donnée (texte via les fichiers de langue). */
-  buildDefaultTemplates(lang: string, guildId?: string | null): EmbedTemplateInput[] {
-    const t = translationService.bind(lang, guildId);
-    return DEFAULT_TEMPLATE_KEYS.map((key) => {
-      const fields = DEFAULT_TEMPLATE_FIELDS[key].map((f) => ({ name: t(`embeds.defaults.${key}.fields.${f}.name`), value: t(`embeds.defaults.${key}.fields.${f}.value`), inline: true }));
-      const spec: EmbedSpec = {
-        title: `${DEFAULT_TEMPLATE_EMOJI[key]} ${t(`embeds.defaults.${key}.title`)}`,
-        description: t(`embeds.defaults.${key}.body`),
-        color: BRAND_HEX,
-        footer: { text: t('embeds.defaults.footer') },
-        timestamp: true,
-        ...(fields.length ? { fields } : {}),
-      };
-      return { name: t(`embeds.defaults.${key}.name`), description: t(`embeds.defaults.${key}.description`), spec, buttons: [] };
-    });
-  }
-
-  /**
-   * Crée les templates par défaut manquants (par nom). Idempotent, mis en cache par serveur.
-   * Retourne le nombre de templates créés.
-   */
-  async ensureDefaults(guildId: string, createdById: string, lang = 'fr'): Promise<number> {
-    if (this.defaultsEnsured.get(guildId)) return 0;
-    const existing = new Set((await this.list(guildId)).map((tpl) => tpl.name));
-    const missing = this.buildDefaultTemplates(lang, guildId).filter((tpl) => !existing.has(tpl.name));
-    let created = 0;
-    for (const tpl of missing) {
-      try {
-        await prisma.embedTemplate.create({
-          data: { guildId, name: tpl.name, description: tpl.description ?? null, spec: tpl.spec as Prisma.InputJsonValue, buttons: (tpl.buttons ?? []) as Prisma.InputJsonValue, createdById },
-        });
-        created++;
-      } catch (err) {
-        log.warn({ err, guildId, name: tpl.name }, 'Template par défaut non créé');
-      }
-    }
-    this.defaultsEnsured.set(guildId, true);
-    if (created) log.info({ guildId, created }, 'Templates par défaut créés');
-    return created;
-  }
-
-  invalidateDefaults(guildId: string): void {
-    this.defaultsEnsured.delete(guildId);
   }
 }
 

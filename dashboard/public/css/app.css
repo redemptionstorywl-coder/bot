@@ -295,17 +295,13 @@ fieldset.field { border: 0; padding: 0; margin: 0 0 14px; }
 .table-compact th, .table-compact td { padding: 7px 10px; }
 .table-group td { background: var(--surface-2); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .row-disabled { opacity: 0.55; }
-.row-overridden { background: rgba(124,58,237,0.05); }
 .cell-json { max-width: 320px; }
 .json-details summary { cursor: pointer; color: var(--muted); font-size: 0.8rem; }
 .json { font-family: var(--mono); font-size: 0.78rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px; max-height: 220px; overflow: auto; white-space: pre-wrap; word-break: break-word; margin-top: 6px; }
-.table-translations .cell-key { width: 24%; }
-.table-translations .cell-default { width: 30%; font-size: 0.86rem; color: var(--muted); }
-.table-translations .cell-override { width: 36%; }
 .pagination { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 16px; flex-wrap: wrap; }
 .pagination-info { color: var(--muted); font-size: 0.85rem; }
 
-/* ───── Bars (langues) ───── */
+/* ───── Bars ───── */
 .bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .bar-row { display: grid; grid-template-columns: 150px minmax(0, 1fr) 90px; align-items: center; gap: 12px; font-size: 0.88rem; }
 .bar-label { display: flex; align-items: center; gap: 6px; min-width: 0; }
@@ -412,9 +408,6 @@ body.error-fallback { display: flex; align-items: center; justify-content: cente
 .status-item { display: block; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); color: var(--text); font-size: 0.9rem; }
 .status-item:hover { text-decoration: none; border-color: var(--primary); }
 .status-item small { display: block; color: var(--muted); margin-top: 2px; }
-.lang-tabs .tab-list { margin-bottom: 14px; border-bottom-color: transparent; gap: 6px; }
-.lang-tabs .tab { border: 1px solid var(--border); border-radius: 999px; padding: 6px 12px; font-size: 0.85rem; }
-.lang-tabs .tab.active { border-color: var(--primary); background: var(--primary-soft); }
 .inline-fields { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
 .inline-fields .field { margin-bottom: 0; flex: 1 1 140px; }
 .inline-fields .field-fixed { flex: 0 0 auto; }

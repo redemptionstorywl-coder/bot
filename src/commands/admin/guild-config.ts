@@ -4,7 +4,6 @@ import { defineCommand } from '../../structures';
 import { guildConfigService } from '../../services/GuildConfigService';
 import { embedService } from '../../services/EmbedService';
 import { GUILD_KIND_ALIASES, GUILD_KIND_LABELS, LANGUAGES, LOG_CATEGORY_LABELS, MODULE_KEYS, MODULE_LABELS } from '../../config/constants';
-import { translationService } from '../../services/TranslationService';
 import { env } from '../../config/env';
 
 /**
@@ -14,7 +13,7 @@ import { env } from '../../config/env';
 export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('guild-config')
-    .setDescription('Configurer ce serveur (type, langues, rôles, logs, modules)')
+    .setDescription('Configurer ce serveur (type, langue, rôles, logs, modules)')
     .addSubcommand((s) =>
       s
         .setName('type')
@@ -37,7 +36,7 @@ export default defineCommand({
     .addSubcommand((s) =>
       s
         .setName('language')
-        .setDescription('Définir la langue par défaut du serveur')
+        .setDescription('Langue des réponses du bot sur ce serveur')
         .addStringOption((o) =>
           o
             .setName('code')
@@ -45,19 +44,6 @@ export default defineCommand({
             .setRequired(true)
             .addChoices(...LANGUAGES.map((l) => ({ name: `${l.flag} ${l.nativeLabel}`, value: l.code }))),
         ),
-    )
-    .addSubcommand((s) =>
-      s
-        .setName('languages')
-        .setDescription('Activer ou désactiver une langue sur ce serveur')
-        .addStringOption((o) =>
-          o
-            .setName('code')
-            .setDescription('Langue')
-            .setRequired(true)
-            .addChoices(...LANGUAGES.map((l) => ({ name: `${l.flag} ${l.nativeLabel}`, value: l.code }))),
-        )
-        .addBooleanOption((o) => o.setName('enabled').setDescription('Activer ?').setRequired(true)),
     )
     .addSubcommand((s) =>
       s
@@ -104,31 +90,6 @@ export default defineCommand({
         .setName('brand-color')
         .setDescription('Couleur par défaut des embeds')
         .addStringOption((o) => o.setName('hex').setDescription('Ex: #7C3AED').setRequired(true)),
-    )
-    .addSubcommand((s) =>
-      s
-        .setName('translation-mode')
-        .setDescription('Mode de diffusion multilingue des annonces')
-        .addStringOption((o) =>
-          o
-            .setName('mode')
-            .setDescription('Mode')
-            .setRequired(true)
-            .addChoices({ name: 'Salons séparés par langue', value: 'CHANNELS' }, { name: 'Plusieurs messages contrôlés par permissions', value: 'PERMISSIONS' }),
-        ),
-    )
-    .addSubcommand((s) =>
-      s
-        .setName('language-channel')
-        .setDescription('Associer un salon à une langue (mode salons séparés)')
-        .addStringOption((o) =>
-          o
-            .setName('code')
-            .setDescription('Langue')
-            .setRequired(true)
-            .addChoices(...LANGUAGES.map((l) => ({ name: `${l.flag} ${l.nativeLabel}`, value: l.code }))),
-        )
-        .addChannelOption((o) => o.setName('channel').setDescription('Salon (vide = retirer)').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)),
     ),
   permissions: { internal: 'admin', discord: [PermissionFlagsBits.Administrator] },
   cooldown: 2,
@@ -147,19 +108,8 @@ export default defineCommand({
       }
       case 'language': {
         const code = interaction.options.getString('code', true);
-        const enabled = config.enabledLanguages.includes(code) ? config.enabledLanguages : [...config.enabledLanguages, code];
-        await guildConfigService.updateSettings(guildId, { defaultLanguage: code, enabledLanguages: enabled });
+        await guildConfigService.updateSettings(guildId, { defaultLanguage: code });
         await interaction.reply({ embeds: [embedService.success(t('admin.guild_config.language_set', { language: code }))], ...ephemeral });
-        return;
-      }
-      case 'languages': {
-        const code = interaction.options.getString('code', true);
-        const enabled = interaction.options.getBoolean('enabled', true);
-        let list = config.enabledLanguages.filter((l) => l !== code);
-        if (enabled) list = [...list, code];
-        if (!list.includes(config.defaultLanguage)) list.push(config.defaultLanguage);
-        await guildConfigService.updateSettings(guildId, { enabledLanguages: list });
-        await interaction.reply({ embeds: [embedService.success(t('admin.guild_config.languages_updated', { languages: list.join(', ') }))], ...ephemeral });
         return;
       }
       case 'staff-role':
@@ -200,22 +150,6 @@ export default defineCommand({
         await interaction.reply({ embeds: [embedService.success(t('admin.guild_config.color_set', { color: hex }))], ...ephemeral });
         return;
       }
-      case 'translation-mode': {
-        const mode = interaction.options.getString('mode', true) as 'CHANNELS' | 'PERMISSIONS';
-        await guildConfigService.updateSettings(guildId, { translationMode: mode });
-        await interaction.reply({ embeds: [embedService.success(t('admin.guild_config.translation_mode_set', { mode }))], ...ephemeral });
-        return;
-      }
-      case 'language-channel': {
-        const code = interaction.options.getString('code', true);
-        const channel = interaction.options.getChannel('channel');
-        const map = { ...config.languageChannels };
-        if (channel) map[code] = channel.id;
-        else delete map[code];
-        await guildConfigService.updateSettings(guildId, { languageChannels: map });
-        await interaction.reply({ embeds: [embedService.success(t('admin.guild_config.language_channel_set', { language: code, channel: channel ? `<#${channel.id}>` : t('core.none') }))], ...ephemeral });
-        return;
-      }
       case 'show':
       default: {
         const fresh = (await guildConfigService.get(guildId)) ?? config;
@@ -223,19 +157,15 @@ export default defineCommand({
         const logs = Object.entries(fresh.logChannels)
           .map(([c, ch]) => `${LOG_CATEGORY_LABELS[c] ?? c} → <#${ch}>`)
           .join('\n');
-        const langStats = await translationService.countByLanguage(guildId);
         const embed = embedService
           .brand(t('admin.guild_config.title', { server: interaction.guild.name }))
           .addFields(
             { name: t('admin.guild_config.kind'), value: GUILD_KIND_LABELS[fresh.kind], inline: true },
             { name: t('admin.guild_config.default_language'), value: fresh.defaultLanguage, inline: true },
-            { name: t('admin.guild_config.enabled_languages'), value: fresh.enabledLanguages.join(', ') || '—', inline: true },
             { name: t('admin.guild_config.admin_roles'), value: fresh.adminRoleIds.map((r) => `<@&${r}>`).join(' ') || '—', inline: true },
             { name: t('admin.guild_config.staff_roles'), value: fresh.staffRoleIds.map((r) => `<@&${r}>`).join(' ') || '—', inline: true },
-            { name: t('admin.guild_config.translation_mode'), value: fresh.translationMode, inline: true },
             { name: t('admin.guild_config.modules'), value: modules, inline: false },
             { name: t('admin.guild_config.logs'), value: logs || '—', inline: false },
-            { name: t('admin.guild_config.language_stats'), value: Object.entries(langStats).map(([l, n]) => `${l}: ${n}`).join(' • ') || '—', inline: false },
           )
           .setFooter({ text: `${t('admin.guild_config.dashboard')}: ${env().DASHBOARD_URL}/guilds/${guildId}` });
         await interaction.reply({ embeds: [embed], ...ephemeral });

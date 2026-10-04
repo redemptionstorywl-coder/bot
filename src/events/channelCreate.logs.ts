@@ -1,12 +1,15 @@
 import { AuditLogEvent, ChannelType, Events } from 'discord.js';
 import { defineEvent } from '../structures';
 import { loggingService } from '../services/LoggingService';
+import { moderationService } from '../services/ModerationService';
 import { BRAND } from '../config/constants';
 import { fetchAudit, logContext, userLine } from './_logs.helpers';
 
 export default defineEvent({
   name: Events.ChannelCreate,
   async execute(_client, channel) {
+    // Salons recréés par /clear serveur : pas de log par salon (rapport unique).
+    if (moderationService.isNukingGuild(channel.guild.id)) return;
     const ctx = await logContext(channel.guild.id);
     if (!ctx) return;
     const { t } = ctx;

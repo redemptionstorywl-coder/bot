@@ -22,11 +22,6 @@ enum GuildKind {
   SHOP
 }
 
-enum TranslationMode {
-  CHANNELS
-  PERMISSIONS
-}
-
 enum LogCategory {
   MESSAGE
   MEMBER
@@ -152,8 +147,6 @@ model Guild {
 
   settings            GuildSettings?
   logChannels         LogChannel[]
-  userLanguages       UserLanguage[]
-  languageRoles       LanguageRole[]
   tickets             Ticket[]
   ticketTypes         TicketType[]
   ticketPanels        TicketPanel[]
@@ -188,7 +181,6 @@ model Guild {
   schoolHouses        SchoolHouse[]
   schoolClubs         SchoolClub[]
   schoolApplications  SchoolApplication[]
-  translations        Translation[]
   commandPermissions  CommandPermission[]
 }
 
@@ -203,16 +195,6 @@ model GuildSettings {
   staffRoleIds    Json            @default("[]")
   /// Map { moduleKey: boolean }
   modules         Json            @default("{}")
-  translationMode TranslationMode @default(CHANNELS)
-  /// Map { language: channelId } pour le mode CHANNELS
-  languageChannels Json           @default("{}")
-  /// Langues activées sur ce serveur
-  enabledLanguages Json           @default("[\"fr\",\"en\"]")
-  /// Traduction automatique des annonces (langues cibles sans traduction manuelle)
-  autoTranslate   Boolean         @default(true)
-  /// Salon où le menu de langue est publié
-  languagePanelChannelId String?  @db.VarChar(32)
-  languagePanelMessageId String?  @db.VarChar(32)
   /// Préfixe d'identification de la boutique / nom affiché
   displayName     String?
   footerText      String?
@@ -254,50 +236,6 @@ model User {
   avatar     String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  languages UserLanguage[]
-}
-
-model UserLanguage {
-  id        Int      @id @default(autoincrement())
-  userId    String   @db.VarChar(32)
-  guildId   String   @db.VarChar(32)
-  language  String   @db.VarChar(8)
-  updatedAt DateTime @updatedAt
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, guildId])
-  @@index([guildId, language])
-}
-
-model LanguageRole {
-  id       Int     @id @default(autoincrement())
-  guildId  String  @db.VarChar(32)
-  language String  @db.VarChar(8)
-  roleId   String  @db.VarChar(32)
-  emoji    String?
-  label    String?
-  enabled  Boolean @default(true)
-
-  guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
-
-  @@unique([guildId, language])
-}
-
-model Translation {
-  id       Int     @id @default(autoincrement())
-  /// null = override global
-  guildId  String? @db.VarChar(32)
-  language String  @db.VarChar(8)
-  key      String  @db.VarChar(191)
-  value    String  @db.Text
-  updatedAt DateTime @updatedAt
-
-  guild Guild? @relation(fields: [guildId], references: [id], onDelete: Cascade)
-
-  @@unique([guildId, language, key])
 }
 
 // ──────────────── Tickets ────────────────
@@ -586,7 +524,6 @@ model WelcomeConfig {
   dmEmbed               Json?
   /// [{ label, style, url?, customId?, emoji? }]
   buttons               Json    @default("[]")
-  languagePromptEnabled Boolean @default(false)
   updatedAt             DateTime @updatedAt
 
   guild Guild @relation(fields: [guildId], references: [id], onDelete: Cascade)
@@ -631,19 +568,14 @@ model Announcement {
   guildId        String             @db.VarChar(32)
   title          String
   content        String?            @db.Text
-  /// EmbedSpec principal (langue source)
+  /// EmbedSpec principal
   spec           Json
-  /// { lang: EmbedSpec } versions traduites
-  translations   Json               @default("{}")
-  sourceLanguage String             @default("fr") @db.VarChar(8)
-  /// Langues cibles de publication ("*" = toutes activées)
-  targetLanguages Json              @default("[]")
   channelId      String?            @db.VarChar(32)
   mentionRoleIds Json               @default("[]")
   mentionEveryone Boolean           @default(false)
   buttons        Json               @default("[]")
   status         AnnouncementStatus @default(DRAFT)
-  /// [{ channelId, messageId, language }]
+  /// [{ channelId, messageId }]
   messages       Json               @default("[]")
   createdById    String             @db.VarChar(32)
   publishedAt    DateTime?
@@ -891,6 +823,29 @@ model FiveMServer {
   lastSeenAt      DateTime?
   maintenance     Boolean        @default(false)
   enabled         Boolean        @default(true)
+  // ── Synchronisation jeu ⇄ Discord (voir docs/FIVEM.md § Synchronisation) ──
+  /// Ban / tempban / unban pris en jeu → appliqué sur Discord
+  syncBansToDiscord    Boolean   @default(true)
+  /// Ban / unban Discord → poussé vers le serveur de jeu (file d'actions)
+  syncBansToGame       Boolean   @default(true)
+  /// Kick en jeu → kick Discord
+  syncKicks            Boolean   @default(false)
+  /// Pseudo en jeu → surnom Discord
+  syncNicknames        Boolean   @default(true)
+  /// Format du surnom : {name} {id} {level} (32 caractères max après rendu)
+  nicknameFormat       String    @default("{name}") @db.VarChar(64)
+  /// Rôle donné quand le compte FiveM est lié au compte Discord
+  linkedRoleId         String?   @db.VarChar(32)
+  /// Rôle « En jeu » donné à la connexion, retiré à la déconnexion
+  onlineRoleId         String?   @db.VarChar(32)
+  /// Salon (vocal) renommé « 🟢 En ligne : x/y » (throttle 6 min)
+  playerCountChannelId String?   @db.VarChar(32)
+  /// Refuser la connexion si aucun compte Discord lié / pas membre du serveur
+  requireDiscord       Boolean   @default(false)
+  /// Rôle Discord requis pour se connecter
+  requireRoleId        String?   @db.VarChar(32)
+  /// Exiger une candidature whitelist acceptée pour se connecter
+  requireWhitelist     Boolean   @default(false)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -1122,18 +1077,53 @@ model ChannelMute {
   @@index([guildId])
 }
 
-// ──────────────── Traduction automatique : cache des segments traduits ────────────────
+// ──────────────── FiveM : joueurs suivis (liaison Discord, temps de jeu) ────────────────
 
-model MachineTranslation {
-  id             Int      @id @default(autoincrement())
-  /// sha256 du texte source
-  hash           String   @db.VarChar(64)
-  sourceLang     String   @db.VarChar(8)
-  targetLang     String   @db.VarChar(8)
-  sourceText     String   @db.Text
-  translatedText String   @db.Text
-  provider       String   @db.VarChar(32)
-  createdAt      DateTime @default(now())
+model FiveMPlayer {
+  id               Int       @id @default(autoincrement())
+  guildId          String    @db.VarChar(32)
+  /// ID Discord (identifiant `discord:` FiveM, liaison manuelle ou /br-link)
+  discordId        String?   @db.VarChar(32)
+  /// Identifiant `license:` (clé de suivi)
+  license          String?   @db.VarChar(128)
+  steam            String?   @db.VarChar(128)
+  fivemId          String?   @db.VarChar(128)
+  /// Dernier pseudo en jeu
+  name             String    @db.VarChar(128)
+  /// Dernier serveur (clé FiveMServer.key)
+  serverKey        String?   @db.VarChar(64)
+  lastSeenAt       DateTime  @default(now())
+  /// Début de la session en cours (null si hors ligne)
+  sessionStartedAt DateTime?
+  playtimeMinutes  Int       @default(0)
+  online           Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  @@unique([hash, sourceLang, targetLang])
+  @@unique([guildId, license])
+  @@index([guildId, discordId])
+  @@index([guildId, online])
+}
+
+enum FiveMActionType {
+  BAN
+  UNBAN
+  KICK
+  MESSAGE
+}
+
+// ──────────────── FiveM : actions à délivrer au serveur de jeu (polling GET /actions) ────────────────
+
+model FiveMPendingAction {
+  id          Int             @id @default(autoincrement())
+  guildId     String          @db.VarChar(32)
+  serverKey   String          @db.VarChar(64)
+  type        FiveMActionType
+  /// { discordId?, license?, identifiers?, reason, expiresAt?, staff?, message? }
+  payload     Json
+  createdAt   DateTime        @default(now())
+  deliveredAt DateTime?
+
+  @@index([guildId, serverKey, deliveredAt])
+  @@index([createdAt])
 }
