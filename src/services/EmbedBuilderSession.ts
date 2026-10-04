@@ -371,7 +371,8 @@ function announceMentionsRows(session: BuilderSession, rc: BuilderRenderContext)
   const { t } = rc;
   const ann = session.announcement!;
   const select = new RoleSelectMenuBuilder().setCustomId(buildCustomId('announce', 'roles', session.id)).setPlaceholder(t('announcements.builder.roles_placeholder')).setMinValues(0).setMaxValues(10);
-  if (ann.mentionRoleIds.length) select.setDefaultRoles(ann.mentionRoleIds.slice(0, 10));
+  const liveMentions = liveRoles(rc.guild, ann.mentionRoleIds).slice(0, 10);
+  if (liveMentions.length) select.setDefaultRoles(liveMentions);
   return [
     row(select),
     row(
@@ -385,7 +386,7 @@ function announceChannelRows(session: BuilderSession, rc: BuilderRenderContext):
   const { t } = rc;
   const ann = session.announcement!;
   const select = new ChannelSelectMenuBuilder().setCustomId(buildCustomId('announce', 'chan', session.id)).setPlaceholder(t('announcements.builder.channel_placeholder')).addChannelTypes(...SEND_CHANNEL_TYPES).setMinValues(1).setMaxValues(1);
-  if (ann.channelId) select.setDefaultChannels([ann.channelId]);
+  if (liveChannel(rc.guild, ann.channelId)) select.setDefaultChannels([ann.channelId!]);
   return [row(select), row(button('announce', 'back', session.id, t('core.back'), ButtonStyle.Secondary, '↩️'))];
 }
 
@@ -435,6 +436,7 @@ export function parentView(session: BuilderSession): BuilderView {
 
 import type { APIInteractionGuildMember } from 'discord.js';
 import type { InteractionContext } from '../structures/types';
+import { liveChannel, liveRoles } from '../utils/liveIds';
 
 interface InteractionLike {
   guild: Guild | null;

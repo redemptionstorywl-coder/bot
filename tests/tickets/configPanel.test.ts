@@ -12,7 +12,7 @@ import { PanelStyle } from '@prisma/client';
 const prisma = prismaClient as unknown as ReturnType<typeof createPrismaMock>;
 
 const t = (key: string, vars: Record<string, unknown> = {}) => `${key}${Object.keys(vars).length ? `[${Object.values(vars).join(',')}]` : ''}`;
-const guild = { id: '222222222222222222', name: 'Redemption Story', channels: { cache: new Map([['444444444444444444', { name: 'support', type: 0 }]]) } } as unknown as Guild;
+const guild = { id: '222222222222222222', name: 'Redemption Story', channels: { cache: new Map([['444444444444444444', { name: 'support', type: 0 }]]) }, roles: { cache: new Map([['555555555555555555', { name: 'Support' }]]) } } as unknown as Guild;
 
 const baseType = {
   id: 7,

@@ -7,6 +7,7 @@ import { formatPrice, parsePrice, shopService, type ProductWithCategory } from '
 import type { ResolvedGuildConfig } from '../services/GuildConfigService';
 import type { Translator } from '../services/TranslationService';
 import { PanelError, btn, channelMention, labelled, modal, moduleButton, moduleLine, option, parseIntField, row, textInput, truncate, withNotice, type PanelNotice, type PanelPayload, type Row } from './_modulesKit';
+import { liveChannel } from '../utils/liveIds';
 
 /**
  * Panneau `/config module:shop` — namespace `cfg-shop` (admin) :
@@ -198,7 +199,7 @@ export async function renderAnnounce(opts: ShopRenderOptions): Promise<PanelPayl
     components.push(row(new StringSelectMenuBuilder().setCustomId(shcid('ann-product')).setPlaceholder(truncate(t('panels_modules.shop.announce_product_placeholder'), 150)).addOptions(products.map((p) => option(`#${p.id} · ${p.name}`, String(p.id), { description: formatPrice(p.price, p.currency), default: p.id === selected?.id })))));
   }
   const channel = new ChannelSelectMenuBuilder().setCustomId(shcid('ann-channel')).setPlaceholder(truncate(t('panels_modules.shop.announce_channel_placeholder'), 150)).addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement).setMinValues(1).setMaxValues(1);
-  if (draft.channelId) channel.setDefaultChannels(draft.channelId);
+  if (liveChannel(opts.guild, draft.channelId)) channel.setDefaultChannels(draft.channelId!);
   components.push(row(channel), row(btn(shcid('ann-send'), t('panels_modules.shop.btn_publish'), ButtonStyle.Success, '🚀', !selected || !draft.channelId), btn(shcid('main', 0), t('core.back'), ButtonStyle.Secondary, '↩️')));
   return { embeds: [embed], components };
 }

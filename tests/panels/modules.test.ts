@@ -45,8 +45,8 @@ function fakeGuild(): Guild {
   return {
     id: `9000000000000000${String(guildSeq).padStart(2, '0')}`,
     name: 'Redemption Story',
-    roles: { cache: new Map([[ROLE_A, { name: 'Membre' }]]) },
-    channels: { cache: new Map([[CHANNEL, { name: 'général' }]]) },
+    roles: { cache: new Map([[ROLE_A, { name: 'Membre' }], [ROLE_B, { name: 'Staff' }]]) },
+    channels: { cache: new Map([[CHANNEL, { name: 'général' }], [VOICE, { name: 'En ligne' }]]) },
     members: { me: null },
   } as unknown as Guild;
 }

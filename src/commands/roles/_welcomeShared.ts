@@ -23,6 +23,7 @@ import { resolveLocalized, welcomeService, type Localized } from '../../services
 import { embedService, embedSpecSchema, type ButtonSpec, type EmbedSpec } from '../../services/EmbedService';
 import type { Translator } from '../../services/TranslationService';
 import { guildConfigService } from '../../services/GuildConfigService';
+import { liveChannel } from '../../utils/liveIds';
 
 /**
  * Panneau interactif `/config bienvenue` (éphémère, sans session) :
@@ -176,7 +177,7 @@ export async function renderPanel(opts: PanelRenderOptions): Promise<PanelPayloa
 
   // Rangée 2 : salon
   const select = new ChannelSelectMenuBuilder().setCustomId(id('channel')).setPlaceholder(t('welcome.panel.channel_placeholder').slice(0, 150)).addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement).setMinValues(1).setMaxValues(1);
-  if (config?.channelId) select.setDefaultChannels(config.channelId);
+  if (liveChannel(opts.guild, config?.channelId)) select.setDefaultChannels(config!.channelId!);
   const row2 = row(select);
 
   // Rangée 3 : contenu

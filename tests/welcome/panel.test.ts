@@ -12,7 +12,7 @@ import { welcomeService } from '../../src/services/WelcomeService';
 const prisma = prismaClient as unknown as ReturnType<typeof createPrismaMock>;
 
 const t = (key: string, vars: Record<string, unknown> = {}) => `${key}${Object.keys(vars).length ? `[${Object.values(vars).join(',')}]` : ''}`;
-const guild = { id: '222222222222222222', name: 'Redemption Story' } as unknown as Guild;
+const guild = { id: '222222222222222222', name: 'Redemption Story', channels: { cache: new Map([['333333333333333333', { name: 'bienvenue' }]]) }, roles: { cache: new Map() } } as unknown as Guild;
 
 describe('parseButtonLines', () => {
   it('parse « label | url | emoji » en boutons liens', () => {

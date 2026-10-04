@@ -6,6 +6,7 @@ import { MAX_QUESTIONS, whitelistQuestionSchema, whitelistService, type Whitelis
 import type { ResolvedGuildConfig } from '../services/GuildConfigService';
 import type { Translator } from '../services/TranslationService';
 import { PanelError, btn, channelMention, labelled, modal, moduleButton, moduleLine, roleMention, row, textInput, truncate, withNotice, type PanelNotice, type PanelPayload } from './_modulesKit';
+import { liveChannel, liveRole } from '../utils/liveIds';
 
 /**
  * Panneau `/config module:whitelist` — namespace `cfg-whitelist` (admin) :
@@ -82,11 +83,11 @@ export async function renderWhitelist(opts: WlRenderOptions): Promise<PanelPaylo
     );
 
   const review = new ChannelSelectMenuBuilder().setCustomId(wcid('review')).setPlaceholder(truncate(t('panels_modules.whitelist.review_placeholder'), 150)).addChannelTypes(ChannelType.GuildText).setMinValues(0).setMaxValues(1);
-  if (s.reviewChannelId) review.setDefaultChannels(s.reviewChannelId);
+  if (liveChannel(opts.guild, s.reviewChannelId)) review.setDefaultChannels(s.reviewChannelId!);
   const accepted = new RoleSelectMenuBuilder().setCustomId(wcid('accepted')).setPlaceholder(truncate(t('panels_modules.whitelist.accepted_placeholder'), 150)).setMinValues(0).setMaxValues(1);
-  if (s.acceptedRoleId) accepted.setDefaultRoles(s.acceptedRoleId);
+  if (liveRole(opts.guild, s.acceptedRoleId)) accepted.setDefaultRoles(s.acceptedRoleId!);
   const pending = new RoleSelectMenuBuilder().setCustomId(wcid('pending')).setPlaceholder(truncate(t('panels_modules.whitelist.pending_placeholder'), 150)).setMinValues(0).setMaxValues(1);
-  if (s.pendingRoleId) pending.setDefaultRoles(s.pendingRoleId);
+  if (liveRole(opts.guild, s.pendingRoleId)) pending.setDefaultRoles(s.pendingRoleId!);
 
   return {
     embeds: [embed],

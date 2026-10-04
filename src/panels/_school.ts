@@ -16,6 +16,7 @@ import { schoolService, sortHouses } from '../services/SchoolService';
 import type { ResolvedGuildConfig } from '../services/GuildConfigService';
 import type { Translator } from '../services/TranslationService';
 import { PanelError, btn, channelMention, describeError, ko, fieldLines, labelled, modal, moduleButton, moduleLine, option, roleMention, row, textInput, truncate, withNotice, type PanelNotice, type PanelPayload, type Row } from './_modulesKit';
+import { liveChannel, liveRole } from '../utils/liveIds';
 
 /**
  * Panneau `/config module:school` — namespace `cfg-school` (admin) :
@@ -87,9 +88,9 @@ async function renderSettings(tab: 'config' | 'roles', opts: SchoolRenderOptions
   const components: Row[] = [tabsRow(tab, t)];
   if (tab === 'config') {
     const apps = new ChannelSelectMenuBuilder().setCustomId(scid('apps')).setPlaceholder(truncate(t('panels_modules.school.apps_placeholder'), 150)).addChannelTypes(ChannelType.GuildText).setMinValues(0).setMaxValues(1);
-    if (s.applicationChannelId) apps.setDefaultChannels(s.applicationChannelId);
+    if (liveChannel(opts.guild, s.applicationChannelId)) apps.setDefaultChannels(s.applicationChannelId!);
     const announce = new ChannelSelectMenuBuilder().setCustomId(scid('announce')).setPlaceholder(truncate(t('panels_modules.school.announce_placeholder'), 150)).addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement).setMinValues(0).setMaxValues(1);
-    if (s.announceChannelId) announce.setDefaultChannels(s.announceChannelId);
+    if (liveChannel(opts.guild, s.announceChannelId)) announce.setDefaultChannels(s.announceChannelId!);
     components.push(row(apps), row(announce), row(moduleButton(scid('module'), 'school', config.modules.school, t)));
   } else {
     for (const key of Object.keys(SCHOOL_ROLE_FIELDS) as SchoolRoleKey[]) {
@@ -98,7 +99,7 @@ async function renderSettings(tab: 'config' | 'roles', opts: SchoolRenderOptions
         .setPlaceholder(truncate(t('panels_modules.school.role_placeholder', { role: t(`school.roles.${key.toLowerCase()}`) }), 150))
         .setMinValues(0)
         .setMaxValues(1);
-      if (s.roles[key]) select.setDefaultRoles(s.roles[key]!);
+      if (liveRole(opts.guild, s.roles[key])) select.setDefaultRoles(s.roles[key]!);
       components.push(row(select));
     }
   }
@@ -166,7 +167,7 @@ export async function renderEntity(kind: EntityKind, id: number, opts: SchoolRen
   const edit = btn(scid('edit', kind, id), t('core.edit'), ButtonStyle.Secondary, '✏️');
   const roleSelect = (roleId: string | null) => {
     const s = new RoleSelectMenuBuilder().setCustomId(scid('set', kind, 'role', id)).setPlaceholder(truncate(t('panels_modules.school.entity_role_placeholder'), 150)).setMinValues(0).setMaxValues(1);
-    if (roleId) s.setDefaultRoles(roleId);
+    if (liveRole(opts.guild, roleId)) s.setDefaultRoles(roleId!);
     return row(s);
   };
   /** Affectation de membres : classes et maisons uniquement (pas de clubs). */
@@ -181,7 +182,7 @@ export async function renderEntity(kind: EntityKind, id: number, opts: SchoolRen
       { name: t('panels_modules.school.field_channel'), value: channelMention(c.channelId, none), inline: true },
     );
     const channel = new ChannelSelectMenuBuilder().setCustomId(scid('set', kind, 'channel', id)).setPlaceholder(truncate(t('panels_modules.school.entity_channel_placeholder'), 150)).addChannelTypes(ChannelType.GuildText, ChannelType.GuildVoice, ChannelType.GuildCategory).setMinValues(0).setMaxValues(1);
-    if (c.channelId) channel.setDefaultChannels(c.channelId);
+    if (liveChannel(opts.guild, c.channelId)) channel.setDefaultChannels(c.channelId!);
     const teacher = new UserSelectMenuBuilder().setCustomId(scid('set', kind, 'teacher', id)).setPlaceholder(truncate(t('panels_modules.school.teacher_placeholder'), 150)).setMinValues(0).setMaxValues(1);
     if (c.teacherId) teacher.setDefaultUsers(c.teacherId);
     return { embeds: [embed], components: [roleSelect(c.roleId), row(channel), row(teacher), assign('class'), row(edit, back)] };

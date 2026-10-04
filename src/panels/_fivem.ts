@@ -20,6 +20,7 @@ import type { SyncSettingsPatch } from '../services/fivem/sync';
 import type { ResolvedGuildConfig } from '../services/GuildConfigService';
 import type { Translator } from '../services/TranslationService';
 import { PanelError, btn, channelMention, fieldLines, labelled, modal, moduleButton, moduleLine, option, roleMention, row, textInput, truncate, withNotice, type PanelNotice, type PanelPayload, type Row } from './_modulesKit';
+import { liveChannel, liveRole } from '../utils/liveIds';
 
 /**
  * Panneau `/config module:fivem` — namespace `cfg-fivem` (admin) :
@@ -162,9 +163,9 @@ export function renderServer(server: FiveMServer, opts: FiveMRenderOptions): Pan
 
   const key = server.key;
   const status = new ChannelSelectMenuBuilder().setCustomId(fcid('status', key)).setPlaceholder(truncate(t('panels_modules.fivem.status_placeholder'), 150)).addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement).setMinValues(0).setMaxValues(1);
-  if (server.statusChannelId) status.setDefaultChannels(server.statusChannelId);
+  if (liveChannel(opts.guild, server.statusChannelId)) status.setDefaultChannels(server.statusChannelId!);
   const counter = new ChannelSelectMenuBuilder().setCustomId(fcid('counter', key)).setPlaceholder(truncate(t('panels_modules.fivem.counter_placeholder'), 150)).addChannelTypes(ChannelType.GuildVoice, ChannelType.GuildStageVoice, ChannelType.GuildCategory).setMinValues(0).setMaxValues(1);
-  if (server.playerCountChannelId) counter.setDefaultChannels(server.playerCountChannelId);
+  if (liveChannel(opts.guild, server.playerCountChannelId)) counter.setDefaultChannels(server.playerCountChannelId!);
   const sync = new StringSelectMenuBuilder()
     .setCustomId(fcid('sync', key))
     .setPlaceholder(truncate(t('panels_modules.fivem.sync_placeholder'), 150))
@@ -209,7 +210,7 @@ export function renderRolesView(server: FiveMServer, opts: FiveMRenderOptions): 
   const select = (field: RoleFieldKey) => {
     const s = new RoleSelectMenuBuilder().setCustomId(fcid('role', field, server.key)).setPlaceholder(truncate(t(`panels_modules.fivem.role_${field}_placeholder`), 150)).setMinValues(0).setMaxValues(1);
     const current = server[ROLE_FIELDS[field]];
-    if (current) s.setDefaultRoles(current);
+    if (current && liveRole(opts.guild, current)) s.setDefaultRoles(current);
     return row(s);
   };
   return { embeds: [embed], components: [select('linked'), select('online'), select('require'), row(btn(fcid('server', server.key), t('core.back'), ButtonStyle.Secondary, '↩️'))] };

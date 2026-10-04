@@ -24,6 +24,7 @@ import { TicketError, asStringArray, parseEmbedSpec, parseQuestions, ticketQuest
 import type { Translator } from '../../services/TranslationService';
 import { guildConfigService, type ResolvedGuildConfig } from '../../services/GuildConfigService';
 import { REMINDER_PING_MODES, ticketReminderService, type ReminderPingMode } from '../../services/TicketReminderService';
+import { liveChannel, liveRoles } from '../../utils/liveIds';
 
 /**
  * Panneau interactif `/config tickets` (éphémère, re-rendu depuis la base après chaque action).
@@ -322,11 +323,12 @@ export function renderType(opts: { guild: Guild; type: TicketType; t: Translator
 
   const id = type.id;
   const category = new ChannelSelectMenuBuilder().setCustomId(cid('category', id)).setPlaceholder(t('tickets.config.category_placeholder').slice(0, 150)).addChannelTypes(ChannelType.GuildCategory).setMinValues(1).setMaxValues(1);
-  if (type.categoryId) category.setDefaultChannels(type.categoryId);
+  if (liveChannel(guild, type.categoryId)) category.setDefaultChannels(type.categoryId!);
   const archive = new ChannelSelectMenuBuilder().setCustomId(cid('archive', id)).setPlaceholder(t('tickets.config.archive_placeholder').slice(0, 150)).addChannelTypes(ChannelType.GuildCategory).setMinValues(1).setMaxValues(1);
-  if (type.archiveCategoryId) archive.setDefaultChannels(type.archiveCategoryId);
+  if (liveChannel(guild, type.archiveCategoryId)) archive.setDefaultChannels(type.archiveCategoryId!);
   const access = new RoleSelectMenuBuilder().setCustomId(cid('roles', id)).setPlaceholder(t('tickets.config.roles_placeholder').slice(0, 150)).setMinValues(0).setMaxValues(MAX_ACCESS_ROLES);
-  if (roles.length) access.setDefaultRoles(roles.slice(0, MAX_ACCESS_ROLES));
+  const liveAccess = liveRoles(guild, roles).slice(0, MAX_ACCESS_ROLES);
+  if (liveAccess.length) access.setDefaultRoles(liveAccess);
 
   return {
     embeds: [embed],
@@ -377,7 +379,7 @@ export async function renderPanelView(opts: { guild: Guild; t: Translator; draft
   );
 
   const channel = new ChannelSelectMenuBuilder().setCustomId(cid('pchannel')).setPlaceholder(t('tickets.config.panel_channel_placeholder').slice(0, 150)).addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement).setMinValues(1).setMaxValues(1);
-  if (draft.channelId) channel.setDefaultChannels(draft.channelId);
+  if (liveChannel(guild, draft.channelId)) channel.setDefaultChannels(draft.channelId!);
 
   const components: ActionRowBuilder<MessageActionRowComponentBuilder>[] = [row(channel)];
   if (types.length) {

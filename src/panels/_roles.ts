@@ -19,6 +19,7 @@ import { DEFAULT_NOTIFICATIONS, MAX_AUTOROLE_DELAY_SECONDS, displayEmoji, parseE
 import type { ResolvedGuildConfig } from '../services/GuildConfigService';
 import type { Translator } from '../services/TranslationService';
 import { PanelError, btn, fieldLines, labelled, modal, moduleButton, moduleLine, option, row, textInput, truncate, withNotice, type PanelNotice, type PanelPayload, type Row } from './_modulesKit';
+import { liveRoles } from '../utils/liveIds';
 
 /**
  * Panneau `/config module:roles` — namespace `cfg-roles` (admin) :
@@ -144,7 +145,8 @@ async function renderAuto(opts: RolesRenderOptions): Promise<PanelPayload> {
     });
     const max = Math.min(25, Math.max(AUTOROLE_SELECT_MAX, ofType.length));
     const select = new RoleSelectMenuBuilder().setCustomId(rcid('auto', type)).setPlaceholder(truncate(t(`panels_modules.roles.auto.placeholder_${type}`), 150)).setMinValues(0).setMaxValues(max);
-    if (ofType.length) select.setDefaultRoles(ofType.slice(0, max).map((r) => r.roleId));
+    const liveDefaults = liveRoles(opts.guild, ofType.map((r) => r.roleId)).slice(0, max);
+    if (liveDefaults.length) select.setDefaultRoles(liveDefaults);
     selects.push(row(select));
   }
   return {
