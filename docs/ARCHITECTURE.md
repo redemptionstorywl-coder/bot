@@ -75,3 +75,9 @@ export default defineCommand({
 
 ### Design
 Sobre, premium, sombre. Violet `BRAND.colors.primary` (0x7C3AED) pour l'identité, rouge uniquement pour alertes/sanctions. Pas d'embeds surchargés.
+
+### Panneaux /config
+- Toute la configuration passe par `/config module:<clé>` (src/commands/admin/config.ts). Un panneau = un fichier `src/panels/<clé>.ts` exportant `defineConfigPanel({ key, label, emoji, order, module?, open })` (src/structures/configPanel.ts), découvert automatiquement (max 25).
+- `open(interaction, ctx)` répond en éphémère avec un embed d'état + composants. Les composants utilisent le namespace propre du panneau (`cfg-<clé>` recommandé, ou un namespace existant comme `welcome:cfg`/`tcfg`) avec `permissions: { internal: 'admin' }`.
+- Chaque action re-rend le panneau (`interaction.update`) avec une notice ✅/❌ ; modals : `isFromMessage() ? update : reply ephemeral`.
+- Pas de commande de configuration séparée : les commandes slash restantes sont des ACTIONS (modération, tickets, annonces, profils…).
