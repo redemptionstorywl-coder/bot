@@ -9,3 +9,6 @@ uploads/welcome/*
 *.tsbuildinfo
 .DS_Store
 coverage/
+
+# Copies de travail temporaires des agents Claude Code
+.claude/worktrees/
