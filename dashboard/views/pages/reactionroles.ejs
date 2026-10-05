@@ -1,7 +1,7 @@
 <% const base = `/guilds/${guild.id}/reaction-roles`; const roleOf = (id) => guild.roles.find((r) => r.id === id); %>
 <%- include('../partials/roles-header', { rtab: 'reactions' }) %>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Reaction roles est désactivé : les réactions ne donnent plus de rôle. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer</a></span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Reaction roles est désactivé : les réactions ne donnent plus de rôle. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer</a></span></div><% } %>
 
 <div class="grid-aside-right grid-2">
   <section class="card card-flush">

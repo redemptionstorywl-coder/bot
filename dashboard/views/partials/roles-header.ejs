@@ -2,8 +2,7 @@
 <% const _rb = `/guilds/${guild.id}`; const _c = typeof counts === 'object' && counts ? counts : {}; %>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('tags') %></span>
-    <div><h1 class="page-title">Rôles</h1><p class="page-subtitle">Rôles automatiques, menus de rôles, notifications et reaction roles.</p></div>
+    <div><%- include('eyebrow') %><h1 class="page-title">Rôles</h1><p class="page-subtitle">Rôles automatiques, menus de rôles, notifications et reaction roles.</p></div>
   </div>
   <div class="page-actions">
     <% if (rtab === 'menus') { %><a class="btn btn-primary" href="<%= _rb %>/roles/menus/new"><%- icon('plus', { size: 16 }) %>Nouveau menu</a><% } %>

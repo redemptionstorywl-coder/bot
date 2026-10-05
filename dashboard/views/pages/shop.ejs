@@ -11,13 +11,12 @@
 %>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('shopping-bag') %></span>
-    <div><h1 class="page-title">Shop</h1><p class="page-subtitle">Catalogue, commandes, historique client, statistiques et intégration Tebex.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Boutique</h1><p class="page-subtitle">Catalogue, commandes, historique client, statistiques et intégration Tebex.</p></div>
   </div>
   <div class="page-actions"><a class="btn btn-primary" href="<%= b %>?tab=products#new-product"><%- icon('plus', { size: 16 }) %>Nouveau produit</a></div>
 </header>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Shop est désactivé : <code>/shop</code> et les boutons « Commander » ne répondent pas (le webhook Tebex reste actif). <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Boutique est désactivé : <code>/shop</code> et les boutons « Commander » ne répondent pas (le webhook Tebex reste actif). <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer le module</a></span></div><% } %>
 
 <div class="stat-grid">
   <div class="stat"><span class="stat-label"><%- icon('shopping-bag', { size: 14 }) %>Produits</span><span class="stat-value"><%= products.length %><span class="stat-sub"><%= products.filter((p) => p.enabled).length %> actifs</span></span></div>
@@ -99,7 +98,7 @@
           </div>
           <div class="row-wrap">
             <% if (!p.enabled) { %><span class="badge badge-muted">Désactivé</span><% } %>
-            <% if (p.stock === 0) { %><span class="badge badge-danger">Épuisé</span><% } %>
+            <% if (p.stock === 0) { %><span class="badge badge-warning">Épuisé</span><% } %>
             <% if (p.tebexPackageId) { %><span class="badge badge-muted"><%- icon('link', { size: 12 }) %>Tebex</span><% } %>
           </div>
         </a>
@@ -270,23 +269,7 @@
       <% } %>
     </section>
     <section class="card">
-      <div class="card-head"><div><h2 class="card-title">Chiffre d'affaires</h2><p class="card-desc">Commandes payées ou livrées · <%= stats.period %> derniers jours</p></div><strong class="stat-value stat-value-sm"><%= stats.revenueLabel %></strong></div>
-      <% if (!stats.days.some((d) => d.count)) { %>
-        <%- include('../partials/empty', { glyph: 'activity', title: 'Aucune vente', text: 'Aucune commande payée ou livrée sur la période.', compact: true }) %>
-      <% } else { %>
-        <div class="histo histo-dense" role="img" aria-label="Chiffre d'affaires par jour sur <%= stats.period %> jours">
-          <% stats.days.forEach((d, i) => { %>
-            <div class="histo-col" data-tooltip="<%= d.label %> · <%= d.totalLabel %> (<%= d.count %> commande<%= d.count > 1 ? 's' : '' %>)">
-              <div class="histo-bars"><span class="histo-bar" data-h="<%= maxDayTotal ? Math.round(d.total / maxDayTotal * 100) : 0 %>"></span></div>
-              <span class="histo-label"><%= i % 5 === 0 || i === stats.days.length - 1 ? d.label : '' %></span>
-            </div>
-          <% }) %>
-        </div>
-        <details class="editor-section mt-4 mb-0">
-          <summary>Voir les données</summary>
-          <div class="table-wrap"><table class="table table-compact"><thead><tr><th>Jour</th><th class="num">Commandes</th><th class="num">CA</th></tr></thead><tbody><% for (const d of stats.days.filter((x) => x.count)) { %><tr><td><%= d.label %></td><td class="num tabular"><%= d.count %></td><td class="num tabular"><%= d.totalLabel %></td></tr><% } %></tbody></table></div>
-        </details>
-      <% } %>
+      <%- include('../partials/chart-columns', { chart: stats.revenueChart, title: "Chiffre d'affaires", sub: 'Commandes payées ou livrées · ' + stats.period + ' derniers jours, par jour.', emptyText: 'Aucune commande payée ou livrée sur la période.', figure: { label: 'Total', value: stats.revenueLabel }, valueFormat: (v) => v.toFixed(2) + ' ' + stats.currency }) %>
     </section>
   </div>
 <% } else { %>

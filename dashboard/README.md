@@ -19,127 +19,174 @@ dashboard/
   lib/
     render.ts          render(res, 'page', data) → page dans layouts/main.ejs
     validate.ts        validate({ body, query, params }) + valid(req), schémas réutilisables
-    navigation.ts      NAVIGATION (menu groupé), buildSidebar(), buildBreadcrumbs(), navHref()
+    navigation.ts      NAVIGATION (menu par intention), buildSidebar() (pertinence par type de serveur), buildBreadcrumbs(),
+                       navGroupLabel() (sur-titres), paletteEntries() (palette Ctrl+K)
     modules.ts         MODULE_INFO (libellé, icône, description, groupe, page), groupedModules(), GUILD_KIND_INFO
     icons.ts           jeu d'icônes SVG inline (trait 1.75) : icon(name, { size, cls, label })
+    charts.ts          modèles de graphiques (dayAxis, bucketByDay, niceScale, mirrorChart, lineChart, hbarsChart)
+    overview.ts        vue d'ensemble : buildSetupSteps() (liste de mise en route), buildOverviewCharts() (30 jours)
     discordPreview.ts  moteur d'aperçu Discord côté serveur (même fichier que le navigateur : public/js/discord-preview.js)
     servicePreview.ts  EmbedBuilder / ActionRowBuilder des services → message d'aperçu ; renderPreviewHtml(res, message, users)
     logs.ts            métadonnées des catégories de logs, logTitle() / logIcon()
-    stats.ts           buildOverview() (vue d'ensemble + /api/…/overview), onlineCount()
-    ticketStats.ts     statistiques tickets en lecture seule (1re réponse, activité 14 j, top staff)
-    fivemPlayers.ts    liste paginée des joueurs FiveM connus (lecture seule)
-    embedForm.ts       formulaire d'embed → EmbedSpec (embedFormSchema, toEmbedSpec, buttonsJsonSchema, jsonArray)
-    serviceErrors.ts   formAction(back, fn) : erreurs métier → flash lisible + redirection
-    names.ts           resolveUserNames(), resolveUserProfiles(), requireBotGuild()
-    dates.ts, format.ts, flash.ts, async.ts, errors.ts, access.ts, guildData.ts, rateLimit.ts, types.ts
-  routes/              index.ts (montage), home, guilds, admin, api, guild/<module>.ts
+    stats.ts           buildOverview() (chiffres clés + /api/…/overview), onlineCount()
+    access.ts          hasGuildAccess(), manageableGuilds(), isGuildAdmin() (actions sensibles : propriétaire / Administrator)
+    ticketStats.ts, fivemPlayers.ts, embedForm.ts, serviceErrors.ts (formAction), names.ts, dates.ts, format.ts, flash.ts…
+  routes/              index.ts (montage), home, guilds, admin, api, guild/<module>.ts (dont permissions.ts)
   views/
-    layouts/main.ejs   shell : sidebar groupée + topbar (fil d'Ariane, indicateur live) ou en-tête public
+    layouts/main.ejs   shell : rail latéral + barre supérieure, ou en-tête public ; palette de commandes
     partials/          composants (voir plus bas)
     pages/             une vue par page
   public/
-    css/app.css        design system complet (un seul fichier, sections numérotées)
-    js/                app.js (cœur), pickers.js, repeater.js, embed-editor.js, discord-preview.js, live-preview.js,
-                       modal-preview.js + scripts de page (tickets, welcome, roles, announcements, settings, fivem)
+    css/app.css        design system complet (un seul fichier, plan + tokens en tête, sections numérotées)
+    fonts/             polices auto-hébergées (woff2 latin + latin-ext) + licences OFL
+    js/                theme.js (synchrone, <head>), app.js (cœur), palette.js, charts.js, pickers.js, repeater.js,
+                       embed-editor.js, discord-preview.js, live-preview.js, modal-preview.js + scripts de page
+                       (tickets, welcome, roles, announcements, settings, fivem, moderation)
 ```
 
 ## Design system (`public/css/app.css`)
 
-**Tokens** (`:root`) — fond `--bg #0a0a0c`, surfaces `--surface #121216` / `--surface-2 #18181d` / `--surface-3`, bordures `--border #26262c`,
-texte `--text #f4f4f5` / `--text-2 #a1a1aa` / `--text-3 #71717a`, accent `--accent #7c3aed` (`--accent-hover #8b5cf6`, `--accent-subtle`),
-`--success #22c55e`, `--danger #ef4444`, `--warning #f59e0b` (+ `-subtle`, `-border`, `-text`). Espacements `--space-1…7` (4/8/12/16/24/32/48),
-rayons `--radius-sm|--radius|--radius-lg` (8/12/16), transitions `--dur` 120–180 ms, police système. Alias historiques : `--primary`, `--muted`.
+**Concept** : « régie de studio ». Rail sombre à gauche, plateau de contenu découpé en **sections séparées par des filets**
+(pas de carte sur chaque bloc), panneaux détachés uniquement pour ce qui flotte ou se manipule (tableaux de données, aperçus,
+fiches, tuiles). Violet = action principale, sélection, état actif. **Rouge = alertes et actions destructrices uniquement.**
+
+**Polices** (auto-hébergées, CSP `font-src 'self'`, `font-display: swap`, piles de repli système) :
+- **Archivo** (variable, étirée à 118 %) : affichage, avec retenue — titres de page, marque, code d'erreur.
+- **IBM Plex Sans** 400/500/600 : texte de l'interface.
+- **IBM Plex Mono** 400/500 : données (IDs, clés, valeurs, actions de log) et sur-titres en capitales.
+Échelle : 11 · 12 · 13 · 14 · 16 · 18 · 22 · 28 · 44 (`--fs-micro` … `--fs-3xl`). Titres en `text-wrap: balance` ;
+chiffres tabulaires dans les colonnes (`.table td`, `.tabular`, axes), chiffres proportionnels pour les grands nombres.
+
+**Thèmes** : sombre par défaut ; clair via `prefers-color-scheme: light` quand rien n'est choisi, ou choix explicite
+(menu du compte : Sombre / Clair / Auto) → `data-theme` sur `<html>`, mémorisé en `localStorage` (`rs-theme`, try/catch),
+appliqué avant le premier rendu par `public/js/theme.js`. Les définitions complètes sont sur `:root` (sombre), redéfinies sous
+`@media (prefers-color-scheme: light) :root:not([data-theme="dark"])` et `:root[data-theme="light"]`.
+Les aperçus Discord restent dans les couleurs du client Discord (sombre) dans les deux thèmes.
+
+**Tokens** (`:root`) :
+
+| Rôle | Tokens |
+| --- | --- |
+| Plans | `--bg` (plateau) · `--bg-rail` (rail) · `--surface` (panneaux) · `--surface-2` · `--surface-3` (survol) · `--field` (champs) · `--overlay` · `--scrim` |
+| Filets | `--line` · `--line-soft` · `--line-strong` |
+| Encre | `--text` · `--text-2` · `--text-3` · `--on-accent` |
+| Identité | `--accent` (#7c3aed sombre / #6d28d9 clair) · `--accent-hover` · `--accent-press` · `--accent-text` · `--accent-soft` · `--accent-softer` · `--accent-line` |
+| Sémantique | `--ok*` · `--warn*` · `--danger*` (variantes `-text`, `-soft`, `-line`) — distinctes de l'accent |
+| Graphiques | `--series-1/2/3` (palette catégorielle validée avec `validate_palette.js`, sombre `#8f75f0,#2aa889,#d26a3a` sur `#131017`, clair `#6a4bd6,#16896d,#c8661f` sur `#fff`) · `--chart-grid` · `--chart-axis` |
+| Typo | `--font-display` · `--font-text` · `--font-mono` · `--display-stretch` · `--fs-*` |
+| Espace / forme | `--s-1…8` (4 → 64) · `--gutter` (40 → 24 → 16 px) · `--r-xs` 4 · `--r-sm` 6 · `--r-md` 10 · `--r-full` |
+| Ombres | `--shadow-pop`, `--shadow-float` (éléments flottants seulement) · `--focus` (anneau clavier) |
+| Mouvement | `--ease`, `--dur-fast/--dur/--dur-slow` (désactivés par `prefers-reduced-motion`) |
 
 **Composants** (classes) :
 
 | Famille | Classes |
 | --- | --- |
-| Mise en page | `.page-header` `.page-heading` `.page-icon` `.page-title` `.page-subtitle` `.page-actions` `.back-link` · `.grid-2/3/4` `.grid-aside-right` (contenu + 340 px) `.grid-aside-wide` (liste + fiche) `.grid-2-aside` · `.split` + `.split-preview` (formulaire + aperçu collant) · `.stack` `.stack-1…5` `.row` `.row-wrap` `.toolbar` |
-| Boutons | `.btn` + `-primary` `-secondary` `-ghost` `-outline` `-danger` `-success` `-sm` `-lg` `-block` `-icon` `.is-loading` · `.icon-btn` (`.is-danger`) · `.btn-danger-text` |
-| Formulaires | `.field` `.field-row` `.field-required` `.field-optional` `.hint` · `.input` `.select` `.textarea` `.search` · `.toggle` · `.toggle-list` > `.toggle-row` (titre + aide + interrupteur) · `.check` · `.segmented` (`-block`, liens ou radios, `.seg-count`) · `.chip-group` > `.chip-toggle` · `.color-field` · `.form-actions` `.sticky-actions` `.btn-row` |
-| Onglets | `.tabs-nav` (partial `tabs`), `.tab-count` |
-| Cartes | `.card` (`-flush`, `-compact`, `-muted`, `-accent`, `-danger`, `-collapsible` sur `<details>`) `.card-head` `.card-title` `.card-desc` · `.subcard` · `.sheet` (fiche collante) · `.panel-list` > `.panel-card` · `.stat-grid` > `.stat` |
-| Données | `.table` (`-responsive` → cartes < 640 px avec `data-label`, `-clickable` + `tr[data-href]`, `-compact`) `.cell-primary` `.cell-stack` · `.list` `.list-item*` `.list-compact` · `.dl` (`-compact`) · `.bars` `.bar-row` `.bar-fill[data-pct]` · `.meter` · `.histo` (`-dense`) + `.histo-bar[data-h]` · `.steps` (étapes numérotées) · `.snippet` (code + copier) |
-| Statuts | `.badge` (`-success` `-warning` `-danger` `-accent` `-info` `-muted`, `.badge-status-<STATUT>`) · `.dot` (`-success` …) · `.role-pill` `.role-dot` · `.channel-tag` · `.chip` · `.avatar` (`-xs` … `-xl`, `-fallback`) |
-| Retours | `.alert-{info,success,warning,danger}` · `.callout` · `.empty` (partial `empty`) · `.skeleton` · toasts · modale de confirmation · `[data-tooltip]` · `.dropdown` |
-| Aperçus Discord | `.preview-panel` (`-head`, `-body`, `-note`) · `.dpreview` `.dmsg` `.dembed*` `.dbtn-*` `.dselect` `.dmodal` `.dmember` `.dchannel-row` |
+| Mise en page | `.page-header` `.page-heading` `.eyebrow` (partial `eyebrow`) `.page-title` `.page-subtitle` `.page-actions` `.back-link` · `.with-toc` + `.toc[data-toc]` + `.toc-section` (sommaire collant, onglets horizontaux sur mobile) · `.split` + `.split-preview` · `.grid-2/3/4` `.grid-aside-right` `.grid-aside-wide` · `.stack*` `.row*` `.toolbar` `.section-head` |
+| Sections / panneaux | `.card` = **section à filet** (pas de boîte) · `.card-flush` (panneau de données) · `.card-muted` `.card-danger` `.card-collapsible` · `aside.card`, `.sheet`, `.subcard`, `.panel` = panneaux · `.card-head` `.card-title` `.card-desc` `.card-foot` |
+| Chiffres clés | `.stat-grid` > `.stat` : **un seul bandeau** divisé par des filets ; `.stat-label` (mono) `.stat-value` `.stat-sub` ; `.is-warn` / `.is-alert` (liseré de sévérité) |
+| Boutons | `.btn` + `-primary` (violet) `-secondary` `-ghost` `-outline` `-danger` `-success` `-discord` `-sm` `-lg` `-block` `-icon` `.is-loading` · `.icon-btn` |
+| Formulaires | `.field` `.hint` `.input` `.select` `.textarea` `.search` · `.toggle` · `.segmented` (sélection en violet) · `.choice` · `.check` · `.color-field` · `.form-actions` `.form-footer` |
+| Statuts | `.badge` (`-success` `-warning` `-danger` = pastille pleine ; `badge-status-<STATUT>` : pleine = en cours, anneau = terminé, losange = échec) · `.dot` · `.role-pill` · `.level-pill` · `.chip` · `.channel-tag` · `.avatar*` |
+| Données | `.table` (`-responsive` → cartes < 640 px, `-clickable`, `-compact`) · `.list` · `.timeline` · `.dl` · `.bars` · `.meter` · `.steps` · `.snippet` |
+| Graphiques | partials `chart-mirror`, `chart-line`, `chart-hbars` (`.chart` `.chart-head` `.chart-figures` `.chart-frame` `.chart-plot` `.chart-tip` `.chart-table`) |
+| Vue d'ensemble | `.setup-list` > `.setup-item.is-done` (mise en route) · `.status-list` · `.overview-grid` |
+| Permissions | `.perm-explain` `.perm-cat` `.perm-list` > `.perm-item` (`<details>` = édition en ligne) `.perm-bulk` |
+| Zone sensible | `.danger-zone` > `.danger-row` (+ `.unban-progress`) |
+| Retours | `.alert-{info,success,warning,danger}` · `.callout` · `.empty` (partial `empty`) · toasts · modale de confirmation (`data-confirm-type` = mot à taper) · `[data-tooltip]` · `.dropdown` · palette `.palette` |
+| Aperçus Discord | `.preview-panel` (`-head`, `-body`, `-note`) · `.dpreview` `.dmsg` `.dembed*` `.dbtn-*` `.dselect` `.dmodal` `.dmember` `.dchannel` |
 
-Couleurs dynamiques sans style inline (CSP) : `data-embed-color`, `data-role-color`, `data-color` + `data-color-bg`, `data-pct`, `data-h` (appliqués par `UI.paint`).
+Couleurs et positions dynamiques sans style inline (CSP) : `data-embed-color`, `data-role-color`, `data-color` + `data-color-bg`,
+`data-pct`, `data-h`, `data-left` / `data-top` (étiquettes de graphiques) — appliqués par `UI.paint`.
+
+## Graphiques
+
+Rendu serveur : `lib/charts.ts` calcule le modèle (une seule échelle « ronde », graduations entières, colonnes centrées sur les jours),
+le partial dessine un SVG `preserveAspectRatio="none"` (traits `vector-effect="non-scaling-stroke"`, barres ≤ 24 px à extrémité
+arrondie de 4 px ancrée à la ligne de base, lignes 2 px, points de fin 8 px avec anneau) et des étiquettes HTML (axes, valeurs).
+`public/js/charts.js` ajoute l'infobulle (réticule sur les courbes, mise en avant de la colonne survolée, flèches ← → au clavier).
+Légende dès 2 séries, étiquettes directes sélectives (omises si elles se chevauchent), tableau « Voir les données » sur chaque graphique.
+Couleurs : `--series-1/2/3` uniquement (texte toujours en tokens d'encre). Toute nouvelle couleur de série doit passer
+`node …/dataviz/scripts/validate_palette.js "<hex,…>" --mode dark --surface "#131017"` puis `--mode light --surface "#ffffff"`.
 
 ## Partials (`views/partials/`)
 
+- Shell : `sidebar`, `topbar`, `site-header`, `user-menu` (thème), `footer`, `toasts`, `modal`, `dirty-bar`, `palette`, `eyebrow` ({ eyebrowText? })
 - `icon` · `tabs` ({ tabs: [{ key, label, href, icon, count }], active }) · `empty` ({ glyph, title, text, actionHref, actionLabel, actionIcon, compact }) · `pagination`
-- `role-select` ({ name, id, selected, multiple = true, emptyLabel, placeholder, includeManaged, required }) · `channel-select` ({ name, id, selected, kind: text|voice|category|all, emptyLabel, required }) · `color-field`
-- `embed-editor` ({ prefix, spec, id, buttons, buttonsName, withPreview, previewTarget, contentSource, withJson, compact, withFields }) · `embed-preview` ({ embed, buttons, content, components, compact, ephemeral })
-- `repeater` / `repeater-row` (kinds `field`, `button`, `option`, `polloption`, `threshold`, `tier`) · `question-row` (question de modale, `withMaxLength`, `defaultStyle`)
-- En-têtes de section : `tickets-header`, `roles-header`, `events-header` · shell : `sidebar`, `topbar`, `site-header`, `user-menu`, `footer`, `toasts`, `modal`, `dirty-bar`
+- `role-select` · `channel-select` · `color-field` · `embed-editor` · `embed-preview` · `repeater` / `repeater-row` · `question-row`
+- Graphiques : `chart-mirror` ({ chart, title, sub, emptyText }) · `chart-line` ({ chart, title, sub, emptyText, extraFigure? }) · `chart-hbars` ({ chart, title, sub, emptyText, unit })
+- En-têtes de section : `tickets-header`, `roles-header`, `events-header`
 
 ## JavaScript (`public/js/`)
 
-`window.UI` = `{ $, $$, api(method, url, data), toast(msg, type), paint(root), enhance(root), onEnhance(fn), guildData(), previewContext(), sortable(), confirm(), markClean(form), icon() }`.
+`window.UI` = `{ $, $$, api(method, url, data), toast(msg, type), paint(root), enhance(root), onEnhance(fn), guildData(), previewContext(), sortable(), confirm(), markClean(form), icon(), setTheme(t) }`.
 `api()` envoie le jeton CSRF ; les données du serveur courant (rôles, salons, bot) sont dans `<script id="guild-data" type="application/json">`.
 
-Attributs déclaratifs (app.js) : `data-dirty-form` (barre « modifications non enregistrées », `.dirty-hide`), `data-confirm` (+ `-title`, `-label`, `-variant`),
-`data-dropdown`, `data-filter` + `data-filter-item`, `tr[data-href]`, `data-copy`, `data-color-picker`, `data-toggle-target`, `data-check-toggle` / `data-check-hide`,
-`data-radio-toggle`, `data-fill-form` + `data-set-<champ>`, `form[data-id-action]` (création / édition partagée), `data-submit-on-change`, `data-module-toggle`,
-`data-toggle-url` (bascule JSON instantanée), `data-sortable` + `data-sortable-url`, `data-insert-target` + `data-insert` (variables), `data-stat`, `data-live-reload`,
-`<details id>` ouvert par l'ancre de l'URL.
+Attributs déclaratifs (app.js) : `data-dirty-form` (barre « modifications non enregistrées », `.dirty-hide`), `data-confirm` (+ `-title`, `-label`,
+`-variant`, `-type` : mot à taper, recopié dans le champ `[data-confirm-target]` du formulaire), `data-dropdown`, `data-filter` + `data-filter-item`,
+`tr[data-href]`, `data-copy`, `data-color-picker`, `data-toggle-target`, `data-check-toggle` / `data-check-hide`, `data-radio-toggle`,
+`data-fill-form` + `data-set-<champ>`, `form[data-id-action]`, `data-submit-on-change`, `data-module-toggle`, `data-toggle-url`,
+`data-sortable` + `data-sortable-url`, `data-insert-target` + `data-insert`, `data-stat`, `data-live-reload`, `data-theme-set`,
+`[data-toc]` (section active au défilement), `data-scroll-to="<id>"` (section ciblée à l'arrivée), `<details id>` ouvert par l'ancre.
 
-Autres modules : `pickers.js` (sélecteurs rôles / salons / multi améliorés, le `<select>` natif reste la source du POST) · `repeater.js` (listes → JSON caché,
-glisser-déposer, `repeater:change`) · `embed-editor.js` (aperçu live, import/export JSON, `embed:change`) · `discord-preview.js` (rendu Discord partagé
-serveur/navigateur : markdown, mentions, embeds, boutons, menus, modales) · `live-preview.js` (`form[data-live-preview="url"][data-live-preview-target]` :
-aperçu calculé par le serveur) · `modal-preview.js` (`[data-modal-live="#repeater"]`).
+Palette de commandes (`palette.js`) : Ctrl+K / ⌘K ou `[data-palette-open]` ; pages, réglages profonds (`lib/navigation.ts` → `PALETTE_SHORTCUTS`),
+autres serveurs, thème, déconnexion. Rendu en `textContent`, recherche sans accents.
 
-## Aperçus Discord
+## Navigation
 
-1. **Client** : `DiscordPreview.render(message, UI.previewContext())` (embed-editor, bienvenue, menus de rôles, annonces, tickets).
-2. **Serveur, mêmes constructeurs que le bot** : pour les messages construits par un service (`eventService.buildEmbed`, `pollService.buildEmbed`,
-   `giveawayService.buildEmbed`, `buildProductAnnouncement`, `buildOrderSummary`, `whitelistService.buildReviewEmbed`…) :
-   `renderPreviewHtml(res, serviceMessagePreview({ embeds, components }))`. Les brouillons passent par une route `POST …/preview` (JSON + CSRF,
-   entité fictive, rien n'est enregistré) appelée par `live-preview.js` : `/events/preview`, `/events/polls/preview`, `/giveaways/preview`, `/shop/products/preview`.
-3. Images : seules celles du CDN Discord et `data:image` s'affichent (CSP) ; les autres affichent un emplacement avec le domaine.
-   `POST /welcome/image` renvoie l'image de bienvenue (WelcomeImageService) en data URL.
+Groupes par intention : Vue d'ensemble · **Communauté** (Bienvenue et départs, Rôles, Annonces, Embeds, Événements) · **Support** (Tickets) ·
+**Sécurité** (Modération, Logs) · **Jeu** (Serveurs FiveM, Battle Royale, Whitelist, School RP, Boutique) · **Serveur** (Membres, Permissions, Paramètres).
+Un module de jeu n'apparaît dans « Jeu » que s'il est recommandé pour le type de serveur (`DEFAULT_MODULES_BY_KIND`) ou déjà activé ; sinon il est
+rangé sous « Autres modules ». Un module coupé reste visible avec l'étiquette « off ».
 
-## Ajouter une page
+## Créer une page
 
 1. **Route** `routes/guild/<module>.ts` : `Router({ mergeParams: true })` ; handlers `wrap(...)` ; entrées `validate({ body, query, params })` + `valid(req)` ;
    mutations de formulaire via `formAction(back, fn)` (erreur → flash + redirection) puis `broadcastToGuild(guildId, event, payload)`.
    `requireAuth` + `requireGuildAccess` sont appliqués par le parent `/guilds/:guildId`. Ajouter le routeur dans `routes/index.ts` (`guildRouters`).
 2. **render** : `render(res, 'page', { title, page: '<clé nav>', crumbs: [{ label, href? }], layout: 'wide'?, scripts: ['nom-js']?, ...données })`.
-   Onglets côté serveur : `?tab=` validé par Zod + partial `tabs` (pas d'onglets JS).
-3. **Vue** `views/pages/<page>.ejs` : `<header class="page-header">` avec `.page-icon`, puis contenu. Chaque `<form method="post">` contient
-   `<input type="hidden" name="_csrf" value="<%= csrfToken %>">`. Sélecteurs : partials `role-select` / `channel-select`. État vide : partial `empty`.
-4. **Menu** : entrée dans `lib/navigation.ts` (`{ key, label, icon, path, module?, group }`) ; les modules de jeu désactivés passent sous « Autres modules ».
+   Onglets côté serveur (`?tab=` validé par Zod + partial `tabs`) seulement pour des listes d'objets distinctes ; pour des réglages,
+   **une seule page** à sections empilées avec sommaire collant (`.with-toc`, `nav.toc[data-toc]`, sections `.card.toc-section` avec `id`).
+3. **Vue** `views/pages/<page>.ejs` : `<header class="page-header"><div class="page-heading"><div><%- include('../partials/eyebrow') %><h1 class="page-title">…`.
+   Chaque `<form method="post">` contient `<input type="hidden" name="_csrf" value="<%= csrfToken %>">`. Une aide d'une ligne (`.hint`) sous chaque réglage.
+   Sélecteurs : partials `role-select` / `channel-select`. État vide : partial `empty`. Message configuré → aperçu Discord en direct (`.split-preview`).
+4. **Menu** : entrée dans `lib/navigation.ts` (`{ key, label, icon, path, module?, group, keywords? }`) ; raccourcis profonds dans `PALETTE_SHORTCUTS`.
 5. **Script de page** éventuel : `public/js/<nom>.js` (IIFE, aucun inline), déclaré via `scripts: ['<nom>']`.
+6. Rédaction : français simple, noms que l'utilisateur connaît, boutons qui disent ce qu'ils font, toasts qui confirment (« Enregistré »),
+   erreurs qui disent quoi faire.
 
 **Variables de vue** : `guild` (GuildView : rôles, salons triés, catégories), `config`, `user`, `isOwner`, `csrfToken`, `botReady`, `botUser`, `fmt`, `icon()`,
-`discordPreview`, `previewContext()`, `jsonScript(value)`, `brand`, `constants` (LANGUAGES, MODULE_LABELS, MODULE_INFO, TEMPLATE_VARIABLES, EMBED_COLOR_PALETTE…), `page`, `crumbs`, `scripts`.
+`kindLabel()`, `navGroupLabel()`, `paletteEntries()`, `discordPreview`, `previewContext()`, `jsonScript(value)`, `brand`, `constants`, `page`, `crumbs`, `scripts`.
 
 ## Pages et routes notables
 
-- **Tickets** (`/tickets`) : Raisons (liste triable, `POST /tickets/reasons/order`, `/:typeId/toggle`, `/defaults`), éditeur de raison (`/tickets/reasons/new`,
-  `/tickets/reasons/:typeId` : général, ouverture, accès, formulaire avec aperçu de la modale, message d'accueil), Panneaux (`/tickets/panels`,
-  `/:panelId/republish`, `/:panelId/delete`), Relances (`/tickets/reminders`, `/tickets/:id/permanent`), Tickets (`/tickets/list`, fiche `/tickets/:id` +
-  close / claim / delete, transcript en iframe `sandbox` `/tickets/:id/transcript/:format`), Statistiques (`/tickets/stats`).
-- **Événements** : `/events`, `/events?tab=polls`, `/giveaways` (en-tête commun) ; création `/events/new`, `/events/polls/new`, `/giveaways/new` avec aperçu serveur.
-- **FiveM** : `/fivem` (Serveurs · Joueurs · Installation rs_bridge), fiche `?server=<clé>&stab=overview|settings|sync`,
-  `POST /fivem/servers/:key/sync` (→ `fivemSyncService.updateSyncSettings`), `POST /fivem/players/link` (→ `linkManually`), `/fivem/new`.
-- **Modération** : onglets sanctions, avertissements, escalade, protections (anti-raid / anti-nuke), salon piège (`/moderation/honeypot/{setup,toggle,remove}`), lockdown, stats.
-- **Whitelist / School / Shop / Battle Royale** : onglets serveur, fiches maître/détail (`?id=`, `?user=`, `?app=`, `?order=`), formulaires latéraux.
-
-Accès direct à Prisma (lecture seule sauf mention) quand un service n'expose pas l'opération : `lib/ticketStats.ts`, `lib/fivemPlayers.ts`,
-listes paginées School / Shop, et écritures commentées `// Pas de méthode …` dans school.ts, shop.ts, battleroyale.ts.
+- **Vue d'ensemble** (`/guilds/:id`) : état (bot, lockdown, serveurs FiveM), **mise en route** cochée d'après la configuration réelle
+  (salons de logs, rôles staff, bienvenue, tickets, protections, + FiveM / whitelist / boutique selon les modules), chiffres clés,
+  graphiques 30 jours (arrivées et départs depuis la table Log, tickets ouverts / fermés, sanctions par type), activité récente.
+- **Permissions** (`/permissions`) : `commandPermissionService` (`catalog`, `rules`, `set`, `reset`, `LOCKED_COMMANDS`) puis `invalidateCommandPermissions(guildId)`.
+  `POST /permissions/command/:command` (rôles + activation), `/command/:command/reset`, `/category/:category` (`mode` replace | add),
+  `/category/:category/reset`, `/permissions/reset`. `/settings?tab=commands` redirige ici.
+- **Paramètres** (`/settings`) : page unique (type, langue, apparence, équipe, modules) ; `?tab=modules` défile jusqu'aux modules.
+- **Modération** : Sanctions (+ graphique 30 j, `?tab=stats`) · Avertissements · Protection (sommaire : lockdown, anti-nuke, filtres, exemptions,
+  escalade, salon piège, actions sensibles ; `?tab=config|antiraid|honeypot|lockdown` ouvrent la section correspondante).
+  **Débannir tout le monde** (`massUnbanService`) : `GET /moderation/unban-all/status` (nombre de bannis mis en cache 60 s, progression),
+  `POST /moderation/unban-all` (confirmation `UNBAN ALL` tapée, raison, « aussi débannir en jeu » ; réservé au propriétaire / Administrator),
+  `POST /moderation/unban-all/cancel` ; progression sondée par `public/js/moderation.js`.
+- **Tickets** (`/tickets`) : Raisons, éditeur de raison, Panneaux, Relances, Tickets, Statistiques.
+- **Événements** : `/events`, `/events?tab=polls`, `/giveaways` ; création avec aperçu serveur (`POST …/preview`).
+- **FiveM** : `/fivem` (Serveurs · Joueurs · Installation rs_bridge), fiche `?server=<clé>&stab=overview|settings|sync`.
+- **Whitelist / School / Boutique / Battle Royale** : onglets d'objets, fiches maître/détail (`?id=`, `?user=`, `?app=`, `?order=`).
 
 ## Conventions
 
 - Textes en français ; textes envoyés sur Discord via `translationService` (langue du serveur).
 - Pas de CDN, pas de script ni de style inline : classes + `data-*` lus par `app.js`.
-- Actions destructives : `data-confirm`. Boutons nécessitant le bot : désactivés si `!botReady`.
+- Actions destructives : `data-confirm` (et `data-confirm-type` pour les actions de masse). Boutons nécessitant le bot : désactivés si `!botReady`.
 - Réponses JSON : `{ ok: true, ... }` ; erreurs `{ error, details? }`.
 
 ## Sécurité
 
-- CSP : `default-src 'self'`, `script-src 'self'`, `style-src 'self'`, `img-src 'self' data:` + CDN Discord, `frame-ancestors 'none'`
+- CSP : `default-src 'self'`, `script-src 'self'`, `style-src 'self'`, `font-src 'self'`, `img-src 'self' data:` + CDN Discord, `frame-ancestors 'none'`
   (le transcript HTML servi en iframe ajoute `frame-ancestors 'self'` et `X-Frame-Options: SAMEORIGIN` sur sa seule réponse).
 - CSRF sur toutes les mutations (formulaires et `fetch`), sauf `/api/fivem` et `/api/shop` (clé dans leur routeur).
 - Rate limit : `/auth` 30 req / 5 min, `/api` 120 req / min.
@@ -148,4 +195,5 @@ listes paginées School / Shop, et écritures commentées `// Pas de méthode �
 
 ## Tests et vérifications
 
-`npx tsc -p tsconfig.json --noEmit` · `npx vitest run` (tests du dashboard dans `tests/dashboard/`) · `node --check dashboard/public/js/*.js`.
+`npx tsc -p tsconfig.json --noEmit` · `npx vitest run` (tests du dashboard dans `tests/dashboard/`, dont `redesign.test.ts` : graphiques,
+navigation, mise en route, débannissement de masse ; `app.test.ts` : page Permissions) · `node --check dashboard/public/js/*.js` · `npm run check`.

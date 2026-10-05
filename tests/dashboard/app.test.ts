@@ -258,7 +258,10 @@ describe('Dashboard — pages publiques', () => {
   it('fichiers statiques servis', async () => {
     const css = await get('/css/app.css');
     expect(css.status).toBe(200);
-    expect(css.text).toContain('--primary: #7c3aed');
+    expect(css.text).toContain('--accent: #7c3aed');
+    expect(css.text).toContain('@font-face');
+    const font = await get('/fonts/ibm-plex-sans-latin-400-normal.woff2');
+    expect(font.status).toBe(200);
     const js = await get('/js/app.js');
     expect(js.status).toBe(200);
   });
@@ -299,7 +302,7 @@ describe('Dashboard — pages connectées', () => {
     for (const [path, needle] of [
       ['/settings', 'Type de serveur'],
       ['/settings?tab=modules', 'data-module-toggle="tickets"'],
-      ['/settings?tab=commands', 'Permissions par commande'],
+      ['/permissions', 'Permissions des commandes'],
       ['/logs', 'Historique'],
       ['/logs?tab=channels', 'Catégorie → salon'],
       ['/logs?category=TICKET&q=ticket&from=2024-01-01&to=2030-01-01', 'ticket.open'],
@@ -379,16 +382,97 @@ describe('Dashboard — mutations', () => {
     expect(prisma.logChannel.upsert).toHaveBeenCalled();
     expect(prisma.logChannel.deleteMany).toHaveBeenCalled();
   });
-  it('enregistre les permissions de commandes', async () => {
-    const r = await post(`/guilds/${GUILD_ID}/commands`, { 'perms[ping][enabled]': 'on', 'perms[ticket][roleIds]': '400000000000000001', 'perms[ticket][enabled]': 'on' });
-    expect(r.status).toBe(302);
-    expect(prisma.commandPermission.deleteMany).toHaveBeenCalledWith({ where: { guildId: GUILD_ID, commandName: 'ping' } });
-    expect(prisma.commandPermission.upsert).toHaveBeenCalled();
-  });
   it('POST /auth/logout détruit la session', async () => {
     const r = await post('/auth/logout', {});
     expect(r.status).toBe(302);
     expect(r.location).toBe('/');
     expect(prisma.dashboardSession.deleteMany).toHaveBeenCalledWith({ where: { sid: SID } });
+  });
+});
+
+describe('Dashboard — permissions des commandes', () => {
+  const PERMS = `/guilds/${GUILD_ID}/permissions`;
+  const STAFF = '400000000000000001';
+  it('GET /permissions liste les commandes par catégorie avec l’explication', async () => {
+    const r = await get(PERMS, { auth: true });
+    expect(r.status).toBe(200);
+    expect(r.text).toContain('Permissions des commandes');
+    expect(r.text).toContain('Un rôle autorisé suffit');
+    expect(r.text).toContain('/config et /help toujours accessibles');
+    expect(r.text).toContain('id="cmd-ping"');
+    expect(r.text).toContain('id="cat-tickets"');
+    expect(r.text).toContain('id="perm-roles-ticket"');
+    expect(r.text).toContain(`action="${PERMS}/category/tickets"`);
+    expect(r.text).toContain('aria-current="page"');
+  });
+  it('affiche l’état : rôles autorisés en pastilles, commande désactivée', async () => {
+    prisma.commandPermission.findMany.mockResolvedValue([
+      { id: 1, guildId: GUILD_ID, commandName: 'ticket', roleIds: [STAFF], enabled: true },
+      { id: 2, guildId: GUILD_ID, commandName: 'ping', roleIds: [], enabled: false },
+    ]);
+    const r = await post(`${PERMS}/reset`, {}); // vide le cache du service avant la lecture
+    expect(r.status).toBe(302);
+    prisma.commandPermission.findMany.mockResolvedValue([
+      { id: 1, guildId: GUILD_ID, commandName: 'ticket', roleIds: [STAFF], enabled: true },
+      { id: 2, guildId: GUILD_ID, commandName: 'ping', roleIds: [], enabled: false },
+    ]);
+    const page = await get(PERMS, { auth: true });
+    expect(page.text).toContain('data-role-color="#7c3aed"');
+    expect(page.text).toContain('Désactivée');
+  });
+  it('l’ancien onglet Paramètres › Permissions redirige vers la page dédiée', async () => {
+    const r = await get(`/guilds/${GUILD_ID}/settings?tab=commands`, { auth: true });
+    expect(r.status).toBe(302);
+    expect(r.location).toBe(PERMS);
+    const settings = await get(`/guilds/${GUILD_ID}/settings`, { auth: true });
+    expect(settings.text).not.toContain('Permissions par commande');
+    expect(settings.text).toContain(`href="${PERMS}"`);
+  });
+  it('POST set : rôles autorisés + activation', async () => {
+    const r = await post(`${PERMS}/command/ticket`, { roleIds: STAFF, enabled: 'on' });
+    expect(r.status).toBe(302);
+    expect(r.location).toBe(`${PERMS}#cmd-ticket`);
+    expect(prisma.commandPermission.upsert).toHaveBeenCalledWith({
+      where: { guildId_commandName: { guildId: GUILD_ID, commandName: 'ticket' } },
+      create: { guildId: GUILD_ID, commandName: 'ticket', roleIds: [STAFF], enabled: true },
+      update: { roleIds: [STAFF], enabled: true },
+    });
+  });
+  it('POST set sans case « activée » : commande désactivée', async () => {
+    const r = await post(`${PERMS}/command/ping`, {});
+    expect(r.status).toBe(302);
+    expect(prisma.commandPermission.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: { guildId: GUILD_ID, commandName: 'ping', roleIds: [], enabled: false } }));
+  });
+  it('POST set refuse une commande inconnue ou un rôle inconnu (aucune écriture)', async () => {
+    const unknown = await post(`${PERMS}/command/nope`, { enabled: 'on' });
+    expect(unknown.status).toBe(302);
+    const badRole = await post(`${PERMS}/command/ticket`, { roleIds: '499999999999999999', enabled: 'on' });
+    expect(badRole.status).toBe(302);
+    expect(prisma.commandPermission.upsert).not.toHaveBeenCalled();
+    expect(prisma.commandPermission.deleteMany).not.toHaveBeenCalled();
+  });
+  it('POST reset : revient au défaut', async () => {
+    const r = await post(`${PERMS}/command/ticket/reset`, {});
+    expect(r.status).toBe(302);
+    expect(r.location).toBe(`${PERMS}#cmd-ticket`);
+    expect(prisma.commandPermission.deleteMany).toHaveBeenCalledWith({ where: { guildId: GUILD_ID, commandName: { in: ['ticket'] } } });
+  });
+  it('POST catégorie : applique des rôles à toutes ses commandes, puis remet la catégorie par défaut', async () => {
+    const apply = await post(`${PERMS}/category/admin`, { roleIds: STAFF, mode: 'replace' });
+    expect(apply.status).toBe(302);
+    expect(apply.location).toBe(`${PERMS}#cat-admin`);
+    expect(prisma.commandPermission.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: { guildId: GUILD_ID, commandName: 'ping', roleIds: [STAFF], enabled: true } }));
+    const reset = await post(`${PERMS}/category/admin/reset`, {});
+    expect(reset.status).toBe(302);
+    expect(prisma.commandPermission.deleteMany).toHaveBeenCalledWith({ where: { guildId: GUILD_ID, commandName: { in: ['ping'] } } });
+  });
+  it('POST catégorie sans rôle : refusé', async () => {
+    const r = await post(`${PERMS}/category/admin`, { mode: 'add' });
+    expect(r.status).toBe(302);
+    expect(prisma.commandPermission.upsert).not.toHaveBeenCalled();
+  });
+  it('les mutations exigent le jeton CSRF', async () => {
+    const r = await post(`${PERMS}/command/ticket`, { enabled: 'on' }, { csrf: null });
+    expect(r.status).toBe(403);
   });
 });

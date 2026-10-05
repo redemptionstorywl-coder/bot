@@ -1,13 +1,12 @@
 <% const b = `/guilds/${guild.id}/embeds`; %>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('layout-template') %></span>
-    <div><h1 class="page-title">Embeds</h1><p class="page-subtitle">Messages enrichis réutilisables par <code>/embed</code>, les annonces et le panel, avec aperçu fidèle à Discord.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Embeds</h1><p class="page-subtitle">Messages enrichis réutilisables par <code>/embed</code>, les annonces et le panel, avec aperçu fidèle à Discord.</p></div>
   </div>
   <div class="page-actions"><a class="btn btn-primary" href="<%= b %>/new"><%- icon('plus', { size: 16 }) %>Nouveau template</a></div>
 </header>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Embeds est désactivé : la commande <code>/embed</code> ne répond pas, mais les templates restent utilisables ici. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Embeds est désactivé : la commande <code>/embed</code> ne répond pas, mais les templates restent utilisables ici. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer le module</a></span></div><% } %>
 
 <details class="card card-collapsible mb-5" <%= templates.length ? '' : 'open' %>>
   <summary class="card-collapsible-head"><span class="row"><%- icon('upload', { size: 16 }) %><strong>Importer un JSON</strong></span><span class="text-xs text-3">Discohook, export du panel, message { content, embeds, buttons }</span></summary>

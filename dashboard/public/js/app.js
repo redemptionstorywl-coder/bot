@@ -1,5 +1,5 @@
 /* Redemption Story Studio — client du dashboard (vanilla, sans dépendance, CSP self-only).
- * Expose window.UI : { $, $$, api, toast, paint, enhance, onEnhance, guildData, previewContext, sortable, confirm, markClean, icon }.
+ * Expose window.UI : { $, $$, api, toast, paint, enhance, onEnhance, guildData, previewContext, sortable, confirm, markClean, icon, setTheme }.
  * Composants déclaratifs (attributs data-*) : voir dashboard/README.md. */
 (function () {
   'use strict';
@@ -131,7 +131,36 @@
       var h = Math.max(0, Math.min(100, parseFloat(el.getAttribute('data-h')) || 0));
       requestAnimationFrame(function () { el.style.height = h + '%'; });
     });
+    // Positionnement des étiquettes de graphiques (pourcentages calculés côté serveur)
+    $$('[data-left]', root).forEach(function (el) { el.style.left = Math.max(0, Math.min(100, parseFloat(el.getAttribute('data-left')) || 0)) + '%'; });
+    $$('[data-top]', root).forEach(function (el) { el.style.top = Math.max(0, Math.min(100, parseFloat(el.getAttribute('data-top')) || 0)) + '%'; });
   }
+
+  // ───── Thème (sombre / clair / système), mémorisé dans localStorage ─────
+  var THEME_KEY = 'rs-theme';
+  function currentTheme() {
+    var t = null;
+    try { t = window.localStorage.getItem(THEME_KEY); } catch (e) { t = null; }
+    return t === 'light' || t === 'dark' ? t : 'system';
+  }
+  function setTheme(choice) {
+    var html = document.documentElement;
+    if (choice === 'light' || choice === 'dark') html.setAttribute('data-theme', choice); else html.removeAttribute('data-theme');
+    try { if (choice === 'light' || choice === 'dark') window.localStorage.setItem(THEME_KEY, choice); else window.localStorage.removeItem(THEME_KEY); } catch (e) { /* stockage indisponible : choix limité à cette page */ }
+    syncThemeButtons();
+  }
+  function syncThemeButtons() {
+    var t = currentTheme();
+    if (document.documentElement.hasAttribute('data-theme')) t = document.documentElement.getAttribute('data-theme');
+    $$('[data-theme-set]').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-theme-set') === t ? 'true' : 'false'); });
+  }
+  on(document, 'click', function (e) {
+    var b = e.target.closest('[data-theme-set]');
+    if (!b) return;
+    setTheme(b.getAttribute('data-theme-set'));
+    toast({ dark: 'Thème sombre activé.', light: 'Thème clair activé.', system: 'Le thème suit maintenant votre système.' }[b.getAttribute('data-theme-set')] || 'Thème modifié.', 'success', 1800);
+  });
+  syncThemeButtons();
 
   // ───── Amélioration progressive (pickers, etc.) ─────
   var enhancers = [];
@@ -237,6 +266,31 @@
   }
   openHashDetails();
   on(window, 'hashchange', openHashDetails);
+
+  // ───── Sommaire collant (.toc a[href^="#"]) : section active au défilement ─────
+  $$('[data-toc]').forEach(function (toc) {
+    var links = $$('a[href^="#"]', toc);
+    var targets = links.map(function (a) { return document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1))); });
+    function spy() {
+      var y = window.scrollY + (window.innerHeight * 0.25) + 60;
+      var current = 0;
+      targets.forEach(function (t, i) { if (t && t.getBoundingClientRect().top + window.scrollY <= y) current = i; });
+      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) current = targets.length - 1;
+      links.forEach(function (a, i) { a.classList.toggle('is-active', i === current); if (i === current) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+      var activeLink = links[current];
+      if (activeLink && toc.scrollWidth > toc.clientWidth) toc.scrollLeft = Math.max(0, activeLink.offsetLeft - 24);
+    }
+    var ticking = false;
+    on(window, 'scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(function () { ticking = false; spy(); }); } }, { passive: true });
+    spy();
+  });
+  // Section ciblée par le serveur (ex. ?tab=antiraid sur une page à sections) : défilement à l'arrivée
+  (function () {
+    var target = body.getAttribute('data-scroll-to') || ($('[data-scroll-to]') || { getAttribute: function () { return null; } }).getAttribute('data-scroll-to');
+    if (!target || location.hash) return;
+    var el = document.getElementById(target);
+    if (el) requestAnimationFrame(function () { el.scrollIntoView({ block: 'start' }); });
+  })();
 
   // ───── Insertion de variables ([data-insert-target] > [data-insert]) ─────
   $$('[data-insert-target]').forEach(function (group) {
@@ -354,12 +408,26 @@
     var primary = opts.variant === 'primary';
     btn.className = 'btn ' + (primary ? 'btn-primary' : 'btn-danger');
     $('[data-modal-icon]', modal).classList.toggle('is-accent', primary);
+    var typed = $('[data-modal-typed]', modal);
+    var typedInput = typed ? $('input', typed) : null;
+    var expected = opts.type || '';
+    if (typed && typedInput) {
+      typed.hidden = !expected;
+      typedInput.value = '';
+      var hintEl = $('[data-modal-typed-word]', typed);
+      if (hintEl) hintEl.textContent = expected;
+      btn.disabled = Boolean(expected);
+      typedInput.oninput = function () { btn.disabled = typedInput.value.trim() !== expected; };
+    }
     pendingConfirm = onConfirm;
     modal.hidden = false;
-    btn.focus();
+    if (expected && typedInput) typedInput.focus(); else btn.focus();
   }
+  var lastTyped = '';
   function closeModal(confirmed) {
     if (!modal || modal.hidden) return;
+    var typedField = $('[data-modal-typed] input', modal);
+    lastTyped = typedField ? typedField.value.trim() : '';
     modal.hidden = true;
     var fn = pendingConfirm; pendingConfirm = null;
     if (lastFocus && lastFocus.focus) lastFocus.focus();
@@ -369,15 +437,16 @@
     $$('[data-modal-cancel]', modal).forEach(function (b) { on(b, 'click', function () { closeModal(false); }); });
     on($('[data-modal-confirm]', modal), 'click', function () { closeModal(true); });
     on(modal, 'keydown', function (e) {
+      if (e.key === 'Enter' && e.target.matches && e.target.matches('[data-modal-typed] input')) { e.preventDefault(); var cb = $('[data-modal-confirm]', modal); if (!cb.disabled) closeModal(true); return; }
       if (e.key !== 'Tab') return;
-      var f = $$('button', modal).filter(function (b) { return !b.hidden; });
+      var f = $$('button, input', modal).filter(function (b) { return !b.hidden && !b.disabled && b.offsetParent !== null; });
       var first = f[0], last = f[f.length - 1];
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
       else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
     });
   }
   function confirmOpts(el) {
-    return { text: el.getAttribute('data-confirm') || 'Confirmer cette action ?', title: el.getAttribute('data-confirm-title'), label: el.getAttribute('data-confirm-label'), variant: el.getAttribute('data-confirm-variant') };
+    return { text: el.getAttribute('data-confirm') || 'Confirmer cette action ?', title: el.getAttribute('data-confirm-title'), label: el.getAttribute('data-confirm-label'), variant: el.getAttribute('data-confirm-variant'), type: el.getAttribute('data-confirm-type') };
   }
   on(document, 'click', function (e) {
     var el = e.target.closest('[data-confirm]');
@@ -385,6 +454,8 @@
     e.preventDefault();
     openModal(confirmOpts(el), function () {
       el.setAttribute('data-confirmed', '1');
+      // Confirmation tapée (data-confirm-type) : recopiée dans le champ [data-confirm-target] du formulaire pour la vérification serveur.
+      if (el.hasAttribute('data-confirm-type') && el.form) { var target = el.form.querySelector('[data-confirm-target]'); if (target) target.value = lastTyped; }
       if (el.tagName === 'A') { window.location.href = el.href; return; }
       if (el.form && el.type === 'submit') { if (el.form.requestSubmit) el.form.requestSubmit(el); else el.form.submit(); }
       else el.click();
@@ -396,7 +467,11 @@
     if (form.matches && form.matches('form[data-confirm]') && !form.hasAttribute('data-confirmed')) {
       e.preventDefault();
       var submitter = e.submitter;
-      openModal(confirmOpts(form), function () { form.setAttribute('data-confirmed', '1'); if (form.requestSubmit) form.requestSubmit(submitter || undefined); else form.submit(); });
+      openModal(confirmOpts(form), function () {
+        form.setAttribute('data-confirmed', '1');
+        if (form.hasAttribute('data-confirm-type')) { var target = form.querySelector('[data-confirm-target]'); if (target) target.value = lastTyped; }
+        if (form.requestSubmit) form.requestSubmit(submitter || undefined); else form.submit();
+      });
     }
   }, true);
   on(document, 'keydown', function (e) { if (e.key === 'Escape') { closeModal(false); closeDropdowns(null); setSidebar(false); } });
@@ -650,7 +725,7 @@
   // ───── API publique ─────
   window.api = api;
   window.toast = toast;
-  window.UI = { $: $, $$: $$, api: api, toast: toast, paint: paint, enhance: enhance, onEnhance: onEnhance, guildData: guildData, previewContext: previewContext, sortable: sortable, confirm: openModal, markClean: markClean, icon: icon };
+  window.UI = { $: $, $$: $$, api: api, toast: toast, paint: paint, enhance: enhance, onEnhance: onEnhance, guildData: guildData, previewContext: previewContext, sortable: sortable, confirm: openModal, markClean: markClean, icon: icon, setTheme: function (t) { setTheme(t); toast({ dark: 'Thème sombre activé.', light: 'Thème clair activé.', system: 'Le thème suit maintenant votre système.' }[t] || 'Thème modifié.', 'success', 1800); } };
 
   paint(document);
   // Après exécution de tous les scripts différés (pickers, listes, éditeurs) : instantané des formulaires

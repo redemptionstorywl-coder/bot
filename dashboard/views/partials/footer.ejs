@@ -1,6 +1,4 @@
 <footer class="site-footer">
   <span>© <%= new Date().getFullYear() %> <%= brand.name %></span>
-  <span aria-hidden="true">·</span>
-  <span>Dashboard du bot Discord</span>
-  <% if (botUser) { %><span aria-hidden="true">·</span><span><%= botUser.username %> <%= botReady ? 'en ligne' : 'hors ligne' %></span><% } %>
+  <span class="site-footer-meta">Dashboard du bot Discord<% if (botUser) { %> · <span class="row"><span class="dot <%= botReady ? 'dot-success' : 'dot-warning' %>" aria-hidden="true"></span><%= botUser.username %> <%= botReady ? 'en ligne' : 'hors ligne' %></span><% } %></span>
 </footer>

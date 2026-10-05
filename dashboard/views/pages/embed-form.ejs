@@ -2,8 +2,7 @@
 <a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Embeds</a>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('layout-template') %></span>
-    <div>
+    <div><%- include('../partials/eyebrow') %>
       <h1 class="page-title"><%= t ? t.name : 'Nouveau template' %></h1>
       <p class="page-subtitle"><%= t ? (t.description ? t.description + ' · ' : '') + 'modifié ' + fmt.relative(t.updatedAt) : "Composez l'embed : l'aperçu se met à jour en direct." %></p>
     </div>

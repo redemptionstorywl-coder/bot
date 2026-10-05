@@ -34,7 +34,7 @@ export const MODULE_INFO: Record<ModuleKey, Omit<ModuleInfo, 'key'>> = {
   fivem: { label: 'FiveM', icon: 'gamepad', description: 'Statut des serveurs, joueurs et synchronisation Discord.', group: 'game', path: 'fivem' },
   battleRoyale: { label: 'Battle Royale', icon: 'swords', description: 'Classements, saisons et Battle Pass.', group: 'game', path: 'battle-royale' },
   school: { label: 'School RP', icon: 'graduation-cap', description: 'Élèves, classes, maisons et clubs.', group: 'game', path: 'school' },
-  shop: { label: 'Shop', icon: 'shopping-bag', description: 'Boutique, commandes et intégration Tebex.', group: 'game', path: 'shop' },
+  shop: { label: 'Boutique', icon: 'shopping-bag', description: 'Produits, commandes et intégration Tebex.', group: 'game', path: 'shop' },
 };
 
 export const MODULE_GROUP_LABELS: Record<ModuleGroup, string> = {
@@ -63,7 +63,7 @@ export const GUILD_KIND_INFO: Record<string, { label: string; icon: string; desc
   PRISON: { label: 'Prison RP (WL)', icon: 'lock', description: 'Whitelist et FiveM activés par défaut.' },
   BATTLE_ROYALE: { label: 'Battle Royale', icon: 'swords', description: 'Classements, saisons, Battle Pass et FiveM.' },
   SCHOOL: { label: 'School RP', icon: 'graduation-cap', description: 'Élèves, classes, maisons, clubs, whitelist et FiveM.' },
-  SHOP: { label: 'Shop', icon: 'shopping-bag', description: 'Boutique, commandes et intégration Tebex.' },
+  SHOP: { label: 'Boutique', icon: 'shopping-bag', description: 'Produits, commandes et intégration Tebex.' },
 };
 
 /** Fuseaux horaires proposés (saisie libre possible). */

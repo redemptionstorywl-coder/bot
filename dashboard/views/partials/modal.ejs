@@ -1,10 +1,15 @@
-<%# Modale de confirmation (boutons / formulaires avec data-confirm, data-confirm-title, data-confirm-label, data-confirm-variant="primary"). %>
+<%# Modale de confirmation (éléments avec data-confirm, data-confirm-title, data-confirm-label, data-confirm-variant="primary",
+    data-confirm-type="MOT" pour exiger la saisie d'un mot avant de confirmer). %>
 <div class="modal" id="confirm-modal" hidden role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-text">
   <div class="modal-backdrop" data-modal-cancel></div>
   <div class="modal-card">
     <div class="modal-icon" data-modal-icon><%- icon('alert-triangle') %></div>
     <h2 class="modal-title" id="confirm-title" data-modal-title>Confirmer l'action</h2>
     <p class="modal-text" id="confirm-text" data-modal-text>Cette action est irréversible.</p>
+    <div class="field modal-typed" data-modal-typed hidden>
+      <label for="confirm-typed">Pour confirmer, tapez <code data-modal-typed-word></code></label>
+      <input id="confirm-typed" class="input input-mono" type="text" autocomplete="off" spellcheck="false">
+    </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-ghost" data-modal-cancel>Annuler</button>
       <button type="button" class="btn btn-danger" data-modal-confirm>Confirmer</button>

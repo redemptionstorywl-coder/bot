@@ -193,7 +193,7 @@ export function createFiveMRouter(client: RedemptionClient): Router {
       const baseQuery = new URLSearchParams({ tab: 'players', ...(query.filter !== 'all' ? { filter: query.filter } : {}), ...(query.q ? { q: query.q } : {}) }).toString();
       render(res, 'fivem', {
         ...common,
-        title: 'FiveM',
+        title: 'Serveurs FiveM',
         crumbs: query.tab === 'players' ? [{ label: 'Joueurs' }] : query.tab === 'integration' ? [{ label: 'Intégration' }] : [],
         tab: query.tab,
         servers: servers.map(toServerView),

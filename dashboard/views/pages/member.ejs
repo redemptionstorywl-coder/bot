@@ -78,7 +78,7 @@
           <% for (const s of sanctions) { const mod = moderators[s.moderatorId]; %>
             <tr>
               <td class="cell-primary"><strong>#<%= s.caseNumber %></strong></td>
-              <td data-label="Type"><span class="badge <%= ['BAN','TEMPBAN','KICK','TIMEOUT','MUTE','WARN'].includes(s.type) ? 'badge-danger' : 'badge-muted' %>"><%= sanctionLabels[s.type] || s.type %></span></td>
+              <td data-label="Type"><span class="badge <%= ['BAN','TEMPBAN','KICK'].includes(s.type) ? 'badge-danger' : ['TIMEOUT','MUTE','WARN'].includes(s.type) ? 'badge-warning' : 'badge-muted' %>"><%= sanctionLabels[s.type] || s.type %></span></td>
               <td data-label="Raison"><%= s.reason || '—' %><% if (s.duration) { %> <span class="text-3">(<%= fmt.duration(s.duration) %>)</span><% } %></td>
               <td data-label="Modérateur"><%= mod ? mod.name : s.moderatorId %></td>
               <td data-label="Date" class="nowrap" title="<%= fmt.dateTime(s.createdAt) %>"><%= fmt.relative(s.createdAt) %></td>

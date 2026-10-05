@@ -1,8 +1,7 @@
 <% const base = `/guilds/${guild.id}`; %>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('users') %></span>
-    <div><h1 class="page-title">Membres</h1><p class="page-subtitle"><%= fmt.number(total) %> membres sur le serveur. Recherchez par pseudo, nom d'utilisateur ou ID.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Membres</h1><p class="page-subtitle"><%= fmt.number(total) %> membres sur le serveur. Recherchez par pseudo, nom d'utilisateur ou ID.</p></div>
   </div>
 </header>
 

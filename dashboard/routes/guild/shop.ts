@@ -7,6 +7,7 @@ import { shopService, canTransition, formatPrice, buildProductAnnouncement, buil
 import { serviceMessagePreview, renderPreviewHtml } from '../../lib/servicePreview';
 import { env } from '../../../src/config/env';
 import { render } from '../../lib/render';
+import { columnChart } from '../../lib/charts';
 import { wrap } from '../../lib/async';
 import { flash } from '../../lib/flash';
 import { HttpError } from '../../lib/errors';
@@ -157,7 +158,7 @@ export function createShopRouter(client: RedemptionClient): Router {
         : null;
       const orderPreview = selectedOrder ? renderPreviewHtml(res, { ...serviceMessagePreview(buildOrderSummary(selectedOrder, lang, config.brandColor)), ephemeral: true }) : null;
       render(res, 'shop', {
-        title: 'Shop',
+        title: 'Boutique',
         page: 'shop',
         crumbs: query.tab === 'products' ? (editing ? [{ label: editing.name }] : []) : [{ label: TAB_LABELS[query.tab] }],
         scripts: query.tab === 'products' ? ['live-preview'] : [],
@@ -185,6 +186,7 @@ export function createShopRouter(client: RedemptionClient): Router {
           days: days.map((d) => ({ ...d, pct: Math.round((d.total / maxDay) * 1000) / 10, totalLabel: formatPrice(d.total, currency) })),
           period: STATS_DAYS,
           currency,
+          revenueChart: columnChart('chart-revenue', { keys: days.map((d) => d.key), short: days.map((d) => d.label), long: days.map((d) => d.label) }, { key: 'revenue', label: "Chiffre d'affaires", slot: 1, values: days.map((d) => Math.round(d.total * 100) / 100) }, { format: (v) => { try { return new Intl.NumberFormat('fr-FR', { style: 'currency', currency, maximumFractionDigits: 0 }).format(v); } catch { return `${v} ${currency}`; } }, currency }),
         },
         webhook: {
           url: `${dashboardUrl}/api/shop/tebex`,

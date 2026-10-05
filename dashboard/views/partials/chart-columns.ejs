@@ -1,0 +1,40 @@
+<%#
+  Colonnes d'une seule série — modèle lib/charts.ts columnChart(). Pas de légende : le titre nomme la série.
+  Attend : chart (ColumnChartModel), title, sub, emptyText, figure ({ label, value } déjà mis en forme), valueFormat (fonction v → texte, optionnelle).
+%>
+<% const _c = chart; const _f = typeof valueFormat === 'function' ? valueFormat : (v) => fmt.number(v); %>
+<figure class="chart" id="<%= _c.id %>" data-chart="columns">
+  <div class="chart-head">
+    <div>
+      <h3 class="chart-title"><%= title %></h3>
+      <p class="chart-sub"><%= sub %></p>
+    </div>
+    <% if (typeof figure === 'object' && figure) { %><dl class="chart-figures"><div><dt><%= figure.label %></dt><dd><%= figure.value %></dd></div></dl><% } %>
+  </div>
+  <% if (_c.empty) { %>
+    <div class="chart-empty"><%= emptyText %></div>
+  <% } else { %>
+  <div class="chart-frame">
+    <div class="chart-y" aria-hidden="true"><% for (const t of _c.yTicks) { %><span><%= t %></span><% } %></div>
+    <div class="chart-plot" tabindex="0" role="img" aria-label="<%= title %>. Détail par jour dans le tableau." data-chart-plot data-n="<%= _c.n %>" data-mode="bars">
+      <svg viewBox="0 0 600 200" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <% _c.gridY.forEach((y, i) => { %><line class="<%= i === 0 ? 'chart-baseline' : 'chart-gridline' %>" x1="0" x2="600" y1="<%= y %>" y2="<%= y %>" vector-effect="non-scaling-stroke"/><% }) %>
+        <% for (const b of _c.bars) { %><path class="chart-bar s<%= b.slot %>" d="<%= b.d %>" data-i="<%= b.i %>"/><% } %>
+      </svg>
+      <div class="chart-tip" hidden data-chart-tip></div>
+    </div>
+    <div class="chart-x" aria-hidden="true"><% for (const l of _c.xLabels) { %><span data-left="<%= l.left %>" class="<%= l.align === 'start' ? 'is-start' : l.align === 'end' ? 'is-end' : '' %><%= l.minor ? ' is-minor' : '' %>"><%= l.text %></span><% } %></div>
+  </div>
+  <div class="chart-foot">
+    <span></span>
+    <details class="chart-table">
+      <summary><%- icon('table', { size: 14 }) %>Voir les données</summary>
+      <div class="table-wrap"><table class="table table-compact">
+        <thead><tr><th>Jour</th><th class="num"><%= _c.series.label %></th></tr></thead>
+        <tbody><% for (const d of [..._c.days].reverse()) { if (!d.value) continue; %><tr><td><%= d.label %></td><td class="num"><%= _f(d.value) %></td></tr><% } %></tbody>
+      </table></div>
+    </details>
+  </div>
+  <script type="application/json" data-chart-data><%- jsonScript(_c.tooltip) %></script>
+  <% } %>
+</figure>

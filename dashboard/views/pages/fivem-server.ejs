@@ -9,8 +9,7 @@
 <a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Serveurs FiveM</a>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('server') %></span>
-    <div>
+    <div><%- include('../partials/eyebrow') %>
       <h1 class="page-title row-wrap"><span><%= s.name %></span><span class="badge <%= s.state === 'online' ? 'badge-success' : s.state === 'maintenance' ? 'badge-warning' : 'badge-danger' %>"><span class="dot <%= stateDot[s.state] %>"></span><%= s.stateLabel %></span></h1>
       <p class="page-subtitle"><code><%= s.key %></code> · <%= s.frameworkLabel %><%= s.version ? ' · v' + s.version : '' %> · dernier signal <%= s.lastSeenAt ? fmt.relative(s.lastSeenAt) : 'jamais' %></p>
     </div>

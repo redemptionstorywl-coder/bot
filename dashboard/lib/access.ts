@@ -72,3 +72,15 @@ export const DISCORD_ID_REGEX = /^\d{15,22}$/;
 export function isDiscordId(value: unknown): value is string {
   return typeof value === 'string' && DISCORD_ID_REGEX.test(value);
 }
+
+/**
+ * Actions sensibles (ex. débannir tout le monde) : propriétaire du bot, propriétaire du serveur
+ * ou permission Administrator — ManageGuild seul ne suffit pas.
+ */
+export function isGuildAdmin(sessionGuilds: readonly SessionGuild[] | undefined, guildId: string, userId: string, ownerIds: readonly string[]): boolean {
+  if (!guildId || !userId) return false;
+  if (ownerIds.includes(userId)) return true;
+  const guild = sessionGuilds?.find((g) => g.id === guildId);
+  if (!guild) return false;
+  return guild.owner || hasPermission(parsePermissions(guild.permissions), PERMISSION_ADMINISTRATOR);
+}

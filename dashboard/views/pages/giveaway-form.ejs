@@ -2,11 +2,10 @@
 <a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Giveaways</a>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('gift') %></span>
-    <div><h1 class="page-title">Nouveau giveaway</h1><p class="page-subtitle">Publié immédiatement avec un bouton de participation ; le tirage est automatique à la fin.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Nouveau giveaway</h1><p class="page-subtitle">Publié immédiatement avec un bouton de participation ; le tirage est automatique à la fin.</p></div>
   </div>
 </header>
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Giveaways est désactivé : les participations ne seront pas prises en compte. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Giveaways est désactivé : les participations ne seront pas prises en compte. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer le module</a></span></div><% } %>
 <% if (!botReady) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Bot hors ligne : le lancement est indisponible pour le moment.</span></div><% } %>
 
 <div class="split" data-no-live-reload>

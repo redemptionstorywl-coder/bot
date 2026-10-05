@@ -2,8 +2,8 @@ import type { RequestHandler } from 'express';
 import type { RedemptionClient } from '../../src/core/Client';
 import { env } from '../../src/config/env';
 import { BRAND, LANGUAGES, MODULE_LABELS, GUILD_KIND_LABELS, LOG_CATEGORY_LABELS, TEMPLATE_VARIABLES, EMBED_COLOR_PALETTE } from '../../src/config/constants';
-import { buildSidebar, buildBreadcrumbs } from '../lib/navigation';
-import { MODULE_INFO } from '../lib/modules';
+import { buildSidebar, buildBreadcrumbs, navGroupLabel, paletteEntries } from '../lib/navigation';
+import { MODULE_INFO, GUILD_KIND_INFO } from '../lib/modules';
 import { fmt, avatarUrl, guildIconUrl } from '../lib/format';
 import { icon } from '../lib/icons';
 import { discordPreview, type PreviewContext } from '../lib/discordPreview';
@@ -25,7 +25,7 @@ export function jsonScript(value: unknown): string {
 /**
  * Variables disponibles dans toutes les vues :
  * user, isOwner, brand, fmt, icon(name, opts), avatarUrl, guildIconUrl, flash, csrfToken, switcherGuilds, botReady, botUser,
- * buildSidebar / buildBreadcrumbs (layout), discordPreview + previewContext() (aperçus Discord), jsonScript(value),
+ * buildSidebar / buildBreadcrumbs / navGroupLabel / paletteEntries (layout, palette Ctrl+K), discordPreview + previewContext() (aperçus Discord), jsonScript(value),
  * constants (MODULE_LABELS, MODULE_INFO, GUILD_KIND_LABELS, LOG_CATEGORY_LABELS, TEMPLATE_VARIABLES, EMBED_COLOR_PALETTE, LANGUAGES).
  */
 export function viewLocals(client: RedemptionClient): RequestHandler {
@@ -49,6 +49,10 @@ export function viewLocals(client: RedemptionClient): RequestHandler {
       brand: { name: BRAND.name, footer: BRAND.footer, primary: fmt.hex(BRAND.colors.primary) },
       buildSidebar,
       buildBreadcrumbs,
+      navGroupLabel,
+      /** Libellé court du type de serveur (sans emoji). */
+      kindLabel: (kind: string | null | undefined) => (kind && GUILD_KIND_INFO[kind] ? GUILD_KIND_INFO[kind]!.label : 'Générique'),
+      paletteEntries,
       fmt,
       icon,
       avatarUrl,

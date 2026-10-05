@@ -1,12 +1,11 @@
 <% const base = `/guilds/${guild.id}`; %>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('scroll-text') %></span>
-    <div><h1 class="page-title">Logs</h1><p class="page-subtitle">Historique des événements du serveur et salons Discord où le bot les publie.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Logs</h1><p class="page-subtitle">Historique des événements du serveur et salons Discord où le bot les publie.</p></div>
   </div>
 </header>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Logs est désactivé : rien n'est publié dans Discord (l'historique reste enregistré). <a class="link" href="<%= base %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Logs est désactivé : rien n'est publié dans Discord (l'historique reste enregistré). <a class="link" href="<%= base %>/settings#modules">Activer le module</a></span></div><% } %>
 
 <%- include('../partials/tabs', { active: tab, label: 'Sections des logs', tabs: [
   { key: 'history', label: 'Historique', href: base + '/logs', icon: 'list', count: fmt.number(pagination.total) },

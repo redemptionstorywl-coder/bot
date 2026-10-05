@@ -2,11 +2,9 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { GuildKind, type Prisma } from '@prisma/client';
 import type { RedemptionClient } from '../../../src/core/Client';
-import { prisma } from '../../../src/database/client';
 import { guildConfigService } from '../../../src/services/GuildConfigService';
 import { loggingService } from '../../../src/services/LoggingService';
-import { invalidateCommandPermissions } from '../../../src/events/interactionCreate';
-import { LANGUAGE_CODES, MODULE_LABELS, LANGUAGES } from '../../../src/config/constants';
+import { LANGUAGE_CODES, LANGUAGES } from '../../../src/config/constants';
 import { groupedModules, GUILD_KIND_INFO, MODULE_INFO, timezoneList } from '../../lib/modules';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
@@ -28,19 +26,7 @@ const settingsBody = z.object({
   timezone: z.string().trim().min(1).max(64).default('Europe/Paris'),
 });
 
-const commandsBody = z.object({
-  perms: z
-    .preprocess(
-      (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {}),
-      z.record(
-        z.string().regex(/^[\w-]{1,64}$/),
-        z.object({ enabled: z.union([z.string(), z.array(z.string())]).optional(), roleIds: discordIdArray }).passthrough(),
-      ),
-    )
-    .default({}),
-});
-
-/** GET/POST /guilds/:guildId/settings (+ modules + permissions de commandes). */
+/** GET/POST /guilds/:guildId/settings (page unique : type, langue, apparence, équipe, modules). Les permissions de commandes sont sur /permissions. */
 export function createSettingsRouter(client: RedemptionClient): Router {
   const router = Router({ mergeParams: true });
 
@@ -49,35 +35,22 @@ export function createSettingsRouter(client: RedemptionClient): Router {
     wrap(async (req, res) => {
       const guild = res.locals.guild!;
       const config = res.locals.config!;
-      const permRows = await prisma.commandPermission.findMany({ where: { guildId: guild.id } });
-      const permMap = new Map(permRows.map((r) => [r.commandName, { roleIds: Array.isArray(r.roleIds) ? (r.roleIds as string[]) : [], enabled: r.enabled }]));
-      const commands = [...client.commands.values()]
-        .map((cmd) => ({
-          name: cmd.data.name,
-          description: cmd.data.description,
-          category: cmd.category ?? 'autre',
-          module: cmd.module ?? null,
-          moduleLabel: cmd.module ? MODULE_INFO[cmd.module]?.label ?? MODULE_LABELS[cmd.module] : null,
-          internal: cmd.permissions?.internal ?? 'everyone',
-          enabled: permMap.get(cmd.data.name)?.enabled ?? true,
-          roleIds: permMap.get(cmd.data.name)?.roleIds ?? [],
-        }))
-        .sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
-      const tab = typeof req.query.tab === 'string' && ['general', 'modules', 'commands'].includes(req.query.tab) ? req.query.tab : 'general';
+      const tab = typeof req.query.tab === 'string' ? req.query.tab : '';
+      // Ancien onglet « Permissions » : la page dédiée le remplace.
+      if (tab === 'commands') return res.redirect(302, `/guilds/${guild.id}/permissions`);
+      const scrollTo = tab === 'modules' ? 'modules' : null;
       render(res, 'settings', {
         title: 'Paramètres',
         page: 'settings',
-        tab,
-        crumbs: tab === 'general' ? [] : [{ label: tab === 'modules' ? 'Modules' : 'Permissions' }],
+        scrollTo,
         kinds: Object.entries(GUILD_KIND_INFO).map(([value, info]) => ({ value, ...info })),
         languages: LANGUAGES,
         moduleGroups: groupedModules(config.modules),
         modulesActive: Object.values(config.modules).filter(Boolean).length,
         modulesTotal: Object.keys(MODULE_INFO).length,
-        commands,
-        timezones: tab === 'general' ? timezoneList() : [],
+        timezones: timezoneList(),
         settings: config.raw.settings,
-        scripts: tab === 'general' ? ['settings'] : [],
+        scripts: ['settings'],
       });
     }),
   );
@@ -108,38 +81,6 @@ export function createSettingsRouter(client: RedemptionClient): Router {
   );
 
   router.post('/modules/:key', toggleModuleHandler(client));
-
-  router.post(
-    '/commands',
-    validate({ body: commandsBody }),
-    wrap(async (req, res) => {
-      const guild = res.locals.guild!;
-      const { body } = valid<z.infer<typeof commandsBody>>(req);
-      const known = new Set(client.commands.keys());
-      let changed = 0;
-      for (const name of known) {
-        const entry = body.perms[name];
-        const enabled = entry ? entry.enabled !== undefined : false;
-        const roleIds = entry ? [...new Set(entry.roleIds)] : [];
-        const isDefault = enabled && roleIds.length === 0;
-        if (isDefault) {
-          const { count } = await prisma.commandPermission.deleteMany({ where: { guildId: guild.id, commandName: name } });
-          changed += count;
-        } else {
-          await prisma.commandPermission.upsert({
-            where: { guildId_commandName: { guildId: guild.id, commandName: name } },
-            create: { guildId: guild.id, commandName: name, roleIds, enabled },
-            update: { roleIds, enabled },
-          });
-          changed++;
-        }
-      }
-      invalidateCommandPermissions(guild.id);
-      void loggingService.log({ guildId: guild.id, category: 'SYSTEM', action: 'commands.permissions', title: 'Permissions des commandes mises à jour', actorId: req.session.user?.id ?? null, data: { changed } });
-      flash(req, 'success', 'Permissions des commandes enregistrées.');
-      res.redirect(`/guilds/${guild.id}/settings?tab=commands`);
-    }),
-  );
 
   return router;
 }

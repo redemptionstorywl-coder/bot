@@ -2,8 +2,7 @@
 <a class="back-link" href="<%= b %>?tab=polls"><%- icon('arrow-left', { size: 16 }) %>Sondages</a>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('bar-chart') %></span>
-    <div><h1 class="page-title">Nouveau sondage</h1><p class="page-subtitle">Publié immédiatement ; les résultats se mettent à jour en direct sur Discord et ici.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Nouveau sondage</h1><p class="page-subtitle">Publié immédiatement ; les résultats se mettent à jour en direct sur Discord et ici.</p></div>
   </div>
 </header>
 <% if (!botReady) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Bot hors ligne : la publication est indisponible pour le moment.</span></div><% } %>

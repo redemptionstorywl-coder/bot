@@ -6,8 +6,7 @@
 %>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('hand') %></span>
-    <div><h1 class="page-title">Bienvenue</h1><p class="page-subtitle">Messages d'arrivée et de départ, image générée et message privé.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Bienvenue et départs</h1><p class="page-subtitle">Ce que voient les membres quand ils arrivent ou quittent le serveur : message, image générée et message privé.</p></div>
   </div>
 </header>
 
@@ -17,7 +16,7 @@
 ] }) %>
 
 <% if (tab === 'welcome') { %>
-<% if (!modules.welcome) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Bienvenue est désactivé : aucun message ne sera envoyé. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer</a></span></div><% } %>
+<% if (!modules.welcome) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Bienvenue est désactivé : aucun message ne sera envoyé. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer</a></span></div><% } %>
 <div class="split" data-no-live-reload>
     <form method="post" action="<%= base %>" class="form stack" id="welcome-form" data-dirty-form data-welcome-kind="welcome">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -91,7 +90,7 @@
     </aside>
 </div>
 <% } else { %>
-<% if (!modules.leave) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Départ est désactivé : aucun message ne sera envoyé. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer</a></span></div><% } %>
+<% if (!modules.leave) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Départ est désactivé : aucun message ne sera envoyé. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer</a></span></div><% } %>
 <div class="split" data-no-live-reload>
     <form method="post" action="<%= base %>/leave" class="form stack" id="welcome-form" data-dirty-form data-welcome-kind="leave">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">

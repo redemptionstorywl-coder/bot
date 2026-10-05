@@ -5,12 +5,11 @@
 %>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('clipboard-check') %></span>
-    <div><h1 class="page-title row-wrap"><span>Whitelist</span><span class="badge <%= settings.enabled ? 'badge-success' : 'badge-muted' %>"><span class="dot <%= settings.enabled ? 'dot-success' : '' %>"></span><%= settings.enabled ? 'Candidatures ouvertes' : 'Candidatures fermées' %></span></h1><p class="page-subtitle">Candidatures via <code>/whitelist</code>, décisions du staff, identifiants FiveM et formulaire.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title row-wrap"><span>Whitelist</span><span class="badge <%= settings.enabled ? 'badge-success' : 'badge-muted' %>"><span class="dot <%= settings.enabled ? 'dot-success' : '' %>"></span><%= settings.enabled ? 'Candidatures ouvertes' : 'Candidatures fermées' %></span></h1><p class="page-subtitle">Candidatures via <code>/whitelist</code>, décisions du staff, identifiants FiveM et formulaire.</p></div>
   </div>
 </header>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Whitelist est désactivé : la commande <code>/whitelist</code> ne répond pas. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Whitelist est désactivé : la commande <code>/whitelist</code> ne répond pas. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer le module</a></span></div><% } %>
 
 <%- include('../partials/tabs', { active: tab, label: 'Sections de la whitelist', tabs: [
   { key: 'applications', label: 'Dossiers', href: b, icon: 'inbox', count: counts.PENDING ? counts.PENDING + ' en attente' : null },

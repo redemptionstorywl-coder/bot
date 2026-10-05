@@ -1,0 +1,45 @@
+<%#
+  Colonnes en miroir (deux séries opposées, une seule échelle) — modèle lib/charts.ts mirrorChart().
+  Attend : chart (MirrorChartModel), title, sub (texte), emptyText.
+%>
+<% const _c = chart; const _n = (v) => fmt.number(v); %>
+<figure class="chart" id="<%= _c.id %>" data-chart="mirror">
+  <div class="chart-head">
+    <div>
+      <h3 class="chart-title"><%= title %></h3>
+      <p class="chart-sub"><%= sub %></p>
+    </div>
+    <dl class="chart-figures">
+      <div><dt><span class="chart-key k<%= _c.up.slot %>" aria-hidden="true"></span><%= _c.up.label %></dt><dd><%= _n(_c.totals.up) %></dd></div>
+      <div><dt><span class="chart-key k<%= _c.down.slot %>" aria-hidden="true"></span><%= _c.down.label %></dt><dd><%= _n(_c.totals.down) %></dd></div>
+      <div><dt>Solde</dt><dd><%= _c.totals.net > 0 ? '+' : _c.totals.net < 0 ? '−' : '' %><%= _n(Math.abs(_c.totals.net)) %></dd></div>
+    </dl>
+  </div>
+  <% if (_c.empty) { %>
+    <div class="chart-empty"><%= emptyText %></div>
+  <% } else { %>
+  <div class="chart-frame">
+    <div class="chart-y" aria-hidden="true"><% for (const t of _c.yTicks) { %><span><%= t %></span><% } %></div>
+    <div class="chart-plot" tabindex="0" role="img" aria-label="<%= title %> : <%= _n(_c.totals.up) %> <%= _c.up.label.toLowerCase() %>, <%= _n(_c.totals.down) %> <%= _c.down.label.toLowerCase() %>. Détail par jour dans le tableau." data-chart-plot data-n="<%= _c.n %>" data-mode="bars">
+      <svg viewBox="0 0 600 200" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <% for (const y of _c.gridY) { %><line class="chart-gridline" x1="0" x2="600" y1="<%= y %>" y2="<%= y %>" vector-effect="non-scaling-stroke"/><% } %>
+        <% for (const b of _c.bars) { %><path class="chart-bar s<%= b.slot %>" d="<%= b.d %>" data-i="<%= b.i %>"/><% } %>
+        <line class="chart-baseline" x1="0" x2="600" y1="<%= _c.baselineY %>" y2="<%= _c.baselineY %>" vector-effect="non-scaling-stroke"/>
+      </svg>
+      <div class="chart-tip" hidden data-chart-tip></div>
+    </div>
+    <div class="chart-x" aria-hidden="true"><% for (const l of _c.xLabels) { %><span data-left="<%= l.left %>" class="<%= l.align === 'start' ? 'is-start' : l.align === 'end' ? 'is-end' : '' %><%= l.minor ? ' is-minor' : '' %>"><%= l.text %></span><% } %></div>
+  </div>
+  <div class="chart-foot">
+    <div class="legend" aria-hidden="true"><span><i class="chart-key k<%= _c.up.slot %>"></i><%= _c.up.label %> (au-dessus)</span><span><i class="chart-key k<%= _c.down.slot %>"></i><%= _c.down.label %> (en dessous)</span></div>
+    <details class="chart-table">
+      <summary><%- icon('table', { size: 14 }) %>Voir les données</summary>
+      <div class="table-wrap"><table class="table table-compact">
+        <thead><tr><th>Jour</th><th class="num"><%= _c.up.label %></th><th class="num"><%= _c.down.label %></th></tr></thead>
+        <tbody><% for (const d of [..._c.days].reverse()) { %><tr><td><%= d.label %></td><td class="num"><%= _n(d.up) %></td><td class="num"><%= _n(d.down) %></td></tr><% } %></tbody>
+      </table></div>
+    </details>
+  </div>
+  <script type="application/json" data-chart-data><%- jsonScript(_c.tooltip) %></script>
+  <% } %>
+</figure>

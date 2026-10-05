@@ -13,12 +13,11 @@
 %>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('graduation-cap') %></span>
-    <div><h1 class="page-title">School RP</h1><p class="page-subtitle">Profils des élèves et professeurs, classes, maisons, clubs et candidatures.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">School RP</h1><p class="page-subtitle">Profils des élèves et professeurs, classes, maisons, clubs et candidatures.</p></div>
   </div>
 </header>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module School RP est désactivé : la commande <code>/school</code> ne répond pas. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module School RP est désactivé : la commande <code>/school</code> ne répond pas. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer le module</a></span></div><% } %>
 
 <div class="stat-grid">
   <div class="stat"><span class="stat-label"><%- icon('users', { size: 14 }) %>Élèves</span><span class="stat-value"><%= fmt.number(counts.STUDENT) %></span></div>

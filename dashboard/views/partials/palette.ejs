@@ -1,0 +1,31 @@
+<%#
+  Palette de commandes (Ctrl+K / ⌘K) : pages et réglages du serveur courant, autres serveurs, actions (thème, déconnexion).
+  Données sérialisées pour public/js/palette.js (rendu en textContent, filtrage sans accents).
+%>
+<%
+  const _pal = {
+    entries: guild ? paletteEntries(guild.id) : [],
+    servers: switcherGuilds.filter((g) => !guild || g.id !== guild.id).map((g) => ({ label: g.name, hint: 'Serveur', icon: 'server', href: '/guilds/' + g.id, keywords: 'serveur changer' })),
+    general: [{ label: 'Mes serveurs', hint: 'Compte', icon: 'server', href: '/guilds', keywords: 'liste choisir' }].concat(isOwner ? [{ label: 'Administration globale', hint: 'Compte', icon: 'wrench', href: '/admin', keywords: 'owner locales' }] : []),
+  };
+  // Icônes (jeu interne statique, aucune donnée utilisateur) : SVG prêts à l'emploi pour le script.
+  const _names = new Set(['moon', 'sun', 'monitor', 'log-out', 'arrow-right'].concat(_pal.entries.map((e) => e.icon), _pal.servers.map((e) => e.icon), _pal.general.map((e) => e.icon)));
+  _pal.icons = Object.fromEntries([..._names].map((n) => [n, icon(n, { size: 16 })]));
+%>
+<div class="palette" id="palette" hidden role="dialog" aria-modal="true" aria-label="Aller à une page ou un réglage">
+  <div class="palette-backdrop" data-palette-close></div>
+  <div class="palette-card">
+    <div class="palette-input-row">
+      <%- icon('search') %>
+      <input class="palette-input" id="palette-input" type="text" placeholder="Aller à une page, un réglage ou un serveur…" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list" aria-label="Rechercher">
+      <kbd class="kbd">Échap</kbd>
+    </div>
+    <div class="palette-list" id="palette-list" role="listbox" aria-label="Résultats"></div>
+    <div class="palette-foot" aria-hidden="true">
+      <span><kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd>naviguer</span>
+      <span><kbd class="kbd">Entrée</kbd>ouvrir</span>
+      <span><kbd class="kbd">Ctrl</kbd><kbd class="kbd">K</kbd>ouvrir ou fermer</span>
+    </div>
+  </div>
+</div>
+<script type="application/json" id="palette-data"><%- jsonScript(_pal) %></script>

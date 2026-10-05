@@ -2,8 +2,7 @@
 <a class="back-link" href="<%= base %>?tab=menus"><%- icon('arrow-left', { size: 16 }) %>Menus de rôles</a>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('tags') %></span>
-    <div>
+    <div><%- include('../partials/eyebrow') %>
       <h1 class="page-title"><%= menu ? menu.name : 'Nouveau menu de rôles' %></h1>
       <p class="page-subtitle"><% if (menu && menu.messageId) { %>Publié dans #<%= (guild.textChannels.find((c) => c.id === menu.channelId) || { name: menu.channelId }).name %> · <a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= menu.channelId %>/<%= menu.messageId %>" target="_blank" rel="noopener noreferrer">voir le message</a><% } else { %>Les membres cliquent sur un bouton ou choisissent dans le menu pour obtenir ou retirer un rôle.<% } %></p>
     </div>

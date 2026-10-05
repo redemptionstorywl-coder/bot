@@ -2,8 +2,7 @@
 <a class="back-link" href="<%= b %>?tab=polls"><%- icon('arrow-left', { size: 16 }) %>Sondages</a>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('bar-chart') %></span>
-    <div>
+    <div><%- include('../partials/eyebrow') %>
       <h1 class="page-title row-wrap"><span><%= p.question %></span><span class="badge <%= p.ended ? 'badge-status-ENDED' : 'badge-status-ONGOING' %>"><%= p.ended ? 'Terminé' : 'Ouvert' %></span></h1>
       <p class="page-subtitle">Par <%= names[p.createdById] || p.createdById %> · #<%= channelName %> · <%= p.type === 'YES_NO' ? 'Oui / Non' : 'Options' %><%= p.multiSelect ? ' · plusieurs réponses' : '' %><%= p.anonymous ? ' · anonyme' : '' %><% if (p.endsAt) { %> · <%= p.ended ? 'terminé le' : 'fin' %> <%= p.ended ? fmt.dateTime(p.endsAt) : fmt.relative(p.endsAt) %><% } %></p>
     </div>

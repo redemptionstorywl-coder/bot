@@ -7,6 +7,7 @@ import { createAdminRouter } from './admin';
 import { createApiRouter } from './api';
 import { createGuildDashboardRouter } from './guild/dashboard';
 import { createSettingsRouter } from './guild/settings';
+import { createPermissionsRouter } from './guild/permissions';
 import { createLogsRouter } from './guild/logs';
 import { createMembersRouter } from './guild/members';
 import { createTicketsRouter } from './guild/tickets';
@@ -44,6 +45,7 @@ export function mountRoutes(client: RedemptionClient): Router {
   const guildRouters = [
     createGuildDashboardRouter,
     createSettingsRouter,
+    createPermissionsRouter,
     createLogsRouter,
     createMembersRouter,
     createTicketsRouter,

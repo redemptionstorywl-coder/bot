@@ -12,8 +12,7 @@
 <a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Annonces</a>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('megaphone') %></span>
-    <div>
+    <div><%- include('../partials/eyebrow') %>
       <h1 class="page-title row-wrap"><span><%= a ? a.title : 'Nouvelle annonce' %></span><% if (a) { %><span class="badge badge-status-<%= a.status %>"><%= singular[a.status] || a.status %></span><% } %></h1>
       <p class="page-subtitle"><% if (a) { %>Créée le <%= fmt.dateTime(a.createdAt) %><% if (a.publishedAt) { %> · publiée le <%= fmt.dateTime(a.publishedAt) %><% } %><% if (pendingSchedule) { %> · programmée pour le <strong><%= fmt.dateTime(pendingSchedule.scheduledAt) %></strong><% } %><% } else { %>Rédigez le message, vérifiez l'aperçu, enregistrez le brouillon puis publiez ou programmez.<% } %></p>
     </div>

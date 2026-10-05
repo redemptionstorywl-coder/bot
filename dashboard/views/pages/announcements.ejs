@@ -13,13 +13,12 @@
 %>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('megaphone') %></span>
-    <div><h1 class="page-title">Annonces</h1><p class="page-subtitle">Rédigez, programmez et publiez vos annonces ; une annonce publiée se met à jour sur Discord quand vous l'enregistrez.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Annonces</h1><p class="page-subtitle">Rédigez, programmez et publiez vos annonces ; une annonce publiée se met à jour sur Discord quand vous l'enregistrez.</p></div>
   </div>
   <div class="page-actions"><a class="btn btn-primary" href="<%= b %>/new"><%- icon('plus', { size: 16 }) %>Nouvelle annonce</a></div>
 </header>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Annonces est désactivé : les programmations ne seront pas publiées tant qu'il n'est pas réactivé. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Annonces est désactivé : les programmations ne seront pas publiées tant qu'il n'est pas réactivé. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer le module</a></span></div><% } %>
 
 <%- include('../partials/tabs', { active, label: 'Filtrer les annonces', tabs: [
   { key: 'ALL', label: 'En cours', href: b, icon: 'list', count: allCount },

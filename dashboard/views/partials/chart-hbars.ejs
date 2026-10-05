@@ -1,0 +1,37 @@
+<%#
+  Barres horizontales d'une série (pas de légende : le titre la nomme) — modèle lib/charts.ts hbarsChart().
+  Attend : chart (HBarsModel), title, sub, emptyText, unit (libellé de la valeur, ex. « sanctions »).
+%>
+<% const _c = chart; const _n = (v) => fmt.number(v); %>
+<figure class="chart" id="<%= _c.id %>" data-chart="hbars">
+  <div class="chart-head">
+    <div>
+      <h3 class="chart-title"><%= title %></h3>
+      <p class="chart-sub"><%= sub %></p>
+    </div>
+    <dl class="chart-figures"><div><dt>Total</dt><dd><%= _n(_c.total) %></dd></div></dl>
+  </div>
+  <% if (_c.empty) { %>
+    <div class="chart-empty"><%= emptyText %></div>
+  <% } else { %>
+  <ul class="hbars" aria-label="<%= title %>">
+    <% for (const r of _c.rows) { %>
+      <li class="hbar" tabindex="0" data-tooltip="<%= r.label %> : <%= _n(r.value) %> (<%= fmt.percent(r.value, _c.total) %> %)" data-tooltip-pos="left">
+        <span class="hbar-label" title="<%= r.label %>"><%= r.label %></span>
+        <span class="hbar-track"><span class="hbar-fill" data-pct="<%= r.pct %>"><span class="hbar-value"><%= _n(r.value) %></span></span></span>
+      </li>
+    <% } %>
+  </ul>
+  <div class="hbar-axis" aria-hidden="true"><span></span><div><% _c.ticks.forEach((t, i) => { %><span data-left="<%= (i / (_c.ticks.length - 1)) * 100 %>" class="<%= i === 0 ? 'is-start' : i === _c.ticks.length - 1 ? 'is-end' : '' %>"><%= t %></span><% }) %></div></div>
+  <div class="chart-foot">
+    <span></span>
+    <details class="chart-table">
+      <summary><%- icon('table', { size: 14 }) %>Voir les données</summary>
+      <div class="table-wrap"><table class="table table-compact">
+        <thead><tr><th>Type</th><th class="num"><%= typeof unit === 'string' ? unit : 'Nombre' %></th><th class="num">Part</th></tr></thead>
+        <tbody><% for (const r of _c.rows) { %><tr><td><%= r.label %></td><td class="num"><%= _n(r.value) %></td><td class="num"><%= fmt.percent(r.value, _c.total) %> %</td></tr><% } %></tbody>
+      </table></div>
+    </details>
+  </div>
+  <% } %>
+</figure>

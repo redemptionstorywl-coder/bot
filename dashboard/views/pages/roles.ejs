@@ -10,7 +10,7 @@
 <%- include('../partials/roles-header', { rtab: tab }) %>
 
 <% if (tab === 'autoroles') { %>
-  <% if (!modules.autorole) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Auto-rôles est désactivé : aucun rôle ne sera attribué automatiquement. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer</a></span></div><% } %>
+  <% if (!modules.autorole) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Auto-rôles est désactivé : aucun rôle ne sera attribué automatiquement. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer</a></span></div><% } %>
   <div class="grid-aside-right grid-2">
     <section class="card card-flush">
       <div class="card-head"><div><h2 class="card-title">Règles actives</h2><p class="card-desc">Rôles attribués automatiquement aux nouveaux membres.</p></div></div>
@@ -41,7 +41,7 @@
   </div>
 
 <% } else if (tab === 'menus') { %>
-  <% if (!modules.rolemenu) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Menus de rôles est désactivé : les menus publiés ne répondent pas. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer</a></span></div><% } %>
+  <% if (!modules.rolemenu) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Menus de rôles est désactivé : les menus publiés ne répondent pas. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer</a></span></div><% } %>
   <% if (!menus.length) { %>
     <div class="card"><%- include('../partials/empty', { glyph: 'tags', title: 'Aucun menu de rôles', text: 'Un message avec des boutons ou un menu déroulant pour que les membres choisissent leurs rôles.', actionHref: base + '/menus/new', actionLabel: 'Créer un menu' }) %></div>
   <% } else { %>
@@ -64,7 +64,7 @@
   <% } %>
 
 <% } else { %>
-  <% if (!modules.notifications) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Notifications est désactivé : le panneau publié ne répond pas. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer</a></span></div><% } %>
+  <% if (!modules.notifications) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Notifications est désactivé : le panneau publié ne répond pas. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer</a></span></div><% } %>
   <div class="grid-aside-right grid-2">
     <div class="stack">
       <section class="card card-flush">

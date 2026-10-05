@@ -10,8 +10,7 @@
 <a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Événements</a>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('calendar') %></span>
-    <div>
+    <div><%- include('../partials/eyebrow') %>
       <h1 class="page-title row-wrap"><span><%= e ? e.name : 'Nouvel événement' %></span><% if (e) { %><span class="badge badge-status-<%= e.status %>"><%= statusLabels[e.status] %></span><% } %></h1>
       <p class="page-subtitle"><% if (e) { %><%= fmt.dateTime(e.startsAt) %> (<%= fmt.relative(e.startsAt) %>) · #<%= channelName %> · créé par <%= names[e.createdById] || e.createdById %><% } else { %>Publié immédiatement avec les boutons d'inscription ; les rappels partent automatiquement.<% } %></p>
     </div>

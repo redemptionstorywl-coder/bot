@@ -1,0 +1,47 @@
+<%#
+  Courbes multi-séries sur une échelle commune — modèle lib/charts.ts lineChart().
+  Attend : chart (LineChartModel), title, sub, emptyText.
+%>
+<% const _c = chart; const _n = (v) => fmt.number(v); %>
+<figure class="chart" id="<%= _c.id %>" data-chart="line">
+  <div class="chart-head">
+    <div>
+      <h3 class="chart-title"><%= title %></h3>
+      <p class="chart-sub"><%= sub %></p>
+    </div>
+    <dl class="chart-figures">
+      <% _c.series.forEach((s, i) => { %><div><dt><span class="chart-key is-line k<%= s.slot %>" aria-hidden="true"></span><%= s.label %></dt><dd><%= _n(_c.totals[i]) %></dd></div><% }) %>
+      <% if (typeof extraFigure === 'object' && extraFigure) { %><div><dt><%= extraFigure.label %></dt><dd><%= _n(extraFigure.value) %></dd></div><% } %>
+    </dl>
+  </div>
+  <% if (_c.empty) { %>
+    <div class="chart-empty"><%= emptyText %></div>
+  <% } else { %>
+  <div class="chart-frame has-ends">
+    <div class="chart-y" aria-hidden="true"><% for (const t of _c.yTicks) { %><span><%= t %></span><% } %></div>
+    <div class="chart-plot" tabindex="0" role="img" aria-label="<%= title %> : <%= _c.series.map((s, i) => _n(_c.totals[i]) + ' ' + s.label.toLowerCase()).join(', ') %>. Détail par jour dans le tableau." data-chart-plot data-n="<%= _c.n %>" data-mode="line">
+      <svg viewBox="0 0 600 200" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+        <% _c.gridY.forEach((y, i) => { %><line class="<%= i === 0 ? 'chart-baseline' : 'chart-gridline' %>" x1="0" x2="600" y1="<%= y %>" y2="<%= y %>" vector-effect="non-scaling-stroke"/><% }) %>
+        <% for (const l of _c.lines) { if (l.area) { %><path class="chart-area s<%= l.slot %>" d="<%= l.area %>"/><% } } %>
+        <line class="chart-cross" x1="0" x2="0" y1="0" y2="200" vector-effect="non-scaling-stroke" data-chart-cross/>
+        <% for (const l of _c.lines) { %><path class="chart-line s<%= l.slot %>" d="<%= l.d %>" vector-effect="non-scaling-stroke"/><% } %>
+        <% for (const l of _c.lines) { %><path class="chart-dot-ring" d="M<%= l.endX %> <%= l.endY %>h0" vector-effect="non-scaling-stroke"/><path class="chart-dot s<%= l.slot %>" d="M<%= l.endX %> <%= l.endY %>h0" vector-effect="non-scaling-stroke"/><% } %>
+      </svg>
+      <div class="chart-tip" hidden data-chart-tip></div>
+    </div>
+    <div class="chart-ends" aria-hidden="true"><% for (const e of _c.endLabels) { %><span class="chart-label" data-top="<%= e.top %>"><strong><%= _n(e.value) %></strong><%= e.label.toLowerCase() %></span><% } %></div>
+    <div class="chart-x" aria-hidden="true"><% for (const l of _c.xLabels) { %><span data-left="<%= l.left %>" class="<%= l.align === 'start' ? 'is-start' : l.align === 'end' ? 'is-end' : '' %><%= l.minor ? ' is-minor' : '' %>"><%= l.text %></span><% } %></div>
+  </div>
+  <div class="chart-foot">
+    <div class="legend" aria-hidden="true"><% for (const s of _c.series) { %><span><i class="chart-key is-line k<%= s.slot %>"></i><%= s.label %></span><% } %></div>
+    <details class="chart-table">
+      <summary><%- icon('table', { size: 14 }) %>Voir les données</summary>
+      <div class="table-wrap"><table class="table table-compact">
+        <thead><tr><th>Jour</th><% for (const s of _c.series) { %><th class="num"><%= s.label %></th><% } %></tr></thead>
+        <tbody><% for (const d of [..._c.days].reverse()) { %><tr><td><%= d.label %></td><% for (const v of d.values) { %><td class="num"><%= _n(v) %></td><% } %></tr><% } %></tbody>
+      </table></div>
+    </details>
+  </div>
+  <script type="application/json" data-chart-data><%- jsonScript(_c.tooltip) %></script>
+  <% } %>
+</figure>

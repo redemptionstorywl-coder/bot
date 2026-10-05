@@ -114,7 +114,7 @@ export function createWelcomeRouter(client: RedemptionClient): Router {
       const lang = config.defaultLanguage;
       const t = translationService.bind(lang, guild.id);
       render(res, 'welcome', {
-        title: 'Bienvenue',
+        title: 'Bienvenue et départs',
         page: 'welcome',
         tab: query.tab,
         welcome,

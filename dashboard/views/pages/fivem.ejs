@@ -9,13 +9,12 @@
 %>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('gamepad') %></span>
-    <div><h1 class="page-title">FiveM</h1><p class="page-subtitle">Serveurs de jeu reliés au bot : statut, joueurs, synchronisation Discord et installation de la ressource rs_bridge.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Serveurs FiveM</h1><p class="page-subtitle">Serveurs de jeu reliés au bot : statut, joueurs, synchronisation Discord et installation de la ressource rs_bridge.</p></div>
   </div>
   <div class="page-actions"><a class="btn btn-primary" href="<%= b %>/new"><%- icon('plus', { size: 16 }) %>Ajouter un serveur</a></div>
 </header>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module FiveM est désactivé : synchronisation et messages de statut inactifs (l'API reste joignable). <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module FiveM est désactivé : synchronisation et messages de statut inactifs (l'API reste joignable). <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer le module</a></span></div><% } %>
 
 <%- include('../partials/tabs', { active: tab, label: 'Sections FiveM', tabs: [
   { key: 'servers', label: 'Serveurs', href: b, icon: 'server', count: servers.length || null },

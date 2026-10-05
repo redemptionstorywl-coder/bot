@@ -5,8 +5,7 @@
 <% const _b = `/guilds/${guild.id}/tickets`; %>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('ticket') %></span>
-    <div><h1 class="page-title">Tickets</h1><p class="page-subtitle">Support privé : raisons, formulaires, panneaux d'ouverture, relances et suivi.</p></div>
+    <div><%- include('eyebrow') %><h1 class="page-title">Tickets</h1><p class="page-subtitle">Support privé : raisons, formulaires, panneaux d'ouverture, relances et suivi.</p></div>
   </div>
   <div class="page-actions">
     <% if (tab === 'reasons') { %><a class="btn btn-primary" href="<%= _b %>/reasons/new"><%- icon('plus', { size: 16 }) %>Nouvelle raison</a><% } %>
@@ -14,7 +13,7 @@
     <% if (tab === 'list' || tab === 'stats') { %><a class="btn" href="<%= _b %>/panels"><%- icon('send', { size: 16 }) %>Publier un panneau</a><% } %>
   </div>
 </header>
-<% if (config && !config.modules.tickets) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Tickets est désactivé : les panneaux et commandes ne répondent pas. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+<% if (config && !config.modules.tickets) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Tickets est désactivé : les panneaux et commandes ne répondent pas. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer le module</a></span></div><% } %>
 <%- include('tabs', { active: tab, label: 'Sections des tickets', tabs: [
   { key: 'reasons', label: 'Raisons', href: _b, icon: 'list', count: counts.reasons },
   { key: 'panels', label: 'Panneaux', href: _b + '/panels', icon: 'send', count: counts.panels },

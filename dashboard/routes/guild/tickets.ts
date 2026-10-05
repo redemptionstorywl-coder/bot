@@ -12,6 +12,7 @@ import { translationService, type Translator } from '../../../src/services/Trans
 import { uniqueKey } from '../../../src/commands/tickets/_configPanel';
 import { BRAND } from '../../../src/config/constants';
 import { render } from '../../lib/render';
+import { lineChart } from '../../lib/charts';
 import { wrap } from '../../lib/async';
 import { flash } from '../../lib/flash';
 import { HttpError } from '../../lib/errors';
@@ -568,7 +569,10 @@ export function createTicketsRouter(client: RedemptionClient): Router {
         byType: [...(stats?.byType ?? [])].sort((a, b) => b.count - a.count).map((b) => ({ ...b, emoji: counts.types.find((x) => x.id === b.typeId)?.emoji ?? null })),
         response,
         daily,
-        dailyMax: Math.max(1, ...daily.map((d) => Math.max(d.opened, d.closed))),
+        activityChart: lineChart('chart-ticket-activity', { keys: daily.map((d) => d.key), short: daily.map((d) => d.label), long: daily.map((d) => d.label) }, [
+          { key: 'opened', label: 'Ouverts', slot: 1, values: daily.map((d) => d.opened) },
+          { key: 'closed', label: 'Fermés', slot: 2, values: daily.map((d) => d.closed) },
+        ]),
         claimers: claimers.map((c) => ({ ...c, profile: profiles[c.userId] ?? null })),
       });
     }),

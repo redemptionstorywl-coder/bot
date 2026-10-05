@@ -1,8 +1,9 @@
 <% const present = cards.filter((g) => g.botPresent); const absent = cards.filter((g) => !g.botPresent); %>
 <header class="page-header">
   <div>
-    <h1 class="page-title">Vos serveurs</h1>
-    <p class="page-subtitle">Serveurs dont vous êtes propriétaire ou administrateur.</p>
+    <p class="eyebrow">Vos serveurs</p>
+    <h1 class="page-title">Choisir un serveur</h1>
+    <p class="page-subtitle">Serveurs dont vous êtes propriétaire ou administrateur. Le bot doit y être présent pour les gérer ici.</p>
   </div>
   <div class="page-actions">
     <% if (cards.length > 6) { %><label class="search"><%- icon('search', { size: 16 }) %><input type="search" class="input" placeholder="Rechercher un serveur…" data-filter="#guild-cards" data-filter-empty="#guild-empty" aria-label="Rechercher un serveur"></label><% } %>
@@ -11,35 +12,33 @@
 </header>
 
 <% if (!botReady) { %>
-  <div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le bot termine son démarrage : la présence sur les serveurs sera connue dans quelques secondes.</span></div>
+  <div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le bot termine son démarrage : sa présence sur vos serveurs sera connue dans quelques secondes.</span></div>
 <% } %>
 
 <% if (!cards.length) { %>
-  <div class="card"><%- include('../partials/empty', { glyph: 'server', title: 'Aucun serveur administrable', text: 'Vous devez être propriétaire ou disposer de la permission « Gérer le serveur » sur un serveur Discord.', actionHref: inviteUrl, actionLabel: 'Inviter le bot', actionIcon: 'plus' }) %></div>
+  <%- include('../partials/empty', { glyph: 'server', title: 'Aucun serveur administrable', text: 'Vous devez être propriétaire ou avoir la permission « Gérer le serveur » sur un serveur Discord.', actionHref: inviteUrl, actionLabel: 'Inviter le bot', actionIcon: 'plus' }) %>
 <% } else { %>
-<div class="guild-grid" id="guild-cards">
-  <% for (const g of present.concat(absent)) { %>
-    <article class="guild-card<%= g.botPresent ? '' : ' is-inactive' %>" data-filter-item data-filter-text="<%= g.name.toLowerCase() %>">
-      <div class="guild-card-head">
-        <% if (g.iconUrl) { %><img class="avatar avatar-lg avatar-square" src="<%= g.iconUrl %>" alt=""><% } else { %><span class="avatar avatar-lg avatar-fallback"><%= fmt.initials(g.name) %></span><% } %>
-        <div class="guild-card-meta">
-          <div class="guild-card-name" title="<%= g.name %>"><%= g.name %></div>
-          <div class="guild-card-sub">
-            <% if (g.botPresent) { %><span class="row"><span class="dot dot-success" aria-hidden="true"></span>Bot présent</span><% } else { %><span>Bot absent</span><% } %>
-            <% if (g.memberCount !== null) { %><span>· <%= fmt.number(g.memberCount) %> membres</span><% } %>
-          </div>
+<ul class="guild-list" id="guild-cards">
+  <% if (present.length && absent.length) { %><li class="guild-row-group" data-filter-skip>Bot présent · <%= present.length %></li><% } %>
+  <% present.concat(absent).forEach((g, i) => { %>
+    <% if (absent.length && i === present.length) { %><li class="guild-row-group" data-filter-skip>Bot absent · <%= absent.length %></li><% } %>
+    <li class="guild-row<%= g.botPresent ? '' : ' is-inactive' %>" data-filter-item data-filter-text="<%= g.name.toLowerCase() %>">
+      <% if (g.iconUrl) { %><img class="avatar avatar-md" src="<%= g.iconUrl %>" alt=""><% } else { %><span class="avatar avatar-md avatar-fallback avatar-square"><%= fmt.initials(g.name) %></span><% } %>
+      <div class="guild-row-main">
+        <div class="guild-row-name" title="<%= g.name %>"><%= g.name %></div>
+        <div class="guild-row-sub">
+          <% if (g.memberCount !== null) { %><span><%= fmt.number(g.memberCount) %> membres</span><% } %>
+          <% if (g.owner) { %><span class="row"><%- icon('crown', { size: 12 }) %>Propriétaire</span><% } else { %><span>Administrateur</span><% } %>
         </div>
-        <% if (g.owner) { %><span class="badge" data-tooltip="Vous êtes propriétaire"><%- icon('crown', { size: 12 }) %></span><% } %>
       </div>
-      <div class="guild-card-actions">
-        <% if (g.botPresent) { %>
-          <a class="btn btn-primary btn-block" href="/guilds/<%= g.id %>">Gérer<%- icon('arrow-right', { size: 16 }) %></a>
-        <% } else { %>
-          <a class="btn btn-block" href="<%= g.inviteUrl %>" target="_blank" rel="noopener"><%- icon('plus', { size: 16 }) %>Inviter le bot</a>
-        <% } %>
-      </div>
-    </article>
-  <% } %>
-</div>
+      <span class="guild-row-state"><span class="dot <%= g.botPresent ? 'dot-success' : 'dot-muted' %>" aria-hidden="true"></span><%= g.botPresent ? 'Bot présent' : 'Bot absent' %></span>
+      <% if (g.botPresent) { %>
+        <a class="btn btn-primary btn-sm" href="/guilds/<%= g.id %>">Gérer<%- icon('arrow-right', { size: 14 }) %></a>
+      <% } else { %>
+        <a class="btn btn-sm" href="<%= g.inviteUrl %>" target="_blank" rel="noopener"><%- icon('plus', { size: 14 }) %>Inviter le bot</a>
+      <% } %>
+    </li>
+  <% }) %>
+</ul>
 <div id="guild-empty" hidden><%- include('../partials/empty', { glyph: 'search', title: 'Aucun serveur ne correspond', compact: true }) %></div>
 <% } %>

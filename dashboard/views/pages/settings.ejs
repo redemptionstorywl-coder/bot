@@ -1,25 +1,28 @@
 <% const base = `/guilds/${guild.id}`; %>
-<header class="page-header">
+<header class="page-header"<%- scrollTo ? ` data-scroll-to="${scrollTo}"` : '' %>>
   <div class="page-heading">
-    <span class="page-icon"><%- icon('settings') %></span>
-    <div><h1 class="page-title">Paramètres</h1><p class="page-subtitle">Identité du bot sur ce serveur, modules actifs et permissions des commandes.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Paramètres</h1><p class="page-subtitle">Type de serveur, langue du bot, apparence des messages, équipe et modules actifs.</p></div>
   </div>
 </header>
 
-<%- include('../partials/tabs', { active: tab, label: 'Sections des paramètres', tabs: [
-  { key: 'general', label: 'Général', href: base + '/settings', icon: 'settings' },
-  { key: 'modules', label: 'Modules', href: base + '/settings?tab=modules', icon: 'layers', count: modulesActive + '/' + modulesTotal },
-  { key: 'commands', label: 'Permissions', href: base + '/settings?tab=commands', icon: 'key', count: commands.length },
-] }) %>
+<div class="with-toc">
+  <nav class="toc" data-toc aria-label="Sommaire des paramètres">
+    <div class="toc-title">Sur cette page</div>
+    <a href="#type">Type de serveur</a>
+    <a href="#langue">Langue et région</a>
+    <a href="#apparence">Apparence des embeds</a>
+    <a href="#equipe">Équipe</a>
+    <a href="#modules">Modules <span class="toc-meta" data-stat="modules-active"><%= modulesActive %></span></a>
+    <a href="<%= base %>/permissions">Permissions des commandes <%- icon('arrow-right', { size: 14, cls: 'text-3' }) %></a>
+  </nav>
 
-<% if (tab === 'general') { %>
-<form method="post" action="<%= base %>/settings" class="form" data-dirty-form id="settings-form">
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-  <div class="settings-layout">
-    <div class="stack">
-      <section class="card">
+  <div class="stack min-w-0">
+    <form method="post" action="<%= base %>/settings" class="form stack" data-dirty-form id="settings-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+      <section class="card toc-section" id="type">
         <h2 class="card-title">Type de serveur</h2>
-        <p class="card-desc mb-4">Active les modules recommandés pour ce type (les modules déjà actifs restent actifs).</p>
+        <p class="card-desc mb-4">Active les modules recommandés pour ce type. Les modules déjà actifs le restent.</p>
         <div class="choice-grid" role="radiogroup" aria-label="Type de serveur">
           <% for (const k of kinds) { %>
             <label class="choice"><input type="radio" name="kind" value="<%= k.value %>" <%= config.kind === k.value ? 'checked' : '' %>><span><span class="choice-title"><%- icon(k.icon, { size: 15 }) %><%= k.label %></span><span class="choice-desc"><%= k.description %></span></span></label>
@@ -27,9 +30,9 @@
         </div>
       </section>
 
-      <section class="card">
-        <h2 class="card-title">Langue &amp; région</h2>
-        <div class="field-row">
+      <section class="card toc-section" id="langue">
+        <h2 class="card-title">Langue et région</h2>
+        <div class="field-row mt-4">
           <div class="field">
             <span class="field-label" id="lang-label">Langue du bot</span>
             <div class="segmented" role="radiogroup" aria-labelledby="lang-label">
@@ -41,92 +44,63 @@
             <label for="timezone">Fuseau horaire</label>
             <input id="timezone" name="timezone" class="input" maxlength="64" value="<%= config.timezone %>" list="timezones" placeholder="Europe/Paris" autocomplete="off">
             <datalist id="timezones"><% for (const tz of timezones) { %><option value="<%= tz %>"></option><% } %></datalist>
-            <small class="hint">Utilisé pour les dates des événements et annonces programmées.</small>
+            <small class="hint">Sert aux dates des événements, des annonces programmées et des graphiques.</small>
           </div>
         </div>
       </section>
 
-      <section class="card">
+      <section class="card toc-section" id="apparence">
         <h2 class="card-title">Apparence des embeds</h2>
-        <div class="field"><label for="brandColor">Couleur de marque</label><%- include('../partials/color-field', { name: 'brandColor', id: 'brandColor', value: fmt.hex(config.brandColor) }) %><small class="hint">Couleur par défaut des embeds envoyés par le bot.</small></div>
-        <div class="field-row">
-          <div class="field"><label for="displayName">Nom affiché <span class="field-optional">optionnel</span></label><input id="displayName" name="displayName" class="input" maxlength="100" value="<%= settings && settings.displayName ? settings.displayName : '' %>" placeholder="<%= guild.name %>"></div>
-          <div class="field"><label for="footerText">Pied de page des embeds</label><input id="footerText" name="footerText" class="input" maxlength="200" value="<%= config.footerText || '' %>" placeholder="<%= brand.footer %>"></div>
+        <p class="card-desc mb-4">S'applique aux messages du bot qui ne définissent pas leur propre couleur ou pied de page.</p>
+        <div class="settings-layout">
+          <div class="min-w-0">
+            <div class="field"><label for="brandColor">Couleur de marque</label><%- include('../partials/color-field', { name: 'brandColor', id: 'brandColor', value: fmt.hex(config.brandColor) }) %><small class="hint">Bande de couleur à gauche des embeds.</small></div>
+            <div class="field"><label for="displayName">Nom affiché <span class="field-optional">optionnel</span></label><input id="displayName" name="displayName" class="input" maxlength="100" value="<%= settings && settings.displayName ? settings.displayName : '' %>" placeholder="<%= guild.name %>"><small class="hint">Remplace le nom du serveur dans les messages du bot.</small></div>
+            <div class="field"><label for="footerText">Pied de page</label><input id="footerText" name="footerText" class="input" maxlength="200" value="<%= config.footerText || '' %>" placeholder="<%= brand.footer %>"><small class="hint">Texte discret affiché sous chaque embed.</small></div>
+            <div class="field"><label for="footerIconUrl">Icône du pied de page <span class="field-optional">URL, optionnelle</span></label><input id="footerIconUrl" name="footerIconUrl" class="input" type="url" maxlength="500" value="<%= config.footerIconUrl || '' %>" placeholder="https://cdn.discordapp.com/…"></div>
+          </div>
+          <div class="preview-panel">
+            <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 14 }) %>Aperçu Discord</span></div>
+            <div class="preview-panel-body" data-settings-preview>
+              <%- include('../partials/embed-preview', { embed: { title: 'Exemple d’annonce', description: 'Voici à quoi ressemblent les **embeds** envoyés par le bot sur *' + guild.name + '*.', footer: { text: config.footerText || brand.footer, iconUrl: config.footerIconUrl || undefined }, timestamp: true } }) %>
+            </div>
+          </div>
         </div>
-        <div class="field mt-4"><label for="footerIconUrl">Icône du pied de page <span class="field-optional">URL</span></label><input id="footerIconUrl" name="footerIconUrl" class="input" type="url" maxlength="500" value="<%= config.footerIconUrl || '' %>" placeholder="https://cdn.discordapp.com/…"></div>
       </section>
 
-      <section class="card">
+      <section class="card toc-section" id="equipe">
         <h2 class="card-title">Équipe</h2>
-        <p class="card-desc mb-4">Les administrateurs ont accès à toutes les commandes de configuration ; le staff gère la modération, les tickets et la whitelist.</p>
-        <div class="field"><label for="adminRoleIds">Rôles administrateurs</label><%- include('../partials/role-select', { name: 'adminRoleIds', id: 'adminRoleIds', selected: config.adminRoleIds }) %></div>
-        <div class="field"><label for="staffRoleIds">Rôles staff</label><%- include('../partials/role-select', { name: 'staffRoleIds', id: 'staffRoleIds', selected: config.staffRoleIds }) %></div>
+        <p class="card-desc mb-4">Les administrateurs règlent toute la configuration (<code>/config</code>) ; le staff gère la modération, les tickets et la whitelist. Pour autoriser un rôle sur une commande précise, utilisez <a class="link" href="<%= base %>/permissions">Permissions</a>.</p>
+        <div class="field-row">
+          <div class="field"><label for="adminRoleIds">Rôles administrateurs</label><%- include('../partials/role-select', { name: 'adminRoleIds', id: 'adminRoleIds', selected: config.adminRoleIds }) %><small class="hint">Le propriétaire du serveur et les membres « Administrateur » Discord le sont toujours.</small></div>
+          <div class="field"><label for="staffRoleIds">Rôles staff</label><%- include('../partials/role-select', { name: 'staffRoleIds', id: 'staffRoleIds', selected: config.staffRoleIds }) %><small class="hint">Modérateurs, support et équipe whitelist.</small></div>
+        </div>
       </section>
 
       <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer les paramètres</button></div>
-    </div>
+    </form>
 
-    <aside class="split-preview">
-      <div class="preview-panel">
-        <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 15 }) %>Aperçu d'un embed du bot</span></div>
-        <div class="preview-panel-body" data-settings-preview>
-          <%- include('../partials/embed-preview', { embed: { title: 'Exemple d’annonce', description: 'Voici à quoi ressemblent les **embeds** envoyés par le bot sur *' + guild.name + '*.', footer: { text: config.footerText || brand.footer, iconUrl: config.footerIconUrl || undefined }, timestamp: true } }) %>
+    <section class="card toc-section" id="modules">
+      <div class="card-head">
+        <div><h2 class="card-title">Modules</h2><p class="card-desc">Un module coupé ignore ses commandes et ses boutons (les membres reçoivent un message clair). Chaque changement s'applique immédiatement.</p></div>
+        <span class="badge badge-accent"><span data-stat="modules-active"><%= modulesActive %></span> / <%= modulesTotal %> actifs</span>
+      </div>
+      <% for (const grp of moduleGroups) { %>
+        <div class="module-group">
+          <h3 class="module-group-title"><%= grp.label %></h3>
+          <div class="module-grid">
+            <% for (const m of grp.modules) { %>
+              <article class="module-card<%= m.enabled ? ' is-on' : '' %>" data-module-card="<%= m.key %>">
+                <span class="module-card-icon"><%- icon(m.icon) %></span>
+                <span class="module-card-title"><%= m.label %></span>
+                <label class="toggle"><input type="checkbox" data-module-toggle="<%= m.key %>" data-label="<%= m.label %>" data-url="<%= base %>/modules/<%= m.key %>" <%= m.enabled ? 'checked' : '' %> aria-label="Activer le module <%= m.label %>"><span class="toggle-track"></span></label>
+                <p class="module-card-desc"><%= m.description %></p>
+                <div class="module-card-foot"><span class="module-state-label" data-module-state><%= m.enabled ? 'Activé' : 'Désactivé' %></span><% if (m.path) { %><a class="link text-xs" href="<%= base %>/<%= m.path %>">Configurer</a><% } %></div>
+              </article>
+            <% } %>
+          </div>
         </div>
-        <div class="preview-panel-note">La couleur et le pied de page s'appliquent aux embeds qui n'en définissent pas.</div>
-      </div>
-    </aside>
-  </div>
-</form>
-<% } else if (tab === 'modules') { %>
-  <div class="callout mb-5"><%- icon('info') %><div>Un module désactivé ignore ses commandes et ses boutons (les membres reçoivent un message explicite). Les changements sont <strong>immédiats</strong>.</div></div>
-  <% for (const grp of moduleGroups) { %>
-    <section class="section">
-      <h2 class="section-title"><%= grp.label %></h2>
-      <div class="module-grid">
-        <% for (const m of grp.modules) { %>
-          <article class="module-card<%= m.enabled ? ' is-on' : '' %>" data-module-card="<%= m.key %>">
-            <div class="module-card-head">
-              <span class="module-card-icon"><%- icon(m.icon) %></span>
-              <span class="module-card-title"><%= m.label %></span>
-              <label class="toggle"><input type="checkbox" data-module-toggle="<%= m.key %>" data-label="<%= m.label %>" data-url="<%= base %>/modules/<%= m.key %>" <%= m.enabled ? 'checked' : '' %> aria-label="Activer le module <%= m.label %>"><span class="toggle-track"></span></label>
-            </div>
-            <p class="module-card-desc"><%= m.description %></p>
-            <div class="module-card-foot"><span class="module-state-label" data-module-state><%= m.enabled ? 'Activé' : 'Désactivé' %></span><% if (m.path) { %><a class="link text-xs" href="<%= base %>/<%= m.path %>">Configurer</a><% } %></div>
-          </article>
-        <% } %>
-      </div>
+      <% } %>
     </section>
-  <% } %>
-<% } else { %>
-<form method="post" action="<%= base %>/commands" class="form" data-dirty-form>
-  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-  <section class="card card-flush">
-    <div class="card-head">
-      <div><h2 class="card-title">Permissions par commande</h2><p class="card-desc">Sans rôle choisi, la commande suit ses permissions par défaut. Administrateurs et propriétaires du bot ne sont jamais bloqués.</p></div>
-      <label class="search"><%- icon('search', { size: 16 }) %><input type="search" class="input input-sm" placeholder="Filtrer les commandes…" data-filter="#commands-table" aria-label="Filtrer les commandes"></label>
-    </div>
-    <% if (!commands.length) { %>
-      <%- include('../partials/empty', { glyph: 'square-slash', title: 'Aucune commande chargée', compact: true }) %>
-    <% } else { %>
-    <div class="table-wrap">
-      <table class="table table-responsive" id="commands-table">
-        <thead><tr><th>Commande</th><th>Niveau</th><th>Rôles autorisés</th><th class="shrink">Activée</th></tr></thead>
-        <tbody>
-          <% let lastCat = null; %>
-          <% for (const c of commands) { %>
-            <% if (c.category !== lastCat) { lastCat = c.category; %><tr class="table-group" data-filter-skip><td colspan="4"><%= c.category %></td></tr><% } %>
-            <tr data-filter-item data-filter-text="<%= (c.name + ' ' + c.description + ' ' + (c.moduleLabel || '')).toLowerCase() %>">
-              <td class="cell-primary"><div><code>/<%= c.name %></code><% if (c.moduleLabel) { %> <span class="badge badge-muted"><%= c.moduleLabel %></span><% } %></div><div class="text-xs text-3 mt-2"><%= c.description %></div></td>
-              <td data-label="Niveau"><span class="badge <%= c.internal === 'everyone' ? 'badge-muted' : c.internal === 'admin' || c.internal === 'owner' ? 'badge-danger' : 'badge-accent' %>"><%= { everyone: 'Tout le monde', staff: 'Staff', admin: 'Admin', owner: 'Propriétaire' }[c.internal] || c.internal %></span></td>
-              <td data-label="Rôles"><%- include('../partials/role-select', { name: `perms[${c.name}][roleIds]`, id: `perm-${c.name}`, selected: c.roleIds, placeholder: 'Par défaut' }) %></td>
-              <td data-label="Activée" class="shrink"><label class="toggle"><input type="checkbox" name="perms[<%= c.name %>][enabled]" <%= c.enabled ? 'checked' : '' %> aria-label="Activer /<%= c.name %>"><span class="toggle-track"></span></label></td>
-            </tr>
-          <% } %>
-        </tbody>
-      </table>
-    </div>
-    <div class="card-foot dirty-hide"><span></span><button type="submit" class="btn btn-primary">Enregistrer les permissions</button></div>
-    <% } %>
-  </section>
-</form>
-<% } %>
+  </div>
+</div>

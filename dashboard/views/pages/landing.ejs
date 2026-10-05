@@ -1,37 +1,25 @@
-<div class="landing">
-  <div class="landing-glow" aria-hidden="true"></div>
-  <section class="hero">
-    <div class="hero-badge"><%- include('../partials/logo') %><span>Redemption Story Studio</span></div>
-    <h1 class="hero-title">Votre bot Discord,<br><span class="accent">configuré en quelques clics.</span></h1>
-    <p class="hero-text">Tickets, modération, bienvenue, annonces et serveurs FiveM : tout se règle ici, avec un aperçu Discord en direct avant chaque publication.</p>
-    <div class="hero-actions">
+<section class="landing">
+  <div class="landing-copy">
+    <p class="eyebrow">Redemption Story Studio · Dashboard</p>
+    <h1 class="landing-title">Vos serveurs Discord, <em>réglés depuis une seule console.</em></h1>
+    <p class="landing-text">Tickets, modération, accueil des membres, annonces et serveurs FiveM&nbsp;: tout se configure ici, avec un aperçu fidèle à Discord avant chaque publication.</p>
+    <div class="landing-actions">
       <a class="btn btn-xl btn-discord" href="/auth/login"><%- icon('discord', { size: 20 }) %>Se connecter avec Discord</a>
       <a class="btn btn-xl btn-ghost" href="<%= inviteUrl %>" target="_blank" rel="noopener"><%- icon('plus', { size: 18 }) %>Inviter le bot</a>
     </div>
     <% if (!oauthConfigured) { %>
-      <div class="alert alert-warning hero-alert"><%- icon('alert-triangle') %><span class="alert-text">La connexion Discord n'est pas encore configurée (<code>DISCORD_CLIENT_SECRET</code> manquant).</span></div>
+      <div class="alert alert-warning landing-alert"><%- icon('alert-triangle') %><span class="alert-text">La connexion Discord n'est pas encore configurée (<code>DISCORD_CLIENT_SECRET</code> manquant).</span></div>
     <% } %>
-    <div class="hero-meta">
-      <span><strong><%= fmt.number(stats.guilds) %></strong> serveurs</span>
-      <span><strong><%= fmt.number(stats.members) %></strong> membres</span>
-      <span><strong><%= stats.modules %></strong> modules</span>
-    </div>
-  </section>
-
-  <section class="feature-grid" aria-label="Points forts">
-    <% for (const [ic, name, text] of [
-      ['ticket', 'Tickets complets', 'Raisons, formulaires, panneaux et transcripts, avec relances automatiques du staff.'],
-      ['eye', 'Aperçus en direct', 'Chaque embed, panneau ou message est prévisualisé exactement comme sur Discord.'],
-      ['shield', 'Sécurité intégrée', 'Modération, anti-raid, anti-nuke et salon piège configurables en un instant.'],
-      ['gamepad', 'Connecté au jeu', 'Statut FiveM, liaison des joueurs, whitelist, boutique et Battle Royale.'],
-    ]) { %>
-      <article class="feature"><div class="feature-icon"><%- icon(ic) %></div><h3><%= name %></h3><p><%= text %></p></article>
-    <% } %>
-  </section>
-
-  <section class="landing-preview" aria-label="Exemple d'aperçu">
+    <dl class="landing-figures">
+      <div><dt>Serveurs</dt><dd><%= fmt.number(stats.guilds) %></dd></div>
+      <div><dt>Membres</dt><dd><%= fmt.number(stats.members) %></dd></div>
+      <div><dt>Modules</dt><dd><%= stats.modules %></dd></div>
+      <div><dt>Commandes</dt><dd><%= fmt.number(stats.commands || 0) %></dd></div>
+    </dl>
+  </div>
+  <div class="landing-visual" aria-label="Exemple d'aperçu Discord">
     <div class="preview-panel">
-      <div class="preview-panel-head"><span class="row"><%- icon('hash', { size: 15 }) %>support</span><span class="badge badge-muted">Aperçu</span></div>
+      <div class="preview-panel-head"><span class="row"><%- icon('hash', { size: 14 }) %>support</span><span class="badge badge-muted">Aperçu en direct</span></div>
       <div class="preview-panel-body">
         <%- include('../partials/embed-preview', {
           embed: { title: '🎫 Support', description: "Besoin d'aide ? Choisissez le sujet de votre demande ci-dessous, l'équipe vous répond au plus vite.", footer: { text: 'Un ticket = un sujet' } },
@@ -39,5 +27,16 @@
         }) %>
       </div>
     </div>
-  </section>
-</div>
+  </div>
+</section>
+
+<section class="landing-features" aria-label="Ce que fait le dashboard">
+  <% for (const [ic, name, text] of [
+    ['ticket', 'Support par tickets', 'Raisons, formulaires, panneaux et transcripts, avec relance automatique du staff.'],
+    ['eye', 'Aperçus fidèles', 'Chaque embed, panneau ou message est prévisualisé tel qu’il apparaîtra sur Discord.'],
+    ['shield', 'Sécurité intégrée', 'Modération, anti-raid, anti-nuke, salon piège et lockdown en un clic.'],
+    ['gamepad', 'Relié au jeu', 'Statut FiveM, liaison des joueurs, whitelist, boutique et Battle Royale.'],
+  ]) { %>
+    <article class="landing-feature"><%- icon(ic) %><h2><%= name %></h2><p><%= text %></p></article>
+  <% } %>
+</section>

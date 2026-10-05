@@ -1,0 +1,2 @@
+<%# Sur-titre des en-têtes de page : groupe de navigation de la page (ou texte fourni : eyebrowText). %>
+<% const _eb = typeof eyebrowText === 'string' && eyebrowText ? eyebrowText : navGroupLabel(page); if (_eb) { %><p class="eyebrow"><%= _eb %></p><% } %>

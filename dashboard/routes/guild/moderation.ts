@@ -6,6 +6,10 @@ import { moderationService, warnThresholdSchema, type AntiRaidConfigInput } from
 import { antiRaidService } from '../../../src/services/AntiRaidService';
 import { antiNukeService, ANTI_NUKE_ACTIONS, ANTI_NUKE_PUNISHMENTS, type AntiNukeAction } from '../../../src/services/AntiNukeService';
 import { honeypotService, HONEYPOT_TITLE, HONEYPOT_DESCRIPTION, HONEYPOT_DEFAULT_NAME } from '../../../src/services/HoneypotService';
+import { massUnbanService, isUnbanAllConfirmed, UNBAN_ALL_CONFIRMATION } from '../../../src/services/MassUnbanService';
+import { env } from '../../../src/config/env';
+import { hbarsChart } from '../../lib/charts';
+import { isGuildAdmin } from '../../lib/access';
 import { BRAND } from '../../../src/config/constants';
 import { fmt } from '../../lib/format';
 import { requireBotGuild } from '../../lib/names';
@@ -21,7 +25,11 @@ import { wantsJson } from '../../lib/rateLimit';
 import { broadcastToGuild } from '../../sockets';
 
 const PAGE_SIZE = 20;
-const TABS = ['sanctions', 'warnings', 'config', 'antiraid', 'honeypot', 'lockdown', 'stats'] as const;
+const TABS = ['sanctions', 'warnings', 'protection', 'config', 'antiraid', 'honeypot', 'lockdown', 'stats'] as const;
+/** Onglets historiques regroupés : Sanctions (+ statistiques), Avertissements, Protection (sections empilées). */
+const PROTECTION_TABS = new Set<string>(['protection', 'config', 'antiraid', 'honeypot', 'lockdown']);
+/** Section ciblée à l'arrivée sur la page Protection selon l'ancien onglet demandé. */
+const PROTECTION_ANCHORS: Record<string, string | null> = { protection: null, config: 'escalade', antiraid: 'anti-nuke', honeypot: 'salon-piege', lockdown: 'lockdown' };
 
 export const SANCTION_TYPE_LABELS: Record<SanctionType, string> = {
   BAN: 'Bannissement',
@@ -114,6 +122,7 @@ const antiRaidBody = z.object({
 export const TAB_LABELS: Record<(typeof TABS)[number], string> = {
   sanctions: 'Sanctions',
   warnings: 'Avertissements',
+  protection: 'Protection',
   config: 'Escalade',
   antiraid: 'Protections',
   honeypot: 'Salon piège',
@@ -145,6 +154,10 @@ const honeypotRemoveBody = z.object({ deleteChannel: checkbox });
 const warningParams = z.object({ warningId: z.coerce.number().int().positive() });
 const reasonBody = z.object({ reason: optionalText(300) });
 const clearBody = z.object({ userId: discordIdSchema, reason: optionalText(300) });
+const unbanAllBody = z.object({ confirm: z.string().max(40).default(''), reason: optionalText(300), syncGame: checkbox });
+
+/** Nombre de bannis mis en cache 60 s par serveur (évite de relister les bans à chaque affichage). */
+const banCountCache = new Map<string, { at: number; count: number }>();
 
 /** Pages Modération : configuration, anti-raid, lockdown, sanctions, avertissements, statistiques. */
 export function createModerationRouter(client: RedemptionClient): Router {
@@ -159,25 +172,32 @@ export function createModerationRouter(client: RedemptionClient): Router {
       const config = res.locals.config!;
       const { query } = valid<unknown, z.infer<typeof pageQuerySchema>>(req);
       const tab = query.tab;
+      const view: 'sanctions' | 'warnings' | 'protection' = PROTECTION_TABS.has(tab) ? 'protection' : tab === 'warnings' ? 'warnings' : 'sanctions';
       const [modConfig, sanctions, stats, selectedCase, warnings, honeypot] = await Promise.all([
         moderationService.getConfig(guild.id),
-        tab === 'sanctions' ? moderationService.listSanctions(guild.id, { type: query.type, userId: query.user, page: query.page, pageSize: PAGE_SIZE }) : Promise.resolve({ items: [], page: 1, pages: 1, total: 0 }),
+        view === 'sanctions' ? moderationService.listSanctions(guild.id, { type: query.type, userId: query.user, page: query.page, pageSize: PAGE_SIZE }) : Promise.resolve({ items: [], page: 1, pages: 1, total: 0 }),
         moderationService.stats(guild.id, 30),
-        tab === 'sanctions' && query.case ? moderationService.getCase(guild.id, query.case) : Promise.resolve(null),
-        tab === 'warnings' && query.warnUser ? moderationService.getWarnings(guild.id, query.warnUser, { activeOnly: false }) : Promise.resolve([]),
-        tab === 'honeypot' ? honeypotService.getConfig(guild.id) : Promise.resolve(null),
+        view === 'sanctions' && query.case ? moderationService.getCase(guild.id, query.case) : Promise.resolve(null),
+        view === 'warnings' && query.warnUser ? moderationService.getWarnings(guild.id, query.warnUser, { activeOnly: false }) : Promise.resolve([]),
+        view === 'protection' ? honeypotService.getConfig(guild.id) : Promise.resolve(null),
       ]);
       const profiles = await resolveUserProfiles(client, guild.id, [...sanctions.items.flatMap((s) => [s.userId, s.moderatorId]), selectedCase?.userId, selectedCase?.moderatorId, query.warnUser, ...warnings.map((w) => w.moderatorId), modConfig.lockdownState?.actorId]);
       const names = Object.fromEntries(Object.entries(profiles).map(([id, p]) => [id, p.name]));
       const baseQuery = new URLSearchParams({ tab: 'sanctions', ...(query.type ? { type: query.type } : {}), ...(query.user ? { user: query.user } : {}) }).toString();
       const types = Object.values(SanctionType);
       const statTotal = Math.max(...types.map((t) => stats.byType[t] ?? 0), 1);
+      const canMassUnban = isGuildAdmin(req.session.guilds, guild.id, req.session.user!.id, env().OWNER_IDS);
       render(res, 'moderation', {
         title: 'Modération',
         page: 'moderation',
         tab,
+        view,
+        scrollTo: view === 'protection' ? PROTECTION_ANCHORS[tab] ?? null : tab === 'stats' ? 'stats' : null,
         tabLabels: TAB_LABELS,
-        crumbs: tab === 'sanctions' ? [] : [{ label: TAB_LABELS[tab] }],
+        crumbs: view === 'sanctions' && tab !== 'stats' ? [] : [{ label: view === 'protection' ? 'Protection' : TAB_LABELS[tab] }],
+        statsChart: hbarsChart('chart-sanctions', types.map((t) => ({ label: SANCTION_TYPE_LABELS[t], value: stats.byType[t] ?? 0 }))),
+        massUnban: { job: massUnbanService.status(guild.id), allowed: canMassUnban, confirmWord: UNBAN_ALL_CONFIRMATION, fivem: Boolean(config.modules.fivem) },
+        scripts: view === 'protection' ? ['moderation'] : [],
         filters: query,
         modConfig,
         antiRaid: modConfig.antiRaid,
@@ -201,6 +221,68 @@ export function createModerationRouter(client: RedemptionClient): Router {
         modules: { moderation: config.modules.moderation, antiraid: config.modules.antiraid },
       });
     }),
+  );
+
+  // ───── Débannir tout le monde (MassUnbanService) ─────
+  router.get(
+    '/moderation/unban-all/status',
+    wrap(async (_req, res) => {
+      const guildView = res.locals.guild!;
+      const job = massUnbanService.status(guildView.id);
+      const running = Boolean(job && !job.finishedAt);
+      let count: number | null = null;
+      if (!running && client.isReady()) {
+        const cached = banCountCache.get(guildView.id);
+        if (cached && Date.now() - cached.at < 60_000) count = cached.count;
+        else {
+          const guild = client.guilds.cache.get(guildView.id);
+          count = guild ? await massUnbanService.count(guild).catch(() => null) : null;
+          if (count !== null) banCountCache.set(guildView.id, { at: Date.now(), count });
+        }
+      }
+      res.json({ ok: true, count, job: job ? { total: job.total, done: job.done, failed: job.failed, startedAt: job.startedAt, finishedAt: job.finishedAt ?? null, cancelled: job.cancelled, running } : null });
+    }),
+  );
+
+  router.post(
+    '/moderation/unban-all',
+    validate({ body: unbanAllBody }),
+    formAction(
+      (_req, res) => `${base(res.locals.guild!.id)}?tab=protection#danger-zone`,
+      async (req, res) => {
+        const guildView = res.locals.guild!;
+        const { body } = valid<z.infer<typeof unbanAllBody>>(req);
+        if (!isGuildAdmin(req.session.guilds, guildView.id, req.session.user!.id, env().OWNER_IDS)) throw new HttpError(403, 'Réservé au propriétaire du serveur et aux membres « Administrateur ».');
+        if (!isUnbanAllConfirmed(body.confirm)) throw new HttpError(400, `Confirmation refusée : il fallait taper exactement ${UNBAN_ALL_CONFIRMATION}. Personne n'a été débanni.`);
+        const guild = requireBotGuild(client, guildView.id);
+        const sessionUser = req.session.user!;
+        // Le service n'utilise que l'identifiant et le nom (raison d'audit) de l'auteur.
+        const actor = (await client.users.fetch(sessionUser.id).catch(() => null)) ?? ({ id: sessionUser.id, username: sessionUser.username, tag: sessionUser.username } as unknown as import('discord.js').User);
+        massUnbanService.start(guild, actor, {
+          reason: body.reason ?? null,
+          syncGame: body.syncGame,
+          onProgress: (job) => broadcastToGuild(guildView.id, 'moderation:unban_all', { guildId: guildView.id, total: job.total, done: job.done, failed: job.failed, finished: Boolean(job.finishedAt) }),
+        });
+        banCountCache.delete(guildView.id);
+        flash(req, 'success', 'Débannissement de masse lancé : suivez la progression ci-dessous (environ 2 membres par seconde).');
+      },
+    ),
+  );
+
+  router.post(
+    '/moderation/unban-all/cancel',
+    formAction(
+      (_req, res) => `${base(res.locals.guild!.id)}?tab=protection#danger-zone`,
+      async (req, res) => {
+        const guildView = res.locals.guild!;
+        const cancelled = massUnbanService.cancel(guildView.id);
+        if (wantsJson(req)) {
+          res.json({ ok: true, cancelled });
+          return;
+        }
+        flash(req, cancelled ? 'success' : 'info', cancelled ? 'Annulation demandée : le débannissement s’arrête après le membre en cours.' : 'Aucun débannissement de masse en cours.');
+      },
+    ),
   );
 
   router.post(

@@ -1,7 +1,6 @@
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('wrench') %></span>
-    <div><h1 class="page-title">Administration globale</h1><p class="page-subtitle">Réservé aux propriétaires du bot : tous les serveurs connus en base, présents ou non.</p></div>
+    <div><%- include('../partials/eyebrow', { eyebrowText: 'Propriétaire du bot' }) %><h1 class="page-title">Administration globale</h1><p class="page-subtitle">Réservé aux propriétaires du bot : tous les serveurs connus en base, présents ou non.</p></div>
   </div>
   <div class="page-actions">
     <form method="post" action="/admin/reload-locales" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn"><%- icon('refresh', { size: 16 }) %>Recharger les locales</button></form>

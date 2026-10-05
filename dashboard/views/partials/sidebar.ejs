@@ -1,13 +1,13 @@
 <%
-  const _sb = buildSidebar(guild.id, page, config ? config.modules : null);
+  const _sb = buildSidebar(guild.id, page, config ? config.modules : null, config ? config.kind : null);
   const _section = (currentPath.match(/^\/guilds\/\d+\/([a-z-]+)/) || [])[1] || '';
 %>
 <aside class="sidebar" id="sidebar" aria-label="Navigation principale">
   <div class="sidebar-head">
     <div class="dropdown grow" data-dropdown>
       <button type="button" class="guild-switch" data-dropdown-toggle aria-haspopup="menu" aria-expanded="false" aria-label="Changer de serveur (actuel : <%= guild.name %>)">
-        <% if (guild.iconUrl) { %><img class="guild-switch-icon" src="<%= guild.iconUrl %>" alt=""><% } else { %><span class="guild-switch-icon avatar avatar-fallback"><%= fmt.initials(guild.name) %></span><% } %>
-        <span class="guild-switch-text"><span class="guild-switch-name truncate"><%= guild.name %></span><span class="guild-switch-sub"><%= fmt.number(guild.memberCount) %> membres</span></span>
+        <% if (guild.iconUrl) { %><img class="guild-switch-icon" src="<%= guild.iconUrl %>" alt=""><% } else { %><span class="guild-switch-icon avatar avatar-fallback avatar-square"><%= fmt.initials(guild.name) %></span><% } %>
+        <span class="guild-switch-text"><span class="guild-switch-name truncate"><%= guild.name %></span><span class="guild-switch-sub"><%= kindLabel(config ? config.kind : null) %> · <%= fmt.number(guild.memberCount) %> membres</span></span>
         <%- icon('chevrons-up-down', { size: 16 }) %>
       </button>
       <div class="dropdown-menu full" role="menu">
@@ -27,13 +27,17 @@
     <button type="button" class="icon-btn sidebar-close" data-sidebar-close aria-label="Fermer le menu"><%- icon('x') %></button>
   </div>
 
+  <button type="button" class="nav-search" data-palette-open aria-haspopup="dialog" aria-label="Rechercher une page ou un réglage (Ctrl+K)">
+    <%- icon('search') %><span>Aller à…</span><kbd class="kbd" data-palette-shortcut>Ctrl K</kbd>
+  </button>
+
   <nav class="sidebar-nav" aria-label="Sections du serveur">
     <% for (const group of _sb.groups) { %>
       <div class="nav-group">
         <% if (group.label) { %><div class="nav-group-label"><%= group.label %></div><% } %>
         <% for (const item of group.items) { %>
-          <a href="<%= item.href %>" class="nav-item<%= item.active ? ' active' : '' %><%= item.dimmed ? ' is-dim' : '' %>"<%- item.active ? ' aria-current="page"' : '' %><%- item.dimmed ? ' title="Module désactivé"' : '' %>>
-            <%- icon(item.icon) %><span class="nav-label"><%= item.label %></span>
+          <a href="<%= item.href %>" class="nav-item<%= item.active ? ' active' : '' %><%= item.dimmed ? ' is-dim' : '' %>"<%- item.active ? ' aria-current="page"' : '' %>>
+            <%- icon(item.icon) %><span class="nav-label"><%= item.label %></span><% if (item.dimmed) { %><span class="nav-tag" title="Module désactivé">off</span><% } %>
           </a>
         <% } %>
       </div>
@@ -41,9 +45,10 @@
     <% if (_sb.others.length) { %>
       <details class="nav-more"<%= _sb.othersOpen ? ' open' : '' %>>
         <summary><%- icon('chevron-right', { size: 14 }) %>Autres modules</summary>
+        <p class="nav-more-hint">Non utilisés par ce type de serveur. Activez-les dans Paramètres si besoin.</p>
         <% for (const item of _sb.others) { %>
-          <a href="<%= item.href %>" class="nav-item is-dim<%= item.active ? ' active' : '' %>"<%- item.active ? ' aria-current="page"' : '' %> title="Module désactivé">
-            <%- icon(item.icon) %><span class="nav-label"><%= item.label %></span>
+          <a href="<%= item.href %>" class="nav-item<%= item.dimmed ? ' is-dim' : '' %><%= item.active ? ' active' : '' %>"<%- item.active ? ' aria-current="page"' : '' %>>
+            <%- icon(item.icon) %><span class="nav-label"><%= item.label %></span><% if (item.dimmed) { %><span class="nav-tag" title="Module désactivé">off</span><% } %>
           </a>
         <% } %>
       </details>
@@ -51,6 +56,10 @@
   </nav>
 
   <div class="sidebar-foot">
+    <div class="bot-status" role="status">
+      <span class="dot <%= botReady ? 'dot-success' : 'dot-warning' %>" aria-hidden="true"></span>
+      <span><strong><%= botUser ? botUser.username : 'Bot' %></strong> <%= botReady ? 'en ligne' : 'en démarrage' %></span>
+    </div>
     <%- include('user-menu', { menuClass: 'align-up full' }) %>
   </div>
 </aside>

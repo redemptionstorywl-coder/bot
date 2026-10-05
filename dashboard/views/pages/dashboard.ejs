@@ -1,53 +1,104 @@
-<% const g = guild; const base = `/guilds/${g.id}`; %>
+<%
+  const g = guild; const base = `/guilds/${g.id}`;
+  const done = steps.filter((s) => s.done).length;
+  const allDone = done === steps.length;
+  const langLabel = overview.defaultLanguage === 'en' ? 'anglais' : 'français';
+%>
 <header class="page-header">
-  <div class="overview-hero">
-    <% if (g.iconUrl) { %><img class="avatar avatar-xl" src="<%= g.iconUrl %>" alt=""><% } else { %><span class="avatar avatar-xl avatar-fallback avatar-square"><%= fmt.initials(g.name) %></span><% } %>
-    <div>
+  <div class="overview-head">
+    <% if (g.iconUrl) { %><img class="avatar avatar-lg" src="<%= g.iconUrl %>" alt=""><% } else { %><span class="avatar avatar-lg avatar-fallback avatar-square"><%= fmt.initials(g.name) %></span><% } %>
+    <div class="min-w-0">
+      <p class="eyebrow">Vue d'ensemble</p>
       <h1 class="page-title"><%= g.name %></h1>
-      <p class="page-subtitle row-wrap"><span class="badge badge-accent"><%= overview.kindLabel %></span><span class="text-3">Langue du bot : <%= overview.defaultLanguage === 'en' ? 'English' : 'Français' %></span></p>
+      <p class="page-subtitle"><%= kindLabel(overview.kind) %> · bot en <%= langLabel %> · fuseau <%= config.timezone %></p>
     </div>
   </div>
   <div class="page-actions">
     <a class="btn" href="<%= base %>/logs"><%- icon('scroll-text', { size: 16 }) %>Logs</a>
-    <a class="btn btn-primary" href="<%= base %>/settings"><%- icon('settings', { size: 16 }) %>Paramètres</a>
+    <a class="btn" href="<%= base %>/settings"><%- icon('settings', { size: 16 }) %>Paramètres</a>
   </div>
 </header>
 
-<section class="stat-grid" aria-label="Statistiques" data-live-reload>
+<% if (lockdown) { %>
+  <div class="alert alert-danger" role="alert"><%- icon('lock') %><span class="alert-text"><span class="alert-title">Lockdown actif</span>Les membres hors staff ne peuvent plus écrire<%= lockdown.at ? ' depuis le ' + fmt.dateTime(lockdown.at) : '' %>. <a class="link" href="<%= base %>/moderation?tab=lockdown">Lever le lockdown</a></span></div>
+<% } %>
+
+<section class="stat-grid" aria-label="Chiffres clés" data-live-reload>
   <a class="stat" href="<%= base %>/members">
-    <div class="stat-head"><span class="stat-label">Membres</span><span class="stat-icon"><%- icon('users') %></span></div>
+    <span class="stat-label">Membres</span>
     <strong class="stat-value" data-stat="members"><%= fmt.number(overview.members) %></strong>
-    <span class="stat-sub"><%= fmt.number(overview.roles) %> rôles · <%= fmt.number(overview.channels) %> salons</span>
+    <span class="stat-sub"><% if (overview.online !== null) { %><span data-stat="online"><%= fmt.number(overview.online) %></span> en ligne<% } else { %>présences indisponibles<% } %></span>
   </a>
-  <div class="stat">
-    <div class="stat-head"><span class="stat-label">En ligne</span><span class="stat-icon"><span class="dot dot-success"></span></span></div>
-    <strong class="stat-value" data-stat="online"><%= overview.online === null ? '—' : fmt.number(overview.online) %></strong>
-    <span class="stat-sub"><%= overview.online !== null && overview.members ? fmt.percent(overview.online, overview.members) + ' % des membres' : 'présences indisponibles' %></span>
-  </div>
   <a class="stat" href="<%= base %>/tickets/list?status=open">
-    <div class="stat-head"><span class="stat-label">Tickets ouverts</span><span class="stat-icon is-accent"><%- icon('ticket') %></span></div>
+    <span class="stat-label">Tickets en attente</span>
     <strong class="stat-value" data-stat="openTickets"><%= fmt.number(overview.counts.openTickets) %></strong>
-    <span class="stat-sub">en attente ou pris en charge</span>
+    <span class="stat-sub">ouverts ou pris en charge</span>
   </a>
   <a class="stat" href="<%= base %>/moderation">
-    <div class="stat-head"><span class="stat-label">Sanctions (7 j)</span><span class="stat-icon"><%- icon('shield') %></span></div>
+    <span class="stat-label">Sanctions (7 j)</span>
     <strong class="stat-value" data-stat="sanctions7d"><%= fmt.number(overview.counts.sanctions7d) %></strong>
-    <span class="stat-sub"><span data-stat="activeWarnings"><%= fmt.number(overview.counts.activeWarnings) %></span> avertissements actifs</span>
+    <span class="stat-sub"><span data-stat="activeWarnings"><%= fmt.number(overview.counts.activeWarnings) %></span> avertissement(s) actif(s)</span>
   </a>
-  <a class="stat" href="<%= base %>/settings?tab=modules">
-    <div class="stat-head"><span class="stat-label">Modules actifs</span><span class="stat-icon"><%- icon('layers') %></span></div>
+  <a class="stat" href="<%= base %>/settings#modules">
+    <span class="stat-label">Modules actifs</span>
     <strong class="stat-value"><span data-stat="modules-active"><%= overview.modules.active %></span><span class="stat-sub">/ <%= overview.modules.total %></span></strong>
-    <span class="stat-sub">latence <span data-stat="ping"><%= overview.pingMs >= 0 ? overview.pingMs + ' ms' : '—' %></span></span>
+    <span class="stat-sub"><%= fmt.number(overview.roles) %> rôles · <%= fmt.number(overview.channels) %> salons</span>
   </a>
 </section>
 
-<div class="grid-aside-right grid-2">
-  <section class="card card-flush">
-    <div class="card-head">
-      <div><h2 class="card-title"><%- icon('activity') %>Activité récente</h2></div>
-      <a class="btn btn-ghost btn-sm" href="<%= base %>/logs">Tout voir<%- icon('arrow-right', { size: 14 }) %></a>
-    </div>
-    <div class="card-body">
+<div class="overview-grid">
+  <div class="overview-main">
+    <% if (!allDone) { %>
+    <section class="setup" id="mise-en-route" aria-labelledby="setup-title">
+      <div class="section-head">
+        <div><h2 class="section-title" id="setup-title">Mise en route</h2><p>Les réglages essentiels, cochés automatiquement d'après la configuration du serveur.</p></div>
+      </div>
+      <div class="setup-progress"><span><strong><%= done %> sur <%= steps.length %></strong> terminées</span><span class="bar-track" aria-hidden="true"><span class="bar-fill" data-pct="<%= Math.round((done / steps.length) * 100) %>"></span></span></div>
+      <ol class="setup-list">
+        <% for (const s of steps) { %>
+          <li class="setup-item<%= s.done ? ' is-done' : '' %>">
+            <a href="<%= s.href %>">
+              <span class="setup-state" aria-hidden="true"><%- icon('check') %></span>
+              <span><span class="setup-title"><%= s.title %></span><span class="sr-only"><%= s.done ? ' (terminé)' : ' (à faire)' %></span><span class="setup-desc"><%= s.desc %></span></span>
+              <span class="setup-go"><%= s.cta %><%- icon('arrow-right') %></span>
+            </a>
+          </li>
+        <% } %>
+      </ol>
+    </section>
+    <% } %>
+
+    <section class="card" aria-label="Arrivées et départs">
+      <%- include('../partials/chart-mirror', { chart: charts.members, title: 'Arrivées et départs', sub: '30 derniers jours, par jour (journal des membres).', emptyText: 'Aucune arrivée ni aucun départ enregistré sur 30 jours. Les données viennent des logs « Membres » : vérifiez que ce module de logs est actif.' }) %>
+    </section>
+
+    <section class="card" aria-label="Tickets">
+      <%- include('../partials/chart-line', { chart: charts.tickets, title: 'Tickets ouverts et fermés', sub: '30 derniers jours, par jour.', emptyText: 'Aucun ticket ouvert ni fermé sur 30 jours.', extraFigure: { label: 'En attente', value: charts.backlog } }) %>
+    </section>
+
+    <section class="card" aria-label="Sanctions">
+      <%- include('../partials/chart-hbars', { chart: charts.sanctions, title: 'Sanctions par type', sub: '30 derniers jours.', emptyText: 'Aucune sanction sur 30 jours.', unit: 'Sanctions' }) %>
+    </section>
+  </div>
+
+  <aside class="overview-aside">
+    <% if (allDone) { %>
+      <p class="setup-done"><%- icon('check-circle') %>Mise en route terminée : les réglages essentiels sont en place.</p>
+    <% } %>
+
+    <section aria-labelledby="state-title">
+      <div class="section-head"><h2 class="section-title" id="state-title">État</h2></div>
+      <ul class="status-list">
+        <li class="status-item"><span class="dot <%= botReady ? 'dot-success' : 'dot-warning' %>" aria-hidden="true"></span><span><%= botUser ? botUser.username : 'Bot' %> <%= botReady ? 'en ligne' : 'en démarrage' %></span><span class="status-value" data-stat="ping"><%= overview.pingMs >= 0 ? overview.pingMs + ' ms' : '—' %></span></li>
+        <li class="status-item"><span class="dot <%= lockdown ? 'dot-danger' : 'dot-success' %>" aria-hidden="true"></span><span><%= lockdown ? 'Lockdown actif' : 'Serveur ouvert' %></span><a class="link text-xs" href="<%= base %>/moderation?tab=lockdown">Gérer</a></li>
+        <% for (const s of servers) { %>
+          <li class="status-item"><span class="dot <%= s.state === 'online' ? 'dot-success' : s.state === 'maintenance' ? 'dot-warning' : 'dot-danger' %>" aria-hidden="true"></span><span title="<%= s.name %>"><%= s.name %> <span class="text-3">· <%= s.stateLabel %></span></span><span class="status-value"><%= s.players %> / <%= s.maxPlayers || '—' %></span></li>
+        <% } %>
+      </ul>
+    </section>
+
+    <section aria-labelledby="activity-title">
+      <div class="section-head"><h2 class="section-title" id="activity-title">Activité récente</h2><a class="link text-sm" href="<%= base %>/logs">Tout voir</a></div>
       <% if (!logs.length) { %>
         <%- include('../partials/empty', { glyph: 'activity', title: 'Aucune activité pour l’instant', text: 'Les actions du bot et du staff apparaîtront ici en temps réel.', compact: true }) %>
       <% } else { %>
@@ -58,56 +109,25 @@
             <div class="grow">
               <div class="log-row-title"><%= l.title %></div>
               <div class="log-row-meta">
-                <span class="badge badge-muted"><%= l.categoryLabel %></span>
+                <span><%= l.categoryLabel %></span>
                 <% if (l.actorId) { %><span class="row"><% if (p) { %><img class="avatar avatar-xs" src="<%= p.avatarUrl %>" alt=""><% } %><%= p ? p.name : l.actorId %></span><% } %>
                 <span title="<%= fmt.dateTime(l.createdAt) %>"><%= fmt.relative(l.createdAt) %></span>
-                <code class="text-3"><%= l.action %></code>
+                <code><%= l.action %></code>
               </div>
             </div>
           </li>
         <% } %>
       </ol>
       <% } %>
-    </div>
-  </section>
-
-  <div class="stack">
-    <section class="card">
-      <h2 class="card-title"><%- icon('zap') %>Raccourcis</h2>
-      <div class="stack-2">
-        <% for (const [href, ic, label] of [
-          [base + '/tickets', 'ticket', 'Configurer les tickets'],
-          [base + '/tickets/panels', 'send', 'Publier un panneau de tickets'],
-          [base + '/welcome', 'hand', 'Message de bienvenue'],
-          [base + '/embeds', 'layout-template', 'Créer un embed'],
-          [base + '/moderation', 'shield', 'Modération & sécurité'],
-          [base + '/settings?tab=modules', 'layers', 'Activer des modules'],
-        ]) { %>
-          <a class="shortcut" href="<%= href %>"><span class="list-item-icon"><%- icon(ic) %></span><%= label %><%- icon('arrow-right') %></a>
-        <% } %>
-      </div>
     </section>
 
-    <% if (servers.length) { %>
-    <section class="card">
-      <div class="card-head"><h2 class="card-title"><%- icon('gamepad') %>Serveurs FiveM</h2><a class="link text-sm" href="<%= base %>/fivem">Gérer</a></div>
-      <% for (const s of servers) { %>
-        <div class="server-status">
-          <span class="dot <%= s.state === 'online' ? 'dot-success' : s.state === 'maintenance' ? 'dot-warning' : 'dot-danger' %>" aria-hidden="true"></span>
-          <div class="grow"><div class="strong text-sm truncate"><%= s.name %></div><div class="text-xs text-3"><%= s.stateLabel %><%= s.lastSeenAt ? ' · vu ' + fmt.relative(s.lastSeenAt) : '' %></div></div>
-          <span class="badge <%= s.state === 'online' ? 'badge-success' : 'badge-muted' %> tabular"><%= s.players %> / <%= s.maxPlayers || '—' %></span>
-        </div>
-      <% } %>
-    </section>
-    <% } %>
-
-    <section class="card">
-      <div class="card-head"><h2 class="card-title"><%- icon('layers') %>Modules</h2><a class="link text-sm" href="<%= base %>/settings?tab=modules">Gérer</a></div>
+    <section aria-labelledby="modules-title">
+      <div class="section-head"><h2 class="section-title" id="modules-title">Modules</h2><a class="link text-sm" href="<%= base %>/settings#modules">Gérer</a></div>
       <ul class="module-chips" data-module-chips>
         <% for (const grp of moduleGroups) { for (const m of grp.modules) { %>
           <li class="chip <%= m.enabled ? 'chip-on' : 'chip-off' %>" data-module-chip="<%= m.key %>"><span class="chip-dot" aria-hidden="true"></span><%= m.label %></li>
         <% } } %>
       </ul>
     </section>
-  </div>
+  </aside>
 </div>

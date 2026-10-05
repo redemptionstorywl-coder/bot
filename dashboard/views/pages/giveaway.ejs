@@ -2,8 +2,7 @@
 <a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Giveaways</a>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('gift') %></span>
-    <div>
+    <div><%- include('../partials/eyebrow') %>
       <h1 class="page-title row-wrap"><span><%= g.prize %></span><span class="badge <%= g.ended ? 'badge-status-ENDED' : 'badge-status-ONGOING' %>"><%= g.ended ? 'Terminé' : 'En cours' %></span></h1>
       <p class="page-subtitle">Organisé par <%= names[g.hostId] || g.hostId %> · #<%= channelName %> · <%= g.ended ? 'terminé' : 'fin' %> <%= fmt.relative(g.endsAt) %> (<%= fmt.dateTime(g.endsAt) %>)</p>
     </div>

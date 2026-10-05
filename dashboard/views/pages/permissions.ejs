@@ -1,0 +1,116 @@
+<%
+  const base = `/guilds/${guild.id}/permissions`;
+  const roleById = new Map(guild.roles.map((r) => [r.id, r]));
+  const rolePills = (ids) => ids.map((id) => { const r = roleById.get(id); return r ? `<span class="role-pill" data-role-color="${r.color}"><span class="role-dot"></span><span>${fmt.escape ? fmt.escape(r.name) : r.name.replace(/[&<>"']/g, '')}</span></span>` : '<span class="badge badge-muted">rôle supprimé</span>'; }).join('');
+%>
+<header class="page-header">
+  <div class="page-heading">
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Permissions des commandes</h1><p class="page-subtitle">Choisissez qui peut utiliser chaque commande slash. Sans réglage, une commande garde son accès par défaut.</p></div>
+  </div>
+  <div class="page-actions">
+    <form method="post" action="<%= base %>/reset" class="inline-form" data-confirm="Toutes les commandes reviendront à leur accès par défaut : rôles autorisés et désactivations seront supprimés." data-confirm-title="Tout remettre par défaut" data-confirm-label="Tout remettre par défaut">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="btn btn-ghost" <%= summary.custom + summary.disabled ? '' : 'disabled' %>><%- icon('refresh', { size: 16 }) %>Tout remettre par défaut</button>
+    </form>
+  </div>
+</header>
+
+<ul class="perm-explain" aria-label="Comment ça marche">
+  <li><%- icon('user-check') %><span><strong>Un rôle autorisé suffit</strong>Un membre qui a l'un des rôles choisis peut utiliser la commande, même s'il n'est pas staff et n'a pas la permission Discord habituelle.</span></li>
+  <li><%- icon('crown') %><span><strong>Propriétaire et administrateurs</strong>Le propriétaire du serveur n'est jamais bloqué. Les membres « Administrateur » Discord passent les restrictions de rôles.</span></li>
+  <li><%- icon('lock') %><span><strong>/config et /help toujours accessibles</strong>Elles ne peuvent pas être restreintes : le serveur ne peut pas se verrouiller dehors. Une commande désactivée l'est pour tous les autres membres.</span></li>
+</ul>
+
+<div class="with-toc">
+  <nav class="toc" data-toc aria-label="Catégories de commandes">
+    <div class="toc-title">Catégories</div>
+    <% for (const cat of categories) { %>
+      <a href="#cat-<%= cat.key %>"><%= cat.label %><span class="toc-meta" title="<%= cat.custom %> commande(s) personnalisée(s) sur <%= cat.commands.length %>"><%= cat.custom ? cat.custom + '/' : '' %><%= cat.commands.length %></span></a>
+    <% } %>
+  </nav>
+
+  <div class="min-w-0">
+    <div class="perm-toolbar">
+      <label class="search grow"><%- icon('search', { size: 16 }) %><input type="search" class="input" placeholder="Filtrer par nom ou description…" data-filter="#perm-root" data-filter-empty="#perm-empty" aria-label="Filtrer les commandes"></label>
+      <span class="text-sm text-3"><%= fmt.number(summary.total) %> commandes · <%= fmt.number(summary.custom) %> avec rôles · <%= fmt.number(summary.disabled) %> désactivée(s)</span>
+    </div>
+
+    <% if (!categories.length) { %>
+      <%- include('../partials/empty', { glyph: 'square-slash', title: 'Aucune commande chargée', text: 'Le bot n’a pas encore enregistré ses commandes : réessayez après son démarrage.' }) %>
+    <% } %>
+
+    <div id="perm-root">
+    <% for (const cat of categories) { %>
+      <section class="perm-cat toc-section" id="cat-<%= cat.key %>" aria-labelledby="cat-title-<%= cat.key %>">
+        <div class="perm-cat-head" data-filter-skip>
+          <h2 class="perm-cat-title" id="cat-title-<%= cat.key %>"><%- icon(cat.icon) %><%= cat.label %> <span class="perm-cat-count"><%= cat.commands.length %> commande<%= cat.commands.length > 1 ? 's' : '' %></span></h2>
+        </div>
+        <ul class="perm-list">
+          <% for (const c of cat.commands) { const lvl = levels[c.level] || levels.everyone; %>
+            <li class="perm-item<%= c.state === 'disabled' ? ' is-disabled' : '' %><%= c.locked ? ' is-locked' : '' %>" id="cmd-<%= c.name %>" data-filter-item data-filter-text="<%= (c.name + ' ' + c.description + ' ' + cat.label).toLowerCase() %>">
+              <% if (c.locked) { %>
+                <div class="perm-static">
+                  <span class="perm-name"><code>/<%= c.name %></code><span class="perm-desc"><%= c.description %></span></span>
+                  <span class="perm-state"><span class="level-pill"><%- icon(lvl.icon) %>Par défaut · <%= lvl.label %></span></span>
+                  <span class="perm-edit-label"><%- icon('lock') %>Toujours accessible</span>
+                </div>
+              <% } else { %>
+              <details>
+                <summary>
+                  <span class="perm-name"><code>/<%= c.name %></code><span class="perm-desc"><%= c.description %></span></span>
+                  <span class="perm-state">
+                    <% if (c.state === 'disabled') { %>
+                      <span class="badge badge-muted"><%- icon('ban') %>Désactivée</span>
+                    <% } else if (c.state === 'roles') { %>
+                      <%- rolePills(c.rule.roleIds) %>
+                    <% } else { %>
+                      <span class="level-pill" title="<%= lvl.hint %>"><%- icon(lvl.icon) %>Par défaut · <%= lvl.label %></span>
+                    <% } %>
+                    <% if (c.moduleOff) { %><span class="badge badge-warning" title="Le module <%= c.moduleLabel %> est coupé : la commande ne répond pas.">Module coupé</span><% } %>
+                  </span>
+                  <span class="perm-edit-label">Modifier<%- icon('chevron-down') %></span>
+                </summary>
+                <form method="post" action="<%= base %>/command/<%= c.name %>" class="perm-form">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <div class="field">
+                    <label for="perm-roles-<%= c.name %>">Rôles autorisés</label>
+                    <%- include('../partials/role-select', { name: 'roleIds', id: 'perm-roles-' + c.name, selected: c.rule ? c.rule.roleIds : [], placeholder: 'Par défaut (' + lvl.label.toLowerCase() + ')' }) %>
+                    <small class="hint">Vide = accès par défaut (<%= lvl.label.toLowerCase() %>). Avec des rôles, seuls ces rôles (et les administrateurs) peuvent l'utiliser.</small>
+                  </div>
+                  <div class="perm-form-actions">
+                    <label class="toggle"><input type="checkbox" name="enabled" <%= !c.rule || c.rule.enabled ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Commande activée</span></label>
+                    <button type="submit" class="btn btn-ghost btn-sm" formaction="<%= base %>/command/<%= c.name %>/reset" <%= c.rule ? '' : 'disabled' %>>Revenir au défaut</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Enregistrer /<%= c.name %></button>
+                  </div>
+                </form>
+              </details>
+              <% } %>
+            </li>
+          <% } %>
+        </ul>
+        <% if (cat.editable) { %>
+        <details class="perm-bulk" data-filter-skip>
+          <summary><%- icon('users', { size: 14 }) %>Appliquer des rôles à toute la catégorie <%= cat.label %></summary>
+          <form method="post" action="<%= base %>/category/<%= cat.key %>" class="perm-bulk-form">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="field">
+              <label for="bulk-roles-<%= cat.key %>">Rôles à autoriser sur les <%= cat.editable %> commande(s)</label>
+              <%- include('../partials/role-select', { name: 'roleIds', id: 'bulk-roles-' + cat.key, selected: [], placeholder: 'Choisir des rôles…' }) %>
+              <div class="segmented mt-2" role="radiogroup" aria-label="Mode d'application">
+                <label><input type="radio" name="mode" value="replace" checked><span>Remplacer les rôles actuels</span></label>
+                <label><input type="radio" name="mode" value="add"><span>Ajouter aux rôles actuels</span></label>
+              </div>
+            </div>
+            <div class="btn-row mt-0">
+              <button type="submit" class="btn btn-ghost btn-sm" formaction="<%= base %>/category/<%= cat.key %>/reset" formnovalidate data-confirm="Les commandes <%= cat.label %> reviendront à leur accès par défaut." data-confirm-title="Remettre la catégorie par défaut" data-confirm-label="Remettre par défaut" <%= cat.custom ? '' : 'disabled' %>>Remettre la catégorie par défaut</button>
+              <button type="submit" class="btn btn-primary btn-sm">Appliquer à <%= cat.editable %> commande(s)</button>
+            </div>
+          </form>
+        </details>
+        <% } %>
+      </section>
+    <% } %>
+    </div>
+    <div id="perm-empty" hidden><%- include('../partials/empty', { glyph: 'search', title: 'Aucune commande ne correspond', compact: true }) %></div>
+  </div>
+</div>

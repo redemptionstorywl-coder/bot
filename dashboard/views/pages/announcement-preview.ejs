@@ -2,8 +2,7 @@
 <a class="back-link" href="<%= b %>"><%- icon('arrow-left', { size: 16 }) %>Retour à l'éditeur</a>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('eye') %></span>
-    <div><h1 class="page-title">Aperçu final</h1><p class="page-subtitle"><%= announcement.title %> — version enregistrée, variables remplacées et couleur de marque appliquée.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Aperçu final</h1><p class="page-subtitle"><%= announcement.title %> — version enregistrée, variables remplacées et couleur de marque appliquée.</p></div>
   </div>
   <div class="page-actions"><a class="btn" href="<%= b %>"><%- icon('pencil', { size: 16 }) %>Modifier</a></div>
 </header>

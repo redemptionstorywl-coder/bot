@@ -11,12 +11,11 @@
 %>
 <header class="page-header">
   <div class="page-heading">
-    <span class="page-icon"><%- icon('swords') %></span>
-    <div><h1 class="page-title">Battle Royale</h1><p class="page-subtitle">Classements par saison, profils des joueurs, saisons et Battle Pass.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Battle Royale</h1><p class="page-subtitle">Classements par saison, profils des joueurs, saisons et Battle Pass.</p></div>
   </div>
 </header>
 
-<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Battle Royale est désactivé : les commandes <code>/br-*</code> ne répondent pas. <a class="link" href="/guilds/<%= guild.id %>/settings?tab=modules">Activer le module</a></span></div><% } %>
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Battle Royale est désactivé : les commandes <code>/br-*</code> ne répondent pas. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer le module</a></span></div><% } %>
 
 <div class="stat-grid">
   <div class="stat"><span class="stat-label"><%- icon('users', { size: 14 }) %>Profils</span><span class="stat-value"><%= fmt.number(profileCount) %></span></div>
