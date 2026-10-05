@@ -98,8 +98,8 @@
       <section class="card">
         <div class="card-head"><div><h2 class="card-title">Sanctions</h2><p class="card-desc">Bans, débans et expulsions dans les deux sens.</p></div></div>
         <div class="toggle-list">
-          <%- toggle('syncBansToDiscord', 'Ban en jeu → ban Discord', 'Ban, tempban et déban pris en jeu (txAdmin, menu admin) appliqués sur Discord.') %>
-          <%- toggle('syncBansToGame', 'Ban Discord → ban en jeu', 'Les bans du serveur Discord sont envoyés au serveur de jeu.') %>
+          <%- toggle('syncBansToDiscord', 'Ban en jeu → ban Discord', 'Par défaut : ban, tempban et déban pris en jeu (txAdmin, menu admin) appliqués sur Discord. exports.rs_bridge:Ban(…, alsoDiscord) choisit à chaque fois.') %>
+          <%- toggle('syncBansToGame', 'Ban Discord → ban en jeu', 'Par défaut : les bans du serveur Discord sont envoyés au serveur de jeu. L\'option en_jeu de /ban, /tempban, /unban (et la case du dashboard) choisit à chaque fois.') %>
           <%- toggle('syncKicks', 'Kick en jeu → expulsion Discord', 'Rarement souhaité : un kick en jeu expulse aussi du Discord.') %>
         </div>
       </section>
@@ -122,6 +122,12 @@
           <div class="field"><label for="f-online">Rôle « en jeu »</label><%- include('../partials/role-select', { name: 'onlineRoleId', id: 'f-online', selected: sync.onlineRoleId || '', multiple: false, emptyLabel: '— Aucun —' }) %></div>
         </div>
         <div class="field mt-4"><label for="f-counter">Salon compteur de joueurs</label><%- include('../partials/channel-select', { name: 'playerCountChannelId', id: 'f-counter', selected: sync.playerCountChannelId || '', kind: 'all', emptyLabel: '— Aucun —' }) %><small class="hint">Renommé automatiquement (au plus toutes les 6 minutes, limite Discord). Un salon vocal est idéal.</small></div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><div><h2 class="card-title">Groupes en jeu</h2><p class="card-desc">Rôle Discord → groupe en jeu (ACE <code>group.&lt;nom&gt;</code>). <strong>L'ordre compte</strong> : le premier groupe détenu par le membre est son groupe principal.</p></div></div>
+        <%- include('../partials/repeater', { kind: 'rolegroup', rows: sync.roleGroups, name: 'roleGroupsJson', id: 'f-role-groups', max: 25, addLabel: 'Associer un rôle', roles: guild.roles.filter((r) => !r.managed && r.id !== guild.id) }) %>
+        <small class="hint mt-2">Appliqué à la connexion et dès qu'un rôle change sur Discord (≈ 10 s). Groupe : minuscules, chiffres, <code>_</code> <code>-</code> <code>.</code>. Côté serveur : <code>add_ace resource.rs_bridge command.add_principal allow</code> et <code>command.remove_principal allow</code> dans <code>server.cfg</code> ; le gamemode reçoit l'événement <code>rs_bridge:groupsChanged</code> et peut lire <code>exports.rs_bridge:GetGroups(source)</code>.</small>
       </section>
 
       <section class="card">

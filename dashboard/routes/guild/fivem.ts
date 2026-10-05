@@ -14,6 +14,8 @@ import { flash } from '../../lib/flash';
 import { HttpError } from '../../lib/errors';
 import { validate, valid, optionalDiscordId, optionalText, checkbox } from '../../lib/validate';
 import { formAction } from '../../lib/serviceErrors';
+import { jsonArray } from '../../lib/embedForm';
+import { MAX_ROLE_GROUPS, parseRoleGroups, roleGroupSchema } from '../../../src/services/fivem/groups';
 import { requireBotGuild } from '../../lib/names';
 import { broadcastToGuild } from '../../sockets';
 
@@ -37,6 +39,9 @@ const pageQuerySchema = z.object({
   page: z.preprocess((v) => (v === '' || v === undefined ? 1 : v), z.coerce.number().int().min(1).max(10_000).catch(1)),
 });
 
+/** Ligne du repeater « Groupes en jeu » : groupe en minuscules (même règle que le panneau Discord). */
+const roleGroupInput = z.preprocess((v) => (v && typeof v === 'object' ? { roleId: String((v as Record<string, unknown>).roleId ?? ''), group: String((v as Record<string, unknown>).group ?? '') } : v), roleGroupSchema);
+
 /** Formulaire « Synchronisation » → patch strict de syncSettingsSchema (toutes les clés, cases décochées = false). */
 const syncBody = z.object({
   syncBansToDiscord: checkbox,
@@ -50,6 +55,7 @@ const syncBody = z.object({
   requireDiscord: checkbox,
   requireRoleId: optionalDiscordId,
   requireWhitelist: checkbox,
+  roleGroupsJson: jsonArray(roleGroupInput, MAX_ROLE_GROUPS),
 });
 const linkBody = z.object({ userId: z.string().trim().regex(/^\d{15,22}$/, 'ID Discord invalide'), license: z.string().trim().min(8, 'licence requise').max(128) });
 
@@ -179,6 +185,7 @@ export function createFiveMRouter(client: RedemptionClient): Router {
             requireDiscord: selected.requireDiscord,
             requireRoleId: selected.requireRoleId,
             requireWhitelist: selected.requireWhitelist,
+            roleGroups: parseRoleGroups(selected.roleGroups),
           },
           counterTexts: { online: t('fivem.counter.online'), offline: t('fivem.counter.offline'), maintenance: t('fivem.counter.maintenance') },
           players: players.map((p) => ({ ...p, discordId: links.get(p.id) ?? null })),
@@ -229,10 +236,13 @@ export function createFiveMRouter(client: RedemptionClient): Router {
       async (req, res) => {
         const guild = res.locals.guild!;
         const { body, params } = valid<z.infer<typeof syncBody>, unknown, z.infer<typeof keyParams>>(req);
-        for (const id of [body.linkedRoleId, body.onlineRoleId, body.requireRoleId]) if (id && !guild.roles.some((r) => r.id === id)) throw new HttpError(400, 'Rôle inconnu.');
+        const { roleGroupsJson, ...settings } = body;
+        for (const id of [body.linkedRoleId, body.onlineRoleId, body.requireRoleId, ...roleGroupsJson.map((m) => m.roleId)]) if (id && !guild.roles.some((r) => r.id === id)) throw new HttpError(400, 'Rôle inconnu.');
+        if (roleGroupsJson.some((m) => m.roleId === guild.id)) throw new HttpError(400, 'Le rôle @everyone ne peut pas être associé à un groupe.');
+        if (new Set(roleGroupsJson.map((m) => m.roleId)).size !== roleGroupsJson.length) throw new HttpError(400, 'Groupes en jeu : un rôle ne peut apparaître qu’une fois.');
         if (body.playerCountChannelId && !guild.channels.some((c) => c.id === body.playerCountChannelId)) throw new HttpError(400, 'Salon compteur inconnu.');
         if (!/\{name\}|\{id\}|\{level\}/.test(body.nicknameFormat)) throw new HttpError(400, 'Le format de pseudo doit contenir {name}, {id} ou {level}.');
-        const server = await fivemSyncService.updateSyncSettings(guild.id, params.key, body);
+        const server = await fivemSyncService.updateSyncSettings(guild.id, params.key, { ...settings, roleGroups: roleGroupsJson });
         broadcastToGuild(guild.id, 'fivem:status', { guildId: guild.id, serverKey: server.key, action: 'sync' });
         flash(req, 'success', `Synchronisation de « ${server.name} » enregistrée.`);
       },

@@ -17,6 +17,7 @@ import { embedService } from '../services/EmbedService';
 import { fivemService, type ResolvedStatus } from '../services/FiveMService';
 import { fivemSyncService } from '../services/FiveMSyncService';
 import type { SyncSettingsPatch } from '../services/fivem/sync';
+import { MAX_ROLE_GROUPS, parseRoleGroups } from '../services/fivem/groups';
 import type { ResolvedGuildConfig } from '../services/GuildConfigService';
 import type { Translator } from '../services/TranslationService';
 import { PanelError, btn, channelMention, fieldLines, labelled, modal, moduleButton, moduleLine, option, roleMention, row, textInput, truncate, withNotice, type PanelNotice, type PanelPayload, type Row } from './_modulesKit';
@@ -28,6 +29,8 @@ import { liveChannel, liveRole } from '../utils/liveIds';
  *  - vue serveur    : `server:<key>`, `maint:<key>`, `players:<key>` (liste éphémère), `test:<key>`, `delete:<key>` → `delete-ok:<key>`,
  *                     `status:<key>` / `counter:<key>` (ChannelSelect), `sync:<key>` (StringSelect multi), `nick:<key>` / `edit:<key>` (modals),
  *                     `roles:<key>` → `role:<linked|online|require>:<key>` (RoleSelect)
+ *  - groupes en jeu : `groups:<key>`, `group-add:<key>` (modal rôle + groupe + position), `group-del:<key>` (StringSelect multi),
+ *                     `group-top:<key>` (StringSelect : placer en tête)
  */
 
 export const FIVEM_NS = 'cfg-fivem';
@@ -154,6 +157,7 @@ export function renderServer(server: FiveMServer, opts: FiveMRenderOptions): Pan
         value: [`${t('fivem.sync.linked_role')} : ${roleMention(server.linkedRoleId, none)}`, `${t('fivem.sync.online_role')} : ${roleMention(server.onlineRoleId, none)}`, `${t('fivem.sync.require_role')} : ${roleMention(server.requireRoleId, none)}`].join('\n'),
         inline: true,
       },
+      { name: t('panels_modules.fivem.field_groups'), value: groupLines(server, t, 5), inline: true },
       {
         name: t('panels_modules.fivem.field_install'),
         value: t('panels_modules.fivem.install_value', { url: apiBaseUrl(), guildId: guild.id, key: server.key, apiKey: server.apiKey ? t('panels_modules.fivem.api_key_own') : t('panels_modules.fivem.api_key_global') }),
@@ -190,9 +194,61 @@ export function renderServer(server: FiveMServer, opts: FiveMRenderOptions): Pan
         btn(fcid('nick', key), t('panels_modules.fivem.btn_nickname'), ButtonStyle.Secondary, '🏷️'),
         btn(fcid('edit', key), t('panels_modules.fivem.btn_edit'), ButtonStyle.Secondary, '⚙️'),
         btn(fcid('roles', key), t('panels_modules.fivem.btn_roles'), ButtonStyle.Primary, '🎭'),
+        btn(fcid('groups', key), t('panels_modules.fivem.btn_groups'), ButtonStyle.Primary, '🛡️'),
       ),
     ],
   };
+}
+
+/** Lignes « 1. @Rôle → `groupe` » (ordre = priorité). */
+function groupLines(server: FiveMServer, t: Translator, max = MAX_ROLE_GROUPS): string {
+  const list = parseRoleGroups(server.roleGroups);
+  if (!list.length) return t('core.none');
+  const lines = list.slice(0, max).map((m, i) => `${i === 0 ? '👑' : `\`${i + 1}.\``} <@&${m.roleId}> → \`${m.group}\``);
+  if (list.length > max) lines.push(t('panels_modules.fivem.groups_more', { count: list.length - max }));
+  return fieldLines(lines, t('core.none'));
+}
+
+/** Vue « Groupes en jeu » : rôles Discord → groupes ACE, par priorité (le premier détenu l'emporte). */
+export function renderGroupsView(server: FiveMServer, opts: FiveMRenderOptions): PanelPayload {
+  const { guild, t, notice } = opts;
+  const list = parseRoleGroups(server.roleGroups);
+  const roleName = (id: string) => truncate(guild.roles.cache.get(id)?.name ?? id, 80);
+  const embed = embedService
+    .brand(t('panels_modules.fivem.groups_title', { name: server.name }))
+    .setDescription(withNotice(notice, t('panels_modules.fivem.groups_hint')))
+    .addFields({ name: t('panels_modules.fivem.field_groups_list', { count: list.length, max: MAX_ROLE_GROUPS }), value: groupLines(server, t) })
+    .setFooter({ text: t('panels_modules.fivem.groups_footer') });
+  const components: Row[] = [];
+  if (list.length) {
+    components.push(
+      row(
+        new StringSelectMenuBuilder()
+          .setCustomId(fcid('group-del', server.key))
+          .setPlaceholder(truncate(t('panels_modules.fivem.group_del_placeholder'), 150))
+          .setMinValues(1)
+          .setMaxValues(list.length)
+          .addOptions(list.map((m, i) => option(`${i + 1}. ${roleName(m.roleId)} → ${m.group}`, m.roleId, { emoji: '🗑️' }))),
+      ),
+    );
+  }
+  if (list.length > 1) {
+    components.push(
+      row(
+        new StringSelectMenuBuilder()
+          .setCustomId(fcid('group-top', server.key))
+          .setPlaceholder(truncate(t('panels_modules.fivem.group_top_placeholder'), 150))
+          .addOptions(list.slice(1).map((m) => option(`${roleName(m.roleId)} → ${m.group}`, m.roleId, { emoji: '⬆️' }))),
+      ),
+    );
+  }
+  components.push(
+    row(
+      btn(fcid('group-add', server.key), t('panels_modules.fivem.btn_group_add'), ButtonStyle.Success, '➕', list.length >= MAX_ROLE_GROUPS),
+      btn(fcid('server', server.key), t('core.back'), ButtonStyle.Secondary, '↩️'),
+    ),
+  );
+  return { embeds: [embed], components };
 }
 
 export function renderRolesView(server: FiveMServer, opts: FiveMRenderOptions): PanelPayload {
@@ -262,6 +318,16 @@ export function buildNicknameModal(server: FiveMServer, t: Translator): ModalBui
     fcid('nick', server.key),
     t('panels_modules.fivem.modal_nick_title'),
     labelled(t('panels_modules.fivem.modal_nick_format'), textInput('format', TextInputStyle.Short, { required: true, max: 64, value: server.nicknameFormat, placeholder: '{name}' }), t('panels_modules.fivem.modal_nick_help')),
+  );
+}
+
+export function buildGroupModal(server: FiveMServer, t: Translator): ModalBuilder {
+  return modal(
+    fcid('group-add', server.key),
+    t('panels_modules.fivem.modal_group_title'),
+    labelled(t('panels_modules.fivem.modal_group_role'), new RoleSelectMenuBuilder().setCustomId('role').setMinValues(1).setMaxValues(1).setRequired(true)),
+    labelled(t('panels_modules.fivem.modal_group_name'), textInput('group', TextInputStyle.Short, { required: true, max: 32, placeholder: 'admin' }), t('panels_modules.fivem.modal_group_name_help')),
+    labelled(t('panels_modules.fivem.modal_group_position'), textInput('position', TextInputStyle.Short, { max: 2, placeholder: '1' }), t('panels_modules.fivem.modal_group_position_help')),
   );
 }
 

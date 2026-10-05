@@ -31,7 +31,7 @@ export function normalizeHost(host: string): string {
   return /^https?:\/\//i.test(h) ? h : `http://${h}`;
 }
 
-function toBool(v: unknown): boolean | undefined {
+export function toBool(v: unknown): boolean | undefined {
   if (typeof v === 'boolean') return v;
   if (typeof v === 'string') {
     const s = v.trim().toLowerCase();

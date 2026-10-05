@@ -130,7 +130,34 @@ export class BattleRoyaleError extends Error {
   }
 }
 
+/** Écouteur appelé après chaque changement de stats / profils / saison d'un serveur (classement en direct). */
+export type BattleRoyaleChangeListener = (guildId: string) => void;
+
+/** Joueur trouvé par pseudo (autocomplete de /stat). */
+export interface PlayerMatch {
+  userId: string;
+  name: string;
+}
+
 export class BattleRoyaleService {
+  private readonly listeners: BattleRoyaleChangeListener[] = [];
+
+  /** Enregistre un écouteur de changement (idempotent par référence). */
+  onChange(listener: BattleRoyaleChangeListener): void {
+    if (!this.listeners.includes(listener)) this.listeners.push(listener);
+  }
+
+  /** Signale un changement de stats / profils / saison (le message de classement se met à jour, avec anti-rafale). */
+  notifyChange(guildId: string): void {
+    for (const l of this.listeners) {
+      try {
+        l(guildId);
+      } catch (err) {
+        log.warn({ err, guildId }, 'Écouteur Battle Royale en erreur');
+      }
+    }
+  }
+
   // ───── Profils ─────
 
   async ensureProfile(guildId: string, userId: string, nickname?: string | null): Promise<BattleRoyaleProfile> {
@@ -152,11 +179,45 @@ export class BattleRoyaleService {
   async linkIdentifier(guildId: string, userId: string, identifier: string, nickname?: string | null): Promise<BattleRoyaleProfile> {
     const taken = await prisma.battleRoyaleProfile.findFirst({ where: { guildId, identifier, NOT: { userId } } });
     if (taken) throw new BattleRoyaleError('identifier_taken');
-    return prisma.battleRoyaleProfile.upsert({
+    const profile = await prisma.battleRoyaleProfile.upsert({
       where: { guildId_userId: { guildId, userId } },
       create: { guildId, userId, identifier, nickname: nickname ?? null },
       update: { identifier, ...(nickname ? { nickname } : {}) },
     });
+    this.notifyChange(guildId);
+    return profile;
+  }
+
+  /**
+   * Joueurs dont le pseudo contient `query` (profil BR : pseudo en jeu ; joueurs FiveM : pseudo du compte puis nom FiveM),
+   * dédoublonnés par compte Discord. `query` vide : profils mis à jour récemment. Utilisé par l'autocomplete de /stat.
+   */
+  async searchPlayers(guildId: string, query: string, limit = 25): Promise<PlayerMatch[]> {
+    const q = query.trim().slice(0, 64);
+    const [profiles, players] = await Promise.all([
+      prisma.battleRoyaleProfile.findMany({ where: { guildId, nickname: q ? { contains: q } : { not: null } }, orderBy: { updatedAt: 'desc' }, take: limit, select: { userId: true, nickname: true } }),
+      q
+        ? prisma.fiveMPlayer.findMany({ where: { guildId, discordId: { not: null }, OR: [{ gameName: { contains: q } }, { name: { contains: q } }] }, orderBy: { lastSeenAt: 'desc' }, take: limit, select: { discordId: true, gameName: true, name: true } })
+        : Promise.resolve([] as { discordId: string | null; gameName: string | null; name: string }[]),
+    ]);
+    const out = new Map<string, PlayerMatch>();
+    for (const p of profiles) if (p.nickname && !out.has(p.userId)) out.set(p.userId, { userId: p.userId, name: p.nickname });
+    for (const p of players) {
+      if (!p.discordId || out.has(p.discordId)) continue;
+      const name = p.gameName ?? p.name;
+      if (name && name !== '—') out.set(p.discordId, { userId: p.discordId, name });
+    }
+    return [...out.values()].slice(0, limit);
+  }
+
+  /** Rang d'un joueur au classement des victoires de la saison (1 = premier) et nombre de joueurs classés (≥ 1 partie). */
+  async seasonRank(guildId: string, season: number, stats: Pick<BattleRoyaleStats, 'wins' | 'kills'>): Promise<{ rank: number; total: number }> {
+    const where = { season, profile: { guildId }, matches: { gt: 0 } };
+    const [ahead, total] = await Promise.all([
+      prisma.battleRoyaleStats.count({ where: { ...where, OR: [{ wins: { gt: stats.wins } }, { wins: stats.wins, kills: { gt: stats.kills } }] } }),
+      prisma.battleRoyaleStats.count({ where }),
+    ]);
+    return { rank: ahead + 1, total: Math.max(total, ahead + 1) };
   }
 
   async getStats(profileId: number, season: number): Promise<BattleRoyaleStats | null> {
@@ -195,6 +256,7 @@ export class BattleRoyaleService {
     // Réinitialise la progression Battle Pass des profils pour la nouvelle saison
     await prisma.battleRoyaleProfile.updateMany({ where: { guildId }, data: { battlePassTier: 0, battlePassXp: 0 } });
     await loggingService.log({ guildId, category: LogCategory.BATTLE_ROYALE, action: 'br.season.new', title: `⚔️ Nouvelle saison ${season} — ${pass.name}`, actorId: input.actorId ?? null, data: { season, name: pass.name, endsAt } });
+    this.notifyChange(guildId);
     return pass;
   }
 
@@ -208,6 +270,7 @@ export class BattleRoyaleService {
       return tx.battlePass.create({ data: { guildId, season, name: `Season ${season}`, startsAt, endsAt: new Date(startsAt.getTime() + 90 * 86400_000), tiers: defaultTiers() as Prisma.InputJsonValue, active: true } });
     });
     await loggingService.log({ guildId, category: LogCategory.BATTLE_ROYALE, action: 'br.season.set', title: `⚔️ Saison active : ${season}`, actorId: actorId ?? null, data: { season } });
+    this.notifyChange(guildId);
     return pass;
   }
 
@@ -259,6 +322,7 @@ export class BattleRoyaleService {
     const bp = battlePassProgress(battlePassXp, pass ? parseTiers(pass.tiers) : []);
     const level = levelFromXp(xp);
     await prisma.battleRoyaleProfile.update({ where: { id: profile.id }, data: { xp, level, playtimeMinutes, battlePassXp, battlePassTier: bp.tier } });
+    this.notifyChange(guildId);
     return { applied: true, profileId: profile.id, season, level };
   }
 
@@ -279,6 +343,7 @@ export class BattleRoyaleService {
       await prisma.battleRoyaleProfile.update({ where: { id: profile.id }, data });
     } else throw new BattleRoyaleError('invalid_field');
     await loggingService.log({ guildId, category: LogCategory.BATTLE_ROYALE, action: 'br.admin.set', title: `⚔️ Stat modifiée : ${field} = ${String(value)}`, description: `<@${userId}>`, actorId, targetId: userId, data: { field, value, season } });
+    this.notifyChange(guildId);
   }
 
   async addXp(guildId: string, userId: string, amount: number, actorId?: string): Promise<BattleRoyaleProfile> {
@@ -289,6 +354,7 @@ export class BattleRoyaleService {
     const bp = battlePassProgress(battlePassXp, pass ? parseTiers(pass.tiers) : []);
     const updated = await prisma.battleRoyaleProfile.update({ where: { id: profile.id }, data: { xp, level: levelFromXp(xp), battlePassXp, battlePassTier: bp.tier } });
     if (actorId) await loggingService.log({ guildId, category: LogCategory.BATTLE_ROYALE, action: 'br.admin.xp', title: `⚔️ XP ${amount >= 0 ? '+' : ''}${amount}`, description: `<@${userId}> → ${xp} XP (niv. ${updated.level})`, actorId, targetId: userId, data: { amount, xp } });
+    this.notifyChange(guildId);
     return updated;
   }
 

@@ -261,6 +261,25 @@ describe('FiveM', () => {
     const page = await follow(bad);
     expect(page.text).toContain('{name}');
   });
+  it('groupes en jeu : liste rôle → groupe affichée et enregistrée (ordre = priorité, nom validé)', async () => {
+    prisma.fiveMServer.findUnique.mockResolvedValue({ ...serverRow, roleGroups: [{ roleId: STAFF_ROLE_ID, group: 'admin' }] });
+    prisma.fiveMServer.findMany.mockResolvedValue([{ ...serverRow, roleGroups: [{ roleId: STAFF_ROLE_ID, group: 'admin' }] }]);
+    const sync = await get(`/guilds/${GUILD_ID}/fivem?server=main&stab=sync`);
+    expect(sync.status).toBe(200);
+    expect(sync.text).toContain('Groupes en jeu');
+    expect(sync.text).toContain('name="roleGroupsJson"');
+    expect(sync.text).toContain('value="admin"');
+    const r = await post(`/guilds/${GUILD_ID}/fivem/servers/main/sync`, { nicknameFormat: '{name}', roleGroupsJson: JSON.stringify([{ roleId: STAFF_ROLE_ID, group: 'Mod' }]) });
+    expect(r.status).toBe(302);
+    const upd = prisma.fiveMServer.update.mock.calls.at(-1)![0] as { data: Record<string, unknown> };
+    expect(upd.data.roleGroups).toEqual([{ roleId: STAFF_ROLE_ID, group: 'mod' }]);
+    const bad = await post(`/guilds/${GUILD_ID}/fivem/servers/main/sync`, { nicknameFormat: '{name}', roleGroupsJson: JSON.stringify([{ roleId: STAFF_ROLE_ID, group: 'admin; quit' }]) });
+    expect(bad.status).toBe(400);
+    expect(bad.text).toContain('groupe');
+    expect(prisma.fiveMServer.update.mock.calls.length).toBe(1);
+    prisma.fiveMServer.findUnique.mockResolvedValue(serverRow);
+    prisma.fiveMServer.findMany.mockResolvedValue([serverRow]);
+  });
   it('liste les joueurs connus et lie un compte manuellement', async () => {
     prisma.fiveMPlayer.findMany.mockResolvedValue([{ id: 1, guildId: GUILD_ID, discordId: USER_ID, license: 'license:abc', steam: null, fivemId: null, name: 'Bob', serverKey: 'main', lastSeenAt: new Date(), sessionStartedAt: null, playtimeMinutes: 125, online: true, createdAt: new Date(), updatedAt: new Date() }]);
     prisma.fiveMPlayer.count.mockResolvedValue(1);
@@ -386,6 +405,22 @@ describe('Battle Royale', () => {
     expect(r.text).toContain('Tester');
     expect(r.text).toContain('data-pct="100"');
     expect(r.text).toContain('Saison 1');
+  });
+  it('onglet Affichage : salon du classement en direct, taille, salon /stat', async () => {
+    const r = await get(`/guilds/${GUILD_ID}/battle-royale?tab=display`);
+    expect(r.status).toBe(200);
+    expect(r.text).toContain('Classement en direct');
+    expect(r.text).toContain('name="leaderboardChannelId"');
+    expect(r.text).toContain('name="statChannelId"');
+    prisma.battleRoyaleConfig.upsert.mockImplementation(async (args: { create: Record<string, unknown> }) => ({ leaderboardMessageId: null, updatedAt: new Date(), ...args.create }));
+    const save = await post(`/guilds/${GUILD_ID}/battle-royale/display`, { leaderboardChannelId: '', leaderboardSize: '15', statChannelId: TEXT_CHANNEL_ID });
+    expect(save.status).toBe(302);
+    expect(save.location).toBe(`/guilds/${GUILD_ID}/battle-royale?tab=display`);
+    const up = prisma.battleRoyaleConfig.upsert.mock.calls.at(-1)![0] as { update: Record<string, unknown> };
+    expect(up.update).toMatchObject({ leaderboardChannelId: null, leaderboardSize: 15, statChannelId: TEXT_CHANNEL_ID });
+    const bad = await post(`/guilds/${GUILD_ID}/battle-royale/display`, { leaderboardChannelId: '', leaderboardSize: '12', statChannelId: '' });
+    expect(bad.status).toBe(400);
+    expect(bad.text).toContain('10 ou 15');
   });
   it('GET /battle-royale?tab=profiles rend la fiche (niveau, stats, Battle Pass)', async () => {
     const r = await get(`/guilds/${GUILD_ID}/battle-royale?tab=profiles&user=${USER_ID}`);

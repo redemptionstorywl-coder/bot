@@ -1,7 +1,5 @@
 {
   "profile": {
-    "title": "⚔️ Profil — {name}",
-    "none": "{user} n’a pas encore de profil Battle Royale.",
     "level": "Niveau",
     "wins": "🏆 Victoires",
     "kills": "🔫 Kills",
@@ -10,15 +8,12 @@
     "top10": "🔟 Top 10",
     "playtime": "⏱️ Temps de jeu",
     "season": "📅 Saison",
-    "battlepass": "🎟️ Battle Pass",
     "tier": "Palier",
-    "identifier": "🔗 Identifiant FiveM",
     "not_linked": "Non lié — lancez FiveM avec Discord ouvert ou `/br-link`",
     "status": "🎮 Statut",
     "in_game": "🟢 En jeu sur {server}",
     "offline": "🔴 Hors ligne",
-    "last_seen": "🕒 Dernière connexion",
-    "ingame_name": "🏷️ Pseudo en jeu"
+    "last_seen": "🕒 Dernière connexion"
   },
   "leaderboard": {
     "title": "🏆 Classement {metric} — Saison {season}",
@@ -56,5 +51,30 @@
     "invalid_field": "Champ invalide.",
     "season_exists": "Cette saison existe déjà.",
     "no_season": "Aucune saison active."
+  },
+  "live": {
+    "title": "🏆 Classement Battle Royale — {server}",
+    "season": "📅 **Saison {season}**",
+    "season_named": "📅 **Saison {season}** · {name}",
+    "updated": "🔄 Mis à jour {time} · tapez `/stat` pour vos statistiques",
+    "ends": "⏳ Fin de saison {time}",
+    "empty": "*Aucun joueur classé pour l’instant.*",
+    "top_wins": "🏆 Top {count} — Victoires",
+    "top_kills": "🔫 Top {count} — Kills",
+    "top_kd": "⚖️ Top {count} — K/D (min. {min} parties)",
+    "footer": "{players} joueur(s) classé(s) · {brand}"
+  },
+  "stat": {
+    "title": "📊 Statistiques — {name}",
+    "wrong_channel": "Les statistiques se consultent dans {channel} : tapez `/stat` là-bas.",
+    "not_found": "Aucun joueur trouvé pour « {query} ». Choisissez un pseudo proposé par la liste, ou mentionnez le membre.",
+    "none_self": "Vous n’avez pas encore de statistiques. Lancez FiveM avec Discord ouvert puis jouez une partie : votre compte sera lié automatiquement.",
+    "none": "{user} n’a pas encore de statistiques Battle Royale.",
+    "deaths": "💀 Morts",
+    "damage": "💥 Dégâts",
+    "rank": "🏅 Rang (victoires)",
+    "rank_value": "**#{rank}** sur {total}",
+    "unranked": "Non classé",
+    "footer": "Saison {season} · statistiques mises à jour à chaque partie"
   }
 }

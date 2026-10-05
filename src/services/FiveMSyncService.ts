@@ -9,11 +9,15 @@ import { whitelistService } from './WhitelistService';
 import { guildConfigService } from './GuildConfigService';
 import { translationService } from './TranslationService';
 import { fivemService, FiveMError, resolveStatus } from './FiveMService';
+import { battleRoyaleService } from './BattleRoyaleService';
 import { TTLCache } from '../utils/cache';
 import { formatDuration } from '../utils/time';
 import { childLogger } from '../utils/logger';
 import { fivemIdentifierSchema, type NormalizedSanction, type ServerPlayer, type ServerStatus } from './fivem/schemas';
+import { managedGroups, parseRoleGroups, resolveGroups, groupsChanged, touchesMappedRole, type ResolvedGroups } from './fivem/groups';
 import {
+  banGameTargets,
+  banToDiscord,
   bulkKey,
   canSetNickname,
   decideConnection,
@@ -28,6 +32,7 @@ import {
   sessionMinutes,
   syncSettingsSchema,
   trackingLicense,
+  type BulkMode,
   type ConnectionDecision,
   type EchoKind,
   type GameActionPayload,
@@ -47,6 +52,12 @@ export interface JoinResult {
   linked: boolean;
   member: boolean;
   nickname: string | null;
+  /** Groupes en jeu (ACE) du membre, du plus prioritaire au moins prioritaire */
+  groups: string[];
+  /** Groupe principal (le premier détenu) */
+  group: string | null;
+  /** Groupes gérés par le bot sur ce serveur (ceux non détenus sont retirés côté jeu) */
+  managedGroups: string[];
 }
 
 export interface SanctionOutcome {
@@ -120,12 +131,27 @@ export class FiveMSyncService {
    * `skip` : l'événement Discord qui suit ne sera PAS relayé vers les serveurs FiveM (anti-écho, 30 s) ;
    * `quiet` : il est relayé comme d'habitude, mais sans log « Discord → FiveM » par membre.
    */
-  markBulk(kind: EchoKind, guildId: string, userId: string, mode: 'skip' | 'quiet'): void {
+  markBulk(kind: EchoKind, guildId: string, userId: string, mode: BulkMode): void {
     this.echo.mark(bulkKey(mode, kind, guildId, userId));
   }
 
+  /**
+   * Case « en jeu » d'un ban / unban Discord (`/ban en_jeu`, dashboard) : à appeler juste avant l'action Discord.
+   * `null` = réglage `syncBansToGame` de chaque serveur (aucun marqueur), `true` = relayé à tous les serveurs actifs,
+   * `false` = non relayé. L'événement GuildBanAdd / GuildBanRemove qui suit lit le marqueur (30 s).
+   */
+  prepareDiscordBan(kind: 'ban' | 'unban', guildId: string, userId: string, inGame: boolean | null): void {
+    if (inGame === null) return;
+    this.markBulk(kind, guildId, userId, inGame ? 'force' : 'skip');
+  }
+
+  /** Action Discord échouée après `prepareDiscordBan` : retire les marqueurs (un ban manuel ultérieur suit le réglage normal). */
+  abortDiscordBan(kind: 'ban' | 'unban', guildId: string, userId: string): void {
+    for (const mode of ['skip', 'force'] as const) this.echo.clear(bulkKey(mode, kind, guildId, userId));
+  }
+
   /** Lit et consomme un marqueur d'opération de masse. */
-  private takeBulk(mode: 'skip' | 'quiet', kind: EchoKind, guildId: string, userId: string): boolean {
+  private takeBulk(mode: BulkMode, kind: EchoKind, guildId: string, userId: string): boolean {
     const key = bulkKey(mode, kind, guildId, userId);
     const hit = this.echo.has(key);
     if (hit) this.echo.clear(key);
@@ -145,6 +171,11 @@ export class FiveMSyncService {
     const updated = Object.keys(data).length ? await fivemService.updateServer(guildId, key, data) : before;
     if (data.playerCountChannelId !== undefined && before.playerCountChannelId && before.playerCountChannelId !== data.playerCountChannelId) this.renames.forget(before.playerCountChannelId);
     if (data.playerCountChannelId) await this.requestCounterRename(updated).catch(() => null);
+    if (data.roleGroups !== undefined) {
+      const previous = parseRoleGroups(before.roleGroups);
+      // Les groupes retirés de la liste restent « gérés » le temps de ce rafraîchissement : ils sont retirés en jeu.
+      if (JSON.stringify(previous) !== JSON.stringify(data.roleGroups)) await this.refreshServerGroups(updated, managedGroups(previous)).catch((err) => log.warn({ err, server: key }, 'Groupes en jeu non rafraîchis'));
+    }
     return updated;
   }
 
@@ -260,24 +291,34 @@ export class FiveMSyncService {
       if (entry) entry.discordId = discordId;
     }
 
-    const result: JoinResult = { discordId, linked: !!discordId, member: false, nickname: null };
+    const noGroups = this.groupsFor(server, null);
+    const result: JoinResult = { discordId, linked: !!discordId, member: false, nickname: null, groups: noGroups.groups, group: noGroups.primary, managedGroups: noGroups.managed };
     const guild = this.guild(server.guildId);
     if (!discordId || !guild) return result;
     const member = await this.fetchMember(guild, discordId);
     if (!member) return result;
     result.member = true;
+    const resolved = this.groupsFor(server, member);
+    result.groups = resolved.groups;
+    result.group = resolved.primary;
+    // Pseudo du compte en jeu (SetPlayerName) prioritaire sur le nom FiveM : pas d'aller-retour du surnom à chaque connexion.
+    const gameName = existing?.gameName ?? null;
     if (license) {
-      const linkedNow = await this.linkBattleRoyale(server.guildId, discordId, license, cleanName, parsed.discordId === discordId).catch((err) => {
+      const linkedNow = await this.linkBattleRoyale(server.guildId, discordId, license, gameName ?? cleanName, parsed.discordId === discordId).catch((err) => {
         log.warn({ err, guild: server.guildId }, 'Liaison BR automatique impossible');
         return false;
       });
       if (linkedNow) {
         await loggingService.log({ guildId: server.guildId, category: LogCategory.BATTLE_ROYALE, action: 'fivem.link.auto', title: '🔗 FiveM — compte lié automatiquement', description: `<@${discordId}> ⇄ \`${license}\` (${cleanName})`, targetId: discordId, data: { license, serverKey: server.key }, skipDatabase: false });
       }
+      // Pseudo affiché au classement et dans /stat : celui du jeu (compte en jeu, sinon nom FiveM).
+      const display = (gameName ?? cleanName).slice(0, 128);
+      const renamed = await prisma.battleRoyaleProfile.updateMany({ where: { guildId: server.guildId, userId: discordId, OR: [{ nickname: null }, { nickname: { not: display } }] }, data: { nickname: display } });
+      if (linkedNow || renamed.count) battleRoyaleService.notifyChange(server.guildId);
     }
     await this.setRole(member, server.linkedRoleId, true, 'FiveM : compte lié');
     await this.setRole(member, server.onlineRoleId, true, 'FiveM : en jeu');
-    result.nickname = await this.syncNickname(server, member, player.name, player.id);
+    result.nickname = await this.syncNickname(server, member, gameName ?? player.name, player.id);
     return result;
   }
 
@@ -396,12 +437,17 @@ export class FiveMSyncService {
     const license = trackingLicense(parsed);
     const clean = sanitizePlayerName(input.name);
     if (license && clean) {
-      await prisma.fiveMPlayer.updateMany({ where: { guildId: server.guildId, license }, data: { name: clean.slice(0, 128) } });
+      // `gameName` : pseudo du compte en jeu, réutilisé à chaque connexion pour le surnom Discord.
+      await prisma.fiveMPlayer.updateMany({ where: { guildId: server.guildId, license }, data: { name: clean.slice(0, 128), gameName: clean.slice(0, 128) } });
       const entry = this.onlineMap(server.id).get(license);
       if (entry) entry.name = input.name;
     }
     const known = license && !input.discordId && !parsed.discordId ? await fivemService.findDiscordIdByLicense(server.guildId, license) : null;
     const discordId = resolveDiscordId({ discordId: input.discordId, identifiers: input.identifiers, knownByLicense: known });
+    if (discordId && clean) {
+      const renamed = await prisma.battleRoyaleProfile.updateMany({ where: { guildId: server.guildId, userId: discordId, OR: [{ nickname: null }, { nickname: { not: clean.slice(0, 128) } }] }, data: { nickname: clean.slice(0, 128) } });
+      if (renamed.count) battleRoyaleService.notifyChange(server.guildId); // pseudo affiché dans le classement en direct
+    }
     const guild = this.guild(server.guildId);
     if (!discordId || !guild) return { discordId, nickname: null };
     const member = await this.fetchMember(guild, discordId);
@@ -484,7 +530,7 @@ export class FiveMSyncService {
   }
 
   /** `POST /check` : autorise ou refuse la connexion d'un joueur (deferrals). */
-  async checkConnection(server: FiveMServer, identifiers: string[]): Promise<ConnectionDecision & { message?: string }> {
+  async checkConnection(server: FiveMServer, identifiers: string[]): Promise<ConnectionDecision & { message?: string; groups: string[]; group: string | null; managedGroups: string[] }> {
     const parsed = parseIdentifiers(identifiers);
     const license = trackingLicense(parsed);
     const known = license && !parsed.discordId ? await fivemService.findDiscordIdByLicense(server.guildId, license) : null;
@@ -506,12 +552,14 @@ export class FiveMSyncService {
       requireWhitelist: server.requireWhitelist,
       whitelisted,
     });
-    if (decision.allowed) return decision;
+    const resolved = this.groupsFor(server, decision.allowed ? member : null);
+    const groupInfo = { groups: resolved.groups, group: resolved.primary, managedGroups: resolved.managed };
+    if (decision.allowed) return { ...decision, ...groupInfo };
     const { t, lang } = await this.translator(server.guildId);
     const vars: Record<string, string> = { server: guild?.name ?? server.name, reason: decision.banReason ?? t('fivem.check.no_reason'), role: (server.requireRoleId && guild?.roles.cache.get(server.requireRoleId)?.name) || '—' };
     let message = t(`fivem.check.${decision.reason}`, vars);
     if (decision.reason === 'banned' && decision.banExpiresAt) message += ` ${t('fivem.check.until', { duration: formatDuration(Math.max(60, Math.floor((new Date(decision.banExpiresAt).getTime() - Date.now()) / 1000)), lang) })}`;
-    return { ...decision, message };
+    return { ...decision, ...groupInfo, message };
   }
 
   // ───────────── Sanctions jeu → Discord ─────────────
@@ -533,7 +581,7 @@ export class FiveMSyncService {
       try {
         switch (sanction.type) {
           case 'BAN': {
-            if (!server.syncBansToDiscord) break;
+            if (!banToDiscord(sanction.syncDiscord, server.syncBansToDiscord)) break;
             const already = await guild.bans.fetch({ user: userId, force: true }).catch(() => null);
             if (already) break;
             const user = await guild.client.users.fetch(userId).catch(() => null);
@@ -548,7 +596,7 @@ export class FiveMSyncService {
             break;
           }
           case 'UNBAN': {
-            if (!server.syncBansToDiscord) break;
+            if (!banToDiscord(sanction.syncDiscord, server.syncBansToDiscord)) break;
             const banned = await guild.bans.fetch({ user: userId, force: true }).catch(() => null);
             if (!banned) break;
             this.markFromGame('unban', guild.id, userId);
@@ -608,7 +656,7 @@ export class FiveMSyncService {
 
   /** Pousse une action vers un serveur : socket si connecté (+ trace en base), sinon file persistée lue par GET /actions. */
   async pushAction(server: FiveMServer, type: GameActionType, payload: GameActionPayload): Promise<{ delivered: boolean; id: number | null }> {
-    const event = `player:${type.toLowerCase()}` as 'player:ban' | 'player:unban' | 'player:kick' | 'player:message';
+    const event = `player:${type.toLowerCase()}` as 'player:ban' | 'player:unban' | 'player:kick' | 'player:message' | 'player:set_groups';
     let id: number | null = null;
     try {
       const row = await prisma.fiveMPendingAction.create({ data: { guildId: server.guildId, serverKey: server.key, type: type as FiveMActionType, payload: payload as Prisma.InputJsonValue } });
@@ -659,7 +707,21 @@ export class FiveMSyncService {
     this.invalidateBan(guild.id, userId);
     if (this.takeBulk('skip', kind, guild.id, userId) || this.isFromGame(kind, guild.id, userId)) return 0;
     const quiet = this.takeBulk('quiet', kind, guild.id, userId);
-    const servers = (await fivemService.listServers(guild.id)).filter((s) => s.enabled && s.syncBansToGame);
+    const force = this.takeBulk('force', kind, guild.id, userId);
+    const servers = banGameTargets(await fivemService.listServers(guild.id), force ? true : null);
+    return this.relayBan(guild, userId, kind, servers, quiet);
+  }
+
+  /**
+   * Ban / unban en jeu seulement (sans action Discord) : `/unban en_jeu:true` d'un membre qui n'est pas banni de Discord,
+   * dashboard. `inGame` suit la même règle que la case « en jeu » (null = réglage des serveurs).
+   */
+  async pushBanToGame(guild: Guild, userId: string, kind: 'ban' | 'unban', inGame: boolean | null): Promise<number> {
+    const servers = banGameTargets(await fivemService.listServers(guild.id), inGame);
+    return this.relayBan(guild, userId, kind, servers, false);
+  }
+
+  private async relayBan(guild: Guild, userId: string, kind: 'ban' | 'unban', servers: FiveMServer[], quiet: boolean): Promise<number> {
     if (!servers.length) return 0;
     let reason: string | null = null;
     let expiresAt: string | null = null;
@@ -707,6 +769,63 @@ export class FiveMSyncService {
       name: latest.name,
       licenses: rows.map((r) => r.license).filter((l): l is string => !!l),
     };
+  }
+
+  // ───────────── Rôles Discord → groupes en jeu ─────────────
+
+  /** Groupes effectifs d'un membre sur ce serveur (membre absent = aucun groupe, mais la liste des groupes gérés reste fournie). */
+  groupsFor(server: Pick<FiveMServer, 'roleGroups'>, member: Pick<GuildMember, 'roles'> | null): ResolvedGroups {
+    const mappings = parseRoleGroups(server.roleGroups);
+    return resolveGroups(mappings, member ? member.roles.cache.keys() : []);
+  }
+
+  /** Pousse les groupes d'un membre vers un serveur (action SET_GROUPS : principals ACE + événement côté Lua). */
+  async pushGroups(server: FiveMServer, userId: string, resolved: ResolvedGroups): Promise<void> {
+    const licenses = await this.licensesOf(server.guildId, userId);
+    await this.pushAction(server, 'SET_GROUPS', { discordId: userId, license: licenses[0] ?? null, identifiers: licenses, groups: resolved.groups, group: resolved.primary, managedGroups: resolved.managed });
+  }
+
+  /**
+   * Rôles d'un membre modifiés (GuildMemberUpdate) : pour chaque serveur dont la liste rôles → groupes est concernée,
+   * pousse les nouveaux groupes si le membre est déjà venu en jeu. `before` = rôles avant (null si inconnus). Retourne le nombre de serveurs notifiés.
+   */
+  async onMemberRolesChanged(before: Iterable<string> | null, member: GuildMember): Promise<number> {
+    const servers = (await fivemService.listServers(member.guild.id)).filter((s) => s.enabled && parseRoleGroups(s.roleGroups).length > 0);
+    if (!servers.length) return 0;
+    const beforeIds = before ? [...before] : null;
+    const afterIds = [...member.roles.cache.keys()];
+    const targets: { server: FiveMServer; resolved: ResolvedGroups }[] = [];
+    for (const server of servers) {
+      const mappings = parseRoleGroups(server.roleGroups);
+      const resolved = resolveGroups(mappings, afterIds);
+      if (beforeIds) {
+        if (!touchesMappedRole(mappings, beforeIds, afterIds)) continue;
+        if (!groupsChanged(resolveGroups(mappings, beforeIds).groups, resolved.groups)) continue;
+      } else if (!resolved.groups.length) continue; // ancien état inconnu (membre non mis en cache) : seulement s'il détient un groupe
+      targets.push({ server, resolved });
+    }
+    if (!targets.length) return 0;
+    const played = await prisma.fiveMPlayer.count({ where: { guildId: member.guild.id, discordId: member.id } });
+    if (!played) return 0;
+    for (const { server, resolved } of targets) await this.pushGroups(server, member.id, resolved);
+    return targets.length;
+  }
+
+  /**
+   * Liste rôles → groupes modifiée : pousse les groupes à jour de chaque joueur lié actuellement en ligne sur ce serveur.
+   * `previouslyManaged` : groupes de l'ancienne liste, ajoutés aux groupes gérés pour être retirés s'ils ont disparu.
+   */
+  async refreshServerGroups(server: FiveMServer, previouslyManaged: readonly string[] = []): Promise<number> {
+    const guild = this.guild(server.guildId);
+    if (!guild || !server.enabled) return 0;
+    const rows = await prisma.fiveMPlayer.findMany({ where: { guildId: server.guildId, serverKey: server.key, online: true, discordId: { not: null } }, select: { discordId: true } });
+    const ids = [...new Set(rows.map((r) => r.discordId).filter((id): id is string => !!id))];
+    for (const id of ids) {
+      const member = await this.fetchMember(guild, id);
+      const resolved = this.groupsFor(server, member);
+      await this.pushGroups(server, id, { ...resolved, managed: [...new Set([...resolved.managed, ...previouslyManaged])] });
+    }
+    return ids.length;
   }
 
   /** Liaison Discord des joueurs listés (bouton « Joueurs » du panneau `/config module:fivem`). */

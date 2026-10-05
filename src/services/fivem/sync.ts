@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { roleGroupsSchema } from './groups';
 
 /**
  * Synchronisation jeu ⇄ Discord : fonctions pures (testées dans tests/fivem/sync.test.ts).
@@ -154,11 +155,34 @@ export function echoKey(origin: 'fromGame' | 'fromDiscord', kind: EchoKind, guil
 }
 
 /**
- * Marqueur d'opération de masse côté Discord (/unban-all) : `skip` = ne pas relayer l'action vers le jeu,
- * `quiet` = la relayer sans log Discord par membre (l'opération produit son propre rapport).
+ * Marqueur posé juste avant une action Discord : `skip` = ne pas relayer l'action vers le jeu (/unban-all inclure_jeu:false,
+ * `/ban en_jeu:false`), `quiet` = la relayer sans log Discord par membre (l'opération produit son propre rapport),
+ * `force` = la relayer à TOUS les serveurs actifs, même ceux dont `syncBansToGame` est désactivé (`/ban en_jeu:true`).
  */
-export function bulkKey(mode: 'skip' | 'quiet', kind: EchoKind, guildId: string, userId: string): string {
+export type BulkMode = 'skip' | 'quiet' | 'force';
+export function bulkKey(mode: BulkMode, kind: EchoKind, guildId: string, userId: string): string {
   return `bulk:${mode}:${kind}:${guildId}:${userId}`;
+}
+
+// ───────────── Ban Discord ⇄ jeu : choix par action ─────────────
+
+/**
+ * Serveurs de jeu qui reçoivent un ban / unban Discord. `inGame` = case « en jeu » de l'action :
+ * `null` (non précisé) → serveurs dont `syncBansToGame` est actif ; `true` → tous les serveurs actifs ; `false` → aucun.
+ */
+export function banGameTargets<S extends { enabled: boolean; syncBansToGame: boolean }>(servers: readonly S[], inGame: boolean | null | undefined): S[] {
+  if (inGame === false) return [];
+  return servers.filter((s) => s.enabled && (inGame === true || s.syncBansToGame));
+}
+
+/** Valeur par défaut de la case « en jeu » d'un formulaire de ban : cochée si au moins un serveur relaie les bans. */
+export function defaultBanInGame(servers: readonly { enabled: boolean; syncBansToGame: boolean }[]): boolean {
+  return servers.some((s) => s.enabled && s.syncBansToGame);
+}
+
+/** Une sanction BAN / UNBAN venue du jeu est-elle appliquée sur Discord ? Choix explicite de l'appel Lua, sinon `syncBansToDiscord`. */
+export function banToDiscord(flag: boolean | null | undefined, syncBansToDiscord: boolean): boolean {
+  return typeof flag === 'boolean' ? flag : syncBansToDiscord;
 }
 
 /** Ensemble de marqueurs à durée de vie courte (30 s par défaut). `now` injectable pour les tests. */
@@ -316,6 +340,7 @@ export const syncSettingsSchema = z
     requireDiscord: z.boolean(),
     requireRoleId: snowflake.nullable(),
     requireWhitelist: z.boolean(),
+    roleGroups: roleGroupsSchema,
   })
   .partial()
   .strict();
@@ -323,7 +348,7 @@ export type SyncSettingsPatch = z.infer<typeof syncSettingsSchema>;
 export const SYNC_SETTING_KEYS = Object.keys(syncSettingsSchema.shape) as (keyof SyncSettingsPatch)[];
 
 /** Type d'action poussée vers le serveur de jeu. */
-export type GameActionType = 'BAN' | 'UNBAN' | 'KICK' | 'MESSAGE';
+export type GameActionType = 'BAN' | 'UNBAN' | 'KICK' | 'MESSAGE' | 'SET_GROUPS';
 export interface GameActionPayload {
   discordId?: string | null;
   license?: string | null;
@@ -333,4 +358,10 @@ export interface GameActionPayload {
   expiresAt?: string | null;
   staff?: string | null;
   message?: string | null;
+  /** SET_GROUPS : groupes détenus, du plus prioritaire au moins prioritaire */
+  groups?: string[];
+  /** SET_GROUPS : groupe principal (le premier détenu) */
+  group?: string | null;
+  /** SET_GROUPS : tous les groupes gérés par le bot (ceux non détenus sont retirés) */
+  managedGroups?: string[];
 }

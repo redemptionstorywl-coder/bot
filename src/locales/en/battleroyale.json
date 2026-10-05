@@ -1,7 +1,5 @@
 {
   "profile": {
-    "title": "⚔️ Profile — {name}",
-    "none": "{user} has no Battle Royale profile yet.",
     "level": "Level",
     "wins": "🏆 Wins",
     "kills": "🔫 Kills",
@@ -10,15 +8,12 @@
     "top10": "🔟 Top 10",
     "playtime": "⏱️ Playtime",
     "season": "📅 Season",
-    "battlepass": "🎟️ Battle Pass",
     "tier": "Tier",
-    "identifier": "🔗 FiveM identifier",
     "not_linked": "Not linked — launch FiveM with Discord open or `/br-link`",
     "status": "🎮 Status",
     "in_game": "🟢 In game on {server}",
     "offline": "🔴 Offline",
-    "last_seen": "🕒 Last seen",
-    "ingame_name": "🏷️ In-game name"
+    "last_seen": "🕒 Last seen"
   },
   "leaderboard": {
     "title": "🏆 {metric} leaderboard — Season {season}",
@@ -56,5 +51,30 @@
     "invalid_field": "Invalid field.",
     "season_exists": "This season already exists.",
     "no_season": "No active season."
+  },
+  "live": {
+    "title": "🏆 Battle Royale leaderboard — {server}",
+    "season": "📅 **Season {season}**",
+    "season_named": "📅 **Season {season}** · {name}",
+    "updated": "🔄 Updated {time} · type `/stat` for your stats",
+    "ends": "⏳ Season ends {time}",
+    "empty": "*No ranked player yet.*",
+    "top_wins": "🏆 Top {count} — Wins",
+    "top_kills": "🔫 Top {count} — Kills",
+    "top_kd": "⚖️ Top {count} — K/D (min. {min} matches)",
+    "footer": "{players} ranked player(s) · {brand}"
+  },
+  "stat": {
+    "title": "📊 Stats — {name}",
+    "wrong_channel": "Stats are available in {channel}: type `/stat` there.",
+    "not_found": "No player found for “{query}”. Pick a name suggested by the list, or mention the member.",
+    "none_self": "You have no stats yet. Launch FiveM with Discord open and play a match: your account will be linked automatically.",
+    "none": "{user} has no Battle Royale stats yet.",
+    "deaths": "💀 Deaths",
+    "damage": "💥 Damage",
+    "rank": "🏅 Rank (wins)",
+    "rank_value": "**#{rank}** of {total}",
+    "unranked": "Unranked",
+    "footer": "Season {season} · stats updated after every match"
   }
 }

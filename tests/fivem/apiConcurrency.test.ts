@@ -68,6 +68,24 @@ describe('API FiveM : arrivées / départs simultanés', () => {
     expect((row.lastStatus as { playerList: { id: number }[] }).playerList.map((p) => p.id)).toEqual([2]);
   });
 
+  it('une arrivée ne recopie pas la maintenance du panneau dans le statut du jeu (levée = immédiate)', async () => {
+    row = { ...row, maintenance: true };
+    expect((await post('/players/join', player(7))).status).toBe(200);
+    const stored = row.lastStatus as Record<string, unknown>;
+    expect('maintenance' in stored).toBe(false);
+    expect('stale' in stored).toBe(false);
+    expect('lastSeenAt' in stored).toBe(false);
+    // Maintenance levée depuis le panneau, puis nouvelle arrivée : elle n'est pas réactivée.
+    row = { ...row, maintenance: false };
+    expect((await post('/players/join', player(8))).status).toBe(200);
+    expect(row.maintenance).toBe(false);
+  });
+
+  it('la maintenance signalée par le jeu (convar) reste prise en compte', async () => {
+    expect((await post('/status', { online: true, players: 0, maxPlayers: 64, maintenance: true })).status).toBe(200);
+    expect(row.maintenance).toBe(true);
+  });
+
   it('auth : clé API requise', async () => {
     const r = await fetch(`${base}/players/join`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(player(1)) });
     expect(r.status).toBe(401);

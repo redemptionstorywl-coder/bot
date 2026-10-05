@@ -1,24 +1,30 @@
 --[[
   rs_bridge — configuration
   1. Sur Discord : /config module:fivem → ➕ Ajouter (clé = ServerKey, framework CUSTOM / ESX / QBCORE)
-  2. Copier l'URL du bot, l'ID du serveur Discord et la clé API ci-dessous.
-  3. server.cfg : ensure rs_bridge   (après es_extended / qb-core si vous les utilisez)
-  Documentation complète : docs/FIVEM.md du bot.
+  2. server.cfg (recommandé, les convars passent avant les valeurs ci-dessous) :
+       set rs_bridge_url "https://bot-f0v7.onrender.com"
+       set rs_bridge_guild "ID du serveur Discord"
+       set rs_bridge_server_key "br"
+       set rs_bridge_api_key "la clé API"
+       add_ace resource.rs_bridge command.add_principal allow
+       add_ace resource.rs_bridge command.remove_principal allow
+       ensure rs_bridge   (après es_extended / qb-core si vous les utilisez)
+  Guide pas à pas : docs/INSTALL-BATTLEROYALE.md du bot. Référence : docs/FIVEM.md.
 ]]
 
 Config = {}
 
--- URL publique du bot (DASHBOARD_URL), sans slash final. Ex : 'https://bot.mondomaine.fr'
-Config.BotUrl = 'https://bot.example.com'
+-- URL publique du bot (DASHBOARD_URL), sans slash final. Convar : rs_bridge_url
+Config.BotUrl = 'https://bot-f0v7.onrender.com'
 
 -- Clé API : FIVEM_API_KEY du bot, ou la clé propre au serveur (champ « Clé API propre » du panneau /config module:fivem)
 -- Conseil : laissez vide ici et définissez `set rs_bridge_api_key "…"` dans server.cfg (non versionné).
 Config.ApiKey = ''
 
--- ID du serveur Discord (clic droit sur le serveur → Copier l'identifiant)
+-- ID du serveur Discord (clic droit sur le serveur → Copier l'identifiant). Convar : rs_bridge_guild
 Config.GuildId = '000000000000000000'
 
--- Clé du serveur déclarée dans /config module:fivem (ex : 'main', 'br-1')
+-- Clé du serveur déclarée dans /config module:fivem (ex : 'main', 'br'). Convar : rs_bridge_server_key
 Config.ServerKey = 'main'
 
 -- Langue des messages affichés aux joueurs : 'fr' ou 'en'
@@ -35,7 +41,14 @@ Config.NameSource = 'fivem'
 
 -- Intervalles (secondes)
 Config.StatusInterval = 30   -- heartbeat POST /status (liste des joueurs, compteur, rôles « en jeu »)
-Config.ActionsInterval = 10  -- GET /actions (bans/unbans/kicks/messages venant de Discord)
+Config.ActionsInterval = 10  -- GET /actions (bans/unbans/kicks/messages/groupes venant de Discord)
+Config.StatsFlushInterval = 15 -- envoi groupé des stats en direct (exports.rs_bridge:AddStats)
+
+-- Rôles Discord → groupes en jeu (ACE `group.<nom>`), réglés sur Discord (/config module:fivem → 🛡️ Groupes) :
+--   'highest' = seul le groupe le plus prioritaire détenu est donné (recommandé si vos groupes héritent entre eux)
+--   'all'     = tous les groupes détenus sont donnés
+-- Nécessite dans server.cfg : add_ace resource.rs_bridge command.add_principal allow (et command.remove_principal)
+Config.GroupsMode = 'highest'
 
 -- Délai max d'une requête HTTP (ms). Au-delà, la requête est considérée en échec.
 Config.HttpTimeout = 8000

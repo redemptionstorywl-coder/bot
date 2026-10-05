@@ -28,6 +28,7 @@
   { key: 'leaderboard', label: 'Classements', href: b, icon: 'bar-chart' },
   { key: 'profiles', label: 'Joueurs', href: b + '?tab=profiles', icon: 'user' },
   { key: 'seasons', label: 'Saisons & Battle Pass', href: b + '?tab=seasons', icon: 'layers', count: seasons.length || null },
+  { key: 'display', label: 'Affichage', href: b + '?tab=display', icon: 'monitor' },
 ] }) %>
 
 <% if (tab === 'leaderboard') { %>
@@ -186,7 +187,7 @@
       </div>
     </div>
   <% } %>
-<% } else { %>
+<% } else if (tab === 'seasons') { %>
   <% if (activePass && passTiers.length) { %>
     <section class="card">
       <div class="card-head"><div><h2 class="card-title">Battle Pass · <%= activePass.name %></h2><p class="card-desc">Saison <%= activePass.season %> · fin <%= fmt.relative(activePass.endsAt) %> · <%= passTiers.length %> paliers</p></div></div>
@@ -258,4 +259,32 @@
       <div class="form-actions"><button type="submit" class="btn btn-primary" data-confirm="Créer une nouvelle saison et réinitialiser la progression Battle Pass de tous les joueurs ?" data-confirm-label="Créer la saison" data-confirm-variant="primary"><%- icon('plus', { size: 16 }) %>Créer la saison</button></div>
     </form>
   </details>
+<% } else if (tab === 'display' && display) { %>
+  <div class="grid-2 grid-aside-right">
+    <form method="post" action="<%= b %>/display" class="card form" data-dirty-form>
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="card-head"><div><h2 class="card-title">Classement en direct</h2><p class="card-desc">Le bot publie <strong>un seul message</strong> (victoires, kills, K/D — min. <%= kdMinMatches %> parties) et le <strong>met à jour tout seul</strong> quand les stats changent : au plus une fois par minute, vérifié toutes les 10 minutes, republié s'il est supprimé.</p></div></div>
+      <div class="field-row">
+        <div class="field"><label for="d-lb">Salon du classement</label><%- include('../partials/channel-select', { name: 'leaderboardChannelId', id: 'd-lb', selected: display.leaderboardChannelId || '', emptyLabel: '— Désactivé —' }) %></div>
+        <div class="field"><label for="d-size">Taille</label><select id="d-size" name="leaderboardSize" class="select"><% for (const n of leaderboardSizes) { %><option value="<%= n %>" <%= display.leaderboardSize === n ? 'selected' : '' %>>Top <%= n %></option><% } %></select></div>
+      </div>
+      <div class="field mt-4"><label for="d-stat">Salon dédié à <code>/stat</code></label><%- include('../partials/channel-select', { name: 'statChannelId', id: 'd-stat', selected: display.statChannelId || '', emptyLabel: '— Tous les salons —' }) %><small class="hint">Si défini, <code>/stat</code> ne répond que dans ce salon (ou ses fils) ; ailleurs, le membre reçoit un lien vers ce salon (message visible par lui seul).</small></div>
+      <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+    </form>
+    <aside class="stack">
+      <section class="card card-muted">
+        <h2 class="card-title">Message publié</h2>
+        <% if (display.leaderboardChannelId && display.leaderboardMessageId) { %>
+          <p class="text-sm text-2 mb-3"><a class="link" href="https://discord.com/channels/<%= guild.id %>/<%= display.leaderboardChannelId %>/<%= display.leaderboardMessageId %>" target="_blank" rel="noopener noreferrer">Voir le classement sur Discord <%- icon('external-link', { size: 12 }) %></a></p>
+        <% } else { %>
+          <p class="text-sm text-2 mb-3"><%= display.leaderboardChannelId ? 'Pas encore publié : il le sera à la prochaine mise à jour des stats, ou maintenant :' : 'Aucun salon choisi.' %></p>
+        <% } %>
+        <form method="post" action="<%= b %>/display/refresh"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-block" <%= display.leaderboardChannelId ? '' : 'disabled' %>><%- icon('refresh', { size: 16 }) %>Republier maintenant</button></form>
+      </section>
+      <section class="card card-muted">
+        <h2 class="card-title">Commande <code>/stat</code></h2>
+        <p class="text-sm text-2"><code>/stat</code> affiche ses propres stats ; <code>/stat joueur:</code> celles d'un autre joueur (pseudo en jeu proposé automatiquement, mention ou ID). Ouverte à tous les membres.</p>
+      </section>
+    </aside>
+  </div>
 <% } %>

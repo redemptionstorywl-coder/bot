@@ -4,13 +4,13 @@ import type { InteractionContext } from '../structures/types';
 import { fivemService } from '../services/FiveMService';
 import { paginate } from '../utils/pagination';
 import { attempt, describeError, ko, show, toggleModule, unknownAction, type PanelNotice } from '../panels/_modulesKit';
-import { buildAddModal, buildEditModal, buildLinkModal, buildNicknameModal, buildPlayerPages, renderDeleteConfirm, renderMain, renderRolesView, renderServer } from '../panels/_fivem';
+import { buildAddModal, buildEditModal, buildGroupModal, buildLinkModal, buildNicknameModal, buildPlayerPages, renderDeleteConfirm, renderGroupsView, renderMain, renderRolesView, renderServer } from '../panels/_fivem';
 import { embedService } from '../services/EmbedService';
 
 /**
  * Boutons du panneau `/config module:fivem` (namespace `cfg-fivem`, admin) :
  * `main`, `module`, `add` / `link` (modals), `server:<key>`, `maint:<key>`, `players:<key>`, `test:<key>`,
- * `delete:<key>` → `delete-ok:<key>`, `nick:<key>` / `edit:<key>` (modals), `roles:<key>`.
+ * `delete:<key>` → `delete-ok:<key>`, `nick:<key>` / `edit:<key>` (modals), `roles:<key>`, `groups:<key>`, `group-add:<key>` (modal).
  */
 export default defineButton({
   id: 'cfg-fivem',
@@ -54,6 +54,14 @@ async function handle(interaction: ButtonInteraction<'cached'>, action: string, 
     case 'roles': {
       const server = await load();
       return server && show(interaction, renderRolesView(server, { guild, config, t }));
+    }
+    case 'groups': {
+      const server = await load();
+      return server && show(interaction, renderGroupsView(server, { guild, config, t }));
+    }
+    case 'group-add': {
+      const server = await load();
+      return server && interaction.showModal(buildGroupModal(server, t));
     }
     case 'nick': {
       const server = await load();
