@@ -33,6 +33,7 @@ export const MODULE_KEYS = [
   'events',
   'giveaways',
   'polls',
+  'vocal',
   'whitelist',
   'fivem',
   'battleRoyale',
@@ -57,6 +58,7 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
   events: '📅 Événements',
   giveaways: '🎁 Giveaways',
   polls: '📊 Sondages',
+  vocal: '🔊 Salons vocaux',
   whitelist: '📝 Whitelist',
   fivem: '🎮 FiveM',
   battleRoyale: '⚔️ Battle Royale',
@@ -66,11 +68,11 @@ export const MODULE_LABELS: Record<ModuleKey, string> = {
 
 /** Modules activés par défaut selon le type de serveur. */
 export const DEFAULT_MODULES_BY_KIND: Record<GuildKind, Partial<Record<ModuleKey, boolean>>> = {
-  GENERIC: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true },
-  PRISON: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, whitelist: true, fivem: true },
-  BATTLE_ROYALE: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, fivem: true, battleRoyale: true },
-  SCHOOL: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, whitelist: true, fivem: true, school: true },
-  SHOP: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, shop: true },
+  GENERIC: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, vocal: true },
+  PRISON: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, vocal: true, whitelist: true, fivem: true },
+  BATTLE_ROYALE: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, vocal: true, fivem: true, battleRoyale: true },
+  SCHOOL: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, vocal: true, whitelist: true, fivem: true, school: true },
+  SHOP: { welcome: true, leave: true, autorole: true, rolemenu: true, reactionrole: true, notifications: true, tickets: true, moderation: true, antiraid: true, logs: true, announcements: true, embeds: true, events: true, giveaways: true, polls: true, vocal: true, shop: true },
 };
 
 export const GUILD_KIND_LABELS: Record<GuildKind, string> = {

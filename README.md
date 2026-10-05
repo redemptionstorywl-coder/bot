@@ -44,6 +44,7 @@ Node.js 22 · TypeScript · discord.js v14 · Prisma · MySQL · Express · Sock
 | 📅 Événements | inscriptions, participants max, rappels automatiques (24h, 1h, 30, 10, 5 min) |
 | 🎁 Giveaways | rôle requis, nombre minimal de messages, tirage automatique, reroll |
 | 📊 Sondages | oui/non, choix multiples, anonyme, durée, résultats automatiques |
+| 🔊 Salons vocaux | « Créer un salon » : rejoindre un lobby crée un salon vocal au nom du membre, avec le drapeau et le nom dans sa langue (selon ses rôles), supprimé quand il se vide |
 | 🎮 FiveM | API REST + Socket.IO, statut serveur en direct, whitelist, sanctions, stats ; adaptateurs ESX / QBCore / custom |
 | ⚔️ Battle Royale | profils, XP/niveaux, wins, kills, K/D, classements, Battle Pass |
 | 🎓 School RP | inscriptions, élèves, professeurs, classes, maisons, clubs, candidatures |
@@ -197,7 +198,7 @@ Tout est aussi modifiable depuis le dashboard.
 Démarre avec le bot sur `DASHBOARD_URL` (par défaut http://localhost:3000).
 
 - Connexion via **Discord OAuth2** ; accès réservé aux administrateurs des serveurs (ou `OWNER_IDS`).
-- Pages : Dashboard, Serveurs, Membres, Tickets, Embeds, Annonces, Bienvenue, Rôles, Reaction Roles, Logs, Modération, Giveaways, Événements, FiveM, Whitelist, Battle Royale, School RP, Shop, Paramètres (+ une vue Administration globale pour les `OWNER_IDS`).
+- Pages : Dashboard, Serveurs, Membres, Tickets, Embeds, Annonces, Bienvenue, Rôles, Reaction Roles, Salons vocaux, Logs, Modération, Giveaways, Événements, FiveM, Whitelist, Battle Royale, School RP, Shop, Paramètres (+ une vue Administration globale pour les `OWNER_IDS`).
 - Chaque modification est appliquée **immédiatement** au bot (cache invalidé + Socket.IO).
 
 Voir [`dashboard/README.md`](dashboard/README.md) pour la structure et l'ajout de pages.
@@ -222,6 +223,7 @@ Toute la configuration passe par **une seule commande** : `/config module:<modul
 | `whitelist` | Questions, salon de review, rôles, DM des décisions |
 | `school` | Salons, rôles, classes, maisons, clubs |
 | `shop` | Produits, catégories, Tebex, annonces produits |
+| `vocal` | Salons vocaux temporaires : lobbies « Créer un salon », catégorie, limite de membres, règles de langue (rôle → drapeau + nom), droits du créateur |
 
 | Catégorie | Commandes d'action |
 | --- | --- |
@@ -243,6 +245,13 @@ Les commandes Battle Royale, School RP et Shop ne sont proposées que sur les se
 - **👥 Rôles autorisés** : ces rôles peuvent utiliser la commande même sans être staff (niveau et permissions Discord ignorés, celles du bot restent vérifiées) ; les autres membres sont refusés, sauf les administrateurs Discord. Les boutons / formulaires ouverts par la commande suivent la même règle.
 - **⛔ Désactivée** : personne ne peut l'utiliser, sauf le propriétaire du serveur.
 - `/config` et `/help` sont verrouillées (jamais restreignables) ; le propriétaire du serveur et `OWNER_IDS` passent toujours.
+
+### Salons vocaux temporaires (`/config module:vocal`)
+
+- Un membre rejoint un salon **lobby** (par défaut le salon « Créer un salon » `1553447736790093944` s'il existe) : le bot crée un salon vocal à son nom et l'y déplace. S'il a déjà un salon actif, il y est simplement renvoyé (une création par membre toutes les 10 s au maximum).
+- **Nom selon la langue** : les règles `rôle → drapeau + modèle` sont évaluées dans l'ordre (ex. rôle Français → `🇫🇷 Salon de {name}`, rôle English → `🇬🇧 {name}'s lobby`) ; sans rôle de langue, la règle de repli (anglais par défaut) s'applique. 11 langues proposées (fr, en, es, de, it, pt, ar, tr, pl, ru, nl), bouton « Détecter les rôles ». `{name}` = pseudo nettoyé, nom limité à 100 caractères.
+- Le salon reprend les permissions, le débit et la limite du lobby (limite et catégorie réglables) ; le créateur peut le gérer (renommer, limite, déplacer des membres). S'il part, ses droits passent au membre présent depuis le plus longtemps.
+- **Suppression** 5 s après le départ du dernier membre (une reconnexion rapide l'annule). Les salons actifs sont enregistrés en base : au redémarrage, ceux restés vides sont supprimés et ceux disparus oubliés. Permissions requises pour le bot : Gérer les salons, Déplacer des membres ; une erreur est notée dans les logs **Vocal**.
 
 ### `/unban-all [raison] [inclure_jeu]`
 
@@ -299,7 +308,7 @@ Voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). En résumé :
 npm test
 ```
 
-Les tests (Vitest) couvrent les systèmes critiques : tickets, permissions, traductions de l'interface, rôles, sanctions, `/clear salon`, `/unban-all`, permissions des commandes par rôle, annonces, programmation, base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
+Les tests (Vitest) couvrent les systèmes critiques : tickets, permissions, traductions de l'interface, rôles, sanctions, `/clear salon`, `/unban-all`, permissions des commandes par rôle, salons vocaux temporaires, annonces, programmation, base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
 
 ```bash
 npm run check            # vérifications statiques (aussi exécutées par npm test)

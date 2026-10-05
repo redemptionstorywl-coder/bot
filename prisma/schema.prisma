@@ -1160,3 +1160,38 @@ model TicketSettings {
   reminderPing     String   @default("claimer") @db.VarChar(16)
   updatedAt        DateTime @updatedAt
 }
+
+// ──────────────── Salons vocaux temporaires (« Créer un salon ») ────────────────
+
+/// Réglages des salons vocaux temporaires : rejoindre un salon « lobby » crée un salon vocal au nom du membre.
+model TempVoiceConfig {
+  guildId           String   @id @db.VarChar(32)
+  /// Salons « lobby » déclencheurs (string[])
+  lobbyIds          Json
+  /// Catégorie des salons créés (null = catégorie du lobby)
+  categoryId        String?  @db.VarChar(32)
+  /// Limite de membres (null = celle du lobby, 0 = illimité)
+  userLimit         Int?
+  /// Règles de langue évaluées dans l'ordre : [{ roleId, preset, emoji, template }]
+  rules             Json
+  /// Règle de repli (aucun rôle correspondant) : { preset, emoji, template } ; null = anglais
+  fallback          Json?
+  /// Le créateur gère son salon (renommer, limite, déplacer / expulser des membres)
+  ownerPermissions  Boolean  @default(true)
+  /// Le créateur parti, ses droits passent au membre présent depuis le plus longtemps
+  transferOwnership Boolean  @default(true)
+  updatedAt         DateTime @updatedAt
+}
+
+/// Salon vocal temporaire actif : supprimé quand il se vide (et au démarrage s'il est resté vide).
+model TempVoiceChannel {
+  channelId String   @id @db.VarChar(32)
+  guildId   String   @db.VarChar(32)
+  ownerId   String   @db.VarChar(32)
+  /// Lobby d'origine
+  lobbyId   String?  @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  @@index([guildId])
+  @@index([guildId, ownerId])
+}

@@ -1,0 +1,21 @@
+<%#
+  Règle de langue des salons vocaux temporaires (liste dynamique repeater.js, public/js/vocal.js).
+  Attend : rule ({ roleId, preset, emoji, template } | null), presets ([{ key, label, emoji, template }]).
+%>
+<% const r = rule || {}; const _preset = r.preset || (rule ? 'custom' : ''); %>
+<div class="repeater-row repeater-voicerule" data-repeater-row data-voice-rule>
+  <button type="button" class="drag-handle" data-repeater-handle aria-label="Déplacer la règle (Alt + flèches)"><%- icon('grip') %></button>
+  <select class="select select-sm" data-field="roleId" aria-label="Rôle de langue" data-role-picker data-placeholder="Choisir un rôle…"><option value="">— Rôle —</option><%- include('role-options', { roles: guild.roles.filter((x) => !x.managed), selected: r.roleId || '' }) %></select>
+  <select class="select select-sm" data-field="preset" aria-label="Langue" data-voice-preset>
+    <option value="custom" <%= _preset === 'custom' || !_preset ? 'selected' : '' %>>Personnalisé</option>
+    <% for (const p of presets) { %><option value="<%= p.key %>" <%= _preset === p.key ? 'selected' : '' %>><%= p.emoji %> <%= p.label %></option><% } %>
+  </select>
+  <input class="input input-sm" data-field="emoji" maxlength="16" placeholder="🇫🇷" value="<%= r.emoji || '' %>" aria-label="Emoji (drapeau)">
+  <input class="input input-sm" data-field="template" maxlength="90" pattern=".*\{name\}.*" title="Le modèle doit contenir {name}" placeholder="Salon de {name}" value="<%= r.template || '' %>" aria-label="Modèle du nom ({name} = pseudo)">
+  <div class="repeater-actions">
+    <button type="button" class="icon-btn icon-btn-sm" data-repeater-up data-tooltip="Monter" aria-label="Monter"><%- icon('arrow-up', { size: 15 }) %></button>
+    <button type="button" class="icon-btn icon-btn-sm" data-repeater-down data-tooltip="Descendre" aria-label="Descendre"><%- icon('arrow-down', { size: 15 }) %></button>
+    <button type="button" class="icon-btn icon-btn-sm is-danger" data-repeater-remove data-tooltip="Retirer" aria-label="Retirer la règle"><%- icon('trash', { size: 15 }) %></button>
+  </div>
+  <div class="voice-rule-preview"><%- icon('volume', { size: 14 }) %><span data-voice-preview>—</span></div>
+</div>

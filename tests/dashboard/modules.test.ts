@@ -184,7 +184,7 @@ const MODELS = [
   'dashboardSession', 'guild', 'guildSettings', 'logChannel', 'log', 'commandPermission', 'user',
   'ticket', 'ticketType', 'ticketPanel', 'ticketTranscript', 'ticketMessage', 'ticketSettings', 'fiveMPlayer', 'fiveMServer', 'honeypotChannel', 'warning', 'sanction', 'ban', 'mute', 'moderationConfig',
   'embedTemplate', 'announcement', 'scheduledAnnouncement', 'welcomeConfig', 'leaveConfig', 'autoRole', 'roleMenu', 'reactionRole',
-  'notificationRole', 'giveaway', 'giveawayEntry', 'event', 'eventParticipant', 'poll', 'pollVote',
+  'notificationRole', 'giveaway', 'giveawayEntry', 'event', 'eventParticipant', 'poll', 'pollVote', 'tempVoiceConfig', 'tempVoiceChannel',
 ];
 
 const ticketType = { id: 1, guildId: GUILD_ID, key: 'support', label: 'Support', emoji: '🎫', description: 'Aide', categoryId: CATEGORY_ID, archiveCategoryId: null, staffRoleIds: [STAFF_ROLE_ID], questions: [{ id: 'details', label: 'Détails', style: 'paragraph', required: true }], embed: null, welcomeMessage: null, language: 'fr', nameFormat: 'ticket-{number}', maxPerUser: 1, enabled: true, order: 0, createdAt: new Date(), updatedAt: new Date() };

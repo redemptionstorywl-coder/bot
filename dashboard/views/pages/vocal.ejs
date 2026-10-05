@@ -1,0 +1,120 @@
+<%
+  const b = `/guilds/${guild.id}/vocal`;
+  const voiceOnly = guild.voiceChannels.filter((c) => c.type === 'voice');
+  const lobbySel = new Set(lobbyIds);
+  const permLabels = { ManageChannels: 'Gérer les salons', MoveMembers: 'Déplacer des membres', Connect: 'Se connecter', ViewChannel: 'Voir les salons' };
+%>
+<header class="page-header">
+  <div class="page-heading">
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title row-wrap"><span>Salons vocaux</span><span class="badge <%= moduleEnabled && lobbyIds.length ? 'badge-success' : 'badge-muted' %>"><span class="dot <%= moduleEnabled && lobbyIds.length ? 'dot-success' : '' %>"></span><%= !moduleEnabled ? 'Module coupé' : lobbyIds.length ? 'Actif' : 'Aucun lobby' %></span></h1><p class="page-subtitle">« Créer un salon » : un membre rejoint un salon lobby, le bot lui crée un salon vocal à son nom, dans sa langue, et le supprime quand il se vide.</p></div>
+  </div>
+</header>
+
+<% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Salons vocaux est désactivé : rejoindre un lobby ne crée aucun salon. <a class="link" href="/guilds/<%= guild.id %>/settings#modules">Activer le module</a></span></div><% } %>
+<% if (missingPermissions.length) { %><div class="alert alert-danger"><%- icon('shield-alert') %><span class="alert-text"><span class="alert-title">Permissions du bot manquantes</span>Le bot a besoin de : <%= missingPermissions.map((p) => permLabels[p] || p).join(', ') %>. Sans elles, aucun salon ne peut être créé (l'erreur est notée dans les logs Vocal).</span></div><% } %>
+<% if (defaultLobby) { %><div class="alert alert-info"><%- icon('info') %><span class="alert-text">Le salon « Créer un salon » du serveur est utilisé par défaut. Enregistrez la page pour confirmer ou choisir d'autres lobbies.</span></div><% } %>
+<% if (missingLobbies.length) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text"><%= missingLobbies.length %> lobby(s) supprimé(s) de Discord : enregistrez pour les retirer.</span></div><% } %>
+
+<form method="post" action="<%= b %>/config" class="split" id="vocal-form" data-dirty-form data-no-live-reload>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <div class="stack">
+    <section class="card">
+      <div class="card-head"><div><h2 class="card-title"><%- icon('volume') %>Salons « Créer un salon »</h2><p class="card-desc">Rejoindre l'un de ces salons crée un salon temporaire. Il hérite des permissions, du débit et de la limite du lobby.</p></div></div>
+      <div class="field">
+        <label for="vc-lobbies">Salons lobby <span class="field-optional"><%= limits.lobbies %> maximum</span></label>
+        <select class="select" name="lobbyIds" id="vc-lobbies" multiple data-channel-picker data-kind="voice" data-placeholder="Choisir des salons vocaux…">
+          <% let parent = null, open = false; for (const c of voiceOnly) { if (c.parentId !== parent) { if (open) { %></optgroup><% } parent = c.parentId; open = Boolean(c.parentId); if (open) { %><optgroup label="<%= c.parentName %>"><% } } %>
+            <option value="<%= c.id %>" data-type="<%= c.type %>" data-name="<%= c.name %>" <%= lobbySel.has(c.id) ? 'selected' : '' %>>🔊 <%= c.name %></option>
+          <% } if (open) { %></optgroup><% } %>
+        </select>
+        <small class="hint">Ex. « ➕ Créer un salon ». Vide = fonctionnalité en pause.</small>
+      </div>
+      <div class="field-row mt-4">
+        <div class="field"><label for="vc-category">Catégorie des salons créés</label><%- include('../partials/channel-select', { name: 'categoryId', id: 'vc-category', kind: 'category', selected: settings.categoryId || '', emptyLabel: '— Celle du lobby —' }) %></div>
+        <div class="field">
+          <label for="vc-limit">Limite de membres</label>
+          <div class="input-group"><input id="vc-limit" name="userLimit" type="number" class="input" min="0" max="<%= limits.userLimit %>" value="<%= settings.userLimit === null ? '' : settings.userLimit %>" placeholder="Celle du lobby" data-input-narrow><span class="input-addon">membres</span></div>
+          <small class="hint">Vide = celle du lobby · 0 = illimitée.</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="regles">
+      <div class="card-head"><div><h2 class="card-title"><%- icon('globe') %>Règles de langue</h2><p class="card-desc">Évaluées dans l'ordre : la première règle dont le membre a le rôle donne le drapeau et le nom. <code>{name}</code> = pseudo du membre (nettoyé, nom limité à 100 caractères).</p></div></div>
+      <div class="repeater" data-repeater data-repeater-max="<%= limits.rules %>" data-repeater-json="#vc-rules-json" data-repeater-require="roleId" id="vc-rules" data-voice-rules>
+        <div class="repeater-rows" data-repeater-rows>
+          <% for (const rule of settings.rules) { %><%- include('../partials/voice-rule-row', { rule, presets }) %><% } %>
+        </div>
+        <template data-repeater-template><%- include('../partials/voice-rule-row', { rule: null, presets }) %></template>
+        <div class="repeater-foot"><button type="button" class="btn btn-sm" data-repeater-add><%- icon('plus', { size: 14 }) %>Ajouter une règle</button><span class="hint" data-repeater-count></span></div>
+        <input type="hidden" name="rulesJson" id="vc-rules-json" value="<%= JSON.stringify(settings.rules) %>">
+      </div>
+
+      <div class="voice-fallback mt-4" data-voice-fallback>
+        <div class="field-label">Autres membres (aucun rôle de langue)</div>
+        <div class="repeater-row repeater-voicerule is-static">
+          <span class="voice-fallback-icon" aria-hidden="true"><%- icon('users') %></span>
+          <span class="text-sm text-2">Règle de repli</span>
+          <select class="select select-sm" name="fallbackPreset" aria-label="Langue de repli" data-voice-preset>
+            <option value="custom" <%= !presets.some((p) => p.key === settings.fallback.preset) ? 'selected' : '' %>>Personnalisé</option>
+            <% for (const p of presets) { %><option value="<%= p.key %>" <%= settings.fallback.preset === p.key ? 'selected' : '' %>><%= p.emoji %> <%= p.label %></option><% } %>
+          </select>
+          <input class="input input-sm" name="fallbackEmoji" maxlength="16" value="<%= settings.fallback.emoji %>" placeholder="🇬🇧" aria-label="Emoji de repli" data-voice-emoji>
+          <input class="input input-sm" name="fallbackTemplate" maxlength="90" pattern=".*\{name\}.*" title="Le modèle doit contenir {name}" value="<%= settings.fallback.template %>" placeholder="{name}'s lobby" required aria-label="Modèle de repli" data-voice-template>
+          <span></span>
+          <div class="voice-rule-preview"><%- icon('volume', { size: 14 }) %><span data-voice-preview>—</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title"><%- icon('crown') %>Créateur du salon</h2>
+      <div class="toggle-list">
+        <label class="toggle-row"><span class="toggle-row-text"><span class="toggle-row-title">Le créateur gère son salon</span><span class="toggle-row-hint">Renommer, changer la limite, déplacer ou déconnecter des membres de son salon.</span></span><span class="toggle"><input type="checkbox" name="ownerPermissions" <%= settings.ownerPermissions ? 'checked' : '' %>><span class="toggle-track"></span></span></label>
+        <label class="toggle-row"><span class="toggle-row-text"><span class="toggle-row-title">Transférer au départ du créateur</span><span class="toggle-row-hint">S'il part alors que d'autres restent, ses droits passent au membre présent depuis le plus longtemps.</span></span><span class="toggle"><input type="checkbox" name="transferOwnership" <%= settings.transferOwnership ? 'checked' : '' %>><span class="toggle-track"></span></span></label>
+      </div>
+    </section>
+    <div class="form-actions dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+  </div>
+
+  <aside class="split-preview">
+    <div class="preview-panel">
+      <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 15 }) %>Aperçu des noms</span><span class="badge badge-muted">Discord</span></div>
+      <div class="preview-panel-body">
+        <div class="dpreview dchannel-list" data-voice-list>
+          <div class="dchannel-cat">Salons vocaux</div>
+          <div class="dchannel-row is-lobby"><%- icon('volume', { size: 18 }) %><span><%= lobbyIds.length ? (voiceOnly.find((c) => c.id === lobbyIds[0]) || { name: 'Créer un salon' }).name : 'Créer un salon' %></span></div>
+          <div data-voice-list-items></div>
+        </div>
+      </div>
+      <div class="preview-panel-note">
+        <label class="field mb-0"><span class="field-label">Pseudo d'exemple</span><input class="input input-sm" maxlength="32" data-voice-sample value="<%= user ? (user.globalName || user.username) : 'Alex' %>" aria-label="Pseudo d'exemple"></label>
+      </div>
+    </div>
+  </aside>
+</form>
+
+<section class="card card-flush mt-5" data-live-reload>
+  <div class="card-head"><div><h2 class="card-title"><%- icon('activity') %>Salons temporaires actifs</h2><p class="card-desc">Supprimés automatiquement 5 s après le départ du dernier membre (et au redémarrage du bot s'ils sont vides).</p></div><span class="badge badge-muted"><%= active.length %></span></div>
+  <% if (!active.length) { %>
+    <%- include('../partials/empty', { glyph: 'volume', title: 'Aucun salon temporaire', text: 'Les salons créés depuis un lobby apparaîtront ici.', compact: true }) %>
+  <% } else { %>
+  <div class="table-wrap">
+    <table class="table table-responsive">
+      <thead><tr><th>Salon</th><th>Créateur</th><th>Membres</th><th>Créé</th></tr></thead>
+      <tbody>
+        <% for (const a of active) { const p = profiles[a.ownerId]; %>
+          <tr>
+            <td class="cell-primary"><span class="row"><%- icon('volume', { size: 15 }) %><span class="truncate"><%= a.name %></span></span></td>
+            <td data-label="Créateur"><span class="user-cell"><% if (p) { %><img class="avatar avatar-xs" src="<%= p.avatarUrl %>" alt=""><% } %><span class="truncate"><%= p ? p.name : a.ownerId %></span></span></td>
+            <td data-label="Membres"><%= fmt.number(a.members) %></td>
+            <td data-label="Créé" class="nowrap" title="<%= fmt.dateTime(a.createdAt) %>"><%= fmt.relative(a.createdAt) %></td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>
+
+<script type="application/json" id="vocal-data"><%- jsonScript({ presets, sampleName: 'Alex' }) %></script>

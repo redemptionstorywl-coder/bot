@@ -84,5 +84,9 @@ Sobre, premium, sombre. Violet `BRAND.colors.primary` (0x7C3AED) pour l'identit�
 - `open(interaction, ctx)` répond en éphémère avec un embed d'état + composants. Les composants utilisent le namespace propre du panneau (`cfg-<clé>` recommandé, ou un namespace existant comme `welcome:cfg`/`tcfg`) avec `permissions: { internal: 'admin' }`.
 - Chaque action re-rend le panneau (`interaction.update`) avec une notice ✅/❌ ; modals : `isFromMessage() ? update : reply ephemeral`.
 - Pas de commande de configuration séparée : les commandes slash restantes sont des ACTIONS (modération, tickets, annonces, profils…).
-- Ordre actuel : general (1), permissions (2), logs (3), bienvenue (4), tickets (5), moderation (6), roles (7), fivem (8), battleroyale (9), whitelist (10), school (11), shop (12).
+- Ordre actuel : general (1), permissions (2), logs (3), bienvenue (4), tickets (5), moderation (6), roles (7), fivem (8), battleroyale (9), whitelist (10), school (11), shop (12), vocal (13).
 - Respecter les limites Discord : 5 rangées, un menu seul sur sa rangée, 25 options (paginer au-delà, cf. `src/panels/_permissions.ts`), customIds < 100, embed ≤ 6000 caractères ; pré-remplir les menus de rôles / salons uniquement avec des IDs encore présents (`src/utils/liveIds.ts`).
+
+### Salons vocaux temporaires (module `vocal`)
+- `src/services/TempVoiceService.ts` : fonctions pures (`resolveRule`, `buildChannelName`, `sanitizeMemberName`, `decideLobbyJoin`, `decideLeave`, `planStartupCleanup`, `buildOverwrites`) + service `tempVoiceService` (config `TempVoiceConfig`, salons actifs `TempVoiceChannel`, état en mémoire, suppression après `DELETE_GRACE_MS`, tâche `vocal:sweep`).
+- Événements : `voiceStateUpdate.vocal.ts`, `channelDelete.vocal.ts`, `ready.vocal.ts` (reprise : salons vides supprimés, disparus oubliés). Panneau `src/panels/vocal.ts` (namespace `cfg-vocal`), page dashboard `routes/guild/vocal.ts`.
