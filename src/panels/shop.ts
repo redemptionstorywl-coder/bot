@@ -7,7 +7,7 @@ export default defineConfigPanel({
   key: 'shop',
   label: 'Shop',
   emoji: '🛒',
-  order: 11,
+  order: 12,
   module: 'shop',
   guildKinds: SHOP_KINDS,
   async open(interaction, ctx) {

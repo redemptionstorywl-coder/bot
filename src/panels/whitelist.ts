@@ -7,7 +7,7 @@ export default defineConfigPanel({
   key: 'whitelist',
   label: 'Whitelist',
   emoji: '📝',
-  order: 9,
+  order: 10,
   module: 'whitelist',
   guildKinds: WL_KINDS,
   async open(interaction, ctx) {

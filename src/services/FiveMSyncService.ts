@@ -14,6 +14,7 @@ import { formatDuration } from '../utils/time';
 import { childLogger } from '../utils/logger';
 import { fivemIdentifierSchema, type NormalizedSanction, type ServerPlayer, type ServerStatus } from './fivem/schemas';
 import {
+  bulkKey,
   canSetNickname,
   decideConnection,
   EchoGuard,
@@ -112,6 +113,23 @@ export class FiveMSyncService {
 
   isFromGame(kind: EchoKind, guildId: string, userId: string): boolean {
     return this.echo.has(echoKey('fromGame', kind, guildId, userId));
+  }
+
+  /**
+   * Opération de masse côté Discord (/unban-all) : à appeler juste avant chaque action Discord.
+   * `skip` : l'événement Discord qui suit ne sera PAS relayé vers les serveurs FiveM (anti-écho, 30 s) ;
+   * `quiet` : il est relayé comme d'habitude, mais sans log « Discord → FiveM » par membre.
+   */
+  markBulk(kind: EchoKind, guildId: string, userId: string, mode: 'skip' | 'quiet'): void {
+    this.echo.mark(bulkKey(mode, kind, guildId, userId));
+  }
+
+  /** Lit et consomme un marqueur d'opération de masse. */
+  private takeBulk(mode: 'skip' | 'quiet', kind: EchoKind, guildId: string, userId: string): boolean {
+    const key = bulkKey(mode, kind, guildId, userId);
+    const hit = this.echo.has(key);
+    if (hit) this.echo.clear(key);
+    return hit;
   }
 
   invalidateBan(guildId: string, userId: string): void {
@@ -639,7 +657,8 @@ export class FiveMSyncService {
   /** Ban / unban Discord (événements GuildBanAdd / GuildBanRemove) → serveurs de jeu. */
   async onDiscordBan(guild: Guild, userId: string, kind: 'ban' | 'unban'): Promise<number> {
     this.invalidateBan(guild.id, userId);
-    if (this.isFromGame(kind, guild.id, userId)) return 0;
+    if (this.takeBulk('skip', kind, guild.id, userId) || this.isFromGame(kind, guild.id, userId)) return 0;
+    const quiet = this.takeBulk('quiet', kind, guild.id, userId);
     const servers = (await fivemService.listServers(guild.id)).filter((s) => s.enabled && s.syncBansToGame);
     if (!servers.length) return 0;
     let reason: string | null = null;
@@ -655,6 +674,7 @@ export class FiveMSyncService {
     const licenses = await this.licensesOf(guild.id, userId);
     const payload: GameActionPayload = { discordId: userId, license: licenses[0] ?? null, identifiers: licenses, reason, expiresAt, staff: 'Discord' };
     for (const s of servers) await this.pushAction(s, kind === 'ban' ? 'BAN' : 'UNBAN', payload);
+    if (quiet) return servers.length;
     await loggingService.log({
       guildId: guild.id,
       category: LogCategory.MODERATION,

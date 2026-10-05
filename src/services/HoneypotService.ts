@@ -54,7 +54,7 @@ export class HoneypotService {
     log.info({ count: rows.length }, 'Salons piège chargés');
   }
 
-  /** Recharge la config d'un serveur (après /clear salon|serveur qui recrée les salons). */
+  /** Recharge la config d'un serveur (après /clear salon qui recrée le salon). */
   async reloadGuild(guildId: string): Promise<void> {
     const row = await prisma.honeypotChannel.findUnique({ where: { guildId } }).catch(() => null);
     if (row?.enabled) this.channels.set(guildId, { channelId: row.channelId, windowMinutes: row.deleteWindowMinutes });

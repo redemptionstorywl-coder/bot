@@ -8,7 +8,7 @@ import { EventEmitter } from 'node:events';
 
 const log = childLogger('GuildConfigService');
 
-/** Émis (guildId) après la recréation de salons (/clear serveur) : les services gardant des IDs de salons en cache les invalident. */
+/** Émis (guildId) après la recréation d'un salon (/clear salon) : les services gardant des IDs de salons en cache les invalident. */
 export const CHANNELS_REMAPPED_EVENT = 'channels:remapped';
 
 export interface ResolvedGuildConfig {

@@ -95,6 +95,8 @@ BAN DISCORD → JEU
        + FiveMPendingAction (file persistée) ─── GET /actions (rs_bridge, toutes les 10 s)
             BAN   → ban local KVP (discord:<id> + licences connues) + DropPlayer des joueurs connectés
             UNBAN → suppression des bans locaux
+  /unban-all : chaque unban est marqué (fivemSyncService.markBulk) → inclure_jeu:true = relayé sans log par membre,
+               inclure_jeu:false = non relayé (marqueur bulk:skip:unban:<guild>:<user>, 30 s) : les bans en jeu restent
   À la connexion, POST /check refuse de toute façon un membre banni de Discord (ban vérifié via l'API, cache 60 s).
 
 CONNEXION

@@ -7,7 +7,7 @@ export default defineConfigPanel({
   key: 'battleroyale',
   label: 'Battle Royale',
   emoji: '⚔️',
-  order: 8,
+  order: 9,
   module: 'battleRoyale',
   guildKinds: BR_KINDS,
   async open(interaction, ctx) {

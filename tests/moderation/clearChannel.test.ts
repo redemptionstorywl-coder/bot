@@ -15,11 +15,10 @@ vi.mock('../../src/services/EventService', () => ({ eventService: { get: vi.fn(a
 vi.mock('../../src/services/GiveawayService', () => ({ giveawayService: { get: vi.fn(async (id: number) => ({ id })), publish: vi.fn() } }));
 vi.mock('../../src/services/PollService', () => ({ pollService: { get: vi.fn(async (id: number) => ({ id })), publish: vi.fn() } }));
 
-import { ModerationService, isGuildNameConfirmed, remapChannelReferences, selectNukeTargets, type NukeChannelInfo } from '../../src/services/ModerationService';
+import { ModerationService, remapChannelReferences } from '../../src/services/ModerationService';
 import { prisma as prismaModule } from '../../src/database/client';
 import { ticketService } from '../../src/services/TicketService';
 import { roleService } from '../../src/services/RoleService';
-import { eventService } from '../../src/services/EventService';
 import { guildConfigService } from '../../src/services/GuildConfigService';
 
 const prisma = prismaModule as unknown as ReturnType<typeof createPrismaMock>;
@@ -152,122 +151,48 @@ describe('remapChannelReferences : configuration de modération', () => {
   });
 });
 
-describe('selectNukeTargets', () => {
-  const ch = (id: string, type: ChannelType, extra: Partial<NukeChannelInfo> = {}): NukeChannelInfo => ({ id, name: id, type, position: 0, parentPosition: -1, manageable: true, ...extra });
-
-  it('ne garde que texte / annonces, ignore tickets et salons non gérables, trie par catégorie puis position', () => {
-    const { targets, skipped } = selectNukeTargets(
-      [
-        ch('voice', ChannelType.GuildVoice),
-        ch('forum', ChannelType.GuildForum),
-        ch('cat', ChannelType.GuildCategory),
-        ch('b', ChannelType.GuildText, { parentPosition: 1, position: 2 }),
-        ch('a', ChannelType.GuildAnnouncement, { parentPosition: 1, position: 0 }),
-        ch('top', ChannelType.GuildText, { parentPosition: -1, position: 5 }),
-        ch('ticket-1', ChannelType.GuildText),
-        ch('locked', ChannelType.GuildText, { manageable: false }),
-      ],
-      { ticketChannelIds: new Set(['ticket-1']), includeTickets: false },
-    );
-    expect(targets.map((t) => t.id)).toEqual(['top', 'a', 'b']);
-    expect(skipped).toEqual([
-      { id: 'ticket-1', name: 'ticket-1', reason: 'ticket' },
-      { id: 'locked', name: 'locked', reason: 'no_permission' },
-    ]);
-  });
-
-  it('inclut les tickets avec includeTickets', () => {
-    const { targets, skipped } = selectNukeTargets([ch('ticket-1', ChannelType.GuildText)], { ticketChannelIds: new Set(['ticket-1']), includeTickets: true });
-    expect(targets.map((t) => t.id)).toEqual(['ticket-1']);
-    expect(skipped).toEqual([]);
-  });
-});
-
-describe('isGuildNameConfirmed', () => {
-  it('exige le nom exact (casse comprise), espaces de bord tolérés', () => {
-    expect(isGuildNameConfirmed('Redemption Story', 'Redemption Story')).toBe(true);
-    expect(isGuildNameConfirmed('  Redemption Story ', 'Redemption Story')).toBe(true);
-    expect(isGuildNameConfirmed('redemption story', 'Redemption Story')).toBe(false);
-    expect(isGuildNameConfirmed('Redemption', 'Redemption Story')).toBe(false);
-    expect(isGuildNameConfirmed('', 'Redemption Story')).toBe(false);
-    expect(isGuildNameConfirmed(undefined, 'Redemption Story')).toBe(false);
-  });
-});
-
-describe('ModerationService.nukeGuild', () => {
+describe('ModerationService.nukeChannel (/clear salon)', () => {
   beforeEach(() => {
     resetPrisma();
     prisma.sanction!.aggregate!.mockResolvedValue({ _max: { caseNumber: 0 } });
     prisma.sanction!.create!.mockImplementation(async ({ data }: { data: Record<string, unknown> }) => ({ id: 1, caseNumber: 1, createdAt: new Date(), ...data }));
-    prisma.ticket!.findMany!.mockResolvedValue([{ channelId: 'tix' }]);
   });
 
-  function fakeGuild() {
-    let n = 0;
-    const deleted: string[] = [];
-    const guild: Record<string, unknown> = { id: 'g', name: 'Serveur', rulesChannelId: 'rules', publicUpdatesChannelId: null, safetyAlertsChannelId: null, systemChannelId: null, edit: vi.fn(async () => null) };
-    const make = (id: string, type: ChannelType, position: number) => ({
-      id,
-      name: id,
-      type,
-      position,
-      parent: null,
-      manageable: true,
-      viewable: true,
-      guild,
-      isThread: () => false,
-      isTextBased: () => type !== ChannelType.GuildVoice,
-      clone: vi.fn(async () => ({ id: `new-${id}-${++n}`, setPosition: vi.fn(async () => null), delete: vi.fn(async () => null) })),
-      delete: vi.fn(async () => {
-        deleted.push(id);
-      }),
-    });
-    const list = [make('general', ChannelType.GuildText, 1), make('rules', ChannelType.GuildText, 0), make('tix', ChannelType.GuildText, 2), make('vocal', ChannelType.GuildVoice, 3)];
-    const map = new Map(list.map((c) => [c.id, c]));
-    guild.channels = { fetch: vi.fn(async () => map) };
-    return { guild, deleted, map };
+  function fakeChannel(id: string, guildPatch: Record<string, unknown> = {}) {
+    const guild = { id: 'g', rulesChannelId: null, publicUpdatesChannelId: null, safetyAlertsChannelId: null, systemChannelId: null, edit: vi.fn(async () => null), ...guildPatch };
+    const clone = { id: `new-${id}`, setPosition: vi.fn(async () => null), delete: vi.fn(async () => null) };
+    const channel = { id, name: id, type: ChannelType.GuildText, position: 2, guild, clone: vi.fn(async () => clone), delete: vi.fn(async () => null) };
+    return { guild, clone, channel };
   }
 
-  it('recrée les salons dans l’ordre, ignore tickets / vocaux, remappe, republie et enregistre la case', async () => {
+  it('recrée le salon, réassigne le salon des règles au clone, remappe et enregistre une case PURGE', async () => {
     const svc = new ModerationService();
-    const { guild, deleted } = fakeGuild();
-    prisma.ticketPanel!.findMany!.mockResolvedValue([{ id: 3, channelId: 'general' }]);
+    const { guild, clone, channel } = fakeChannel('rules', { rulesChannelId: 'rules' });
     prisma.roleMenu!.findMany!.mockResolvedValue([{ id: 4, channelId: 'rules' }]);
-    prisma.event!.findMany!.mockResolvedValue([{ id: 6, channelId: 'general' }]);
-    const report = await svc.nukeGuild(guild as never, { id: 'admin', tag: 'admin#0' } as never, { delayMs: 0 });
-    expect(deleted).toEqual(['rules', 'general']);
-    expect(report.cleared.map((c) => c.oldId)).toEqual(['rules', 'general']);
-    expect(report.skipped).toEqual([{ id: 'tix', name: 'tix', reason: 'ticket' }]);
-    expect(report.errors).toEqual([]);
-    // Salon des règles (communauté) réassigné au clone avant suppression
-    expect(guild.edit).toHaveBeenCalledWith(expect.objectContaining({ rulesChannel: report.cleared[0]!.newId }));
-    expect(ticketService.republishPanel).toHaveBeenCalledWith(3);
+    const r = await svc.nukeChannel({ channel: channel as never, moderator: { id: 'admin', tag: 'admin#0' } as never });
+    expect(r.channel).toBe(clone);
+    expect(clone.setPosition).toHaveBeenCalledWith(2);
+    expect(guild.edit).toHaveBeenCalledWith(expect.objectContaining({ rulesChannel: 'new-rules' }));
+    expect(channel.delete).toHaveBeenCalled();
+    expect(svc.isNukeDeletion('rules')).toBe(true);
     expect(roleService.publishRoleMenu).toHaveBeenCalledWith(4, 'new-1');
-    expect(eventService.publish).toHaveBeenCalledWith({ id: 6 });
     expect(guildConfigService.emit).toHaveBeenCalledWith('channels:remapped', 'g');
-    expect(prisma.sanction!.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ type: 'PURGE', metadata: expect.objectContaining({ nukeGuild: true, channels: 2 }) }) }));
-    expect(svc.isNukingGuild('g')).toBe(false);
+    expect(prisma.sanction!.create).toHaveBeenCalledWith(expect.objectContaining({ data: expect.objectContaining({ type: 'PURGE', channelId: 'new-rules', metadata: expect.objectContaining({ nuke: true, oldChannelId: 'rules' }) }) }));
   });
 
-  it('refuse un second nuke simultané sur le même serveur', async () => {
+  it('supprime le clone et relance l’erreur si l’original ne peut pas être supprimé', async () => {
     const svc = new ModerationService();
-    const { guild } = fakeGuild();
-    const first = svc.nukeGuild(guild as never, { id: 'admin' } as never, { delayMs: 5 });
-    await expect(svc.nukeGuild(guild as never, { id: 'admin' } as never, { delayMs: 0 })).rejects.toMatchObject({ key: 'moderation.nuke_guild.already_running' });
-    await first;
-    expect(svc.isNukingGuild('g')).toBe(false);
+    const { clone, channel } = fakeChannel('general');
+    channel.delete.mockRejectedValueOnce(new Error('Missing Access'));
+    await expect(svc.nukeChannel({ channel: channel as never, moderator: { id: 'admin' } as never })).rejects.toThrow('Missing Access');
+    expect(clone.delete).toHaveBeenCalled();
+    expect(svc.isNukeDeletion('general')).toBe(false);
+    expect(prisma.sanction!.create).not.toHaveBeenCalled();
   });
 
-  it('annule le clone et signale l’erreur si la suppression échoue', async () => {
+  it('refuse un salon qui n’est ni texte ni annonces', async () => {
     const svc = new ModerationService();
-    const { guild, map } = fakeGuild();
-    const general = map.get('general')!;
-    general.delete.mockRejectedValueOnce(new Error('Missing Access'));
-    const cloneDelete = vi.fn(async () => null);
-    general.clone.mockResolvedValueOnce({ id: 'new-general', setPosition: vi.fn(async () => null), delete: cloneDelete } as never);
-    const report = await svc.nukeGuild(guild as never, { id: 'admin' } as never, { delayMs: 0, includeTickets: true });
-    expect(cloneDelete).toHaveBeenCalled();
-    expect(report.errors).toEqual([{ id: 'general', name: 'general', error: 'Missing Access' }]);
-    expect(report.cleared.map((c) => c.oldId)).toEqual(['rules', 'tix']);
+    const { channel } = fakeChannel('vocal');
+    await expect(svc.nukeChannel({ channel: { ...channel, type: ChannelType.GuildVoice } as never, moderator: { id: 'admin' } as never })).rejects.toMatchObject({ key: 'moderation.errors.channel_type' });
   });
 });

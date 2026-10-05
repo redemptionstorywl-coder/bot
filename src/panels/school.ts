@@ -7,7 +7,7 @@ export default defineConfigPanel({
   key: 'school',
   label: 'School RP',
   emoji: '🎓',
-  order: 10,
+  order: 11,
   module: 'school',
   guildKinds: SCHOOL_KINDS,
   async open(interaction, ctx) {

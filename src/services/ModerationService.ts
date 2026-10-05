@@ -293,53 +293,7 @@ export function auditReason(moderator: { id: string; tag?: string; username?: st
   return `${who} (${moderator.id})${reason ? ` • ${reason}` : ''}`.slice(0, 512);
 }
 
-// ─────────────────────────── /clear serveur (nuke) : fonctions pures + remap base ───────────────────────────
-
-/** Types de salons vidés par /clear serveur (forums, vocaux, catégories et threads sont ignorés). */
-export const NUKE_CHANNEL_TYPES: ReadonlySet<ChannelType> = new Set<ChannelType>([ChannelType.GuildText, ChannelType.GuildAnnouncement]);
-/** Pause entre deux salons (limites de débit Discord sur la création / suppression de salons). */
-export const NUKE_DELAY_MS = 1500;
-
-export interface NukeChannelInfo {
-  id: string;
-  name: string;
-  type: ChannelType;
-  /** Position du salon dans sa catégorie */
-  position: number;
-  /** Position de la catégorie parente (-1 sans catégorie) */
-  parentPosition: number;
-  /** Le bot peut gérer (cloner / supprimer) ce salon */
-  manageable: boolean;
-}
-
-export type NukeSkipReason = 'ticket' | 'no_permission';
-
-/**
- * Sélectionne les salons à recréer, dans l'ordre d'affichage (catégorie puis position).
- * Seuls les salons texte / annonces sont concernés ; les salons de tickets sont ignorés sauf `includeTickets`.
- */
-export function selectNukeTargets(
-  channels: NukeChannelInfo[],
-  opts: { ticketChannelIds: ReadonlySet<string>; includeTickets: boolean },
-): { targets: NukeChannelInfo[]; skipped: { id: string; name: string; reason: NukeSkipReason }[] } {
-  const targets: NukeChannelInfo[] = [];
-  const skipped: { id: string; name: string; reason: NukeSkipReason }[] = [];
-  for (const c of channels) {
-    if (!NUKE_CHANNEL_TYPES.has(c.type)) continue;
-    if (!opts.includeTickets && opts.ticketChannelIds.has(c.id)) skipped.push({ id: c.id, name: c.name, reason: 'ticket' });
-    else if (!c.manageable) skipped.push({ id: c.id, name: c.name, reason: 'no_permission' });
-    else targets.push(c);
-  }
-  targets.sort((a, b) => a.parentPosition - b.parentPosition || a.position - b.position || a.id.localeCompare(b.id));
-  return { targets, skipped };
-}
-
-/** Confirmation de /clear serveur : le nom saisi doit être EXACTEMENT celui du serveur (espaces de bord ignorés). */
-export function isGuildNameConfirmed(input: string | null | undefined, guildName: string): boolean {
-  if (typeof input !== 'string') return false;
-  const typed = input.trim();
-  return typed.length > 0 && typed === guildName.trim();
-}
+// ─────────────────────────── /clear salon : remap des références en base ───────────────────────────
 
 /** Lignes de base remappées par table + éléments à republier. */
 export interface ChannelRemapResult {
@@ -500,28 +454,6 @@ export async function remapChannelReferences(guildId: string, map: Record<string
     }
   }
   return result;
-}
-
-export interface NukeGuildReport {
-  cleared: { oldId: string; newId: string; name: string }[];
-  skipped: { id: string; name: string; reason: NukeSkipReason }[];
-  errors: { id: string; name: string; error: string }[];
-  remap: ChannelRemapResult;
-  durationMs: number;
-  sanction: Sanction;
-}
-
-/** Champs d'embed du rapport de /clear serveur (DM à l'exécuteur + salon de logs). */
-export function nukeReportFields(t: Translator, lang: string, report: Omit<NukeGuildReport, 'sanction'>): { name: string; value: string; inline: boolean }[] {
-  const list = (items: string[]) => (items.length ? items.join(', ').slice(0, 1000) : '—');
-  const remapped = Object.entries(report.remap.counts).map(([table, n]) => `${table} ×${n}`);
-  return [
-    { name: t('moderation.nuke_guild.report_cleared', { count: report.cleared.length }), value: list(report.cleared.map((c) => `#${c.name}`)), inline: false },
-    { name: t('moderation.nuke_guild.report_skipped', { count: report.skipped.length }), value: list(report.skipped.map((c) => `#${c.name} (${t(`moderation.nuke_guild.skip_${c.reason}`)})`)), inline: false },
-    { name: t('moderation.nuke_guild.report_errors', { count: report.errors.length }), value: list(report.errors.map((e) => `${e.name === 'republish' ? '' : `#${e.name} : `}${e.error}`)), inline: false },
-    { name: t('moderation.nuke_guild.report_remapped'), value: list(remapped), inline: false },
-    { name: t('moderation.nuke_guild.report_duration'), value: formatDuration(Math.max(1, Math.round(report.durationMs / 1000)), lang), inline: true },
-  ];
 }
 
 function toJson(value: unknown): Prisma.InputJsonValue {
@@ -1040,16 +972,11 @@ export class ModerationService {
     return { channel: clone, sanction };
   }
 
-  /** Salons en cours de suppression par /clear (les listeners channelDelete les ignorent : pas de ticket « supprimé », pas de log). */
+  /** Salons en cours de suppression par /clear salon (les listeners channelDelete les ignorent : pas de ticket « supprimé », pas de log). */
   private readonly nukeDeletions = new TTLCache<true>(15 * 60_000, 5000);
-  private readonly nukingGuilds = new Set<string>();
 
   isNukeDeletion(channelId: string): boolean {
     return this.nukeDeletions.has(channelId);
-  }
-
-  isNukingGuild(guildId: string): boolean {
-    return this.nukingGuilds.has(guildId);
   }
 
   /**
@@ -1118,77 +1045,6 @@ export class ModerationService {
       if (p) await pollService.publish(p);
     });
     return errors;
-  }
-
-  /**
-   * /clear serveur : recrée à l'identique chaque salon texte / annonces gérable (dans l'ordre d'affichage,
-   * pause de 1,5 s entre deux salons), puis remappe toutes les références de salons en base et republie
-   * panneaux, role menus, événements, giveaways et sondages. Un seul nuke à la fois par serveur.
-   * Les salons de tickets sont ignorés sauf `includeTickets`. Enregistre une case PURGE { nukeGuild: true }.
-   */
-  async nukeGuild(guild: Guild, moderator: User, opts: { includeTickets?: boolean; reason?: string | null; delayMs?: number } = {}): Promise<NukeGuildReport> {
-    if (this.nukingGuilds.has(guild.id)) throw new ModerationError('moderation.nuke_guild.already_running');
-    this.nukingGuilds.add(guild.id);
-    const started = Date.now();
-    const includeTickets = opts.includeTickets ?? false;
-    const delayMs = opts.delayMs ?? NUKE_DELAY_MS;
-    const reason = auditReason(moderator, opts.reason ?? 'clear serveur');
-    try {
-      const channels = await guild.channels.fetch();
-      const ticketRows = await prisma.ticket.findMany({ where: { guildId: guild.id, status: { not: 'DELETED' } }, select: { channelId: true } });
-      const infos: NukeChannelInfo[] = [];
-      for (const c of channels.values()) {
-        if (!c || c.isThread()) continue;
-        infos.push({ id: c.id, name: c.name, type: c.type, position: c.position, parentPosition: c.parent?.position ?? -1, manageable: c.manageable && c.viewable });
-      }
-      const { targets, skipped } = selectNukeTargets(infos, { ticketChannelIds: new Set(ticketRows.map((r) => r.channelId)), includeTickets });
-      const cleared: NukeGuildReport['cleared'] = [];
-      const errors: NukeGuildReport['errors'] = [];
-      for (const [index, info] of targets.entries()) {
-        if (index > 0 && delayMs > 0) await new Promise((resolve) => setTimeout(resolve, delayMs));
-        const channel = channels.get(info.id);
-        if (!channel || !channel.isTextBased() || channel.isThread()) continue;
-        try {
-          const clone = await this.recreateChannel(channel as GuildTextBasedChannel, reason);
-          cleared.push({ oldId: info.id, newId: clone.id, name: info.name });
-        } catch (err) {
-          errors.push({ id: info.id, name: info.name, error: ((err as Error).message ?? String(err)).slice(0, 200) });
-          log.warn({ err, guild: guild.id, channel: info.id }, '/clear serveur : salon non recréé');
-        }
-      }
-      const map = Object.fromEntries(cleared.map((c) => [c.oldId, c.newId]));
-      const remap = await remapChannelReferences(guild.id, map, { includeTickets });
-      const republishErrors = await this.afterRemap(guild, remap, { includeTickets });
-      for (const e of republishErrors) errors.push({ id: '-', name: 'republish', error: e });
-      const durationMs = Date.now() - started;
-      const sanction = await this.createSanction({
-        guildId: guild.id,
-        type: 'PURGE',
-        userId: null,
-        moderatorId: moderator.id,
-        reason: opts.reason ?? null,
-        channelId: null,
-        metadata: { nukeGuild: true, includeTickets, channels: cleared.length, skipped: skipped.length, errors: errors.length, durationMs, map },
-      });
-      const report: NukeGuildReport = { cleared, skipped, errors, remap, durationMs, sanction };
-      // Rapport dans le (nouveau) salon de logs Modération, sinon Sécurité.
-      const { t, lang } = await this.guildTranslator(guild.id);
-      const fresh = await guildConfigService.get(guild.id);
-      await loggingService.log({
-        guildId: guild.id,
-        category: fresh?.logChannels.MODERATION || !fresh?.logChannels.SECURITY ? 'MODERATION' : 'SECURITY',
-        action: 'mod.nuke_guild',
-        title: t('moderation.nuke_guild.log_title', { number: sanction.caseNumber }),
-        description: t('moderation.nuke_guild.log_description', { moderator: `<@${moderator.id}>` }),
-        fields: nukeReportFields(t, lang, report),
-        actorId: moderator.id,
-        color: BRAND.colors.danger,
-        data: { caseNumber: sanction.caseNumber, type: 'PURGE', metadata: sanction.metadata },
-      });
-      return report;
-    } finally {
-      this.nukingGuilds.delete(guild.id);
-    }
   }
 
   async lockChannel(opts: { channel: GuildTextBasedChannel; moderator: User; reason?: string | null }): Promise<Sanction> {

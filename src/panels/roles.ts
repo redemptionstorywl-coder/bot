@@ -10,7 +10,7 @@ export default defineConfigPanel({
   key: 'roles',
   label: 'Rôles',
   emoji: '🎭',
-  order: 6,
+  order: 7,
   async open(interaction, ctx) {
     if (!interaction.guild || !ctx.config) return;
     const payload = await renderRoles('auto', { guild: interaction.guild, config: ctx.config, t: ctx.t, userId: interaction.user.id });

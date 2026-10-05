@@ -38,7 +38,7 @@ Node.js 22 · TypeScript · discord.js v14 · Prisma · MySQL · Express · Sock
 | 👋 Bienvenue / Départ | Message, embed, image générée, DM, boutons, rôle automatique, variables documentées |
 | 🎭 Rôles | Auto-roles (arrivée, bot, vérifié, spécial), role menus (boutons / select), reaction roles, rôles de notifications |
 | 🎫 Tickets | 11 types configurables, formulaire, numérotation, claim, ajout/retrait, transfert, transcripts HTML/TXT/PDF |
-| 🛡️ Modération | ban, tempban, unban, kick, warn (seuils automatiques), timeout, `/clear` (messages, salon entier ou tout le serveur), slowmode, lock/unlock, mute-salon (sourdine programmée), lockdown, historique des sanctions |
+| 🛡️ Modération | ban, tempban, unban, kick, warn (seuils automatiques), timeout, `/clear` (messages ou salon entier), `/unban-all` (débannissement de masse), slowmode, lock/unlock, mute-salon (sourdine programmée), lockdown, historique des sanctions |
 | 🚨 Anti-raid | anti-spam, anti-mass-mention, anti-link/invite/pub, anti-compte-récent, anti-bot, anti-mass-join → lockdown automatique, anti-nuke (audit log : bans/kicks/salons/rôles/webhooks en masse, bots ajoutés → strip des rôles dangereux / kick / ban) |
 | 📜 Logs | 14 catégories, un salon par catégorie, historique consultable dans le dashboard |
 | 📅 Événements | inscriptions, participants max, rappels automatiques (24h, 1h, 30, 10, 5 min) |
@@ -185,7 +185,8 @@ Le dashboard écoute automatiquement sur le port `PORT` fourni par l'hébergeur.
 
 1. `/config module:general` → type de serveur (**Prison**, **Battle Royale**, **School** ou **Shop**), langue du bot, rôles admin et staff, modules actifs, couleur. Un rôle nommé **🛡️ RS Team** est reconnu automatiquement comme équipe sur tous les serveurs.
 2. `/config module:logs` → un salon par catégorie de logs, ou tout dans un salon privé créé en un clic.
-3. `/config module:bienvenue`, `/config module:tickets`, `/config module:moderation`, `/config module:roles`… : chaque module s'ouvre dans un panneau complet.
+3. `/config module:permissions` (facultatif) → par défaut chaque commande exige son niveau (staff, admin…) ; vous pouvez autoriser des rôles précis sur une commande ou une catégorie entière, ou désactiver une commande.
+4. `/config module:bienvenue`, `/config module:tickets`, `/config module:moderation`, `/config module:roles`… : chaque module s'ouvre dans un panneau complet.
 
 Tout est aussi modifiable depuis le dashboard.
 
@@ -210,6 +211,7 @@ Toute la configuration passe par **une seule commande** : `/config module:<modul
 | `/config module:` | Contenu du panneau |
 | --- | --- |
 | `general` | Type de serveur, langue du bot, rôles admin/staff, modules actifs, couleur, footer |
+| `permissions` | Qui peut utiliser chaque commande : rôles autorisés par commande ou par catégorie, commande désactivée, retour au défaut |
 | `logs` | Salon de chaque catégorie de logs, salon de logs privé en un clic |
 | `bienvenue` | Bienvenue et départ : salon, message, embed, image, DM, boutons, test |
 | `tickets` | Raisons de ticket, catégorie d'ouverture, rôles d'accès, questions, message d'accueil, panneau, salon des transcripts, relances automatiques |
@@ -226,7 +228,7 @@ Toute la configuration passe par **une seule commande** : `/config module:<modul
 | Administration | `/info` (fiche du serveur avec IDs), `/dm user|all|status|cancel`, `/help`, `/status` |
 | Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |
 | Tickets | `/ticket close|add|remove|claim|transcript|rename|info|list` (+ boutons dans chaque ticket, dont 📌 « Ticket permanent ») |
-| Modération | `/ban`, `/tempban`, `/unban`, `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/clear messages|salon|serveur`, `/slowmode`, `/lock`, `/unlock`, `/mute-salon`, `/lockdown on|off|status`, `/case`, `/history` |
+| Modération | `/ban`, `/tempban`, `/unban`, `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/clear messages|salon`, `/unban-all`, `/slowmode`, `/lock`, `/unlock`, `/mute-salon`, `/lockdown on|off|status`, `/case`, `/history` |
 | Communauté | `/event`, `/giveaway`, `/poll` |
 | Whitelist | `/whitelist apply|status|review|list` |
 | Battle Royale | `/profile`, `/leaderboard`, `/battlepass`, `/br-link` |
@@ -234,6 +236,17 @@ Toute la configuration passe par **une seule commande** : `/config module:<modul
 | Shop | `/shop catalog|order` |
 
 Les commandes Battle Royale, School RP et Shop ne sont proposées que sur les serveurs du type correspondant (`/config module:general`).
+
+### Permissions des commandes (`/config module:permissions`)
+
+- **🔒 Par défaut** : chaque commande exige son niveau (`staff` = rôles staff ou Modérer/Gérer le serveur, `admin` = rôles admin, 🛡️ RS Team ou Administrateur) et les permissions Discord prévues.
+- **👥 Rôles autorisés** : ces rôles peuvent utiliser la commande même sans être staff (niveau et permissions Discord ignorés, celles du bot restent vérifiées) ; les autres membres sont refusés, sauf les administrateurs Discord. Les boutons / formulaires ouverts par la commande suivent la même règle.
+- **⛔ Désactivée** : personne ne peut l'utiliser, sauf le propriétaire du serveur.
+- `/config` et `/help` sont verrouillées (jamais restreignables) ; le propriétaire du serveur et `OWNER_IDS` passent toujours.
+
+### `/unban-all [raison] [inclure_jeu]`
+
+Débannit tous les membres bannis (niveau `admin` par défaut, modifiable dans `/config module:permissions`). Le bot affiche le nombre de bannis, puis il faut taper `UNBAN ALL` dans un formulaire. Le débannissement tourne en arrière-plan (~2 par seconde) avec une barre de progression, un bouton **Annuler** et un rapport final ; une seule case de modération récapitulative est créée et l'opération est journalisée dans les logs Sécurité et Modération. `inclure_jeu:false` ne relaie pas les débannissements vers les serveurs FiveM.
 
 ---
 
@@ -286,7 +299,7 @@ Voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). En résumé :
 npm test
 ```
 
-Les tests (Vitest) couvrent les systèmes critiques : tickets, permissions, traductions de l'interface, rôles, sanctions, `/clear serveur`, annonces, programmation, base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
+Les tests (Vitest) couvrent les systèmes critiques : tickets, permissions, traductions de l'interface, rôles, sanctions, `/clear salon`, `/unban-all`, permissions des commandes par rôle, annonces, programmation, base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
 
 ```bash
 npm run check            # vérifications statiques (aussi exécutées par npm test)

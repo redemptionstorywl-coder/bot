@@ -152,12 +152,12 @@ const defaultOptions = (c: Json | undefined) => ((c?.options as { value: string;
 describe('panneaux /config — déclaration', () => {
   it('clés, ordres et types de serveur', () => {
     expect([rolesPanel, fivemPanel, brPanel, wlPanel, schoolPanel, shopPanel].map((p) => [p.key, p.order])).toEqual([
-      ['roles', 6],
-      ['fivem', 7],
-      ['battleroyale', 8],
-      ['whitelist', 9],
-      ['school', 10],
-      ['shop', 11],
+      ['roles', 7],
+      ['fivem', 8],
+      ['battleroyale', 9],
+      ['whitelist', 10],
+      ['school', 11],
+      ['shop', 12],
     ]);
     expect(brPanel.guildKinds).toEqual(['BATTLE_ROYALE']);
     expect(wlPanel.guildKinds).toEqual(['PRISON', 'SCHOOL']);

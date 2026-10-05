@@ -7,8 +7,6 @@
   "missing_permissions": "Missing permissions: `{permissions}`",
   "bot_missing_permissions": "I am missing the permissions: `{permissions}`",
   "insufficient_level": "Required level: **{level}**.",
-  "command_disabled": "This command is disabled on this server.",
-  "command_role_required": "You do not have the role required to use this command.",
   "cooldown": "Please wait **{time}** before using this command again.",
   "yes": "Yes",
   "no": "No",

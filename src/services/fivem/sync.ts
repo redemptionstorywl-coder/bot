@@ -153,6 +153,14 @@ export function echoKey(origin: 'fromGame' | 'fromDiscord', kind: EchoKind, guil
   return `${origin}:${kind}:${guildId}:${userId}`;
 }
 
+/**
+ * Marqueur d'opération de masse côté Discord (/unban-all) : `skip` = ne pas relayer l'action vers le jeu,
+ * `quiet` = la relayer sans log Discord par membre (l'opération produit son propre rapport).
+ */
+export function bulkKey(mode: 'skip' | 'quiet', kind: EchoKind, guildId: string, userId: string): string {
+  return `bulk:${mode}:${kind}:${guildId}:${userId}`;
+}
+
 /** Ensemble de marqueurs à durée de vie courte (30 s par défaut). `now` injectable pour les tests. */
 export class EchoGuard {
   private readonly marks = new Map<string, number>();

@@ -34,7 +34,7 @@ export default defineButton({
       case 'nuke': {
         const member = interaction.member instanceof GuildMember ? interaction.member : null;
         if (!hasInternalPermission({ member, config: ctx.config, ownerIds: env().OWNER_IDS, required: 'admin' })) {
-          await interaction.reply({ embeds: [embedService.error(t('moderation.nuke_guild.admin_only'))], flags: MessageFlags.Ephemeral });
+          await interaction.reply({ embeds: [embedService.error(t('moderation.clear_channel.admin_only'))], flags: MessageFlags.Ephemeral });
           return;
         }
         const channel = await interaction.guild.channels.fetch(a1 ?? '').catch(() => null);

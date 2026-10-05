@@ -84,6 +84,12 @@ export interface ComponentHandler<I> {
   module?: ModuleKey;
   cooldown?: number;
   permissions?: CommandPermissions;
+  /**
+   * Commande slash à laquelle ces composants sont rattachés : la règle de permissions par rôle de cette commande
+   * (`/config module:permissions`) s'applique aussi à eux (rôle autorisé → accès ; commande désactivée / rôle absent → refus).
+   * Sans ce champ, un composant est rattaché à la commande du message qui le porte (réponse de commande) pour l'autorisation seulement.
+   */
+  command?: string;
   execute(interaction: I, args: string[], ctx: InteractionContext): Promise<unknown>;
 }
 

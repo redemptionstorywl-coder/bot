@@ -48,10 +48,12 @@ export default defineCommand({
 - `ctx.config` = `ResolvedGuildConfig` (kind, modules, defaultLanguage, staffRoleIds, adminRoleIds, brandColor, logChannels).
 - Réponses de confirmation/erreur : `MessageFlags.Ephemeral`. Embeds : `embedService.brand/success/error/warning/info`. Couleur par défaut `config.brandColor`.
 - Permissions internes : `'everyone' | 'staff' | 'admin' | 'owner'` (staff = rôles staff configurés ou ModerateMembers/ManageGuild ; admin = rôles admin ou Administrator).
+- Permissions par rôle configurables par serveur (`/config module:permissions`, dashboard) : `commandPermissionService` (src/services/CommandPermissionService.ts) + `decideCommandAccess`, appliqués par `src/events/interactionCreate.ts` AVANT le niveau interne et les permissions Discord : `allow` (rôle autorisé, administrateur Discord, propriétaire) saute niveau + permissions Discord de l'utilisateur (celles du bot restent vérifiées), `deny_disabled` / `deny_role` refusent, `default` = comportement ci-dessus. `config` et `help` sont verrouillées. Les vérifications faites DANS une commande (ex. `/clear salon` réservé aux admins) restent en place.
 
 ### Composants (boutons, menus, modals)
 - customId = `namespace:arg1:arg2` construit avec `buildCustomId('ticket', 'close', ticketId)` (`src/utils/customId.ts`). Max 100 caractères.
 - Handler : `export default defineButton({ id: 'ticket', module: 'tickets', async execute(interaction, args, ctx) { const [action, id] = args; } })`.
+- Permissions par rôle et composants : `command: 'unban-all'` dans un handler le rattache à cette commande (sa règle s'applique : rôle autorisé → accès, désactivée / rôle absent → refus). Sans `command`, un composant posé sur la réponse d'une commande slash (`message.interaction.commandName`) profite seulement de l'autorisation par rôle ; un refus retombe sur ses vérifications par défaut (boutons publics : vote, inscription…).
 - Un namespace par module (`ticket`, `rolemenu`, `giveaway`, `poll`, `event`, `announce`, `embed`, `welcome`, `notif`, `whitelist`, `shop`, `school`, `br`…). **Ne réutilisez pas le namespace d'un autre module.**
 - Les namespaces `noop` et `pg` sont réservés.
 
@@ -82,3 +84,5 @@ Sobre, premium, sombre. Violet `BRAND.colors.primary` (0x7C3AED) pour l'identit�
 - `open(interaction, ctx)` répond en éphémère avec un embed d'état + composants. Les composants utilisent le namespace propre du panneau (`cfg-<clé>` recommandé, ou un namespace existant comme `welcome:cfg`/`tcfg`) avec `permissions: { internal: 'admin' }`.
 - Chaque action re-rend le panneau (`interaction.update`) avec une notice ✅/❌ ; modals : `isFromMessage() ? update : reply ephemeral`.
 - Pas de commande de configuration séparée : les commandes slash restantes sont des ACTIONS (modération, tickets, annonces, profils…).
+- Ordre actuel : general (1), permissions (2), logs (3), bienvenue (4), tickets (5), moderation (6), roles (7), fivem (8), battleroyale (9), whitelist (10), school (11), shop (12).
+- Respecter les limites Discord : 5 rangées, un menu seul sur sa rangée, 25 options (paginer au-delà, cf. `src/panels/_permissions.ts`), customIds < 100, embed ≤ 6000 caractères ; pré-remplir les menus de rôles / salons uniquement avec des IDs encore présents (`src/utils/liveIds.ts`).

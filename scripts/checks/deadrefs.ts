@@ -29,6 +29,10 @@ export const REMOVED_COMMANDS: Record<string, string> = {
   purge: '/clear messages',
   'clear-salon': '/clear salon',
 };
+/** Sous-commandes supprimées (`commande sous-commande` → remplacement / motif). Détecte aussi `/clear messages|serveur`. */
+export const REMOVED_SUBCOMMANDS: Record<string, string> = {
+  'clear serveur': 'retirée (trop destructrice) — /clear salon pour un salon',
+};
 /** Variables d'environnement du système de traduction automatique retiré. */
 export const REMOVED_ENV = ['DEEPL_API_KEY', 'MYMEMORY_EMAIL'];
 
@@ -50,6 +54,10 @@ export async function run(): Promise<CheckResult> {
   const names = Object.keys(REMOVED_COMMANDS).sort((a, b) => b.length - a.length);
   const slash = new RegExp(`(?<![\\w./:<>@#~%-])/(${names.map((n) => n.replace(/-/g, '\\-')).join('|')})(?![\\w-])`, 'g');
   const env = new RegExp(`\\b(${REMOVED_ENV.join('|')})\\b`, 'g');
+  const subs = Object.entries(REMOVED_SUBCOMMANDS).map(([full, hint]) => {
+    const [cmd = '', sub = ''] = full.split(' ');
+    return { full, hint, cmd, sub, re: new RegExp(`(?<![\\w./:<>@#~%-])/${cmd} (?:[\\w-]+\\|)*${sub}(?![\\w-])`) };
+  });
   let lines = 0;
   for (const file of files) {
     const text = fs.readFileSync(file, 'utf8');
@@ -61,12 +69,15 @@ export async function run(): Promise<CheckResult> {
         problems.push(`commande supprimée /${name} (→ ${REMOVED_COMMANDS[name]}) — ${rel(file)}:${i + 1}`);
       }
       for (const m of line.matchAll(env)) problems.push(`variable retirée ${m[1]} — ${rel(file)}:${i + 1}`);
+      for (const s of subs) if (s.re.test(line)) problems.push(`sous-commande supprimée /${s.full} (${s.hint}) — ${rel(file)}:${i + 1}`);
     });
   }
   // Aucune commande enregistrée sous un nom supprimé
   for (const file of walkFiles(path.join(ROOT, 'src', 'commands'), ['.ts'])) {
-    for (const m of fs.readFileSync(file, 'utf8').matchAll(/new SlashCommandBuilder\(\)\s*\.setName\('([^']+)'\)/g)) {
+    const text = fs.readFileSync(file, 'utf8');
+    for (const m of text.matchAll(/new SlashCommandBuilder\(\)\s*\.setName\('([^']+)'\)/g)) {
       if (REMOVED_COMMANDS[m[1]!]) problems.push(`commande supprimée encore déclarée : /${m[1]} — ${rel(file)}`);
+      for (const s of subs) if (s.cmd === m[1] && new RegExp(`\\.addSubcommand\\(\\(\\w+\\)\\s*=>\\s*\\w+\\s*\\.setName\\('${s.sub}'\\)`).test(text)) problems.push(`sous-commande supprimée encore déclarée : /${s.full} — ${rel(file)}`);
     }
   }
   notes.push(`${files.length} fichiers, ${lines} lignes analysés`);

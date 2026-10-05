@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, GuildMember, LabelBuilder, ModalBuilder, PermissionFlagsBits, SlashCommandBuilder, TextInputBuilder, TextInputStyle, type ChatInputCommandInteraction } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, GuildMember, PermissionFlagsBits, SlashCommandBuilder, type ChatInputCommandInteraction } from 'discord.js';
 import { defineCommand } from '../../structures';
 import type { InteractionContext } from '../../structures/types';
 import { moderationService, type PurgeFilter } from '../../services/ModerationService';
@@ -11,14 +11,12 @@ import { EPHEMERAL, MOD_PERMS, errorKey, replyError } from './_shared';
 /**
  * /clear — suppression de messages :
  *  - `messages` : jusqu'à 500 messages récents (< 14 jours) avec filtres (staff, Gérer les messages) ;
- *  - `salon`    : vide un salon en le recréant à l'identique (admin, confirmation bouton `mod:nuke:<channelId>`) ;
- *  - `serveur`  : vide TOUS les salons texte / annonces du serveur (admin, confirmation par modal `mod:nukeguild:<1|0>`
- *                 où il faut taper le nom exact du serveur).
+ *  - `salon`    : vide un salon en le recréant à l'identique (admin, confirmation bouton `mod:nuke:<channelId>`).
  */
 export default defineCommand({
   data: new SlashCommandBuilder()
     .setName('clear')
-    .setDescription('Supprimer des messages (salon actuel, un salon entier ou tout le serveur)')
+    .setDescription('Supprimer des messages (salon actuel ou un salon entier)')
     .addSubcommand((s) =>
       s
         .setName('messages')
@@ -45,12 +43,6 @@ export default defineCommand({
         .setName('salon')
         .setDescription('Supprimer tous les messages d’un salon (recréé à l’identique)')
         .addChannelOption((o) => o.setName('salon').setDescription('Salon à vider (défaut : salon actuel)').addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)),
-    )
-    .addSubcommand((s) =>
-      s
-        .setName('serveur')
-        .setDescription('Supprimer TOUS les messages du serveur (salons recréés, confirmation par le nom du serveur)')
-        .addBooleanOption((o) => o.setName('inclure_tickets').setDescription('Vider aussi les salons de tickets (défaut : non)')),
     ),
   module: 'moderation',
   permissions: MOD_PERMS.messages,
@@ -59,18 +51,17 @@ export default defineCommand({
     if (!interaction.guild) return;
     const sub = interaction.options.getSubcommand();
     if (sub === 'messages') return clearMessages(interaction, ctx);
-    // salon / serveur : administrateurs uniquement + le bot doit pouvoir gérer les salons
+    // salon : administrateurs uniquement + le bot doit pouvoir gérer les salons
     const member = interaction.member instanceof GuildMember ? interaction.member : null;
     if (!hasInternalPermission({ member, config: ctx.config, ownerIds: env().OWNER_IDS, required: 'admin' })) {
-      await interaction.reply({ embeds: [embedService.error(ctx.t('moderation.nuke_guild.admin_only'))], ...EPHEMERAL });
+      await interaction.reply({ embeds: [embedService.error(ctx.t('moderation.clear_channel.admin_only'))], ...EPHEMERAL });
       return;
     }
     if (!interaction.guild.members.me?.permissions.has([PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ManageRoles])) {
-      await interaction.reply({ embeds: [embedService.error(ctx.t('moderation.nuke_guild.bot_missing'))], ...EPHEMERAL });
+      await interaction.reply({ embeds: [embedService.error(ctx.t('moderation.clear_channel.bot_missing'))], ...EPHEMERAL });
       return;
     }
-    if (sub === 'salon') return clearChannel(interaction, ctx);
-    return clearGuild(interaction, ctx);
+    return clearChannel(interaction, ctx);
   },
 });
 
@@ -105,18 +96,4 @@ async function clearChannel(interaction: ChatInputCommandInteraction, { t }: Int
     components: [row],
     ...EPHEMERAL,
   });
-}
-
-async function clearGuild(interaction: ChatInputCommandInteraction, { t }: InteractionContext): Promise<void> {
-  if (moderationService.isNukingGuild(interaction.guild!.id)) {
-    await interaction.reply({ embeds: [embedService.error(t('moderation.nuke_guild.already_running'))], ...EPHEMERAL });
-    return;
-  }
-  const includeTickets = interaction.options.getBoolean('inclure_tickets') ?? false;
-  const input = new TextInputBuilder().setCustomId('name').setStyle(TextInputStyle.Short).setRequired(true).setMaxLength(100).setPlaceholder(interaction.guild!.name.slice(0, 100));
-  const modal = new ModalBuilder()
-    .setCustomId(buildCustomId('mod', 'nukeguild', includeTickets ? '1' : '0'))
-    .setTitle(t('moderation.nuke_guild.modal_title').slice(0, 45))
-    .addLabelComponents(new LabelBuilder().setLabel(t('moderation.nuke_guild.modal_label').slice(0, 45)).setDescription(t('moderation.nuke_guild.modal_help').slice(0, 100)).setTextInputComponent(input));
-  await interaction.showModal(modal);
 }

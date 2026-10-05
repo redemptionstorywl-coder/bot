@@ -9,7 +9,7 @@ export default defineConfigPanel({
   key: 'logs',
   label: 'Logs',
   emoji: '📜',
-  order: 2,
+  order: 3,
   module: 'logs',
   async open(interaction, ctx) {
     if (!interaction.guild || !ctx.config) return interaction.reply({ embeds: [embedService.error(ctx.t('core.guild_only'))], flags: MessageFlags.Ephemeral });

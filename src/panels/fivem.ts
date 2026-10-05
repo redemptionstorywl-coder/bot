@@ -7,7 +7,7 @@ export default defineConfigPanel({
   key: 'fivem',
   label: 'FiveM',
   emoji: '🎮',
-  order: 7,
+  order: 8,
   module: 'fivem',
   async open(interaction, ctx) {
     if (!interaction.guild || !ctx.config) return;

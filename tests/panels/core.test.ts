@@ -136,10 +136,10 @@ describe('ouverture des panneaux (/config)', () => {
   it('clés, ordre et emoji', () => {
     expect(panels.map((p) => [p.key, p.order])).toEqual([
       ['general', 1],
-      ['logs', 2],
-      ['bienvenue', 3],
-      ['tickets', 4],
-      ['moderation', 5],
+      ['logs', 3],
+      ['bienvenue', 4],
+      ['tickets', 5],
+      ['moderation', 6],
     ]);
     for (const p of panels) expect(p.emoji).toBeTruthy();
   });
