@@ -96,7 +96,15 @@
     "modal_footer_icon": "URL de l'icône (https://…)",
     "footer_set": "Footer mis à jour.",
     "footer_cleared": "Footer réinitialisé (par défaut).",
-    "invalid_url": "URL invalide : {details}"
+    "invalid_url": "URL invalide : {details}",
+    "field_translate": "Traduction automatique en anglais",
+    "translate_layout_embed": "Embed anglais séparé",
+    "translate_layout_content": "Texte après « 🇬🇧 »",
+    "translate_provider": "Fournisseur : {provider}",
+    "btn_translate": "Traduction EN",
+    "btn_translate_layout": "Mise en page : {layout}",
+    "translate_set": "Traduction automatique en anglais : {state}. Annonces, embeds, bienvenue et panneaux de tickets recevront une version anglaise (modifiable message par message).",
+    "translate_layout_set": "Mise en page de la version anglaise : {layout}."
   },
   "logs": {
     "title": "📜 Logs — {server}",

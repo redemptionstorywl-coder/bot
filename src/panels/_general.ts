@@ -5,12 +5,15 @@ import { buildCustomId } from '../utils/customId';
 import { embedService } from '../services/EmbedService';
 import type { ResolvedGuildConfig } from '../services/GuildConfigService';
 import type { Translator } from '../services/TranslationService';
+import { DEFAULT_AUTO_TRANSLATE } from '../services/autotranslate/bilingual';
+import { describeProvider, type ProviderDescription } from '../services/autotranslate/providers';
 import { btn, existingRoles, labelled, modal, moduleLabel, option, roleList, row, textInput, truncate, withNotice, type PanelNotice, type PanelPayload } from './_coreKit';
 
 /**
  * Panneau `/config general` (namespace `cfg-general`, admin) :
  *  - menus   : `cfg-general:kind` · `cfg-general:lang` · `cfg-general:admins` · `cfg-general:staff` · `cfg-general:modules` · `cfg-general:palette`
  *  - boutons : `cfg-general:view:<main|modules|color>` · `cfg-general:hex` (modal) · `cfg-general:footer` (modal)
+ *              `cfg-general:autotr` (traduction automatique en anglais on/off) · `cfg-general:trlayout` (mise en page embed / texte)
  *  - modals  : `cfg-general:hex` · `cfg-general:footer`
  */
 
@@ -72,6 +75,20 @@ export interface GeneralRenderOptions {
   t: Translator;
   view?: GeneralView;
   notice?: PanelNotice;
+  /** Fournisseur de traduction (défaut : déduit des variables d'environnement) */
+  provider?: ProviderDescription;
+}
+
+/** Fournisseur de traduction actif, sans jamais lever (variables d'environnement absentes en test). */
+function currentProvider(): ProviderDescription {
+  return describeProvider({ DEEPL_API_KEY: process.env.DEEPL_API_KEY, GOOGLE_TRANSLATE_API_KEY: process.env.GOOGLE_TRANSLATE_API_KEY, MYMEMORY_EMAIL: process.env.MYMEMORY_EMAIL });
+}
+
+/** Valeur du champ « Traduction automatique » : état · mise en page · fournisseur. */
+export function autoTranslateSummary(config: ResolvedGuildConfig, t: Translator, provider: ProviderDescription = currentProvider()): string {
+  const at = config.autoTranslate ?? DEFAULT_AUTO_TRANSLATE;
+  const state = at.enabled ? `🟢 ${t('core.enabled')}` : `🔴 ${t('core.disabled')}`;
+  return `${state} · ${t(`panels_core.general.translate_layout_${at.layout}`)}\n-# ${t('panels_core.general.translate_provider', { provider: provider.label })}`;
 }
 
 export function renderGeneral(opts: GeneralRenderOptions): PanelPayload {
@@ -85,7 +102,8 @@ export function renderGeneral(opts: GeneralRenderOptions): PanelPayload {
   }
 }
 
-function renderMain({ guild, config, t, notice }: GeneralRenderOptions): PanelPayload {
+function renderMain({ guild, config, t, notice, provider }: GeneralRenderOptions): PanelPayload {
+  const translate = config.autoTranslate ?? DEFAULT_AUTO_TRANSLATE;
   const none = t('panels_core.common.none_set');
   const active = MODULE_KEYS.filter((k) => config.modules[k]);
   const logCount = Object.keys(config.logChannels).length;
@@ -103,6 +121,7 @@ function renderMain({ guild, config, t, notice }: GeneralRenderOptions): PanelPa
       { name: t('panels_core.general.field_logs'), value: t('panels_core.general.logs_value', { count: logCount, total: LOG_CATEGORY_COUNT }), inline: true },
       { name: t('panels_core.general.field_modules', { count: active.length, total: MODULE_KEYS.length }), value: truncate(active.map((k) => moduleLabel(k, t)).join(' · ') || none, 1024) },
       { name: t('panels_core.general.field_footer'), value: config.footerText ? truncate(config.footerText, 200) : t('panels_core.general.footer_default') },
+      { name: `🇬🇧 ${t('panels_core.general.field_translate')}`, value: autoTranslateSummary(config, t, provider) },
     );
 
   const kind = new StringSelectMenuBuilder()
@@ -135,6 +154,8 @@ function renderMain({ guild, config, t, notice }: GeneralRenderOptions): PanelPa
         btn(gid('view', 'modules'), t('panels_core.general.btn_modules'), ButtonStyle.Primary, '🧩'),
         btn(gid('view', 'color'), t('panels_core.general.btn_color'), ButtonStyle.Secondary, '🎨'),
         btn(gid('footer'), t('panels_core.general.btn_footer'), ButtonStyle.Secondary, '📝'),
+        btn(gid('autotr'), t('panels_core.general.btn_translate'), translate.enabled ? ButtonStyle.Success : ButtonStyle.Secondary, '🇬🇧'),
+        btn(gid('trlayout'), t('panels_core.general.btn_translate_layout', { layout: t(`panels_core.general.translate_layout_${translate.layout}`) }), ButtonStyle.Secondary, translate.layout === 'embed' ? '🧾' : '💬'),
       ),
     ],
   };

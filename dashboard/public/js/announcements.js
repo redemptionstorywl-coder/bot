@@ -1,4 +1,4 @@
-/* Éditeur d'annonce : aperçu Discord live (mentions + texte + embed + boutons). */
+/* Éditeur d'annonce : aperçu Discord live (mentions + texte + embed + boutons) et version anglaise (translate-preview.js). */
 (function () {
   'use strict';
   var UI = window.UI, D = window.DiscordPreview;
@@ -22,6 +22,11 @@
     var msg = { content: content, embed: api ? api.read() : {}, buttons: api ? api.readButtons() : [], emptyText: 'Le message est vide : ajoutez un texte ou un embed.' };
     host.innerHTML = D.render(msg, UI.previewContext());
     UI.paint(host);
+    // Version anglaise : le texte (sans les mentions, jamais dupliquées) et l'embed sont traduits côté serveur.
+    var english = window.TranslatePreview && window.TranslatePreview.get('announcement');
+    if (english) english.update({ content: contentEl ? contentEl.value : '', embed: msg.embed, buttons: msg.buttons }, {
+      transform: function (m) { m.content = [mentionLine(), m.content].filter(Boolean).join('\n'); return m; },
+    });
   }
   var raf = 0;
   function schedule() { cancelAnimationFrame(raf); raf = requestAnimationFrame(render); }

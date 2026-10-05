@@ -167,7 +167,9 @@ describe('renderPanelView', () => {
     const payload = await renderPanelView({ guild, t, draft: { channelId: undefined, style: PanelStyle.SELECT, typeIds: [7] } });
     const components = flatten(payload) as (Component & { style?: number })[];
     const ids = components.map((c) => c.custom_id);
-    expect(ids).toEqual(['tcfg:pchannel', 'tcfg:ptypes', 'tcfg:pstyle:buttons', 'tcfg:pstyle:select', 'tcfg:publish', 'tcfg:main', 'tcfg:pdelete']);
+    expect(ids).toEqual(['tcfg:pchannel', 'tcfg:ptypes', 'tcfg:pstyle:buttons', 'tcfg:pstyle:select', 'tcfg:pen', 'tcfg:publish', 'tcfg:main', 'tcfg:pdelete']);
+    // Version anglaise : suit le réglage du serveur (désactivé par défaut) tant qu'aucun choix n'est fait.
+    expect(components.find((c) => c.custom_id === 'tcfg:pen')!.style).toBe(2);
     expect(components.find((c) => c.custom_id === 'tcfg:pstyle:select')!.style).toBe(1);
     expect(components.find((c) => c.custom_id === 'tcfg:publish')!.disabled).toBe(true);
     expect(components.find((c) => c.custom_id === 'tcfg:pdelete')!.options![0]!.value).toBe('3');

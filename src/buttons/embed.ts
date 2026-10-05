@@ -3,7 +3,7 @@ import { defineButton } from '../structures';
 import type { InteractionContext } from '../structures/types';
 import { embedService } from '../services/EmbedService';
 import { EmbedTemplateError, embedTemplateService } from '../services/EmbedTemplateService';
-import { embedBuilderSessions, isEmbedEmpty, parentView, renderBuilder, renderContextFromInteraction, type BuilderSession } from '../services/EmbedBuilderSession';
+import { embedBuilderSessions, isEmbedEmpty, parentView, renderBuilder, renderContextFromInteraction, sessionEnglish, type BuilderSession } from '../services/EmbedBuilderSession';
 import { buildEmbedModal, type EmbedModalKind } from '../modals/embed';
 
 const MODAL_ACTIONS: EmbedModalKind[] = ['title', 'color', 'images', 'footer', 'content', 'template', 'import'];
@@ -17,7 +17,7 @@ async function refresh(interaction: ButtonInteraction, session: BuilderSession, 
 
 /**
  * Boutons du créateur d'embeds : `embed:<action>:<sessionId>`.
- * Partagé avec le mode annonce (édition de l'embed d'une annonce).
+ * Partagé avec le mode annonce (édition de l'embed d'une annonce). `english` : bascule « Version anglaise ».
  */
 export default defineButton({
   id: 'embed',
@@ -41,6 +41,11 @@ export default defineButton({
     switch (action) {
       case 'timestamp':
         session.spec.timestamp = !session.spec.timestamp;
+        await refresh(interaction, session, ctx);
+        return;
+      case 'english':
+        session.english = !sessionEnglish(session, ctx.config);
+        session.notice = { type: 'info', text: session.english ? t('embeds.builder.english_on') : t('embeds.builder.english_off') };
         await refresh(interaction, session, ctx);
         return;
       case 'colorview':
@@ -82,6 +87,7 @@ export default defineButton({
             client: interaction.client,
             guild: interaction.guild,
             language: ctx.lang,
+            translate: sessionEnglish(session, ctx.config),
           });
           session.notice = { type: 'success', text: t('embeds.builder.updated', { url: message.url }) };
         } catch (err) {

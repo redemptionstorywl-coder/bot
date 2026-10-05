@@ -1160,3 +1160,42 @@ model TicketSettings {
   reminderPing     String   @default("claimer") @db.VarChar(16)
   updatedAt        DateTime @updatedAt
 }
+
+// ──────────────── Traduction automatique FR → EN ────────────────
+
+/// Réglage serveur « Traduction automatique en anglais » (annonces, embeds, bienvenue, panneaux de tickets).
+model AutoTranslateSettings {
+  guildId   String   @id @db.VarChar(32)
+  enabled   Boolean  @default(false)
+  /// embed : embed anglais sous l'embed français · content : texte anglais ajouté après une ligne « 🇬🇧 »
+  layout    String   @default("embed") @db.VarChar(16)
+  updatedAt DateTime @updatedAt
+}
+
+/// Choix « Version anglaise » propre à un message (prioritaire sur le réglage du serveur).
+model AutoTranslateOverride {
+  id        Int      @id @default(autoincrement())
+  guildId   String   @db.VarChar(32)
+  /// announcement | welcome | ticket_panel
+  scope     String   @db.VarChar(32)
+  targetId  String   @db.VarChar(64)
+  enabled   Boolean
+  updatedAt DateTime @updatedAt
+
+  @@unique([guildId, scope, targetId])
+}
+
+/// Cache des traductions automatiques : SHA-256 du texte source + langue cible (renvois et éditions gratuits).
+model TranslationCache {
+  id             Int      @id @default(autoincrement())
+  hash           String   @db.VarChar(64)
+  targetLang     String   @db.VarChar(8)
+  /// Langue détectée par le fournisseur (null si inconnue)
+  sourceLang     String?  @db.VarChar(8)
+  translatedText String   @db.Text
+  provider       String   @db.VarChar(32)
+  createdAt      DateTime @default(now())
+
+  @@unique([hash, targetLang])
+  @@index([createdAt])
+}

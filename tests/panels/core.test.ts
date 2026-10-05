@@ -170,7 +170,7 @@ describe('panneau general', () => {
     expect(rows[2]![0]!.default_values).toEqual([{ id: ROLE_A, type: 'role' }]); // rôle supprimé ignoré
     expect(rows[2]![0]!.min_values).toBe(0);
     expect(rows[3]![0]!.default_values).toEqual([{ id: ROLE_B, type: 'role' }]);
-    expect(rows[4]!.map((c) => c.custom_id)).toEqual(['cfg-general:view:modules', 'cfg-general:view:color', 'cfg-general:footer']);
+    expect(rows[4]!.map((c) => c.custom_id)).toEqual(['cfg-general:view:modules', 'cfg-general:view:color', 'cfg-general:footer', 'cfg-general:autotr', 'cfg-general:trlayout']);
   });
 
   it('vue modules : un select multi avec les modules actifs cochés', () => {

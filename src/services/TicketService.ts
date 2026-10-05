@@ -28,6 +28,8 @@ import { guildConfigService, type ResolvedGuildConfig } from './GuildConfigServi
 import { loggingService } from './LoggingService';
 import { scheduler } from './SchedulerService';
 import { translationService, type Translator } from './TranslationService';
+import { autoTranslateService } from './AutoTranslateService';
+import { bilingualLabel, bilingualOption, DISCORD_LIMITS } from './autotranslate/bilingual';
 import { transcriptService, type TranscriptData, type TranscriptFiles, type TranscriptMessage, type TranscriptParticipant } from './TranscriptService';
 import { buildCustomId } from '../utils/customId';
 import { hasInternalPermission } from '../utils/permissions';
@@ -129,6 +131,18 @@ export interface TicketActor {
 }
 
 export type TicketBusEvent = 'ticket:open' | 'ticket:close' | 'ticket:update';
+
+/** Version anglaise d'un panneau de tickets (traduction automatique). */
+export interface PanelEnglish {
+  /** Embeds composés (FR puis EN, ou fusionnés) ; vide = embed français seul */
+  embeds: EmbedSpec[];
+  /** Libellé / description anglais de chaque raison (`null` = inchangé) */
+  options: Map<number, { label: string | null; description: string | null }>;
+  /** Libellés du bot en anglais (null quand le bot parle déjà anglais) */
+  openButton: string | null;
+  placeholder: string | null;
+  pickPrompt: string | null;
+}
 
 /** Types par défaut (bouton « Raisons par défaut » de /config tickets, dashboard). */
 export const DEFAULT_TICKET_TYPES: { key: string; emoji: string }[] = [
@@ -423,31 +437,38 @@ export class TicketService {
     return ids.map((id) => types.find((t) => t.id === id)).filter((t): t is TicketType => !!t);
   }
 
-  buildPanelMessage(panel: TicketPanel, types: TicketType[], guild: Guild, lang: string, brandColor: number) {
+  /**
+   * Message d'un panneau. `english` (traduction automatique) : embeds bilingues déjà composés, libellés
+   * « FR / EN » des raisons et des composants ; absent = français seul.
+   */
+  buildPanelMessage(panel: TicketPanel, types: TicketType[], guild: Guild, lang: string, brandColor: number, english?: PanelEnglish | null) {
     const t = translationService.bind(lang, guild.id);
     const spec = parseEmbedSpec(panel.embed) ?? this.defaultPanelEmbed(t);
-    const embed = buildEmbed(spec, { guild, language: lang }, brandColor);
+    const specs = english?.embeds.length ? english.embeds : [spec];
+    const embeds = specs.map((s) => buildEmbed(s, { guild, language: lang }, brandColor));
     const components: ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder>[] = [];
     if (panel.style === PanelStyle.SELECT && types.length > 0) {
       const select = new StringSelectMenuBuilder()
         .setCustomId(buildCustomId('ticket', 'panel-select', panel.id))
-        .setPlaceholder(t('tickets.panel.select_placeholder'))
-        .addOptions(types.slice(0, 25).map((ty) => this.typeOption(ty)));
+        .setPlaceholder(english ? bilingualLabel(t('tickets.panel.select_placeholder'), english.placeholder, DISCORD_LIMITS.placeholder) : t('tickets.panel.select_placeholder'))
+        .addOptions(types.slice(0, 25).map((ty) => this.typeOption(ty, english?.options.get(ty.id))));
       components.push(new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select));
     } else {
-      const button = new ButtonBuilder().setCustomId(buildCustomId('ticket', 'panel', panel.id)).setLabel(t('tickets.panel.open_button')).setEmoji('🎫').setStyle(ButtonStyle.Primary);
+      const label = english ? bilingualLabel(t('tickets.panel.open_button'), english.openButton, DISCORD_LIMITS.buttonLabel) : t('tickets.panel.open_button');
+      const button = new ButtonBuilder().setCustomId(buildCustomId('ticket', 'panel', panel.id)).setLabel(label).setEmoji('🎫').setStyle(ButtonStyle.Primary);
       components.push(new ActionRowBuilder<ButtonBuilder>().addComponents(button));
     }
-    return { embeds: [embed], components };
+    return { embeds, components };
   }
 
   defaultPanelEmbed(t: Translator): EmbedSpec {
     return { title: t('tickets.defaults.panel_title'), description: t('tickets.defaults.panel_description'), footer: { text: t('tickets.defaults.panel_footer') } };
   }
 
-  private typeOption(type: TicketType): StringSelectMenuOptionBuilder {
-    const opt = new StringSelectMenuOptionBuilder().setLabel(type.label.slice(0, 100)).setValue(String(type.id));
-    if (type.description) opt.setDescription(type.description.slice(0, 100));
+  private typeOption(type: TicketType, english?: { label?: string | null; description?: string | null }): StringSelectMenuOptionBuilder {
+    const text = english ? bilingualOption({ label: type.label, description: type.description }, english) : { label: type.label.slice(0, 100), description: type.description ? type.description.slice(0, 100) : undefined };
+    const opt = new StringSelectMenuOptionBuilder().setLabel(text.label).setValue(String(type.id));
+    if (text.description) opt.setDescription(text.description);
     if (type.emoji) {
       try {
         opt.setEmoji(type.emoji);
@@ -458,24 +479,50 @@ export class TicketService {
     return opt;
   }
 
-  /** Menu « Quel est le sujet ? » (réponse éphémère quand le panneau a plusieurs types). */
-  buildTypePicker(panelId: number, types: TicketType[], t: Translator): ActionRowBuilder<StringSelectMenuBuilder> {
+  /**
+   * Traductions d'un panneau (embed, raisons, libellés du bot). `null` si la version anglaise est désactivée
+   * (choix du panneau, sinon réglage du serveur). Les libellés du bot (bouton, placeholder) viennent des fichiers
+   * de langue anglais ; le reste est traduit automatiquement (cache) — en cas d'échec, le panneau reste en français.
+   */
+  async panelEnglish(panel: TicketPanel, types: TicketType[], lang: string, opts: { timeoutMs?: number; embed?: boolean } = {}): Promise<PanelEnglish | null> {
+    const resolved = await autoTranslateService.resolve(panel.guildId, { scope: 'ticket_panel', targetId: String(panel.id) });
+    if (!resolved.enabled) return null;
+    const en = translationService.bind('en', panel.guildId);
+    const own = lang === 'en';
+    const shown = types.slice(0, 25);
+    const labels = await autoTranslateService.translateLabels(shown.flatMap((ty) => [ty.label, ty.description ?? '']), opts.timeoutMs);
+    const options = new Map<number, { label: string | null; description: string | null }>();
+    shown.forEach((ty, i) => options.set(ty.id, { label: labels[i * 2] ?? null, description: labels[i * 2 + 1] ?? null }));
+    let embeds: EmbedSpec[] = [];
+    if (opts.embed !== false) {
+      const t = translationService.bind(lang, panel.guildId);
+      const spec = parseEmbedSpec(panel.embed) ?? this.defaultPanelEmbed(t);
+      const loc = await autoTranslateService.localizeMessage(panel.guildId, { embeds: [spec] }, { enabled: true, layout: resolved.layout });
+      embeds = loc.translated ? loc.embeds : [];
+    }
+    return { embeds, options, openButton: own ? null : en('tickets.panel.open_button'), placeholder: own ? null : en('tickets.panel.select_placeholder'), pickPrompt: own ? null : en('tickets.panel.pick_prompt') };
+  }
+
+  /** Menu « Quel est le sujet ? » (réponse éphémère quand le panneau a plusieurs types ; `english` = libellés bilingues). */
+  buildTypePicker(panelId: number, types: TicketType[], t: Translator, english?: PanelEnglish | null): ActionRowBuilder<StringSelectMenuBuilder> {
     const select = new StringSelectMenuBuilder()
       .setCustomId(buildCustomId('ticket', 'pick', panelId))
-      .setPlaceholder(t('tickets.panel.select_placeholder'))
-      .addOptions(types.slice(0, 25).map((ty) => this.typeOption(ty)));
+      .setPlaceholder(english ? bilingualLabel(t('tickets.panel.select_placeholder'), english.placeholder, DISCORD_LIMITS.placeholder) : t('tickets.panel.select_placeholder'))
+      .addOptions(types.slice(0, 25).map((ty) => this.typeOption(ty, english?.options.get(ty.id))));
     return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select);
   }
 
-  async createPanel(opts: { guild: Guild; channel: TextChannel | NewsChannel; style: PanelStyle; typeIds: number[]; embed?: EmbedSpec | null; lang: string; brandColor: number }): Promise<TicketPanel> {
+  /** `english` : choix « Version anglaise » du panneau (absent / null = réglage du serveur). */
+  async createPanel(opts: { guild: Guild; channel: TextChannel | NewsChannel; style: PanelStyle; typeIds: number[]; embed?: EmbedSpec | null; lang: string; brandColor: number; english?: boolean | null }): Promise<TicketPanel> {
     const { guild, channel, style, typeIds, lang, brandColor } = opts;
     const t = translationService.bind(lang, guild.id);
     const embed = opts.embed ?? this.defaultPanelEmbed(t);
     let panel = await prisma.ticketPanel.create({
       data: { guildId: guild.id, channelId: channel.id, embed: embed as Prisma.InputJsonValue, typeIds: typeIds as Prisma.InputJsonValue, style },
     });
+    if (typeof opts.english === 'boolean') await autoTranslateService.setChoice(guild.id, 'ticket_panel', String(panel.id), opts.english);
     const types = await this.getPanelTypes(panel);
-    const message = await channel.send(this.buildPanelMessage(panel, types, guild, lang, brandColor));
+    const message = await channel.send(this.buildPanelMessage(panel, types, guild, lang, brandColor, await this.panelEnglish(panel, types, lang)));
     panel = await prisma.ticketPanel.update({ where: { id: panel.id }, data: { messageId: message.id } });
     return panel;
   }
@@ -488,7 +535,8 @@ export class TicketService {
     if (!channel || (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement)) return null;
     const config = await guildConfigService.get(panel.guildId);
     const types = await this.getPanelTypes(panel);
-    const message = await channel.send(this.buildPanelMessage(panel, types, channel.guild, config?.defaultLanguage ?? 'fr', config?.brandColor ?? BRAND.colors.primary));
+    const lang = config?.defaultLanguage ?? 'fr';
+    const message = await channel.send(this.buildPanelMessage(panel, types, channel.guild, lang, config?.brandColor ?? BRAND.colors.primary, await this.panelEnglish(panel, types, lang)));
     return prisma.ticketPanel.update({ where: { id: panel.id }, data: { messageId: message.id } });
   }
 
@@ -500,6 +548,7 @@ export class TicketService {
       if (channel?.type === ChannelType.GuildText) await channel.messages.delete(panel.messageId).catch(() => null);
     }
     await prisma.ticketPanel.delete({ where: { id } });
+    await autoTranslateService.setOverride(guildId, 'ticket_panel', String(id), null).catch((err) => log.debug({ err, id }, 'Suppression du choix « Version anglaise » impossible'));
     return panel;
   }
 

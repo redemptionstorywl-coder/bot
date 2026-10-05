@@ -6,7 +6,7 @@ import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
 import { flash } from '../../lib/flash';
 import { HttpError } from '../../lib/errors';
-import { validate, valid, optionalText, discordIdSchema } from '../../lib/validate';
+import { validate, valid, optionalText, discordIdSchema, checkbox } from '../../lib/validate';
 import { embedFormSchema, buttonsJsonSchema, toEmbedSpec, safeEmbedSpec, safeButtons } from '../../lib/embedForm';
 import { formAction } from '../../lib/serviceErrors';
 import { requireBotGuild } from '../../lib/names';
@@ -29,9 +29,11 @@ const importBody = z.object({
 const sendBody = z.object({
   channelId: discordIdSchema,
   content: optionalText(2000),
+  /** « Version anglaise » : traduction automatique ajoutée à l'envoi */
+  english: checkbox,
 });
 
-/** Pages Embeds : templates (liste + aperçus), éditeur complet, import/export JSON, envoi dans un salon. */
+/** Pages Embeds : templates (liste + aperçus), éditeur complet, import/export JSON, envoi dans un salon (avec version anglaise automatique). */
 export function createEmbedsRouter(client: RedemptionClient): Router {
   const router = Router({ mergeParams: true });
   const base = (guildId: string) => `/guilds/${guildId}/embeds`;
@@ -59,7 +61,7 @@ export function createEmbedsRouter(client: RedemptionClient): Router {
   router.get(
     '/embeds/new',
     wrap(async (_req, res) => {
-      render(res, 'embed-form', { title: 'Nouveau template', page: 'embeds', layout: 'wide', crumbs: [{ label: 'Nouveau template' }], template: null, spec: {}, buttons: [] });
+      render(res, 'embed-form', { title: 'Nouveau template', page: 'embeds', layout: 'wide', crumbs: [{ label: 'Nouveau template' }], template: null, spec: {}, buttons: [], guildEnglish: res.locals.config!.autoTranslate?.enabled ?? false, scripts: ['translate-preview'] });
     }),
   );
 
@@ -78,6 +80,8 @@ export function createEmbedsRouter(client: RedemptionClient): Router {
         template,
         spec: safeEmbedSpec(template.spec),
         buttons: safeButtons(template.buttons),
+        guildEnglish: res.locals.config!.autoTranslate?.enabled ?? false,
+        scripts: ['translate-preview'],
       });
     }),
   );
@@ -181,8 +185,8 @@ export function createEmbedsRouter(client: RedemptionClient): Router {
         const guild = requireBotGuild(client, guildView.id);
         if (!guildView.textChannels.some((c) => c.id === body.channelId)) throw new HttpError(400, 'Salon inconnu.');
         const spec = embedTemplateService.toMessageSpec(template);
-        const message = await embedTemplateService.sendSpec(guildView.id, body.channelId, { ...spec, content: body.content ?? undefined }, { client, guild, language: res.locals.config!.defaultLanguage });
-        flash(req, 'success', `Embed envoyé dans #${guildView.textChannels.find((c) => c.id === body.channelId)?.name ?? body.channelId} (message ${message.id}).`);
+        const message = await embedTemplateService.sendSpec(guildView.id, body.channelId, { ...spec, content: body.content ?? undefined }, { client, guild, language: res.locals.config!.defaultLanguage, translate: body.english });
+        flash(req, 'success', `Embed envoyé dans #${guildView.textChannels.find((c) => c.id === body.channelId)?.name ?? body.channelId} (message ${message.id})${body.english ? ', avec sa version anglaise' : ''}.`);
         return base(guildView.id);
       },
     ),

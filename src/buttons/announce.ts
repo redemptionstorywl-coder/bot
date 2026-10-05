@@ -4,7 +4,7 @@ import { defineButton } from '../structures';
 import type { InteractionContext } from '../structures/types';
 import { embedService } from '../services/EmbedService';
 import { AnnouncementError, announcementService, type AnnouncementInput } from '../services/AnnouncementService';
-import { embedBuilderSessions, isEmbedEmpty, parentView, renderBuilder, renderContextFromInteraction, type BuilderSession } from '../services/EmbedBuilderSession';
+import { embedBuilderSessions, isEmbedEmpty, parentView, renderBuilder, renderContextFromInteraction, sessionEnglish, type BuilderSession } from '../services/EmbedBuilderSession';
 import { buildDateModal } from '../modals/announce';
 import { discordTimestamp } from '../utils/time';
 
@@ -30,6 +30,7 @@ export function draftInput(session: BuilderSession, t: InteractionContext['t']):
     mentionRoleIds: ann.mentionRoleIds,
     mentionEveryone: ann.mentionEveryone,
     buttons: session.buttons,
+    english: session.english,
   };
 }
 
@@ -105,6 +106,11 @@ export default defineButton({
         return;
       case 'everyone':
         ann.mentionEveryone = !ann.mentionEveryone;
+        await refresh(interaction, session, ctx);
+        return;
+      case 'english':
+        session.english = !sessionEnglish(session, config);
+        session.notice = { type: 'info', text: session.english ? t('embeds.builder.english_on') : t('embeds.builder.english_off') };
         await refresh(interaction, session, ctx);
         return;
       case 'date':

@@ -45,7 +45,12 @@
     "btn_color_hex": "Code hex personnalisé",
     "btn_color_brand": "Couleur du serveur ({hex})",
     "color_set": "Couleur appliquée : `{hex}`",
-    "color_reset": "Couleur par défaut du serveur rétablie."
+    "color_reset": "Couleur par défaut du serveur rétablie.",
+    "english": "Version anglaise",
+    "english_default": "réglage du serveur",
+    "btn_english": "Version anglaise",
+    "english_on": "Version anglaise activée : une traduction automatique en anglais sera ajoutée à l’envoi.",
+    "english_off": "Version anglaise désactivée : le message sera envoyé en français uniquement."
   },
   "cmd": {
     "sent": "Template envoyé dans {channel} → {url}",

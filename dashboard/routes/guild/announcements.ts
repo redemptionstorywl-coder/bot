@@ -30,6 +30,8 @@ const announcementBody = z.object({
   mentionEveryone: checkbox,
   embed: embedFormSchema,
   buttonsJson: buttonsJsonSchema,
+  /** « Version anglaise » (traduction automatique) */
+  english: checkbox,
 });
 
 const scheduleBody = z.object({ scheduledAt: z.string().trim().min(1, 'date requise') });
@@ -43,6 +45,7 @@ function inputFromBody(body: z.infer<typeof announcementBody>): AnnouncementInpu
     mentionRoleIds: [...new Set(body.mentionRoleIds)],
     mentionEveryone: body.mentionEveryone,
     buttons: body.buttonsJson,
+    english: body.english,
   };
 }
 
@@ -92,12 +95,15 @@ export function createAnnouncementsRouter(_client: RedemptionClient): Router {
     }),
   );
 
-  function formData(res: Parameters<typeof render>[0], ann: Awaited<ReturnType<typeof announcementService.get>> | null) {
+  async function formData(res: Parameters<typeof render>[0], ann: Awaited<ReturnType<typeof announcementService.get>> | null) {
     const config = res.locals.config!;
+    const guildEnglish = config.autoTranslate?.enabled ?? false;
     return {
       page: 'announcements',
       layout: 'wide',
-      scripts: ['announcements'],
+      scripts: ['translate-preview', 'announcements'],
+      english: ann ? ((await announcementService.getEnglish(ann)) ?? guildEnglish) : guildEnglish,
+      guildEnglish,
       crumbs: [{ label: ann ? ann.title : 'Nouvelle annonce' }],
       announcement: ann,
       spec: ann?.spec ?? {},
@@ -110,7 +116,7 @@ export function createAnnouncementsRouter(_client: RedemptionClient): Router {
   router.get(
     '/announcements/new',
     wrap(async (_req, res) => {
-      render(res, 'announcement-form', { title: 'Nouvelle annonce', ...formData(res, null), pendingSchedule: null });
+      render(res, 'announcement-form', { title: 'Nouvelle annonce', ...(await formData(res, null)), pendingSchedule: null });
     }),
   );
 
@@ -122,7 +128,7 @@ export function createAnnouncementsRouter(_client: RedemptionClient): Router {
       const { params } = valid<unknown, unknown, z.infer<typeof idParams>>(req);
       const ann = await load(guild.id, params.announcementId);
       const pendingSchedule = ann.status === AnnouncementStatus.SCHEDULED ? await announcementService.getPendingSchedule(ann.id) : null;
-      render(res, 'announcement-form', { title: `Annonce · ${ann.title}`, ...formData(res, ann), pendingSchedule, statusLabel: ANNOUNCEMENT_STATUS_LABELS[ann.status] });
+      render(res, 'announcement-form', { title: `Annonce · ${ann.title}`, ...(await formData(res, ann)), pendingSchedule, statusLabel: ANNOUNCEMENT_STATUS_LABELS[ann.status] });
     }),
   );
 

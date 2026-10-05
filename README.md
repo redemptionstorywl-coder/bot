@@ -21,10 +21,11 @@ Node.js 22 · TypeScript · discord.js v14 · Prisma · MySQL · Express · Sock
 6. [Dashboard web](#dashboard-web)
 7. [Commandes](#commandes)
 8. [Variables](#variables)
-9. [Intégration FiveM](#intégration-fivem)
-10. [Architecture & extension](#architecture--extension)
-11. [Tests](#tests)
-12. [Dépannage](#dépannage)
+9. [Traduction automatique en anglais](#traduction-automatique-en-anglais)
+10. [Intégration FiveM](#intégration-fivem)
+11. [Architecture & extension](#architecture--extension)
+12. [Tests](#tests)
+13. [Dépannage](#dépannage)
 
 ---
 
@@ -33,6 +34,7 @@ Node.js 22 · TypeScript · discord.js v14 · Prisma · MySQL · Express · Sock
 | Module | Description |
 | --- | --- |
 | 🌍 Langue du bot | Le bot répond en français ou en anglais selon la langue du serveur (`/config module:general`) |
+| 🇬🇧 Traduction automatique | Écrivez en français : annonces, embeds (« comment jouer »…), bienvenue et panneaux de tickets reçoivent automatiquement une version anglaise (DeepL / Google / MyMemory, cache, variables protégées) |
 | 📢 Annonces | `/announce` : création interactive (embed, texte, mentions, boutons, salon), publication immédiate ou programmée, édition, duplication, archivage, aperçu |
 | 🎨 Embed Builder | `/embed` : création sans code, aperçu live, vos propres templates réutilisables, import/export JSON |
 | 👋 Bienvenue / Départ | Message, embed, image générée, DM, boutons, rôle automatique, variables documentées |
@@ -117,6 +119,7 @@ DASHBOARD_PORT=3000
 SESSION_SECRET=une-longue-chaine-aleatoire
 FIVEM_API_KEY=une-autre-chaine-aleatoire
 TEBEX_WEBHOOK_SECRET=        # optionnel, webhook Tebex
+DEEPL_API_KEY=               # optionnel, traduction automatique en anglais (voir plus bas)
 ```
 
 Toutes les variables sont décrites dans [`.env.example`](.env.example).
@@ -210,7 +213,7 @@ Toute la configuration passe par **une seule commande** : `/config module:<modul
 
 | `/config module:` | Contenu du panneau |
 | --- | --- |
-| `general` | Type de serveur, langue du bot, rôles admin/staff, modules actifs, couleur, footer |
+| `general` | Type de serveur, langue du bot, rôles admin/staff, modules actifs, couleur, footer, traduction automatique en anglais (on/off + mise en page) |
 | `permissions` | Qui peut utiliser chaque commande : rôles autorisés par commande ou par catégorie, commande désactivée, retour au défaut |
 | `logs` | Salon de chaque catégorie de logs, salon de logs privé en un clic |
 | `bienvenue` | Bienvenue et départ : salon, message, embed, image, DM, boutons, test |
@@ -273,6 +276,41 @@ Exemple : `Bienvenue {user} sur {server} ! Nous sommes maintenant {memberCount} 
 
 ---
 
+## Traduction automatique en anglais
+
+Vous écrivez vos messages en français, le bot ajoute **automatiquement la version anglaise** :
+
+| Où | Ce qui est traduit |
+| --- | --- |
+| Annonces (`/announce`, dashboard, programmées) | Texte et embed — retraduits à chaque modification (les messages publiés sont mis à jour) |
+| Embeds (`/embed create` et `/embed edit`, dashboard « Embeds » → Envoyer) | Titre, description, champs, pied de page, auteur — idéal pour les messages « comment jouer » |
+| Bienvenue | Message, embed et message privé : le **modèle** est traduit une seule fois, avant le remplacement des variables |
+| Panneaux de tickets | Embed du panneau + raisons du menu : libellé « FR / EN » s'il tient (100 caractères), sinon libellé français et description anglaise |
+
+**Activer** : `/config module:general` → bouton **🇬🇧 Traduction EN** (et **Mise en page**), ou Dashboard → **Paramètres → Traduction automatique**. Désactivée par défaut.
+Chaque message garde ensuite son propre interrupteur **« Version anglaise »** (formulaire d'annonce, envoi d'embed, bienvenue, panneau de tickets, bouton 🇬🇧 des builders `/announce` et `/embed`), pré-réglé sur le choix du serveur.
+
+**Mise en page** :
+- **Embed anglais séparé** (par défaut) : dans le même message, l'embed français (pied de page 🇫🇷) puis l'embed anglais (🇬🇧) ; la grande image n'est pas dupliquée.
+- **Texte à la suite** : la traduction est ajoutée sous une ligne `🇬🇧 ─────────` (dans le texte, ou dans l'embed lui-même ; embed séparé si la place manque).
+Un message texte sans embed reçoit toujours la traduction après cette ligne. Les limites Discord (2000 caractères de texte, 4096 de description, 6000 par message…) sont toujours respectées : la partie anglaise est raccourcie si nécessaire.
+
+**Ce qui n'est jamais traduit** : variables `{user}` `{server}`…, mentions `<@…>` `<#…>` `<@&…>`, emojis personnalisés `<:nom:id>`, horodatages `<t:…>`, liens, blocs de code et code, mise en forme Markdown (gras, titres, citations, listes…), URLs, couleurs et images. Un texte déjà en anglais n'est pas retraduit.
+
+**Fournisseur** (choisi automatiquement, par ordre de priorité) :
+1. **DeepL** si `DEEPL_API_KEY` est renseignée — meilleure qualité. Une clé **gratuite** donne **500 000 caractères par mois** :
+   1. créez un compte sur https://www.deepl.com/pro-api et choisissez l'offre **DeepL API Free** (une carte bancaire est demandée pour vérifier l'identité, rien n'est débité) ;
+   2. dans **Compte → Clés d'API**, copiez la clé (elle se termine par `:fx`) ;
+   3. ajoutez `DEEPL_API_KEY=votre-clé:fx` dans `.env`, puis redémarrez le bot. Le point d'accès gratuit (`api-free.deepl.com`) est choisi automatiquement grâce au suffixe `:fx` ; une clé Pro utilise `api.deepl.com`.
+2. **Google Cloud Translation** si `GOOGLE_TRANSLATE_API_KEY` est renseignée (clé d'API Google Cloud, API « Cloud Translation » activée).
+3. Sinon **MyMemory**, gratuit et sans clé (≈ 5 000 caractères / jour ; ≈ 50 000 avec `MYMEMORY_EMAIL=votre@adresse`). Il sert aussi de secours si DeepL / Google échouent.
+
+Le fournisseur actif est affiché dans `/config module:general` et dans les Paramètres du dashboard.
+
+**Coût et fiabilité** : chaque traduction est mise en cache (mémoire + table `TranslationCache`, clé SHA-256 du texte) : renvoyer un message, republier un panneau ou accueillir 1 000 membres ne consomme le quota qu'une fois. Si la traduction échoue ou dépasse 15 secondes, le message part **en français seul** (avertissement dans les logs) : un envoi n'est jamais bloqué. Dans le dashboard, l'aperçu « Avec la version anglaise » montre le message exact qui sera envoyé.
+
+---
+
 ## Intégration FiveM
 
 Le bot expose une API REST (`/api/fivem/...`) et un namespace Socket.IO (`/fivem`) protégés par `FIVEM_API_KEY`. Les serveurs FiveM envoient : statut, joueurs, version, maintenance, statistiques Battle Royale, sanctions ; et interrogent la whitelist.
@@ -299,7 +337,7 @@ Voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). En résumé :
 npm test
 ```
 
-Les tests (Vitest) couvrent les systèmes critiques : tickets, permissions, traductions de l'interface, rôles, sanctions, `/clear salon`, `/unban-all`, permissions des commandes par rôle, annonces, programmation, base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
+Les tests (Vitest) couvrent les systèmes critiques : tickets, permissions, traductions de l'interface, traduction automatique (protection des variables, composition bilingue et limites Discord, fournisseurs, cache, repli en cas d'échec — sans aucun accès réseau), rôles, sanctions, `/clear salon`, `/unban-all`, permissions des commandes par rôle, annonces, programmation, base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
 
 ```bash
 npm run check            # vérifications statiques (aussi exécutées par npm test)
@@ -321,6 +359,7 @@ npm run check -- --verbose
 | `Missing Permissions` sur les rôles | Montez le rôle du bot au-dessus des rôles à gérer. |
 | Le dashboard refuse la connexion | `DISCORD_CLIENT_SECRET` vide ou redirect URI non ajoutée dans OAuth2. |
 | Image de bienvenue absente | `sharp` n'a pas pu s'installer : `npm rebuild sharp`. Le message est envoyé sans image. |
+| Pas de version anglaise | Activez-la (`/config module:general` ou Paramètres) et vérifiez l'interrupteur « Version anglaise » du message. Les logs indiquent l'erreur du fournisseur (`DeepL: quota exceeded`, `invalid key`…) ; le message part alors en français seul. |
 
 Les logs sont écrits dans `logs/bot.log` et `logs/error.log` (le token n'y apparaît jamais).
 

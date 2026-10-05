@@ -40,6 +40,7 @@
       <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 15 }) %>Aperçu en direct</span><span class="badge badge-muted">Discord</span></div>
       <div class="preview-panel-body" id="embed-live-preview"><%- include('../partials/embed-preview', { embed: spec, buttons, content: '' }) %></div>
     </div>
+    <%- include('../partials/translate-preview', t ? { key: 'embed', toggle: '#send-english', editor: '#embed-form', contentSource: '#send-content' } : { key: 'embed', enabled: guildEnglish, editor: '#embed-form' }) %>
 
     <% if (t) { %>
     <form method="post" action="<%= b %>/<%= t.id %>/send" class="card form" id="send">
@@ -48,6 +49,7 @@
       <% if (!botReady) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Bot hors ligne : envoi indisponible.</span></div><% } %>
       <div class="field"><label for="send-channel" class="field-required">Salon</label><%- include('../partials/channel-select', { name: 'channelId', id: 'send-channel', selected: '', emptyLabel: '— Choisir un salon —', required: true }) %></div>
       <div class="field"><label for="send-content">Texte au-dessus <span class="field-optional">optionnel</span></label><input id="send-content" name="content" class="input" maxlength="2000" placeholder="@everyone, {server}…"></div>
+      <div class="field"><label class="toggle"><input type="checkbox" id="send-english" name="english" <%= guildEnglish ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">🇬🇧 Version anglaise automatique</span></label><small class="hint">Ajoute la traduction anglaise (idéal pour les messages « comment jouer »). Par défaut : réglage du serveur.</small></div>
       <p class="hint mb-3">La version <strong>enregistrée</strong> est envoyée : enregistrez vos modifications d'abord.</p>
       <button type="submit" class="btn btn-primary btn-block" <%= botReady ? '' : 'disabled' %>><%- icon('send', { size: 16 }) %>Envoyer</button>
     </form>

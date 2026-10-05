@@ -60,7 +60,8 @@ describe('renderPanel', () => {
     expect(welcomeTab!.style).toBe(1); // Primary
     expect(leaveTab!.style).toBe(2); // Secondary
     expect((rows[1]!.components[0] as { custom_id: string }).custom_id).toBe('welcome:cfg:channel:welcome');
-    expect(rows[3]!.components).toHaveLength(4);
+    expect(rows[3]!.components).toHaveLength(5);
+    expect((rows[3]!.components[4] as { custom_id: string }).custom_id).toBe('welcome:cfg:english:welcome');
     const embed = payload.embeds[0]!.toJSON();
     expect(embed.description).toContain('✅ OK');
     const message = embed.fields!.find((f) => f.name.startsWith('welcome.config.kind_message'));

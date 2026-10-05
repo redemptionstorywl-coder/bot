@@ -23,7 +23,8 @@ import {
 /**
  * Boutons du namespace `welcome` :
  *  - `welcome:cfg:<action>:<tab>`      → panneau `/config bienvenue` (admin, vérifié ici ; utilisable module désactivé).
- *      tab ∈ welcome | leave ; actions : tab, toggle, test, message, embed, image, imgtoggle, dm, dmmsg, buttons, logs, vars.
+ *      tab ∈ welcome | leave ; actions : tab, toggle, test, message, embed, image, imgtoggle, dm, dmmsg, buttons, logs, vars,
+ *      english (version anglaise automatique de la bienvenue).
  * Les autres boutons configurés par le staff utilisent leur propre namespace (ex. `rolemenu:toggle:<roleId>`) ou sont des liens.
  */
 export default defineButton({
@@ -118,6 +119,12 @@ async function panelAction(interaction: ButtonInteraction, action: string, tabAr
       const dmEnabled = !(c?.dmEnabled ?? false);
       await welcomeService.updateConfig(guildId, { dmEnabled });
       await refresh(interaction, 'welcome', ctx, ok(t('welcome.config.dm_set', { state: onOff(dmEnabled, t) })));
+      return;
+    }
+    case 'english': {
+      const current = (await welcomeService.getEnglish(guildId)) ?? config?.autoTranslate?.enabled ?? false;
+      await welcomeService.setEnglish(guildId, !current);
+      await refresh(interaction, 'welcome', ctx, ok(!current ? t('embeds.builder.english_on') : t('embeds.builder.english_off')));
       return;
     }
     case 'logs': {

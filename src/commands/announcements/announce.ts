@@ -124,6 +124,7 @@ export default defineCommand({
             content: ann.content ?? undefined,
             buttons: ann.buttons,
             announcement: toDraft(ann, pending?.scheduledAt),
+            english: (await announcementService.getEnglish(ann)) ?? undefined,
           });
           await interaction.reply({ ...renderBuilder(session, renderContextFromInteraction(interaction, ctx)), ...EPHEMERAL });
           return;

@@ -111,6 +111,8 @@ const panelBody = z.object({
   style: z.nativeEnum(PanelStyle),
   typeIds: z.preprocess((v) => (v === undefined || v === '' ? [] : Array.isArray(v) ? v : [v]), z.array(z.coerce.number().int().positive()).max(25)),
   embed: embedFormOptional,
+  /** « Version anglaise » du panneau (embed + libellés des raisons) */
+  english: checkbox,
 });
 
 const remindersBody = z.object({
@@ -412,7 +414,8 @@ export function createTicketsRouter(client: RedemptionClient): Router {
         defaultEmbed: ticketService.defaultPanelEmbed(t),
         texts: discordTexts(t),
         moduleEnabled: config.modules.tickets,
-        scripts: ['tickets'],
+        guildEnglish: config.autoTranslate?.enabled ?? false,
+        scripts: ['translate-preview', 'tickets'],
       });
     }),
   );
@@ -432,7 +435,7 @@ export function createTicketsRouter(client: RedemptionClient): Router {
         const types = await ticketService.listTypes(guildView.id, { enabledOnly: true });
         if (!types.length) throw new HttpError(400, 'Créez au moins une raison activée avant de publier un panneau.');
         const typeIds = body.typeIds.filter((id) => types.some((t) => t.id === id));
-        const panel = await ticketService.createPanel({ guild, channel: channel as TextChannel | NewsChannel, style: body.style, typeIds, embed: toEmbedSpec(body.embed), lang: config.defaultLanguage, brandColor: config.brandColor });
+        const panel = await ticketService.createPanel({ guild, channel: channel as TextChannel | NewsChannel, style: body.style, typeIds, embed: toEmbedSpec(body.embed), lang: config.defaultLanguage, brandColor: config.brandColor, english: body.english });
         broadcastToGuild(guildView.id, 'ticket:update', { guildId: guildView.id, action: 'panel', panelId: panel.id });
         flash(req, 'success', `Panneau publié dans #${channel.name}.`);
       },

@@ -45,7 +45,12 @@
     "btn_color_hex": "Custom hex code",
     "btn_color_brand": "Server color ({hex})",
     "color_set": "Color applied: `{hex}`",
-    "color_reset": "Server default color restored."
+    "color_reset": "Server default color restored.",
+    "english": "English version",
+    "english_default": "server setting",
+    "btn_english": "English version",
+    "english_on": "English version enabled: an automatic English translation will be added when sending.",
+    "english_off": "English version disabled: the message will be sent in French only."
   },
   "cmd": {
     "sent": "Template sent to {channel} → {url}",
