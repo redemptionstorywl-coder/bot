@@ -2,27 +2,42 @@
   rs_bridge — pont FiveM ⇄ bot Discord (côté serveur)
 
   Flux :
-    playerConnecting  → POST /check        (ban Discord, Discord requis, rôle requis, whitelist) + bans locaux (KVP)
-    playerJoining     → POST /players/join (liaison auto du compte, rôles, surnom Discord)
+    playerConnecting  → POST /check        (ban Discord, Discord requis, rôle requis, whitelist, groupes ACE) + bans locaux (KVP)
+    playerJoining     → POST /players/join (liaison auto du compte, rôles, surnom Discord, groupes ACE)
     playerDropped     → POST /players/leave (temps de jeu, retrait du rôle « en jeu »)
-    boucle statut     → POST /status       (compteur, liste des joueurs)
-    boucle actions    → GET  /actions      (ban / unban / kick / message venant de Discord)
-    exports           → POST /sanctions    (BanPlayer, UnbanPlayer, KickPlayer, WarnPlayer)
+    boucle statut     → POST /status       (compteur, liste des joueurs, message de statut Discord)
+    boucle actions    → GET  /actions      (ban / unban / kick / message / groupes venant de Discord)
+    exports           → POST /sanctions    (Ban, Unban, BanPlayer, UnbanPlayer, KickPlayer, WarnPlayer)
+                      → POST /players/name (SetPlayerName : pseudo du compte en jeu → surnom Discord)
     txAdmin (option)  → POST /sanctions    (relai automatique des sanctions txAdmin)
+
+  Réglages de connexion : convars server.cfg (prioritaires) ou config.lua
+    set rs_bridge_url "https://…"   set rs_bridge_guild "ID Discord"   set rs_bridge_server_key "br"   set rs_bridge_api_key "…"
 ]]
 
 RSBridge = {}
 
 local resourceName = GetCurrentResourceName()
-local apiKey = GetConvar('rs_bridge_api_key', '')
-if apiKey == '' then apiKey = Config.ApiKey or '' end
 
-local baseUrl = ('%s/api/fivem/servers/%s/%s'):format((Config.BotUrl or ''):gsub('/+$', ''), Config.GuildId, Config.ServerKey)
+--- Convar non vide, sinon valeur de config.lua.
+local function setting(convar, fallback)
+  local v = GetConvar(convar, '')
+  if v ~= '' then return v end
+  return fallback or ''
+end
+
+local botUrl = setting('rs_bridge_url', Config.BotUrl):gsub('/+$', '')
+local guildId = setting('rs_bridge_guild', Config.GuildId)
+local serverKey = setting('rs_bridge_server_key', Config.ServerKey)
+local apiKey = setting('rs_bridge_api_key', Config.ApiKey)
+RSBridge.settings = { botUrl = botUrl, guildId = guildId, serverKey = serverKey }
+
+local baseUrl = ('%s/api/fivem/servers/%s/%s'):format(botUrl, guildId, serverKey)
 local headers = {
   ['Content-Type'] = 'application/json',
   ['Accept'] = 'application/json',
   ['x-api-key'] = apiKey,
-  ['x-server-key'] = Config.ServerKey,
+  ['x-server-key'] = serverKey,
 }
 
 -- Pseudos imposés par le gamemode / le framework (source → nom)
@@ -40,10 +55,12 @@ RSBridge.str = str
 local function debug(fmt, ...)
   if Config.Debug then print(('^5[%s]^7 ' .. fmt):format(resourceName, ...)) end
 end
+RSBridge.debug = debug
 
 local function warn(fmt, ...)
   print(('^3[%s]^7 ' .. fmt):format(resourceName, ...))
 end
+RSBridge.warn = warn
 
 --- Message localisé (Config.Messages[Config.Locale][key]) formaté avec string.format.
 local function msg(key, ...)
@@ -132,6 +149,7 @@ local function discordOf(ids)
   local d = findIdentifier(ids, 'discord')
   return d and d:sub(9) or nil
 end
+RSBridge.discordOf = discordOf
 
 local function playerName(src)
   return customNames[tonumber(src)] or GetPlayerName(src) or ('#' .. tostring(src))
@@ -244,6 +262,8 @@ AddEventHandler('playerConnecting', function(name, _setKickReason, deferrals)
   RSBridge.post('/check', { identifiers = ids, name = name }, function(status, data)
     if status == 200 and type(data) == 'table' then
       if data.allowed then
+        -- Groupes ACE posés dès la connexion (par identifiant) : disponibles avant même le spawn.
+        RSBridge.applyGroups({ ids = ids, discordId = str(data.discordId) }, data.groups, data.group, data.managedGroups)
         deferrals.done()
       elseif Config.UseBotMessages and str(data.message) then
         deferrals.done(data.message)
@@ -266,7 +286,10 @@ end)
 local function sendJoin(src)
   local ids = identifiersOf(src)
   RSBridge.post('/players/join', { id = tonumber(src), name = playerName(src), identifiers = ids, ping = GetPlayerPing(src) }, function(status, data)
-    if status == 200 and type(data) == 'table' and not data.linked and Config.NotifyUnlinked then
+    if status ~= 200 or type(data) ~= 'table' then return end
+    -- Groupes ACE + événement rs_bridge:groupsChanged pour le gamemode
+    RSBridge.applyGroups({ src = tonumber(src), ids = ids, discordId = str(data.discordId) }, data.groups, data.group, data.managedGroups)
+    if not data.linked and Config.NotifyUnlinked then
       SetTimeout(15000, function()
         if GetPlayerName(src) then notify(src, msg('unlinked')) end
       end)
@@ -283,15 +306,21 @@ AddEventHandler('playerDropped', function(reason)
   local ids = identifiersOf(src)
   RSBridge.post('/players/leave', { id = tonumber(src), name = playerName(src), identifiers = ids, reason = tostring(reason or ''):sub(1, 250) })
   customNames[tonumber(src)] = nil
+  RSBridge.clearGroups(tonumber(src))
 end)
 
---- Pseudo choisi en jeu → surnom Discord (export pour le gamemode Battle Royale / menu de pseudo).
---- exports.rs_bridge:SetPlayerName(source, 'MonPseudo')
+--- Pseudo du compte en jeu → surnom Discord. À appeler par le gamemode à la CRÉATION du compte (premier choix du pseudo)
+--- puis à chaque changement de pseudo. Le bot le retient : il est réappliqué à chaque connexion, à la place du nom FiveM.
+--- exports.rs_bridge:SetPlayerName(source, 'MonPseudo')  → true si envoyé
 local function setPlayerName(src, name)
   src = tonumber(src)
-  if not src or type(name) ~= 'string' or name == '' then return false end
+  if not src or type(name) ~= 'string' or name == '' or not GetPlayerName(src) then return false end
   customNames[src] = name:sub(1, 128)
-  RSBridge.post('/players/name', { id = src, name = customNames[src], identifiers = identifiersOf(src) })
+  RSBridge.post('/players/name', { id = src, name = customNames[src], identifiers = identifiersOf(src) }, function(status, data)
+    if status == 200 and type(data) == 'table' then
+      debug('Pseudo %s → surnom Discord : %s', customNames[src] or name, str(data.nickname) or 'inchangé (compte non lié, option désactivée ou hiérarchie)')
+    end
+  end)
   return true
 end
 exports('SetPlayerName', setPlayerName)
@@ -335,13 +364,13 @@ CreateThread(function()
   if apiKey == '' then warn('Aucune clé API : définissez Config.ApiKey ou `set rs_bridge_api_key "…"` dans server.cfg.') end
   RSBridge.post('/status', buildStatus(), function(status)
     if status == 200 then
-      print(('^2[%s]^7 Connecté au bot (%s / %s).'):format(resourceName, Config.GuildId, Config.ServerKey))
+      print(('^2[%s]^7 Connecté au bot (%s / %s).'):format(resourceName, guildId, serverKey))
     elseif status == 401 then
-      warn('Clé API refusée (401) : vérifiez Config.ApiKey / rs_bridge_api_key.')
+      warn('Clé API refusée (401) : vérifiez rs_bridge_api_key (server.cfg) / Config.ApiKey.')
     elseif status == 404 then
-      warn('Serveur inconnu (404) : vérifiez Config.GuildId et Config.ServerKey (/config module:fivem sur Discord).')
+      warn('Serveur inconnu (404) : vérifiez rs_bridge_guild et rs_bridge_server_key (/config module:fivem sur Discord).')
     else
-      warn('Bot injoignable (%d) : vérifiez Config.BotUrl (%s).', status, Config.BotUrl)
+      warn('Bot injoignable (%d) : vérifiez rs_bridge_url (%s).', status, botUrl)
     end
   end)
   -- Joueurs déjà présents (restart de la ressource)
@@ -404,6 +433,15 @@ function handlers.KICK(action)
   end
 end
 
+--- Rôles Discord → groupes en jeu : principals ACE (discord: + licences) et, si le joueur est connecté, événement + exports.
+function handlers.SET_GROUPS(action)
+  local ids = actionIdentifiers(action)
+  RSBridge.applyGroups({ ids = ids, discordId = str(action.discordId) }, action.groups, action.group, action.managedGroups)
+  for _, src in ipairs(matchPlayers(action)) do
+    RSBridge.applyGroups({ src = src, ids = identifiersOf(src), discordId = str(action.discordId) }, action.groups, action.group, action.managedGroups)
+  end
+end
+
 function handlers.MESSAGE(action)
   local text = str(action.message) or str(action.reason)
   if not text then return end
@@ -439,7 +477,8 @@ end)
 
 -- ───────────────────────── Exports de sanction (à appeler depuis votre menu admin) ─────────────────────────
 
-local function sendSanction(kind, ids, reason, duration, staff, discordId)
+--- syncDiscord : true / false = appliquer (ou non) aussi sur Discord ; nil = réglage « Ban en jeu → Discord » du serveur.
+local function sendSanction(kind, ids, reason, duration, staff, discordId, syncDiscord)
   local body = {
     type = kind,
     reason = (reason and reason ~= '') and tostring(reason):sub(1, 1000) or msg('no_reason'),
@@ -449,6 +488,7 @@ local function sendSanction(kind, ids, reason, duration, staff, discordId)
   }
   if discordId then body.discordId = discordId end
   if duration and tonumber(duration) and tonumber(duration) > 0 then body.duration = math.floor(tonumber(duration)) end
+  if syncDiscord ~= nil then body.syncDiscord = (syncDiscord == true) end
   RSBridge.post('/sanctions', body)
 end
 
@@ -485,6 +525,37 @@ local function unbanPlayer(identifier, staffName, reason)
   return true
 end
 exports('UnbanPlayer', unbanPlayer)
+
+--- Ban avec choix Discord explicite (menu admin du gamemode) :
+--- exports.rs_bridge:Ban(source, 'Cheat', 86400, true, 'Admin Bob')
+---   durationSec nil / 0 = permanent ; alsoDiscord true = bannir aussi du Discord, false = jeu seulement,
+---   nil = réglage « Ban en jeu → Discord » du serveur (/config module:fivem). `source` peut aussi être un identifiant
+---   (license:…, discord:…) pour un joueur hors ligne.
+local function ban(target, reason, durationSec, alsoDiscord, staffName)
+  local ids
+  if type(target) == 'string' and target:find(':') then
+    ids = { target }
+  else
+    ids = identifiersOf(target)
+  end
+  if #ids == 0 then return false end
+  local expires = (tonumber(durationSec) or 0) > 0 and (os.time() + math.floor(tonumber(durationSec))) or nil
+  LocalBans.add(ids, reason, expires, staffName)
+  sendSanction('BAN', ids, reason, durationSec, staffName, discordOf(ids), alsoDiscord)
+  if type(target) ~= 'string' and GetPlayerName(target) then DropPlayer(tostring(target), banMessage(reason, expires)) end
+  return true
+end
+exports('Ban', ban)
+
+--- Débannissement avec choix Discord explicite : exports.rs_bridge:Unban('license:…', 'Erreur', true, 'Admin Bob')
+local function unban(identifier, reason, alsoDiscord, staffName)
+  if type(identifier) ~= 'string' or not identifier:find(':') then return false end
+  local ids = { identifier }
+  LocalBans.remove(ids)
+  sendSanction('UNBAN', ids, reason or 'Unban', nil, staffName, discordOf(ids), alsoDiscord)
+  return true
+end
+exports('Unban', unban)
 
 --- Expulse un joueur (kick Discord seulement si syncKicks est activé côté bot).
 local function kickPlayer(src, reason, staffName)
@@ -556,10 +627,19 @@ RegisterCommand('rsbridge', function(src, args)
   if sub == 'unban' and args[2] then
     unbanPlayer(args[2], 'Console')
     print(('[%s] Unban envoyé pour %s'):format(resourceName, args[2]))
+  elseif sub == 'groups' and args[2] then
+    local target = tonumber(args[2])
+    local list = target and RSBridge.getGroups(target) or {}
+    print(('[%s] Groupes de %s : %s'):format(resourceName, args[2], #list > 0 and table.concat(list, ', ') or 'aucun'))
   else
+    print(('[%s] URL=%s  serveur Discord=%s  clé du serveur=%s  clé API=%s'):format(resourceName, botUrl, guildId, serverKey, apiKey ~= '' and 'définie' or 'MANQUANTE'))
     RSBridge.get('/status', function(status, data)
       print(('[%s] %s → HTTP %d'):format(resourceName, baseUrl, status))
       if data and data.status then print(('  en ligne=%s joueurs=%s/%s'):format(tostring(data.status.online), tostring(data.status.players), tostring(data.status.maxPlayers))) end
+      if status == 200 then print(('^2[%s]^7 Liaison OK.'):format(resourceName))
+      elseif status == 401 then warn('Clé API refusée (401).')
+      elseif status == 404 then warn('Serveur inconnu (404) : rs_bridge_guild / rs_bridge_server_key.')
+      else warn('Bot injoignable (%d).', status) end
     end)
   end
 end, true)

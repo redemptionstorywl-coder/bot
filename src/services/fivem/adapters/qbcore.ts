@@ -1,5 +1,5 @@
 import { FiveMFramework } from '@prisma/client';
-import { asRecord, BaseAdapter, firstDefined, identifierList, normalizeSanctionType } from './base';
+import { asRecord, BaseAdapter, firstDefined, identifierList, normalizeSanctionType, toBool } from './base';
 import type { NormalizedSanction, NormalizedStats } from '../schemas';
 
 /**
@@ -47,6 +47,7 @@ export class QbCoreAdapter extends BaseAdapter {
       reason: firstDefined(p, ['reason']) ?? '',
       duration: firstDefined(p, ['duration', 'expire', 'time']),
       staff: firstDefined(p, ['staff', 'admin', 'source']) ?? '',
+      syncDiscord: toBool(firstDefined(p, ['syncDiscord'])),
     });
   }
 }

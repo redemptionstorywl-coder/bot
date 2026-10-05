@@ -1,7 +1,9 @@
 # Intégration FiveM — Redemption Story Bot
 
 Ce document décrit comment relier un serveur FiveM (Battle Royale, ESX, QBCore ou standalone) au bot :
-**bans synchronisés dans les deux sens, pseudo en jeu → surnom Discord, liaison automatique des comptes, rôles « compte lié » / « en jeu », salon compteur de joueurs, contrôle à la connexion (ban, Discord requis, rôle requis, whitelist), temps de jeu, statistiques Battle Royale, statut en temps réel, maintenance, webhook Tebex.**
+**bans synchronisés dans les deux sens (avec choix à chaque action), pseudo du compte en jeu → surnom Discord, liaison automatique des comptes, rôles « compte lié » / « en jeu », rôles Discord → groupes en jeu (ACE), salon compteur de joueurs, contrôle à la connexion (ban, Discord requis, rôle requis, whitelist), temps de jeu, statistiques Battle Royale (classement en direct, `/stat`), statut en temps réel, maintenance, webhook Tebex.**
+
+> Installation pas à pas pour le serveur **RS Battle Royale** (Windows, sans connaissances techniques) : [`INSTALL-BATTLEROYALE.md`](INSTALL-BATTLEROYALE.md).
 
 Une ressource prête à l'emploi est fournie : **`fivem-resource/rs_bridge/`** (Lua, aucune dépendance obligatoire).
 
@@ -24,18 +26,21 @@ format du pseudo, rôles « compte lié » / « en jeu » / « requis » (bouton
 ### 1.2 Côté serveur FiveM
 
 1. Copier le dossier `fivem-resource/rs_bridge` dans `resources/` (ou `resources/[redemption]/`).
-2. Éditer `rs_bridge/config.lua` :
-   - `Config.BotUrl` = `DASHBOARD_URL` du bot (ex : `https://bot.mondomaine.fr`, sans `/` final) ;
-   - `Config.GuildId` = ID du serveur Discord ; `Config.ServerKey` = la clé déclarée dans `/config module:fivem` ;
-   - `Config.Framework` = `standalone` | `esx` | `qbcore` ; `Config.Locale` = `fr` | `en`.
-3. Clé API **hors du code** (recommandé) dans `server.cfg` :
+2. Réglages de connexion dans `server.cfg` (les convars passent avant `config.lua`) :
    ```cfg
-   set rs_bridge_api_key "votre-clé-FIVEM_API_KEY"
+   set rs_bridge_url "https://bot.mondomaine.fr"      # DASHBOARD_URL du bot, sans / final
+   set rs_bridge_guild "123456789012345678"           # ID du serveur Discord
+   set rs_bridge_server_key "br"                      # clé déclarée dans /config module:fivem
+   set rs_bridge_api_key "votre-clé-FIVEM_API_KEY"    # ou la clé propre au serveur
+   add_ace resource.rs_bridge command.add_principal allow     # groupes en jeu (§ 2.3)
+   add_ace resource.rs_bridge command.remove_principal allow
    ensure rs_bridge          # après es_extended / qb-core si utilisés
    ```
+3. Éditer `rs_bridge/config.lua` si besoin : `Config.Framework` = `standalone` | `esx` | `qbcore` ; `Config.Locale` = `fr` | `en` ;
+   `Config.GroupsMode` = `highest` | `all` ; à défaut de convars, `Config.BotUrl` / `Config.GuildId` / `Config.ServerKey` / `Config.ApiKey`.
 4. Redémarrer. La console affiche `[rs_bridge] Connecté au bot (…)` ou la cause exacte (401 clé refusée, 404 GuildId/ServerKey inconnus, bot injoignable).
 5. Brancher votre menu admin sur les exports (§ 3) — ou laisser `Config.TxAdminHooks = true` si vous sanctionnez via txAdmin.
-6. Gamemode Battle Royale : appeler `exports.rs_bridge:AddMatchStats(source, {...})` à la fin de chaque partie et `exports.rs_bridge:SetPlayerName(source, pseudo)` quand le joueur choisit son pseudo.
+6. Gamemode Battle Royale : `exports.rs_bridge:SetPlayerName(source, pseudo)` à la création du compte (et à chaque changement de pseudo), `exports.rs_bridge:AddStats(source, { kills = 1 })` pendant la partie et / ou `exports.rs_bridge:AddMatchStats(source, {...})` à la fin (§ 3).
 
 > Les joueurs n'ont **rien à faire** : si Discord est ouvert sur leur PC au lancement de FiveM, FiveM fournit l'identifiant `discord:<id>` et le bot lie automatiquement leur compte (profil Battle Royale, rôle, surnom). `/br-link` (joueur) et le bouton **🔗 Lier un membre** de `/config module:fivem` (admin) restent disponibles pour les cas manuels.
 
@@ -70,6 +75,7 @@ Intents requis (déjà activés dans `src/core/Client.ts`) : `Guilds`, `GuildMem
 | Discord requis | `requireDiscord` | ❌ | Refuse la connexion si aucun Discord lié ou si le joueur n'est pas membre du serveur Discord |
 | Rôle requis | `requireRoleId` | — | Rôle Discord requis pour se connecter (implique Discord lié + membre) |
 | Whitelist requise | `requireWhitelist` | ❌ | Candidature whitelist acceptée requise (`/whitelist`) |
+| Groupes en jeu (🛡️ Groupes) | `roleGroups` | `[]` | `[{ roleId, group }]`, ordre = priorité : rôles Discord → groupes ACE en jeu (§ 2.3) |
 | (sélecteur vidé) | — | — | Retire le rôle / salon correspondant |
 
 Le panneau `/config module:fivem` (et le dashboard) appellent `fivemSyncService.updateSyncSettings(guildId, key, patch)` (patch validé par Zod `syncSettingsSchema`, `src/services/fivem/sync.ts`).
@@ -117,9 +123,38 @@ PSEUDO
   └─ POST /players/name (ou join / status) → nettoyage (codes ^1, ~r~, contrôles, invisibles ; liens,
      @everyone et noms vides ignorés) → format → 32 caractères → member.setNickname si différent
      Jamais le propriétaire du serveur ni un membre dont le rôle le plus haut ≥ celui du bot.
+     Le pseudo reçu par /players/name est retenu (FiveMPlayer.gameName) : il est réappliqué à chaque connexion
+     à la place du nom FiveM (pas d'aller-retour du surnom) et sert de pseudo au classement et à /stat.
+
+RÔLES DISCORD → GROUPES EN JEU (§ 2.3)
+  GuildMemberUpdate (rôle associé gagné / perdu, membre déjà venu en jeu)
+  └─ FiveMPendingAction SET_GROUPS { discordId, license, identifiers, groups, group, managedGroups } ── GET /actions
+  Connexion : réponses de POST /check et POST /players/join (champs groups, group, managedGroups)
+  rs_bridge : add_principal / remove_principal identifier.discord:<id> + identifier.license:<…> group.<nom>,
+              TriggerEvent('rs_bridge:groupsChanged', source, groupes, principal), exports GetGroups / GetGroup / HasGroup
+
+BAN AVEC CHOIX (« en jeu » / « aussi sur Discord »)
+  /ban, /tempban, /unban en_jeu:<oui|non> · dashboard (fiche membre, case « Aussi en jeu »)
+    non précisé → réglage syncBansToGame de chaque serveur ; oui → tous les serveurs actifs ; non → aucun
+    (marqueur bulk:force|skip:<ban|unban>:<guild>:<user>, 30 s, lu par GuildBanAdd / GuildBanRemove)
+    /unban en_jeu d'un membre non banni de Discord → UNBAN envoyé aux serveurs de jeu seulement
+  exports.rs_bridge:Ban(source, raison, duréeSec, alsoDiscord, staff) / Unban(identifiant, raison, alsoDiscord, staff)
+    → POST /sanctions { …, syncDiscord } : true / false explicite, absent = réglage syncBansToDiscord
 ```
 
-### 2.3 Données
+### 2.3 Rôles Discord → groupes en jeu
+
+`/config module:fivem` → serveur → **🛡️ Groupes** (ou dashboard → FiveM → serveur → Synchronisation → *Groupes en jeu*) :
+associez un rôle Discord à un groupe (`admin`, `mod`, `vip`… : minuscules, chiffres, `_ - .`, 32 caractères max).
+**L'ordre est la priorité** : le premier groupe détenu par le membre est son groupe principal.
+
+- Côté jeu, `Config.GroupsMode = 'highest'` (défaut) ne donne que le groupe principal (idéal si `group.admin` hérite de `group.mod` dans `server.cfg`) ; `'all'` donne tous les groupes détenus.
+- Les groupes gérés par le bot que le joueur n'a plus sont retirés (`remove_principal`) : ne les donnez pas aussi à la main dans `server.cfg`.
+- `server.cfg` doit autoriser la ressource : `add_ace resource.rs_bridge command.add_principal allow` et `add_ace resource.rs_bridge command.remove_principal allow`.
+- Gamemode : `AddEventHandler('rs_bridge:groupsChanged', function(src, groups, primary) … end)`, `exports.rs_bridge:GetGroups(src)`, `GetGroup(src)`, `HasGroup(src, 'mod')`. Console : `rsbridge groups <id>`.
+- Délai : immédiat à la connexion ; ≈ `Config.ActionsInterval` (10 s) après un changement de rôle sur Discord. Un membre qui n'est jamais venu en jeu reçoit ses groupes à sa première connexion.
+
+### 2.4 Données
 
 | Modèle | Rôle |
 |--------|------|
@@ -127,7 +162,8 @@ PSEUDO
 | `FiveMPlayer` | Un joueur suivi par licence : `discordId`, `steam`, `fivemId`, dernier `name`, `serverKey`, `lastSeenAt`, `sessionStartedAt`, `playtimeMinutes`, `online` |
 | `FiveMPendingAction` | File des actions Discord → jeu (`BAN`/`UNBAN`/`KICK`/`MESSAGE`), marquées `deliveredAt` lorsqu'elles sont servies. Délivrées purgées après 7 j ; non délivrées ignorées après 7 j |
 
-`/profile` affiche en plus le statut en jeu (serveur), la dernière connexion et le pseudo en jeu ; le bouton **👥 Joueurs** de `/config module:fivem` affiche la liaison Discord de chaque joueur.
+`/stat` affiche en plus le statut en jeu (serveur) et la dernière connexion ; le bouton **👥 Joueurs** de `/config module:fivem` affiche la liaison Discord de chaque joueur.
+`FiveMPendingAction.type` : `BAN` / `UNBAN` / `KICK` / `MESSAGE` / `SET_GROUPS`.
 
 ---
 
@@ -140,12 +176,18 @@ PSEUDO
 | `UnbanPlayer(identifier, staffName?, reason?)` | Supprime le ban local + `POST /sanctions` UNBAN |
 | `KickPlayer(source, reason, staffName?)` | DropPlayer + `POST /sanctions` KICK |
 | `WarnPlayer(source, reason, staffName?)` | Notification en jeu + `POST /sanctions` WARN |
-| `SetPlayerName(source, name)` | Pseudo choisi en jeu → surnom Discord |
-| `AddMatchStats(source, { kills, deaths, win, damage, top10, xp, season? })` | Stats de fin de partie → `POST /stats` |
+| `Ban(source \| identifiant, reason, durationSec?, alsoDiscord?, staffName?)` | Ban local + DropPlayer + `POST /sanctions` BAN avec `syncDiscord` (`nil` = réglage du serveur) |
+| `Unban(identifier, reason?, alsoDiscord?, staffName?)` | Lève le ban local + `POST /sanctions` UNBAN avec `syncDiscord` |
+| `SetPlayerName(source, name)` | Pseudo du compte en jeu → surnom Discord (à la création du compte puis à chaque changement), retenu par le bot |
+| `AddStats(source, { kills?, deaths?, damage?, xp?, win?, top10?, matches? })` | Stats en direct, cumulées puis envoyées en lot toutes les `Config.StatsFlushInterval` s (pas de partie comptée) |
+| `FlushStats()` | Envoie tout de suite les stats en direct en attente |
+| `AddMatchStats(source, { kills, deaths, win, damage, top10, xp, season? })` | Stats de fin de partie (compte une partie) → `POST /stats` |
 | `AddMatchStatsBatch({ { source, kills, … }, … })` | Idem en une requête (max 200) |
+| `GetGroups(source)` / `GetGroup(source)` / `HasGroup(source, name)` | Groupes en jeu du joueur (rôles Discord, § 2.3) |
 
-Événement local : `AddEventHandler('rs_bridge:action', function(action) … end)` est déclenché pour chaque action reçue du bot (pour l'appliquer aussi dans votre système de ban ESX/QBCore).
-Console : `rsbridge` (test de connexion), `rsbridge unban <identifiant>`.
+Événements locaux : `rs_bridge:action` (chaque action reçue du bot, pour l'appliquer aussi dans votre système de ban ESX/QBCore) et `rs_bridge:groupsChanged` (source, groupes, principal).
+Console : `rsbridge` (réglages + test de connexion), `rsbridge unban <identifiant>`, `rsbridge groups <id>`.
+Les stats en direct (`AddStats`) et de fin de partie (`AddMatchStats`) s'additionnent : n'envoyez pas deux fois la même statistique.
 Hooks txAdmin (`Config.TxAdminHooks`) : `txAdmin:events:playerBanned`, `playerWarned`, `playerKicked`, `actionRevoked` (révocation de ban → UNBAN).
 
 Exemples :
@@ -193,14 +235,14 @@ Préfixe commun : `B = /api/fivem/servers/:guildId/:serverKey`
 |---------|-------|-------|---------|
 | POST | `B/status` | `{ online, players, maxPlayers, version?, maintenance?, playerList?: [{ id, name, identifiers, ping? }] }` | `{ ok, status }` — heartbeat 30–60 s, diff des joueurs |
 | GET | `B/status` | — | Statut résolu sans la liste des joueurs |
-| POST | `B/check` | `{ identifiers: [...], name? }` | `{ ok, allowed, reason?, message?, banned, banReason?, banExpiresAt?, whitelisted, linked, discordId }` |
-| POST | `B/players/join` | `{ id, name, identifiers, ping? }` | `{ ok, players, discordId, linked, member, nickname }` |
+| POST | `B/check` | `{ identifiers: [...], name? }` | `{ ok, allowed, reason?, message?, banned, banReason?, banExpiresAt?, whitelisted, linked, discordId, groups, group, managedGroups }` |
+| POST | `B/players/join` | `{ id, name, identifiers, ping? }` | `{ ok, players, discordId, linked, member, nickname, groups, group, managedGroups }` |
 | POST | `B/players/leave` | `{ id, name?, identifiers?, reason? }` | `{ ok, players, minutes, discordId }` |
 | POST | `B/players/name` | `{ discordId? \| identifiers, name, id? }` | `{ ok, discordId, nickname }` (`nickname` null = ignoré : nom invalide, hiérarchie, option désactivée) |
 | GET | `B/players` | — | Joueurs connus (dernier statut ou `players.json`) |
-| GET | `B/actions` | — | `{ ok, count, actions: [{ id, type: BAN\|UNBAN\|KICK\|MESSAGE, discordId?, license?, identifiers?, reason?, expiresAt?, staff?, message?, createdAt }] }` — max 50, marquées délivrées |
+| GET | `B/actions` | — | `{ ok, count, actions: [{ id, type: BAN\|UNBAN\|KICK\|MESSAGE\|SET_GROUPS, discordId?, license?, identifiers?, reason?, expiresAt?, staff?, message?, groups?, group?, managedGroups?, createdAt }] }` — max 50, marquées délivrées |
 | GET | `B/bans/:discordId` | — | `{ ok, discordId, banned, reason, expiresAt }` (ban Discord, cache 60 s) |
-| POST | `B/sanctions` | `{ identifier?, identifiers?, discordId?, type: BAN\|KICK\|WARN\|UNBAN, reason, duration?, staff }` | `201 { ok, caseNumber, userId, discord: banned\|unbanned\|kicked\|warned\|recorded, propagated }` |
+| POST | `B/sanctions` | `{ identifier?, identifiers?, discordId?, type: BAN\|KICK\|WARN\|UNBAN, reason, duration?, staff, syncDiscord? }` | `201 { ok, caseNumber, userId, discord: banned\|unbanned\|kicked\|warned\|recorded, propagated }` |
 | POST | `B/stats` | Objet ou tableau (max 200) de stats normalisées (§ 5.1) | `{ ok, applied, unlinked, unlinkedIdentifiers, results }` (`202` si non lié) |
 | GET | `B/whitelist/:identifier` | — | `{ ok, identifier, whitelisted, status, discordId }` |
 | GET | `B/whitelist` | — | `{ ok, count, whitelist: [{ discordId, identifier, acceptedAt }] }` |
@@ -221,6 +263,7 @@ Préfixe commun : `B = /api/fivem/servers/:guildId/:serverKey`
 
 - Cible : `discordId` explicite, sinon identifiant `discord:` dans `identifiers`, sinon liaison connue de la licence.
 - `BAN` + `duration` (secondes) ⇒ tempban (levé automatiquement sur Discord, puis UNBAN relayé aux serveurs).
+- `syncDiscord` (BAN / UNBAN) : `true` / `false` force (ou empêche) l'action Discord pour cet appel ; absent = réglage `syncBansToDiscord` du serveur.
 - La raison Discord est `[FiveM] <raison> (<staff>)`. Si l'action Discord est impossible (membre absent, hiérarchie, option désactivée, déjà banni), la sanction est **enregistrée** (`discord: "recorded"`) avec un log MODERATION.
 
 ---
@@ -320,8 +363,8 @@ Logique : commande retrouvée par `tebexTransactionId`, sinon dernière commande
 ## 11. Récapitulatif côté serveur de jeu
 
 1. `/config module:fivem` → ➕ Ajouter, puis régler la vue du serveur (rôles, salon compteur, options).
-2. Copier `fivem-resource/rs_bridge`, renseigner `config.lua`, `set rs_bridge_api_key "…"` et `ensure rs_bridge` dans `server.cfg`.
+2. Copier `fivem-resource/rs_bridge`, ajouter dans `server.cfg` les convars `rs_bridge_url` / `rs_bridge_guild` / `rs_bridge_server_key` / `rs_bridge_api_key`, les deux `add_ace resource.rs_bridge …` et `ensure rs_bridge`.
 3. Brancher le menu admin sur `BanPlayer` / `UnbanPlayer` / `KickPlayer` / `WarnPlayer` (ou laisser les hooks txAdmin).
-4. Gamemode BR : `AddMatchStats` en fin de partie, `SetPlayerName` quand le joueur choisit son pseudo.
+4. Gamemode BR : `SetPlayerName` à la création du compte, `AddStats` / `AddMatchStats` pour les stats, `Ban` pour le menu admin, `rs_bridge:groupsChanged` / `GetGroups` pour les droits.
 5. Bot : rôle placé au-dessus des rôles gérés et des membres à renommer ; intent *Server Members* activé.
 6. Shop : `tebexPackageId` sur chaque produit et webhooks Tebex relayés vers `/api/shop/tebex`.

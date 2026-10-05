@@ -40,6 +40,8 @@ export interface SocketEvents {
   'player:unban': GameActionPayload & { id?: number };
   'player:kick': GameActionPayload & { id?: number };
   'player:message': GameActionPayload & { id?: number };
+  /** Groupes en jeu (rôles Discord → ACE) d'un membre */
+  'player:set_groups': GameActionPayload & { id?: number };
 }
 
 /** Écouteur appelé après chaque statut appliqué (synchronisation joueurs / rôles / salon compteur). */
@@ -50,6 +52,16 @@ export class FiveMError extends Error {
     super(message ?? code);
     this.name = 'FiveMError';
   }
+}
+
+/**
+ * Dernier statut reçu tel qu'envoyé par le serveur de jeu (sans les champs calculés `lastSeenAt` / `stale` et sans la
+ * maintenance du panneau) : base des mises à jour partielles (arrivée / départ d'un joueur). Repartir du statut « résolu »
+ * recopiait la maintenance du panneau dans le statut du jeu, et une arrivée pouvait réactiver une maintenance levée.
+ */
+export function rawStatus(server: Pick<FiveMServer, 'lastStatus'>): ServerStatus {
+  const parsed = serverStatusSchema.safeParse(server.lastStatus ?? {});
+  return parsed.success ? parsed.data : { online: false, players: 0, maxPlayers: 0, playerList: [] };
 }
 
 /** Détermine le statut effectif à partir du dernier statut et de la fraîcheur des données (fonction pure). */
@@ -79,6 +91,8 @@ export class FiveMService {
   private readonly statusListeners: StatusListener[] = [];
   /** File par serveur (id) des mises à jour de statut / liste des joueurs. */
   private readonly statusLocks = new Map<number, Promise<void>>();
+  /** File par serveur (id) des éditions du message de statut : jamais deux messages créés en parallèle. */
+  private readonly messageLocks = new Map<number, Promise<void>>();
 
   attach(client: Client): void {
     this.client = client;
@@ -182,6 +196,11 @@ export class FiveMService {
     return resolveStatus(server);
   }
 
+  /** Dernier statut brut du serveur de jeu (voir `rawStatus`). */
+  getRawStatus(server: FiveMServer): ServerStatus {
+    return rawStatus(server);
+  }
+
   /**
    * Exécute `fn` après les mises à jour de statut déjà en cours pour ce serveur (une à la fois) :
    * des arrivées / départs / heartbeats simultanés ne lisent plus la même liste de joueurs pour l'écraser
@@ -227,7 +246,11 @@ export class FiveMService {
   }
 
   async setMaintenance(guildId: string, key: string, enabled: boolean, actorId?: string): Promise<FiveMServer> {
-    const server = await this.updateServer(guildId, key, { maintenance: enabled });
+    const current = await this.requireServer(guildId, key);
+    // La maintenance du panneau fait foi immédiatement : on oublie celle du dernier heartbeat (la convar de rs_bridge
+    // reprendra la main au heartbeat suivant si elle est définie).
+    const { maintenance: reported, ...withoutMaintenance } = (current.lastStatus ?? {}) as Record<string, unknown>;
+    const server = await this.updateServer(guildId, key, { maintenance: enabled, ...(reported !== undefined ? { lastStatus: withoutMaintenance as Prisma.InputJsonValue } : {}) });
     this.emitToServer(server, 'maintenance', { enabled });
     await this.updateStatusMessage(server).catch(() => null);
     await loggingService.log({
@@ -296,9 +319,23 @@ export class FiveMService {
   // ───── Message de statut Discord ─────
 
   async setStatusChannel(guildId: string, key: string, channelId: string | null): Promise<FiveMServer> {
+    const before = await this.requireServer(guildId, key);
+    if (before.statusChannelId === channelId && before.statusMessageId) {
+      await this.updateStatusMessage(before);
+      return before;
+    }
     const server = await this.updateServer(guildId, key, { statusChannelId: channelId, statusMessageId: null });
+    // Ancien message (autre salon / salon retiré) supprimé : un seul message de statut par serveur.
+    if (before.statusChannelId && before.statusMessageId) await this.deleteMessage(before.statusChannelId, before.statusMessageId);
     if (channelId) await this.updateStatusMessage(server);
-    return server;
+    return (await prisma.fiveMServer.findUnique({ where: { id: server.id } })) ?? server;
+  }
+
+  private async deleteMessage(channelId: string, messageId: string): Promise<void> {
+    const channel = await this.client?.channels.fetch(channelId).catch(() => null);
+    if (!channel || !channel.isTextBased() || channel.isDMBased()) return;
+    const msg = await channel.messages.fetch(messageId).catch(() => null);
+    await msg?.delete().catch(() => null);
   }
 
   buildStatusEmbed(server: FiveMServer, lang: string): EmbedBuilder {
@@ -325,14 +362,36 @@ export class FiveMService {
     return embed;
   }
 
+  /**
+   * Crée ou édite le message de statut (recréé s'il a été supprimé). Sérialisé par serveur, et l'ID du message est relu
+   * en base : deux mises à jour simultanées (heartbeat + arrivée d'un joueur) ne publient plus deux messages.
+   */
   async updateStatusMessage(server: FiveMServer): Promise<void> {
+    if (!this.client || !server.statusChannelId) return;
+    const previous = this.messageLocks.get(server.id) ?? Promise.resolve();
+    const run = previous.then(() => this.writeStatusMessage(server));
+    const tail = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    this.messageLocks.set(server.id, tail);
+    void tail.then(() => {
+      if (this.messageLocks.get(server.id) === tail) this.messageLocks.delete(server.id);
+    });
+    return run;
+  }
+
+  private async writeStatusMessage(server: FiveMServer): Promise<void> {
     if (!this.client || !server.statusChannelId) return;
     const channel = await this.client.channels.fetch(server.statusChannelId).catch(() => null);
     if (!channel || !channel.isTextBased() || channel.isDMBased() || !('send' in channel)) return;
     const cfg = await guildConfigService.get(server.guildId);
     const embed = this.buildStatusEmbed(server, cfg?.defaultLanguage ?? 'fr');
-    if (server.statusMessageId) {
-      const msg = await channel.messages.fetch(server.statusMessageId).catch(() => null);
+    const stored = await prisma.fiveMServer.findUnique({ where: { id: server.id }, select: { statusMessageId: true, statusChannelId: true } }).catch(() => null);
+    if (stored && stored.statusChannelId !== server.statusChannelId) return; // salon changé entre-temps
+    const messageId = stored ? stored.statusMessageId : server.statusMessageId;
+    if (messageId) {
+      const msg = await channel.messages.fetch(messageId).catch(() => null);
       if (msg) {
         await msg.edit({ embeds: [embed] });
         return;

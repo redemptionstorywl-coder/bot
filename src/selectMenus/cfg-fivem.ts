@@ -4,7 +4,8 @@ import type { InteractionContext } from '../structures/types';
 import { fivemService } from '../services/FiveMService';
 import { fivemSyncService } from '../services/FiveMSyncService';
 import { attempt, ko, show, unknownAction } from '../panels/_modulesKit';
-import { ROLE_FIELDS, isRoleField, renderMain, renderRolesView, renderServer, syncPatchFromSelection } from '../panels/_fivem';
+import { ROLE_FIELDS, isRoleField, renderGroupsView, renderMain, renderRolesView, renderServer, syncPatchFromSelection } from '../panels/_fivem';
+import { moveRoleGroupToTop, parseRoleGroups, removeRoleGroups } from '../services/fivem/groups';
 
 /**
  * Menus du panneau `/config module:fivem` (namespace `cfg-fivem`, admin) :
@@ -13,6 +14,8 @@ import { ROLE_FIELDS, isRoleField, renderMain, renderRolesView, renderServer, sy
  *  - `counter:<key>` (ChannelSelect, 0–1)     → salon vocal / catégorie renommé avec le nombre de joueurs
  *  - `sync:<key>` (StringSelect multi)        → options de synchronisation actives
  *  - `role:<linked|online|require>:<key>`     → rôle lié / en jeu / requis (RoleSelect, 0–1)
+ *  - `group-del:<key>` (StringSelect multi)   → retire des associations rôle → groupe en jeu
+ *  - `group-top:<key>` (StringSelect)         → place une association en tête (groupe le plus prioritaire)
  */
 export default defineSelectMenu({
   id: 'cfg-fivem',
@@ -67,6 +70,19 @@ async function handle(interaction: AnySelectMenuInteraction<'cached'>, action: s
         return t('fivem.sync.updated', { name: server.name });
       });
       return show(interaction, renderRolesView(updated, { ...opts, notice }));
+    }
+    case 'group-del':
+    case 'group-top': {
+      if (!interaction.isStringSelectMenu()) return;
+      const current = parseRoleGroups(server.roleGroups);
+      const roleGroups = action === 'group-del' ? removeRoleGroups(current, interaction.values) : moveRoleGroupToTop(current, interaction.values[0] ?? '');
+      await interaction.deferUpdate();
+      let updated = server;
+      const notice = await attempt(t, async () => {
+        updated = await fivemSyncService.updateSyncSettings(guild.id, server.key, { roleGroups });
+        return t('panels_modules.fivem.groups_updated', { name: server.name });
+      });
+      return show(interaction, renderGroupsView(updated, { ...opts, notice }));
     }
     default:
       return unknownAction(interaction, t, action);

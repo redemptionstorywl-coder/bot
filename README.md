@@ -45,8 +45,8 @@ Node.js 22 · TypeScript · discord.js v14 · Prisma · MySQL · Express · Sock
 | 🎁 Giveaways | rôle requis, nombre minimal de messages, tirage automatique, reroll |
 | 📊 Sondages | oui/non, choix multiples, anonyme, durée, résultats automatiques |
 | 🔊 Salons vocaux | « Créer un salon » : rejoindre un lobby crée un salon vocal au nom du membre, avec le drapeau et le nom dans sa langue (selon ses rôles), supprimé quand il se vide |
-| 🎮 FiveM | API REST + Socket.IO, statut serveur en direct, whitelist, sanctions, stats ; adaptateurs ESX / QBCore / custom |
-| ⚔️ Battle Royale | profils, XP/niveaux, wins, kills, K/D, classements, Battle Pass |
+| 🎮 FiveM | API REST + Socket.IO, statut serveur en direct, whitelist, bans synchronisés (choix « en jeu » à chaque ban), pseudo du compte → surnom Discord, rôles Discord → groupes en jeu (ACE), stats ; adaptateurs ESX / QBCore / custom |
+| ⚔️ Battle Royale | profils, XP/niveaux, wins, kills, K/D, `/stat`, classement en direct (message mis à jour tout seul), Battle Pass |
 | 🎓 School RP | inscriptions, élèves, professeurs, classes, maisons, clubs, candidatures |
 | 🛒 Shop | catégories, produits, annonces produits, commandes, historique, webhook Tebex |
 | 🌐 Dashboard | OAuth2 Discord, configuration complète de chaque serveur sans toucher au code, temps réel (Socket.IO) |
@@ -218,8 +218,8 @@ Toute la configuration passe par **une seule commande** : `/config module:<modul
 | `tickets` | Raisons de ticket, catégorie d'ouverture, rôles d'accès, questions, message d'accueil, panneau, salon des transcripts, relances automatiques |
 | `moderation` | Seuils de warns, rôle mute, anti-raid, anti-nuke, lockdown, salon piège `get-banned` |
 | `roles` | Auto-roles, role menus, reaction roles, rôles de notifications |
-| `fivem` | Serveurs FiveM, statut, synchronisation bans/pseudos/rôles, salon compteur, installation |
-| `battleroyale` | Saisons, Battle Pass, outils de stats et d'XP |
+| `fivem` | Serveurs FiveM, statut, synchronisation bans/pseudos/rôles, rôles Discord → groupes en jeu (🛡️ Groupes), salon compteur, installation |
+| `battleroyale` | Saisons, Battle Pass, outils de stats et d'XP, 📺 Affichage (classement en direct, salon `/stat`) |
 | `whitelist` | Questions, salon de review, rôles, DM des décisions |
 | `school` | Salons, rôles, classes, maisons, clubs |
 | `shop` | Produits, catégories, Tebex, annonces produits |
@@ -230,10 +230,10 @@ Toute la configuration passe par **une seule commande** : `/config module:<modul
 | Administration | `/info` (fiche du serveur avec IDs), `/dm user|all|status|cancel`, `/help`, `/status` |
 | Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |
 | Tickets | `/ticket close|add|remove|claim|transcript|rename|info|list` (+ boutons dans chaque ticket, dont 📌 « Ticket permanent ») |
-| Modération | `/ban`, `/tempban`, `/unban`, `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/clear messages|salon`, `/unban-all`, `/slowmode`, `/lock`, `/unlock`, `/mute-salon`, `/lockdown on|off|status`, `/case`, `/history` |
+| Modération | `/ban`, `/tempban`, `/unban` (option `en_jeu` : appliquer aussi sur les serveurs FiveM), `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/clear messages|salon`, `/unban-all`, `/slowmode`, `/lock`, `/unlock`, `/mute-salon`, `/lockdown on|off|status`, `/case`, `/history` |
 | Communauté | `/event`, `/giveaway`, `/poll` |
 | Whitelist | `/whitelist apply|status|review|list` |
-| Battle Royale | `/profile`, `/leaderboard`, `/battlepass`, `/br-link` |
+| Battle Royale | `/stat [joueur]` (ouverte à tous : vos stats ou celles d'un joueur, pseudo en jeu proposé automatiquement), `/leaderboard`, `/battlepass`, `/br-link` |
 | School RP | `/school register|profile|apply|announce|house|club` |
 | Shop | `/shop catalog|order` |
 
@@ -288,6 +288,8 @@ Le bot expose une API REST (`/api/fivem/...`) et un namespace Socket.IO (`/fivem
 
 Les frameworks **ESX**, **QBCore** et **custom** sont pris en charge via des adaptateurs (`src/services/fivem/adapters`). Documentation complète, exemples `curl` et script Lua : [`docs/FIVEM.md`](docs/FIVEM.md).
 
+**Serveur RS Battle Royale : guide d'installation pas à pas (Windows, en français) → [`docs/INSTALL-BATTLEROYALE.md`](docs/INSTALL-BATTLEROYALE.md)** — copie de `rs_bridge`, lignes `server.cfg`, déclaration du serveur, test, et extraits Lua pour le développeur du gamemode (création de compte, kills, fin de partie, ban, groupes).
+
 ---
 
 ## Architecture & extension
@@ -308,7 +310,7 @@ Voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). En résumé :
 npm test
 ```
 
-Les tests (Vitest) couvrent les systèmes critiques : tickets, permissions, traductions de l'interface, rôles, sanctions, `/clear salon`, `/unban-all`, permissions des commandes par rôle, salons vocaux temporaires, annonces, programmation, base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
+Les tests (Vitest) couvrent les systèmes critiques : tickets, permissions, traductions de l'interface, rôles, sanctions, `/clear salon`, `/unban-all`, permissions des commandes par rôle, salons vocaux temporaires, annonces, programmation, FiveM (rôles → groupes en jeu, option « en jeu » des bans, statut), Battle Royale (classement en direct, `/stat`), base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
 
 ```bash
 npm run check            # vérifications statiques (aussi exécutées par npm test)

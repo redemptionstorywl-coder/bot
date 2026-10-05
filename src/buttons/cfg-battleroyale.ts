@@ -2,12 +2,13 @@ import type { ButtonInteraction } from 'discord.js';
 import { defineButton } from '../structures';
 import type { InteractionContext } from '../structures/types';
 import { battleRoyaleService } from '../services/BattleRoyaleService';
-import { ko, show, toggleModule, unknownAction } from '../panels/_modulesKit';
-import { buildGenerateModal, buildLinkModal, buildNewSeasonModal, buildStatModal, buildTiersModal, buildXpModal, renderBattlePass, renderMain } from '../panels/_battleroyale';
+import { leaderboardService } from '../services/LeaderboardService';
+import { attempt, ko, show, toggleModule, unknownAction } from '../panels/_modulesKit';
+import { buildGenerateModal, buildLinkModal, buildNewSeasonModal, buildStatModal, buildTiersModal, buildXpModal, renderBattlePass, renderDisplay, renderMain } from '../panels/_battleroyale';
 
 /**
  * Boutons du panneau `/config module:battleroyale` (namespace `cfg-battleroyale`, admin) :
- * `main`, `module`, `bp`, modals `season-new` / `stat` / `xp` / `link` / `tiers` / `gen`.
+ * `main`, `module`, `bp`, `display`, `lb-refresh`, modals `season-new` / `stat` / `xp` / `link` / `tiers` / `gen`.
  */
 export default defineButton({
   id: 'cfg-battleroyale',
@@ -35,6 +36,16 @@ async function handle(interaction: ButtonInteraction<'cached'>, action: string, 
     }
     case 'bp':
       return show(interaction, await renderBattlePass({ guild, config, t }));
+    case 'display':
+      return show(interaction, await renderDisplay({ guild, config, t }));
+    case 'lb-refresh': {
+      await interaction.deferUpdate();
+      const notice = await attempt(t, async () => {
+        await leaderboardService.refreshNow(guild.id);
+        return t('panels_modules.battleroyale.lb_refreshed');
+      });
+      return show(interaction, await renderDisplay({ guild, config, t, notice }));
+    }
     case 'season-new':
       return interaction.showModal(buildNewSeasonModal(t));
     case 'stat':

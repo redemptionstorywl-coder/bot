@@ -52,7 +52,10 @@
     "dm_failed": "📪 Could not send the direct message (DMs closed).",
     "warn_count": "Active warnings: **{count}**",
     "escalated": "⚠️ Threshold of **{count}** warnings reached → **{action}** {duration} applied automatically (case #{number}).",
-    "escalation_failed": "⚠️ Threshold reached but the automatic **{action}** failed: {error}"
+    "escalation_failed": "⚠️ Threshold reached but the automatic **{action}** failed: {error}",
+    "in_game": "🎮 In game: applied on **{count}** FiveM server(s).",
+    "not_in_game": "🎮 In game: not applied.",
+    "unban_game_only": "{user} was not banned from Discord: the unban was sent to **{count}** FiveM server(s)."
   },
   "escalation": {
     "reason": "Automatic escalation: {count} active warnings"

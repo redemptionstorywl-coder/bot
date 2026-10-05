@@ -310,6 +310,7 @@ describe('Dashboard — pages connectées', () => {
       ['/members', 'Tester'],
       ['/members?q=test', '@tester'],
       [`/members/${USER_ID}`, 'Avertissements'],
+      [`/members/${USER_ID}`, `/members/${USER_ID}/ban`],
       ['/fivem?tab=integration', 'Installer rs_bridge'],
       ['/whitelist?tab=config', 'Questions du formulaire'],
     ] as const) {

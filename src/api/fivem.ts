@@ -142,7 +142,7 @@ async function handleJoin(server: FiveMServer, payload: unknown) {
   const player: ServerPlayer = playerJoinSchema.parse(payload);
   return fivemService.withStatusLock(server, async (fresh) => {
     const result = await fivemSyncService.handleJoin(fresh, player);
-    const current = fivemService.getResolvedStatus(fresh);
+    const current = fivemService.getRawStatus(fresh);
     const playerList = [...current.playerList.filter((p) => p.id !== player.id), player];
     const updated = await fivemService.applyStatus(fresh, { ...current, online: true, players: playerList.length, playerList }, 'rest');
     return { updated, players: playerList.length, ...result };
@@ -153,7 +153,7 @@ async function handleJoin(server: FiveMServer, payload: unknown) {
 async function handleLeave(server: FiveMServer, payload: unknown) {
   const leave = playerLeaveSchema.parse(payload);
   return fivemService.withStatusLock(server, async (fresh) => {
-    const current = fivemService.getResolvedStatus(fresh);
+    const current = fivemService.getRawStatus(fresh);
     const known = current.playerList.find((p) => p.id === leave.id);
     const r = await fivemSyncService.handleLeave(fresh, { id: leave.id, identifiers: leave.identifiers ?? known?.identifiers });
     const playerList = current.playerList.filter((p) => p.id !== leave.id);

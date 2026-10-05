@@ -1,4 +1,4 @@
-import { ButtonStyle, StringSelectMenuBuilder, TextInputStyle, UserSelectMenuBuilder, type Guild, type ModalBuilder } from 'discord.js';
+import { ButtonStyle, ChannelSelectMenuBuilder, ChannelType, StringSelectMenuBuilder, TextInputStyle, UserSelectMenuBuilder, type Guild, type ModalBuilder } from 'discord.js';
 import { GuildKind, type BattlePass } from '@prisma/client';
 import { buildCustomId } from '../utils/customId';
 import { discordTimestamp } from '../utils/time';
@@ -6,13 +6,17 @@ import { embedService } from '../services/EmbedService';
 import { PROFILE_FIELDS, STAT_FIELDS, battleRoyaleService, defaultTiers, parseTiers, type BattlePassTier, type ProfileField, type StatField } from '../services/BattleRoyaleService';
 import type { ResolvedGuildConfig } from '../services/GuildConfigService';
 import type { Translator } from '../services/TranslationService';
-import { PanelError, btn, fieldLines, labelled, modal, moduleButton, moduleLine, option, parseIntField, row, textInput, truncate, withNotice, type PanelNotice, type PanelPayload, type Row } from './_modulesKit';
+import { leaderboardService } from '../services/LeaderboardService';
+import { KD_MIN_MATCHES, LEADERBOARD_SIZES } from '../services/battleroyale/leaderboard';
+import { liveChannel } from '../utils/liveIds';
+import { PanelError, btn, channelMention, fieldLines, labelled, modal, moduleButton, moduleLine, option, parseIntField, row, textInput, truncate, withNotice, type PanelNotice, type PanelPayload, type Row } from './_modulesKit';
 
 /**
  * Panneau `/config module:battleroyale` — namespace `cfg-battleroyale` (admin) :
  *  - vue principale : `main`, `module`, `season` (StringSelect : saison active), `season-new` / `stat` / `xp` / `link` (modals)
  *  - Battle Pass    : `bp`, `tiers` (modal multi-lignes `palier | xp | gratuit | premium`), `gen` (modal : génération des paliers)
- * Les commandes joueurs restent : /profile, /leaderboard, /battlepass, /br-link.
+ *  - Affichage      : `display`, `lb-channel` / `stat-channel` (ChannelSelect), `lb-size` (StringSelect 10 / 15), `lb-refresh`
+ * Les commandes joueurs restent : /stat, /leaderboard, /battlepass, /br-link.
  */
 
 export const BR_NS = 'cfg-battleroyale';
@@ -143,9 +147,47 @@ export async function renderMain(opts: BrRenderOptions): Promise<PanelPayload> {
       btn(bcid('xp'), t('panels_modules.battleroyale.btn_xp'), ButtonStyle.Secondary, '✨'),
       btn(bcid('link'), t('panels_modules.battleroyale.btn_link'), ButtonStyle.Secondary, '🔗'),
     ),
-    row(moduleButton(bcid('module'), 'battleRoyale', config.modules.battleRoyale, t), btn(bcid('main'), t('panels_modules.common.refresh'), ButtonStyle.Secondary, '🔄')),
+    row(
+      btn(bcid('display'), t('panels_modules.battleroyale.btn_display'), ButtonStyle.Primary, '📺'),
+      moduleButton(bcid('module'), 'battleRoyale', config.modules.battleRoyale, t),
+      btn(bcid('main'), t('panels_modules.common.refresh'), ButtonStyle.Secondary, '🔄'),
+    ),
   );
   return { embeds: [embed], components };
+}
+
+/** Vue « Affichage » : salon du classement en direct (un message édité automatiquement), taille, salon dédié à /stat. */
+export async function renderDisplay(opts: BrRenderOptions): Promise<PanelPayload> {
+  const { guild, t, notice } = opts;
+  const s = await leaderboardService.getSettings(guild.id);
+  const none = t('core.none');
+  const message = s.leaderboardChannelId && s.leaderboardMessageId ? `https://discord.com/channels/${guild.id}/${s.leaderboardChannelId}/${s.leaderboardMessageId}` : null;
+  const embed = embedService
+    .brand(t('panels_modules.battleroyale.display_title'))
+    .setDescription(withNotice(notice, t('panels_modules.battleroyale.display_hint', { min: KD_MIN_MATCHES })))
+    .addFields(
+      { name: t('panels_modules.battleroyale.field_lb_channel'), value: `${channelMention(s.leaderboardChannelId, none)}${message ? ` · [${t('panels_modules.battleroyale.lb_message_link')}](${message})` : ''}`, inline: true },
+      { name: t('panels_modules.battleroyale.field_lb_size'), value: t('panels_modules.battleroyale.lb_size_value', { count: s.leaderboardSize }), inline: true },
+      { name: t('panels_modules.battleroyale.field_stat_channel'), value: s.statChannelId ? `<#${s.statChannelId}>` : t('panels_modules.battleroyale.stat_anywhere'), inline: true },
+    );
+  const textTypes = [ChannelType.GuildText, ChannelType.GuildAnnouncement] as const;
+  const lb = new ChannelSelectMenuBuilder().setCustomId(bcid('lb-channel')).setPlaceholder(truncate(t('panels_modules.battleroyale.lb_channel_placeholder'), 150)).addChannelTypes(...textTypes).setMinValues(0).setMaxValues(1);
+  if (liveChannel(guild, s.leaderboardChannelId)) lb.setDefaultChannels(s.leaderboardChannelId!);
+  const stat = new ChannelSelectMenuBuilder().setCustomId(bcid('stat-channel')).setPlaceholder(truncate(t('panels_modules.battleroyale.stat_channel_placeholder'), 150)).addChannelTypes(...textTypes).setMinValues(0).setMaxValues(1);
+  if (liveChannel(guild, s.statChannelId)) stat.setDefaultChannels(s.statChannelId!);
+  const size = new StringSelectMenuBuilder()
+    .setCustomId(bcid('lb-size'))
+    .setPlaceholder(truncate(t('panels_modules.battleroyale.lb_size_placeholder'), 150))
+    .addOptions(LEADERBOARD_SIZES.map((n) => option(t('panels_modules.battleroyale.lb_size_value', { count: n }), String(n), { default: n === s.leaderboardSize })));
+  return {
+    embeds: [embed],
+    components: [
+      row(lb),
+      row(size),
+      row(stat),
+      row(btn(bcid('lb-refresh'), t('panels_modules.battleroyale.btn_lb_refresh'), ButtonStyle.Secondary, '🔁', !s.leaderboardChannelId), btn(bcid('main'), t('core.back'), ButtonStyle.Secondary, '↩️')),
+    ],
+  };
 }
 
 export async function renderBattlePass(opts: BrRenderOptions): Promise<PanelPayload> {

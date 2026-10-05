@@ -1,7 +1,7 @@
 <%#
   Ligne d'une liste dynamique (public/js/repeater.js). Les inputs portent `data-field` (jamais `name`) :
   la liste est sérialisée en JSON dans le champ caché désigné par `data-repeater-json`.
-  Attend : kind ('field' | 'button' | 'question' | 'threshold' | 'option' | 'polloption' | 'tier'), row (objet ou null), roles (RoleOption[] pour 'option').
+  Attend : kind ('field' | 'button' | 'question' | 'threshold' | 'option' | 'rolegroup' | 'polloption' | 'tier'), row (objet ou null), roles (RoleOption[] pour 'option' et 'rolegroup').
 %>
 <% const r = row || {}; %>
 <div class="repeater-row repeater-<%= kind %>" data-repeater-row>
@@ -36,6 +36,9 @@
     <input class="input input-sm" data-field="emoji" maxlength="64" placeholder="Emoji" value="<%= r.emoji || '' %>" aria-label="Emoji">
     <input class="input input-sm" data-field="description" maxlength="100" placeholder="Description (select)" value="<%= r.description || '' %>" aria-label="Description">
     <select class="select select-sm" data-field="style" aria-label="Style du bouton"><option value="" <%= !r.style ? 'selected' : '' %>>Style auto</option><% for (const s of [['secondary', 'Gris'], ['primary', 'Violet / bleu'], ['success', 'Vert'], ['danger', 'Rouge']]) { %><option value="<%= s[0] %>" <%= r.style === s[0] ? 'selected' : '' %>><%= s[1] %></option><% } %></select>
+  <% } else if (kind === 'rolegroup') { %>
+    <select class="select select-sm" data-field="roleId" aria-label="Rôle Discord" data-role-picker data-placeholder="Choisir un rôle…"><option value="">— Rôle —</option><%- include('role-options', { roles: roles || [], selected: r.roleId || '' }) %></select>
+    <label class="repeater-inline"><span class="muted">→ groupe</span><input class="input input-sm input-mono" data-field="group" maxlength="32" pattern="^[a-z0-9_.\-]{1,32}$" placeholder="admin" value="<%= r.group || '' %>" aria-label="Groupe en jeu"></label>
   <% } else if (kind === 'polloption') { %>
     <input class="input input-sm" data-field="label" maxlength="100" placeholder="Option" value="<%= r.label || '' %>" aria-label="Libellé de l'option">
     <input class="input input-sm" data-field="emoji" maxlength="64" placeholder="Emoji" value="<%= r.emoji || '' %>" aria-label="Emoji">

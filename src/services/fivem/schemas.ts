@@ -62,6 +62,11 @@ export const normalizedSanctionSchema = z
     /** Durée en secondes (bans temporaires) */
     duration: z.coerce.number().int().min(1).optional(),
     staff: z.string().min(1).max(128),
+    /**
+     * BAN / UNBAN : appliquer aussi sur Discord ? Absent = réglage `syncBansToDiscord` du serveur.
+     * (`exports.rs_bridge:Ban(src, raison, durée, alsoDiscord)`)
+     */
+    syncDiscord: z.boolean().optional(),
   })
   .refine((s) => s.identifier || s.discordId || s.identifiers?.length, { message: '`identifier`, `identifiers` ou `discordId` requis' });
 export type NormalizedSanction = z.infer<typeof normalizedSanctionSchema>;

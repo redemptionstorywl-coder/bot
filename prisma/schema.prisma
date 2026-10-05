@@ -854,6 +854,8 @@ model FiveMServer {
   requireRoleId        String?   @db.VarChar(32)
   /// Exiger une candidature whitelist acceptée pour se connecter
   requireWhitelist     Boolean   @default(false)
+  /// Rôles Discord → groupes en jeu (ACE) : [{ roleId, group }], ordre = priorité (le premier l'emporte)
+  roleGroups           Json?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -1098,6 +1100,8 @@ model FiveMPlayer {
   fivemId          String?   @db.VarChar(128)
   /// Dernier pseudo en jeu
   name             String    @db.VarChar(128)
+  /// Pseudo du compte en jeu fixé par le gamemode (exports.rs_bridge:SetPlayerName) : prioritaire pour le surnom Discord
+  gameName         String?   @db.VarChar(128)
   /// Dernier serveur (clé FiveMServer.key)
   serverKey        String?   @db.VarChar(64)
   lastSeenAt       DateTime  @default(now())
@@ -1118,6 +1122,7 @@ enum FiveMActionType {
   UNBAN
   KICK
   MESSAGE
+  SET_GROUPS
 }
 
 // ──────────────── FiveM : actions à délivrer au serveur de jeu (polling GET /actions) ────────────────
@@ -1194,4 +1199,20 @@ model TempVoiceChannel {
 
   @@index([guildId])
   @@index([guildId, ownerId])
+}
+
+// ──────────────── Battle Royale : affichage (classement en direct, salon /stat) ────────────────
+
+/// Message de classement mis à jour automatiquement et salon dédié à /stat.
+model BattleRoyaleConfig {
+  guildId              String   @id @db.VarChar(32)
+  /// Salon du message de classement (null = désactivé)
+  leaderboardChannelId String?  @db.VarChar(32)
+  /// Message de classement publié par le bot (recréé s'il est supprimé)
+  leaderboardMessageId String?  @db.VarChar(32)
+  /// Nombre de joueurs par catégorie (10 ou 15)
+  leaderboardSize      Int      @default(10)
+  /// Salon où /stat est autorisé (null = partout)
+  statChannelId        String?  @db.VarChar(32)
+  updatedAt            DateTime @updatedAt
 }

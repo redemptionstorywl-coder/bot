@@ -28,6 +28,7 @@ export const REMOVED_COMMANDS: Record<string, string> = {
   template: '/config (module concerné)',
   purge: '/clear messages',
   'clear-salon': '/clear salon',
+  profile: '/stat',
 };
 /** Sous-commandes supprimées (`commande sous-commande` → remplacement / motif). Détecte aussi `/clear messages|serveur`. */
 export const REMOVED_SUBCOMMANDS: Record<string, string> = {

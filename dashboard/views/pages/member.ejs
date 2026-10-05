@@ -58,6 +58,29 @@
       <% } } %>
     </section>
 
+    <% if (banState.canBan) { %>
+    <section class="card <%= banState.banned ? '' : 'card-danger' %>">
+      <h2 class="card-title"><%- icon('shield') %><%= banState.banned ? 'Banni du serveur' : 'Bannir' %></h2>
+      <% if (banState.banned) { %>
+        <p class="text-sm text-2 mb-3">Raison : <%= banState.reason || '—' %></p>
+        <form method="post" action="<%= base %>/members/<%= member.id %>/unban" class="form stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="field"><label for="unban-reason">Raison <span class="field-optional">optionnel</span></label><input id="unban-reason" name="reason" class="input" maxlength="512"></div>
+          <% if (banState.fivem) { %><label class="check check-sm"><input type="checkbox" name="inGame" <%= banState.inGameDefault ? 'checked' : '' %>><span>Débannir aussi en jeu (FiveM)</span></label><% } %>
+          <button type="submit" class="btn btn-primary btn-block" data-confirm="Débannir <%= member.displayName %> ?" data-confirm-label="Débannir" data-confirm-variant="primary">Débannir</button>
+        </form>
+      <% } else { %>
+        <form method="post" action="<%= base %>/members/<%= member.id %>/ban" class="form stack">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <div class="field"><label for="ban-reason">Raison <span class="field-optional">optionnel</span></label><input id="ban-reason" name="reason" class="input" maxlength="512"></div>
+          <div class="field"><label for="ban-duration">Durée <span class="field-optional">vide = définitif</span></label><input id="ban-duration" name="duration" class="input input-mono" maxlength="32" placeholder="7d, 12h, 1w…"></div>
+          <% if (banState.fivem) { %><label class="check check-sm"><input type="checkbox" name="inGame" <%= banState.inGameDefault ? 'checked' : '' %>><span>Bannir aussi en jeu (FiveM)</span></label><small class="hint">Cochée par défaut si un serveur FiveM relaie les bans Discord. Cochée = tous les serveurs FiveM actifs.</small><% } %>
+          <button type="submit" class="btn btn-danger btn-block" data-confirm="Bannir <%= member.displayName %> ?" data-confirm-label="Bannir"><%- icon('shield', { size: 16 }) %>Bannir</button>
+        </form>
+      <% } %>
+    </section>
+    <% } %>
+
     <section class="card">
       <h2 class="card-title"><%- icon('info') %>Informations</h2>
       <dl class="dl">

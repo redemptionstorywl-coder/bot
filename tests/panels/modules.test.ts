@@ -295,6 +295,23 @@ describe('panneau fivem', () => {
     checkPayload(fivem.renderDeleteConfirm(server as never, tFr));
   });
 
+  it('vue groupes en jeu : liste par priorité, retrait, mise en tête, modal rôle + groupe', () => {
+    const guild = fakeGuild();
+    const withGroups = { ...server, roleGroups: [{ roleId: ROLE_A, group: 'admin' }, { roleId: '700000000000000009', group: 'mod' }] };
+    const payload = fivem.renderGroupsView(withGroups as never, { guild, config: fakeConfig(guild), t: tFr });
+    const cs = checkPayload(payload);
+    expect((byId(cs, `cfg-fivem:group-del:${server.key}`)?.options as unknown[]).length).toBe(2);
+    expect((byId(cs, `cfg-fivem:group-top:${server.key}`)?.options as { value: string }[]).map((o) => o.value)).toEqual(['700000000000000009']);
+    expect(byId(cs, `cfg-fivem:group-add:${server.key}`)?.disabled).toBe(false);
+    expect(JSON.stringify(payload.embeds)).toContain('👑');
+    const empty = checkPayload(fivem.renderGroupsView(server as never, { guild, config: fakeConfig(guild), t: tEn }));
+    expect(byId(empty, `cfg-fivem:group-del:${server.key}`)).toBeUndefined();
+    const modal = checkModal(fivem.buildGroupModal(server as never, tFr));
+    expect(modal.map((c) => c.custom_id)).toEqual(['role', 'group', 'position']);
+    expect(modal[0]?.type).toBe(ComponentType.RoleSelect);
+    expect(byId(checkPayload(fivem.renderServer(server as never, { guild, config: fakeConfig(guild), t: tFr })), `cfg-fivem:groups:${server.key}`)).toBeDefined();
+  });
+
   it('modals : ajout (framework en menu), édition, pseudo, liaison', () => {
     const add = checkModal(fivem.buildAddModal(tFr));
     expect(add.map((c) => c.custom_id)).toEqual(['key', 'name', 'framework', 'host', 'apiKey']);
@@ -342,6 +359,20 @@ describe('panneau battleroyale', () => {
     checkModal(br.buildXpModal(tFr));
     checkModal(br.buildLinkModal(tFr));
     checkModal(br.buildGenerateModal(tFr));
+  });
+
+  it('vue Affichage : salon du classement, taille, salon /stat pré-remplis', async () => {
+    prisma.battleRoyaleConfig.findUnique.mockResolvedValue({ guildId: 'display-test', leaderboardChannelId: CHANNEL, leaderboardMessageId: '800000000000000001', leaderboardSize: 15, statChannelId: null, updatedAt: new Date() });
+    const guild = { ...fakeGuild(), id: 'display-test' } as ReturnType<typeof fakeGuild>;
+    const payload = await br.renderDisplay({ guild, config: fakeConfig(guild), t: tFr });
+    const cs = checkPayload(payload);
+    expect(defaults(byId(cs, 'cfg-battleroyale:lb-channel'))).toEqual([CHANNEL]);
+    expect(defaults(byId(cs, 'cfg-battleroyale:stat-channel'))).toEqual([]);
+    expect(defaultOptions(byId(cs, 'cfg-battleroyale:lb-size'))).toEqual(['15']);
+    expect(byId(cs, 'cfg-battleroyale:lb-refresh')?.disabled).toBe(false);
+    expect(JSON.stringify(payload.embeds)).toContain('800000000000000001');
+    prisma.battlePass.findMany.mockResolvedValue([]);
+    expect(byId(checkPayload(await br.renderMain({ guild, config: fakeConfig(guild), t: tEn })), 'cfg-battleroyale:display')).toBeDefined();
   });
 
   it('parse les paliers multi-lignes', () => {

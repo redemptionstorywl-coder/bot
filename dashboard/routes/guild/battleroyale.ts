@@ -17,18 +17,20 @@ import {
   type ProfileField,
 } from '../../../src/services/BattleRoyaleService';
 import { fivemIdentifierSchema } from '../../../src/services/fivem/schemas';
+import { leaderboardService } from '../../../src/services/LeaderboardService';
+import { KD_MIN_MATCHES, LEADERBOARD_SIZES } from '../../../src/services/battleroyale/leaderboard';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
 import { flash } from '../../lib/flash';
 import { HttpError } from '../../lib/errors';
-import { validate, valid, discordIdSchema, optionalText } from '../../lib/validate';
+import { validate, valid, discordIdSchema, optionalText, optionalDiscordId } from '../../lib/validate';
 import { jsonArray } from '../../lib/embedForm';
 import { formAction } from '../../lib/serviceErrors';
-import { resolveUserProfiles } from '../../lib/names';
+import { resolveUserProfiles, requireBotGuild } from '../../lib/names';
 import { parseLocalDateTime, toLocalInputValue } from '../../lib/dates';
 import { broadcastToGuild } from '../../sockets';
 
-const TABS = ['leaderboard', 'profiles', 'seasons'] as const;
+const TABS = ['leaderboard', 'profiles', 'seasons', 'display'] as const;
 const METRICS: LeaderboardMetric[] = ['wins', 'kills', 'level', 'kd'];
 const TOP = 50;
 
@@ -68,6 +70,12 @@ const statBody = z.object({
 });
 const xpBody = z.object({ amount: z.coerce.number().int().min(-1_000_000_000).max(1_000_000_000).refine((n) => n !== 0, 'montant non nul attendu') });
 const linkBody = z.object({ identifier: fivemIdentifierSchema, nickname: optionalText(64) });
+/** Onglet « Affichage » : classement en direct + salon /stat (vide = désactivé / partout). */
+const displayBody = z.object({
+  leaderboardChannelId: optionalDiscordId,
+  leaderboardSize: z.coerce.number().int().refine((n) => (LEADERBOARD_SIZES as readonly number[]).includes(n), 'taille : 10 ou 15'),
+  statChannelId: optionalDiscordId,
+});
 
 /** Palier saisi dans le repeater : récompenses vides → null. */
 const tierInput = z.preprocess((v) => {
@@ -137,7 +145,8 @@ export function createBattleRoyaleRouter(client: RedemptionClient): Router {
 
       const top = rows.slice(0, TOP);
       const maxValue = Math.max(1, ...top.map((r) => (query.metric === 'level' ? r.xp : query.metric === 'kd' ? r.kd : r[query.metric])));
-      const crumbs = query.tab === 'profiles' ? [{ label: 'Joueurs' }] : query.tab === 'seasons' ? [{ label: 'Saisons & Battle Pass' }] : [];
+      const crumbs = query.tab === 'profiles' ? [{ label: 'Joueurs' }] : query.tab === 'seasons' ? [{ label: 'Saisons & Battle Pass' }] : query.tab === 'display' ? [{ label: 'Affichage' }] : [];
+      const display = query.tab === 'display' ? await leaderboardService.getSettings(guild.id) : null;
       render(res, 'battleroyale', {
         title: 'Battle Royale',
         page: 'battleRoyale',
@@ -165,6 +174,9 @@ export function createBattleRoyaleRouter(client: RedemptionClient): Router {
         seasons: seasons.map((s) => ({ ...s, tiers: parseTiers(s.tiers), startsAtInput: toLocalInputValue(s.startsAt, config.timezone), endsAtInput: toLocalInputValue(s.endsAt, config.timezone) })),
         selectedPass: selectedPass ? { ...selectedPass, tiers: parseTiers(selectedPass.tiers), startsAtInput: toLocalInputValue(selectedPass.startsAt, config.timezone), endsAtInput: toLocalInputValue(selectedPass.endsAt, config.timezone) } : null,
         defaultEndsAt: toLocalInputValue(new Date(Date.now() + 90 * 86400_000), config.timezone),
+        display,
+        leaderboardSizes: LEADERBOARD_SIZES,
+        kdMinMatches: KD_MIN_MATCHES,
         moduleEnabled: config.modules.battleRoyale,
       });
     }),
@@ -237,6 +249,40 @@ export function createBattleRoyaleRouter(client: RedemptionClient): Router {
     ),
   );
 
+  // ───── Affichage : classement en direct, salon /stat ─────
+
+  router.post(
+    '/battle-royale/display',
+    validate({ body: displayBody }),
+    formAction(
+      (_req, res) => `${base(res.locals.guild!.id)}?tab=display`,
+      async (req, res) => {
+        const guild = res.locals.guild!;
+        const { body } = valid<z.infer<typeof displayBody>>(req);
+        for (const id of [body.leaderboardChannelId, body.statChannelId]) if (id && !guild.textChannels.some((c) => c.id === id)) throw new HttpError(400, 'Salon inconnu.');
+        if (body.leaderboardChannelId) requireBotGuild(client, guild.id);
+        await leaderboardService.updateSettings(guild.id, body, req.session.user!.id);
+        broadcastToGuild(guild.id, 'br:update', { guildId: guild.id, action: 'display' });
+        flash(req, 'success', body.leaderboardChannelId ? 'Affichage enregistré : le classement est publié et se mettra à jour tout seul.' : 'Affichage enregistré (classement en direct désactivé).');
+      },
+    ),
+  );
+
+  router.post(
+    '/battle-royale/display/refresh',
+    formAction(
+      (_req, res) => `${base(res.locals.guild!.id)}?tab=display`,
+      async (req, res) => {
+        const guild = res.locals.guild!;
+        requireBotGuild(client, guild.id);
+        const settings = await leaderboardService.getSettings(guild.id);
+        if (!settings.leaderboardChannelId) throw new HttpError(400, 'Choisissez d’abord un salon pour le classement.');
+        await leaderboardService.refreshNow(guild.id);
+        flash(req, 'success', 'Classement republié / mis à jour.');
+      },
+    ),
+  );
+
   // ───── Saisons & Battle Pass ─────
 
   router.post(
@@ -298,6 +344,7 @@ export function createBattleRoyaleRouter(client: RedemptionClient): Router {
         const tiers = normalizeTiers(body.tiersJson);
         // Pas de méthode de service pour éditer un Battle Pass : mise à jour directe (aucun cache côté service).
         const pass = await prisma.battlePass.update({ where: { id: existing.id }, data: { name: body.name, startsAt, endsAt, tiers: tiers as unknown as Prisma.InputJsonValue } });
+        battleRoyaleService.notifyChange(guild.id); // nom / fin de saison affichés dans le classement en direct
         broadcastToGuild(guild.id, 'br:update', { guildId: guild.id, action: 'season', season: pass.season });
         flash(req, 'success', `Saison ${pass.season} mise à jour (${tiers.length} paliers).`);
         return `${base(guild.id)}?tab=seasons`;

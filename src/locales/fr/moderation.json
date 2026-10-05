@@ -52,7 +52,10 @@
     "dm_failed": "📪 Impossible d'envoyer le message privé (DM fermés).",
     "warn_count": "Avertissements actifs : **{count}**",
     "escalated": "⚠️ Seuil de **{count}** avertissements atteint → **{action}** {duration} appliqué automatiquement (case #{number}).",
-    "escalation_failed": "⚠️ Seuil atteint mais l'action automatique **{action}** a échoué : {error}"
+    "escalation_failed": "⚠️ Seuil atteint mais l'action automatique **{action}** a échoué : {error}",
+    "in_game": "🎮 En jeu : appliqué sur **{count}** serveur(s) FiveM.",
+    "not_in_game": "🎮 En jeu : non appliqué.",
+    "unban_game_only": "{user} n’était pas banni de Discord : le débannissement a été envoyé à **{count}** serveur(s) FiveM."
   },
   "escalation": {
     "reason": "Escalade automatique : {count} avertissements actifs"
