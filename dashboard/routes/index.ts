@@ -24,6 +24,7 @@ import { createWhitelistRouter } from './guild/whitelist';
 import { createBattleRoyaleRouter } from './guild/battleroyale';
 import { createSchoolRouter } from './guild/school';
 import { createShopRouter } from './guild/shop';
+import { createVocalRouter } from './guild/vocal';
 
 /**
  * Point de montage de toutes les routes.
@@ -57,6 +58,7 @@ export function mountRoutes(client: RedemptionClient): Router {
     createModerationRouter,
     createGiveawaysRouter,
     createEventsRouter,
+    createVocalRouter,
     createFiveMRouter,
     createWhitelistRouter,
     createBattleRoyaleRouter,

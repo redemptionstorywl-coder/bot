@@ -30,6 +30,7 @@ import { createApp } from '../../dashboard/app';
 import { createSessionMiddleware } from '../../dashboard/auth/session';
 import { env } from '../../src/config/env';
 import type { RedemptionClient } from '../../src/core/Client';
+import { MODULE_KEYS } from '../../src/config/constants';
 
 const prisma = mockedPrisma as unknown as ReturnType<typeof createPrismaMock>;
 const GUILD_ID = '100000000000000001';
@@ -340,7 +341,7 @@ describe('Dashboard — pages connectées', () => {
     expect(overview.status).toBe(200);
     const o = JSON.parse(overview.text);
     expect(o.members).toBe(42);
-    expect(o.modules.total).toBe(20);
+    expect(o.modules.total).toBe(MODULE_KEYS.length);
     const channels = JSON.parse((await get(`/api/guilds/${GUILD_ID}/channels`, { auth: true })).text);
     expect(channels.text.map((c: { name: string }) => c.name)).toEqual(['annonces']);
     const roles = JSON.parse((await get(`/api/guilds/${GUILD_ID}/roles`, { auth: true })).text);

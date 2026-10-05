@@ -1392,6 +1392,24 @@ form[data-dirty-form].js-dirty .dirty-hide { display: none; }
 .repeater-inline .input { width: 90px; }
 .repeater-actions { display: flex; gap: 2px; justify-content: flex-end; }
 .repeater-foot { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+/* Règles de langue des salons vocaux temporaires (page Salons vocaux) */
+.repeater-voicerule { grid-template-columns: auto minmax(150px, 1.2fr) minmax(130px, 1fr) 72px minmax(170px, 1.6fr) auto; }
+.repeater-voicerule.is-static { background: var(--surface-2); }
+.voice-rule-preview { grid-column: 2 / -1; display: flex; align-items: center; gap: 6px; min-width: 0; font-size: var(--fs-xs); color: var(--text-2); }
+.voice-rule-preview .icon { color: var(--text-3); flex-shrink: 0; }
+.voice-rule-preview span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.voice-fallback .field-label { margin-bottom: var(--s-2); }
+.voice-fallback-icon { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: var(--text-3); }
+.dchannel-cat { padding: 4px 8px 6px; color: #949ba4; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; }
+.dchannel-list .dchannel-row + .dchannel-row, .dchannel-list [data-voice-list-items] > .dchannel-row { margin-top: 2px; }
+.dchannel-row.is-lobby { background: transparent; color: #949ba4; }
+.dchannel-row > span:not(.dchannel-meta) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.dchannel-meta { margin-left: auto; padding-left: 8px; font-size: 12px; font-weight: 400; color: #949ba4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; flex-shrink: 0; }
+@media (max-width: 760px) {
+  .repeater-voicerule { grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr); }
+  .repeater-voicerule > .input[data-field="template"], .repeater-voicerule > [data-voice-template], .voice-rule-preview { grid-column: 1 / -1; }
+  .repeater-voicerule > .repeater-actions { grid-column: 1 / -1; }
+}
 
 .q-list { display: flex; flex-direction: column; gap: var(--s-2); }
 .q-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--s-3); padding: var(--s-3) var(--s-3) var(--s-3) var(--s-2); border: 1px solid var(--line); border-radius: var(--r-md); background: var(--surface); transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }

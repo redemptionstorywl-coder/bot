@@ -26,6 +26,7 @@ export const MODULE_INFO: Record<ModuleKey, Omit<ModuleInfo, 'key'>> = {
   events: { label: 'Événements', icon: 'calendar', description: 'Événements avec inscriptions et rappels automatiques.', group: 'community', path: 'events' },
   giveaways: { label: 'Giveaways', icon: 'gift', description: 'Tirages au sort avec conditions de participation.', group: 'community', path: 'giveaways' },
   polls: { label: 'Sondages', icon: 'bar-chart', description: 'Sondages à choix multiples, anonymes ou non.', group: 'community', path: 'events' },
+  vocal: { label: 'Salons vocaux', icon: 'volume', description: 'Salons vocaux temporaires « Créer un salon » au nom du membre, dans sa langue.', group: 'community', path: 'vocal' },
   tickets: { label: 'Tickets', icon: 'ticket', description: 'Support privé : raisons, formulaires, panneaux et transcripts.', group: 'support', path: 'tickets' },
   moderation: { label: 'Modération', icon: 'shield', description: 'Sanctions, avertissements et seuils automatiques.', group: 'security', path: 'moderation' },
   antiraid: { label: 'Anti-raid', icon: 'shield-alert', description: 'Protection contre les raids, anti-nuke et salon piège.', group: 'security', path: 'moderation' },

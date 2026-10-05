@@ -134,7 +134,7 @@ autres serveurs, thème, déconnexion. Rendu en `textContent`, recherche sans ac
 
 ## Navigation
 
-Groupes par intention : Vue d'ensemble · **Communauté** (Bienvenue et départs, Rôles, Annonces, Embeds, Événements) · **Support** (Tickets) ·
+Groupes par intention : Vue d'ensemble · **Communauté** (Bienvenue et départs, Rôles, Annonces, Embeds, Événements, Salons vocaux) · **Support** (Tickets) ·
 **Sécurité** (Modération, Logs) · **Jeu** (Serveurs FiveM, Battle Royale, Whitelist, School RP, Boutique) · **Serveur** (Membres, Permissions, Paramètres).
 Un module de jeu n'apparaît dans « Jeu » que s'il est recommandé pour le type de serveur (`DEFAULT_MODULES_BY_KIND`) ou déjà activé ; sinon il est
 rangé sous « Autres modules ». Un module coupé reste visible avec l'étiquette « off ».
@@ -166,6 +166,9 @@ rangé sous « Autres modules ». Un module coupé reste visible avec l'étiquet
 - **Permissions** (`/permissions`) : `commandPermissionService` (`catalog`, `rules`, `set`, `reset`, `LOCKED_COMMANDS`) puis `invalidateCommandPermissions(guildId)`.
   `POST /permissions/command/:command` (rôles + activation), `/command/:command/reset`, `/category/:category` (`mode` replace | add),
   `/category/:category/reset`, `/permissions/reset`. `/settings?tab=commands` redirige ici.
+- **Salons vocaux** (`/vocal`) : `tempVoiceService` (`getConfig`, `updateConfig`, `listActive`) ; `POST /vocal/config` (lobbies, catégorie, limite,
+  règles de langue `rulesJson` via `partials/voice-rule-row` + repeater, règle de repli, droits du créateur) ; aperçu live des noms (`public/js/vocal.js`,
+  mêmes règles que `buildChannelName`) ; tableau des salons temporaires actifs.
 - **Paramètres** (`/settings`) : page unique (type, langue, apparence, équipe, modules) ; `?tab=modules` défile jusqu'aux modules.
 - **Modération** : Sanctions (+ graphique 30 j, `?tab=stats`) · Avertissements · Protection (sommaire : lockdown, anti-nuke, filtres, exemptions,
   escalade, salon piège, actions sensibles ; `?tab=config|antiraid|honeypot|lockdown` ouvrent la section correspondante).
