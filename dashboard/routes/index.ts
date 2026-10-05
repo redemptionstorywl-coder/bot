@@ -25,6 +25,7 @@ import { createBattleRoyaleRouter } from './guild/battleroyale';
 import { createSchoolRouter } from './guild/school';
 import { createShopRouter } from './guild/shop';
 import { createVocalRouter } from './guild/vocal';
+import { createTranslateRouter } from './guild/translate';
 
 /**
  * Point de montage de toutes les routes.
@@ -64,6 +65,7 @@ export function mountRoutes(client: RedemptionClient): Router {
     createBattleRoyaleRouter,
     createSchoolRouter,
     createShopRouter,
+    createTranslateRouter,
   ];
   for (const factory of guildRouters) guildScoped.use('/', factory(client));
   root.use('/guilds/:guildId', guildScoped);

@@ -1,0 +1,9 @@
+<%#
+  Aperçu de la version anglaise (public/js/translate-preview.js). Attend :
+    key (clé du panneau), toggle (sélecteur de la case « Version anglaise », optionnel),
+    enabled (bool : état par défaut sans case), editor / contentSource (mode déclaratif, optionnels), note (texte sous l'aperçu).
+%><div class="preview-panel" data-translate-panel="<%= key %>" data-translate-url="/guilds/<%= guild.id %>/translate/preview"<% if (typeof toggle === 'string') { %> data-translate-toggle="<%= toggle %>"<% } %> data-translate-default="<%= typeof enabled !== 'undefined' && enabled ? 'true' : 'false' %>"<% if (typeof editor === 'string') { %> data-translate-editor="<%= editor %>"<% } %><% if (typeof contentSource === 'string') { %> data-translate-content="<%= contentSource %>"<% } %> hidden>
+  <div class="preview-panel-head"><span class="row"><span aria-hidden="true">🇬🇧</span>Avec la version anglaise</span><span class="badge badge-muted" data-translate-status>Traduction auto</span></div>
+  <div class="preview-panel-body" data-translate-host></div>
+  <div class="preview-panel-note"><%= typeof note === 'string' ? note : 'Traduction automatique du texte français (variables, mentions, liens et mise en forme conservés). Si elle échoue à l’envoi, le message part en français seul.' %></div>
+</div>

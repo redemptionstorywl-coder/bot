@@ -1,7 +1,7 @@
-<% const base = `/guilds/${guild.id}`; %>
+<% const base = `/guilds/${guild.id}`; const at = typeof autoTranslate !== 'undefined' && autoTranslate ? autoTranslate : { enabled: false, layout: 'embed' }; %>
 <header class="page-header"<%- scrollTo ? ` data-scroll-to="${scrollTo}"` : '' %>>
   <div class="page-heading">
-    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Paramètres</h1><p class="page-subtitle">Type de serveur, langue du bot, apparence des messages, équipe et modules actifs.</p></div>
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title">Paramètres</h1><p class="page-subtitle">Type de serveur, langue du bot, traduction automatique, apparence des messages, équipe et modules actifs.</p></div>
   </div>
 </header>
 
@@ -10,6 +10,7 @@
     <div class="toc-title">Sur cette page</div>
     <a href="#type">Type de serveur</a>
     <a href="#langue">Langue et région</a>
+    <a href="#traduction">Traduction automatique</a>
     <a href="#apparence">Apparence des embeds</a>
     <a href="#equipe">Équipe</a>
     <a href="#modules">Modules <span class="toc-meta" data-stat="modules-active"><%= modulesActive %></span></a>
@@ -47,6 +48,24 @@
             <small class="hint">Sert aux dates des événements, des annonces programmées et des graphiques.</small>
           </div>
         </div>
+      </section>
+
+      <section class="card toc-section" id="traduction">
+        <div class="card-head">
+          <div><h2 class="card-title">Traduction automatique en anglais</h2><p class="card-desc">Écrivez en français : le bot ajoute une version anglaise aux annonces, embeds (messages « comment jouer »…), messages de bienvenue et panneaux de tickets. Chaque message peut ensuite l'activer ou la couper avec son interrupteur « Version anglaise ».</p></div>
+          <label class="toggle"><input type="checkbox" name="autoTranslate" <%= at.enabled ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">Activée</span></label>
+        </div>
+        <div class="field">
+          <span class="field-label" id="tr-layout-label">Mise en page de la version anglaise</span>
+          <div class="segmented" role="radiogroup" aria-labelledby="tr-layout-label">
+            <label><input type="radio" name="translateLayout" value="embed" <%= at.layout !== 'content' ? 'checked' : '' %>><span>🇫🇷 / 🇬🇧 Embed anglais séparé</span></label>
+            <label><input type="radio" name="translateLayout" value="content" <%= at.layout === 'content' ? 'checked' : '' %>><span>🇬🇧 Texte à la suite</span></label>
+          </div>
+          <small class="hint">Embed séparé : l'embed français (marqué 🇫🇷) puis l'embed anglais (🇬🇧) dans le même message. Texte à la suite : la traduction est ajoutée sous une ligne « 🇬🇧 ───── », dans le texte ou dans l'embed (embed séparé si la place manque). Les messages texte sans embed reçoivent toujours la traduction à la suite.</small>
+        </div>
+        <div class="callout mt-4"><%- icon('info') %><div><strong>Fournisseur : <%= translateProvider.label %></strong> <span class="text-xs text-3"><%= translateProvider.endpoint %></span>
+          <div class="text-sm text-2 mt-2"><% if (translateProvider.primary === 'mymemory') { %>Service gratuit sans clé, quota limité (≈ 5 000 caractères / jour<%= translateProvider.mymemoryEmail ? ', 50 000 avec MYMEMORY_EMAIL' : '' %>). Pour une meilleure qualité, créez une clé DeepL API Free (500 000 caractères / mois gratuits) et ajoutez-la dans <code>DEEPL_API_KEY</code> (fichier <code>.env</code>), puis redémarrez le bot.<% } else { %>Les traductions sont mises en cache : renvoyer ou modifier un message déjà traduit ne consomme pas de quota.<% } %> Si la traduction échoue, le message part en français seul.</div>
+        </div></div>
       </section>
 
       <section class="card toc-section" id="apparence">

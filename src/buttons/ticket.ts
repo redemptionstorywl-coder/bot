@@ -5,6 +5,7 @@ import { embedService } from '../services/EmbedService';
 import { DELETE_COUNTDOWN_SECONDS, TicketError, canCloseTicket, canManageTicket, canViewTicket, ticketService } from '../services/TicketService';
 import { buildCustomId } from '../utils/customId';
 import { ticketReminderService } from '../services/TicketReminderService';
+import { composeContent } from '../services/autotranslate/bilingual';
 import { sleep } from '../utils/time';
 import { EPHEMERAL, loadTicketContext, replyTicketError, startOpenFlow } from '../commands/tickets/_shared';
 
@@ -19,7 +20,9 @@ const handlers: Record<string, Handler> = {
     const types = await ticketService.getPanelTypes(panel);
     if (!types.length) throw new TicketError('no_types');
     if (types.length === 1) return startOpenFlow(interaction, types[0]!, ctx);
-    await interaction.reply({ content: t('tickets.panel.pick_prompt'), components: [ticketService.buildTypePicker(panel.id, types, t)], ...EPHEMERAL });
+    // Panneau bilingue : libellés « FR / EN » (traductions en cache depuis la publication ; délai court, sinon français seul).
+    const english = await ticketService.panelEnglish(panel, types, ctx.lang, { timeoutMs: 1_500, embed: false });
+    await interaction.reply({ content: composeContent(t('tickets.panel.pick_prompt'), english?.pickPrompt), components: [ticketService.buildTypePicker(panel.id, types, t, english)], ...EPHEMERAL });
   },
 
   async close(interaction, arg, ctx) {

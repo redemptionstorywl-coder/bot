@@ -7,6 +7,7 @@ import { welcomeImageService } from '../../../src/services/WelcomeImageService';
 import { translationService } from '../../../src/services/TranslationService';
 import { renderTemplate } from '../../../src/utils/variables';
 import { BRAND } from '../../../src/config/constants';
+import { SEPARATOR_LINE } from '../../../src/services/autotranslate/bilingual';
 import { embedSpecSchema, type EmbedSpec } from '../../../src/services/EmbedService';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
@@ -50,6 +51,8 @@ const welcomeBody = z.object({
   dmMessage: optionalText(2000),
   dmEmbedJson: embedJson,
   buttonsJson: buttonsJsonSchema,
+  /** « Version anglaise » : traduction automatique du message et de l'embed de bienvenue */
+  english: checkbox,
 });
 
 const leaveBody = z.object({
@@ -113,7 +116,12 @@ export function createWelcomeRouter(client: RedemptionClient): Router {
       const [welcome, leave] = await Promise.all([welcomeService.getConfig(guild.id), welcomeService.getLeaveConfig(guild.id)]);
       const lang = config.defaultLanguage;
       const t = translationService.bind(lang, guild.id);
+      const en = translationService.bind('en', guild.id);
+      const guildEnglish = config.autoTranslate?.enabled ?? false;
+      const english = (await welcomeService.getEnglish(guild.id)) ?? guildEnglish;
       render(res, 'welcome', {
+        english,
+        guildEnglish,
         title: 'Bienvenue et départs',
         page: 'welcome',
         tab: query.tab,
@@ -131,11 +139,13 @@ export function createWelcomeRouter(client: RedemptionClient): Router {
         crumbs: query.tab === 'leave' ? [{ label: 'Départ' }] : [],
         texts: {
           defaultWelcome: t('welcome.default_message', { user: '{user}', server: '{server}' }),
+          defaultWelcomeEn: lang === 'en' ? '' : en('welcome.default_message', { user: '{user}', server: '{server}' }),
+          separator: SEPARATOR_LINE,
           defaultLeave: t('welcome.leave.default_message', { username: '{username}', memberCount: '{memberCount}' }),
           leaveImageTitle: t('welcome.leave.image_title'),
           leaveImageSubtitle: t('welcome.leave.image_subtitle'),
         },
-        scripts: ['welcome'],
+        scripts: ['translate-preview', 'welcome'],
       });
     }),
   );
@@ -165,6 +175,7 @@ export function createWelcomeRouter(client: RedemptionClient): Router {
           dmEmbed: jsonOrNull(body.dmEmbedJson),
           buttons: body.buttonsJson as unknown as Prisma.InputJsonValue,
         });
+        await welcomeService.setEnglish(guild.id, body.english);
         broadcastToGuild(guild.id, 'welcome:update', { guildId: guild.id, kind: 'welcome' });
         flash(req, 'success', 'Configuration de bienvenue enregistrée.');
       },

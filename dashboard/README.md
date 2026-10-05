@@ -40,7 +40,7 @@ dashboard/
     css/app.css        design system complet (un seul fichier, plan + tokens en tête, sections numérotées)
     fonts/             polices auto-hébergées (woff2 latin + latin-ext) + licences OFL
     js/                theme.js (synchrone, <head>), app.js (cœur), palette.js, charts.js, pickers.js, repeater.js,
-                       embed-editor.js, discord-preview.js, live-preview.js, modal-preview.js + scripts de page
+                       embed-editor.js, discord-preview.js, live-preview.js, modal-preview.js, translate-preview.js + scripts de page
                        (tickets, welcome, roles, announcements, settings, fivem, moderation)
 ```
 
@@ -114,6 +114,9 @@ Couleurs : `--series-1/2/3` uniquement (texte toujours en tokens d'encre). Toute
 - Shell : `sidebar`, `topbar`, `site-header`, `user-menu` (thème), `footer`, `toasts`, `modal`, `dirty-bar`, `palette`, `eyebrow` ({ eyebrowText? })
 - `icon` · `tabs` ({ tabs: [{ key, label, href, icon, count }], active }) · `empty` ({ glyph, title, text, actionHref, actionLabel, actionIcon, compact }) · `pagination`
 - `role-select` · `channel-select` · `color-field` · `embed-editor` · `embed-preview` · `repeater` / `repeater-row` · `question-row`
+- `translate-preview` ({ key, toggle?, enabled?, editor?, contentSource?, note? }) : aperçu « Avec la version anglaise » (traduction automatique),
+  alimenté par `public/js/translate-preview.js` → `POST /guilds/:id/translate/preview` (JSON + CSRF, 20 req/min) ; les pages appellent
+  `TranslatePreview.get(key).update({ content, embed, buttons, options }, { transform })` ou utilisent le mode déclaratif `editor`.
 - Graphiques : `chart-mirror` ({ chart, title, sub, emptyText }) · `chart-line` ({ chart, title, sub, emptyText, extraFigure? }) · `chart-hbars` ({ chart, title, sub, emptyText, unit })
 - En-têtes de section : `tickets-header`, `roles-header`, `events-header`
 

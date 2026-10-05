@@ -6,6 +6,7 @@ import { buttonSpecSchema, colorToHex, embedService, embedSpecSchema, type Butto
 import { guildConfigService } from './GuildConfigService';
 import { loggingService } from './LoggingService';
 import { translationService } from './TranslationService';
+import { autoTranslateService } from './AutoTranslateService';
 import type { TemplateContext } from '../utils/variables';
 import { discordTimestamp } from '../utils/time';
 import { childLogger } from '../utils/logger';
@@ -19,6 +20,8 @@ export const announcementMessageRefSchema = z.object({ channelId: z.string(), me
 export type AnnouncementMessageRef = z.infer<typeof announcementMessageRefSchema>;
 
 export interface AnnouncementInput {
+  /** « Version anglaise » : true / false = choix propre à l'annonce, null = suit le réglage du serveur, absent = inchangé */
+  english?: boolean | null;
   title?: string;
   content?: string | null;
   spec: EmbedSpec;
@@ -113,7 +116,10 @@ export function mentionLine(ann: { mentionEveryone: boolean; mentionRoleIds: str
  * Construit le MessageSpec (non rendu : variables `{server}`… intactes) d'une annonce :
  * mentions + contenu au-dessus de l'embed, puis les boutons.
  */
-export function renderAnnouncement(ann: Pick<AnnouncementData, 'spec' | 'content' | 'buttons' | 'mentionEveryone' | 'mentionRoleIds'>, opts: RenderOptions = {}): MessageSpec {
+export function renderAnnouncement(
+  ann: Pick<AnnouncementData, 'spec' | 'content' | 'buttons' | 'mentionEveryone' | 'mentionRoleIds'> & { embeds?: EmbedSpec[] },
+  opts: RenderOptions = {},
+): MessageSpec {
   const parts: string[] = [];
   if (opts.includeMentions ?? true) {
     const m = mentionLine(ann);
@@ -121,7 +127,7 @@ export function renderAnnouncement(ann: Pick<AnnouncementData, 'spec' | 'content
   }
   if (ann.content) parts.push(ann.content);
   const content = parts.join('\n').slice(0, 2000);
-  return { content: content || undefined, embeds: [ann.spec], buttons: ann.buttons.length ? ann.buttons : undefined };
+  return { content: content || undefined, embeds: ann.embeds ?? [ann.spec], buttons: ann.buttons.length ? ann.buttons : undefined };
 }
 
 /** Une programmation est due si elle est PENDING et que sa date est passée. */
@@ -229,6 +235,7 @@ export class AnnouncementService {
         buttons: (json.buttons as Prisma.InputJsonValue | undefined) ?? [],
       },
     });
+    await autoTranslateService.setChoice(guildId, 'announcement', String(row.id), data.english);
     return parseAnnouncement(row);
   }
 
@@ -239,6 +246,7 @@ export class AnnouncementService {
   async update(id: number, data: Partial<AnnouncementInput>, opts: { actorId?: string; sync?: boolean } = {}): Promise<AnnouncementData> {
     const current = await this.require(id);
     const row = await prisma.announcement.update({ where: { id }, data: this.toJson(data) });
+    await autoTranslateService.setChoice(current.guildId, 'announcement', String(id), data.english);
     let ann = parseAnnouncement(row);
     if ((opts.sync ?? true) && current.status === AnnouncementStatus.PUBLISHED && ann.messages.length) {
       ann = await this.syncMessages(ann, opts.actorId);
@@ -253,10 +261,12 @@ export class AnnouncementService {
     const guild = client.guilds.cache.get(ann.guildId) ?? null;
     const lang = config?.defaultLanguage ?? 'fr';
     let edited = 0;
+    // Version anglaise retraduite à chaque édition (le cache rend les textes inchangés gratuits).
+    const spec = await this.localized(ann);
     for (const ref of ann.messages) {
       const message = await this.fetchMessage(ref).catch(() => null);
       if (!message) continue;
-      const built = buildMessageWithBrand(renderAnnouncement(ann), this.templateContext(guild, lang), config?.brandColor);
+      const built = buildMessageWithBrand(spec, this.templateContext(guild, lang), config?.brandColor);
       await message
         .edit({ content: built.content || null, embeds: built.embeds, components: built.components, allowedMentions: this.allowedMentions(ann) })
         .then(() => {
@@ -285,6 +295,7 @@ export class AnnouncementService {
       if (message) await message.delete().then(() => deleted++).catch((err) => log.warn({ err, ref }, 'Suppression message annonce impossible'));
     }
     await prisma.announcement.delete({ where: { id } });
+    await autoTranslateService.setOverride(ann.guildId, 'announcement', String(id), null).catch((err) => log.debug({ err, id }, 'Suppression du choix « Version anglaise » impossible'));
     const t = await this.t(ann.guildId);
     await loggingService.log({
       guildId: ann.guildId,
@@ -316,6 +327,8 @@ export class AnnouncementService {
         messages: [],
       },
     });
+    const english = await autoTranslateService.getOverride(ann.guildId, 'announcement', String(ann.id));
+    if (english !== null) await autoTranslateService.setOverride(ann.guildId, 'announcement', String(row.id), english);
     return parseAnnouncement(row);
   }
 
@@ -406,6 +419,26 @@ export class AnnouncementService {
 
   // ───── Publication ─────
 
+  /** Choix « Version anglaise » de l'annonce (`null` = réglage du serveur). */
+  getEnglish(ann: Pick<AnnouncementData, 'guildId' | 'id'>): Promise<boolean | null> {
+    return autoTranslateService.getOverride(ann.guildId, 'announcement', String(ann.id));
+  }
+
+  /**
+   * MessageSpec de l'annonce avec sa version anglaise (traduction du texte et de l'embed AVANT le remplacement
+   * des variables ; mentions jamais dupliquées). Traduction désactivée ou en échec → version française seule.
+   */
+  async localized(ann: AnnouncementData): Promise<MessageSpec> {
+    const mentions = mentionLine(ann);
+    const localized = await autoTranslateService.localizeMessage(
+      ann.guildId,
+      { content: ann.content, embeds: [ann.spec] },
+      { scope: 'announcement', targetId: String(ann.id), contentMax: 2000 - (mentions ? mentions.length + 1 : 0) },
+    );
+    if (!localized.translated) return renderAnnouncement(ann);
+    return renderAnnouncement({ ...ann, content: localized.content ?? null, embeds: localized.embeds });
+  }
+
   private templateContext(guild: TemplateContext['guild'], language: string): TemplateContext {
     return { guild, language };
   }
@@ -436,7 +469,7 @@ export class AnnouncementService {
 
     const channel = await client.channels.fetch(ann.channelId).catch(() => null);
     if (!channel || !channel.isTextBased() || channel.isDMBased() || !('send' in channel)) throw new AnnouncementError('send_failed', `${ann.channelId}: invalid channel`);
-    const built = buildMessageWithBrand(renderAnnouncement(ann), this.templateContext(guild, config.defaultLanguage), config.brandColor);
+    const built = buildMessageWithBrand(await this.localized(ann), this.templateContext(guild, config.defaultLanguage), config.brandColor);
     let ref: AnnouncementMessageRef;
     try {
       const message = await channel.send({
@@ -474,7 +507,7 @@ export class AnnouncementService {
     const ann = await this.require(id);
     const config = await guildConfigService.get(ann.guildId);
     const guild = this.client?.guilds.cache.get(ann.guildId) ?? null;
-    const spec = renderAnnouncement(ann);
+    const spec = await this.localized(ann);
     const built = buildMessageWithBrand(spec, this.templateContext(guild, config?.defaultLanguage ?? 'fr'), config?.brandColor);
     return {
       content: built.content,

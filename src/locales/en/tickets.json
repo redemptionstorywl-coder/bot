@@ -157,7 +157,8 @@
     "panel_channel_set": "Channel: {channel}",
     "panel_style_set": "Style: {style}",
     "panel_types_set": "{count} reason(s) included.",
-    "panel_types_all": "All enabled reasons will be included."
+    "panel_types_all": "All enabled reasons will be included.",
+    "panel_english": "English version"
   },
   "open": {
     "title": "{emoji} Ticket #{number} — {type}",

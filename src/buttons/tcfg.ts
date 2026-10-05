@@ -6,6 +6,7 @@ import { embedService } from '../services/EmbedService';
 import { TicketError, ticketService } from '../services/TicketService';
 import { guildConfigService } from '../services/GuildConfigService';
 import { ticketReminderService } from '../services/TicketReminderService';
+import { autoTranslateService } from '../services/AutoTranslateService';
 import { replyTicketError } from '../commands/tickets/_shared';
 import {
   buildInfoModal,
@@ -32,7 +33,7 @@ import {
  *  - vue principale : `tcfg:main`, `tcfg:new` (modal), `tcfg:defaults`, `tcfg:panelview`
  *  - vue d'une raison : `tcfg:type:<id>`, `tcfg:info:<id>` / `questions` / `welcome` (modals), `tcfg:toggle:<id>`,
  *    `tcfg:archivenone:<id>`, `tcfg:delete:<id>` → `tcfg:delete-confirm:<id>`
- *  - vue panneau : `tcfg:pstyle:<buttons|select>`, `tcfg:publish`
+ *  - vue panneau : `tcfg:pstyle:<buttons|select>`, `tcfg:pen` (version anglaise), `tcfg:publish`
  *  - vue options : `tcfg:options`, `tcfg:translog-off` (retire le salon des transcripts), `tcfg:module` (active / désactive le module),
  *    `tcfg:rtoggle` (relances automatiques on/off), `tcfg:rhours` (modal délai des relances)
  */
@@ -138,6 +139,12 @@ async function handle(interaction: ButtonInteraction<'cached'>, action: string, 
       setDraft(guildId, userId, { style });
       return show(interaction, await panelView(ok(t('tickets.config.panel_style_set', { style: style === PanelStyle.SELECT ? t('tickets.config.style_select') : t('tickets.config.style_buttons') }))));
     }
+    case 'pen': {
+      const current = getDraft(guildId, userId);
+      const english = !(current.english ?? (await autoTranslateService.getSettings(guildId)).enabled);
+      setDraft(guildId, userId, { english });
+      return show(interaction, await panelView(ok(english ? t('embeds.builder.english_on') : t('embeds.builder.english_off'))));
+    }
     case 'publish': {
       const draft = getDraft(guildId, userId);
       if (!draft.channelId) return show(interaction, await panelView(ko(t('tickets.config.panel_no_channel_error'))));
@@ -147,7 +154,7 @@ async function handle(interaction: ButtonInteraction<'cached'>, action: string, 
       if (!types.length) throw new TicketError('no_types');
       const typeIds = draft.typeIds.filter((id) => types.some((ty) => ty.id === id));
       await interaction.deferUpdate();
-      const panel = await ticketService.createPanel({ guild, channel, style: draft.style, typeIds, lang: config!.defaultLanguage, brandColor: config!.brandColor });
+      const panel = await ticketService.createPanel({ guild, channel, style: draft.style, typeIds, lang: config!.defaultLanguage, brandColor: config!.brandColor, english: draft.english ?? null });
       clearDraft(guildId, userId);
       return show(interaction, await renderPanelView({ guild, t, draft: getDraft(guildId, userId), notice: ok(t('tickets.config.panel_published', { channel: `<#${channel.id}>`, id: panel.id, count: typeIds.length || types.length })) }));
     }

@@ -97,7 +97,15 @@
     "modal_footer_icon": "Icon URL (https://…)",
     "footer_set": "Footer updated.",
     "footer_cleared": "Footer reset (default).",
-    "invalid_url": "Invalid URL: {details}"
+    "invalid_url": "Invalid URL: {details}",
+    "field_translate": "Automatic English translation",
+    "translate_layout_embed": "Separate English embed",
+    "translate_layout_content": "Text after “🇬🇧”",
+    "translate_provider": "Provider: {provider}",
+    "btn_translate": "EN translation",
+    "btn_translate_layout": "Layout: {layout}",
+    "translate_set": "Automatic English translation: {state}. Announcements, embeds, welcome and ticket panels will get an English version (can be changed per message).",
+    "translate_layout_set": "English version layout: {layout}."
   },
   "logs": {
     "title": "📜 Logs — {server}",

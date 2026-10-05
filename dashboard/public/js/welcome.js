@@ -1,4 +1,5 @@
-/* Bienvenue / départ : aperçu Discord live (message, image, embed, boutons, DM) + aperçu réel de l'image générée. */
+/* Bienvenue / départ : aperçu Discord live (message, image, embed, boutons, DM), version anglaise (translate-preview.js)
+ * + aperçu réel de l'image générée. */
 (function () {
   'use strict';
   var UI = window.UI, D = window.DiscordPreview;
@@ -51,6 +52,7 @@
     }
     var buttons = kind === 'welcome' && editor && editor.embedEditor ? editor.embedEditor.readButtons() : [];
     if (host) { host.innerHTML = D.render({ content: content, embed: spec, attachments: attachments, buttons: buttons }, UI.previewContext()); UI.paint(host); }
+    renderEnglish(mode, v, imageOn, mock, buttons);
     var sel = form.elements.namedItem('channelId');
     var opt = sel && sel.selectedOptions && sel.selectedOptions[0];
     $$('[data-preview-channel]').forEach(function (el) { el.textContent = opt && opt.value ? (opt.getAttribute('data-name') || opt.textContent) : 'salon'; });
@@ -63,6 +65,32 @@
         UI.paint(dmHost);
       }
     }
+  }
+
+  /** Version anglaise (bienvenue) : le MODÈLE est traduit côté serveur, puis les variables sont remplacées ici, comme le bot. */
+  function renderEnglish(mode, v, imageOn, mock, buttons) {
+    var english = kind === 'welcome' && window.TranslatePreview ? window.TranslatePreview.get('welcome') : null;
+    if (!english) return;
+    var raw = null;
+    if (mode === 'form' && editor && editor.embedEditor) raw = editor.embedEditor.read();
+    else if (mode === 'json') raw = parseJson('embedJson');
+    if (raw && !D.hasEmbedContent(raw)) raw = null;
+    var message = val('message');
+    var useDefault = !message && !raw;
+    english.update({ content: useDefault ? '' : message, embed: raw, buttons: buttons }, {
+      transform: function (m) {
+        m.content = useDefault
+          ? D.applyVars(texts.defaultWelcomeEn ? texts.defaultWelcome + '\n\n' + texts.separator + '\n' + texts.defaultWelcomeEn : texts.defaultWelcome, v)
+          : D.applyVars(m.content || '', v);
+        m.embeds = (m.embeds || []).map(function (e) { return D.applyVarsDeep(e, v); });
+        if (imageOn) {
+          var first = m.embeds[0];
+          if (first && !first.image) { if (generated) first.image = generated; else first.imageMock = mock; }
+          else if (!first) m.attachments = [generated ? { url: generated, name: 'welcome.png' } : { mock: mock }];
+        }
+        return m;
+      },
+    });
   }
 
   // Aperçu réel de l'image (PNG généré côté serveur, renvoyé en data URL)

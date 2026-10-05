@@ -4,7 +4,7 @@ import { ROOT, rel, runStandalone, walkFiles, type CheckResult } from './_lib';
 
 /**
  * Références mortes : commandes slash supprimées (remplacées par `/config module:<x>` ou une commande d'action),
- * variables d'environnement retirées (traduction automatique), dans le code, les locales, la doc et la ressource FiveM.
+ * variables d'environnement retirées (REMOVED_ENV), dans le code, les locales, la doc et la ressource FiveM.
  */
 
 /** Commandes supprimées → remplacement à indiquer. */
@@ -34,8 +34,8 @@ export const REMOVED_COMMANDS: Record<string, string> = {
 export const REMOVED_SUBCOMMANDS: Record<string, string> = {
   'clear serveur': 'retirée (trop destructrice) — /clear salon pour un salon',
 };
-/** Variables d'environnement du système de traduction automatique retiré. */
-export const REMOVED_ENV = ['DEEPL_API_KEY', 'MYMEMORY_EMAIL'];
+/** Variables d'environnement retirées (DEEPL_API_KEY / MYMEMORY_EMAIL sont de nouveau utilisées par la traduction automatique FR → EN). */
+export const REMOVED_ENV: string[] = [];
 
 /** Mentions légitimes de `/fivem` : namespace Socket.IO (pas une commande). */
 const ALLOWED_CONTEXT: Record<string, RegExp> = { fivem: /Socket\.IO|io\.of\(|io\(|namespace/i };
@@ -54,7 +54,7 @@ export async function run(): Promise<CheckResult> {
   ];
   const names = Object.keys(REMOVED_COMMANDS).sort((a, b) => b.length - a.length);
   const slash = new RegExp(`(?<![\\w./:<>@#~%-])/(${names.map((n) => n.replace(/-/g, '\\-')).join('|')})(?![\\w-])`, 'g');
-  const env = new RegExp(`\\b(${REMOVED_ENV.join('|')})\\b`, 'g');
+  const env = REMOVED_ENV.length ? new RegExp(`\\b(${REMOVED_ENV.join('|')})\\b`, 'g') : null;
   const subs = Object.entries(REMOVED_SUBCOMMANDS).map(([full, hint]) => {
     const [cmd = '', sub = ''] = full.split(' ');
     return { full, hint, cmd, sub, re: new RegExp(`(?<![\\w./:<>@#~%-])/${cmd} (?:[\\w-]+\\|)*${sub}(?![\\w-])`) };
@@ -69,7 +69,7 @@ export async function run(): Promise<CheckResult> {
         if (ALLOWED_CONTEXT[name]?.test(line)) continue;
         problems.push(`commande supprimée /${name} (→ ${REMOVED_COMMANDS[name]}) — ${rel(file)}:${i + 1}`);
       }
-      for (const m of line.matchAll(env)) problems.push(`variable retirée ${m[1]} — ${rel(file)}:${i + 1}`);
+      if (env) for (const m of line.matchAll(env)) problems.push(`variable retirée ${m[1]} — ${rel(file)}:${i + 1}`);
       for (const s of subs) if (s.re.test(line)) problems.push(`sous-commande supprimée /${s.full} (${s.hint}) — ${rel(file)}:${i + 1}`);
     });
   }

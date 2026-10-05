@@ -64,6 +64,7 @@ export default defineCommand({
 - Tâches périodiques : `scheduler.register({ name: 'giveaways:end', intervalMs: 15_000, run })` (`src/services/SchedulerService.ts`). **Jamais de `setInterval` ad hoc** dans les services.
 - Logs Discord + base : `loggingService.log({ guildId, category: 'TICKET', action: 'ticket.open', title, description, fields, actorId, targetId })`.
 - Embeds dynamiques configurables : `EmbedSpec` (Zod, `src/services/EmbedService.ts`) stocké en JSON, rendu via `embedService.build(spec, { member, guild, language, extra })` avec les variables `{user}`, `{server}`, `{memberCount}`… (`src/utils/variables.ts`).
+- Traduction automatique FR → EN des messages publiés : `autoTranslateService.localizeMessage(guildId, { content, embeds }, { scope, targetId })` (src/services/AutoTranslateService.ts) sur le **modèle non rendu** (avant `renderTemplate`) ; réglage serveur dans `config.autoTranslate`, choix par message via `setChoice(guildId, scope, targetId, bool)` (scopes `announcement`, `welcome`, `ticket_panel`). Fonctions pures : `src/services/autotranslate/` (`text.ts` protection/restauration, `bilingual.ts` composition + limites Discord, `providers.ts` DeepL / Google / MyMemory). Ne lance jamais : échec → message français seul.
 - Durées : `parseDuration('1h30m')` / `formatDuration(sec, lang)` / `discordTimestamp(date, 'R')` (`src/utils/time.ts`).
 
 ### Base de données

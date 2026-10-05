@@ -18,6 +18,10 @@ const envSchema = z.object({
   SESSION_SECRET: z.string().min(16, 'SESSION_SECRET doit faire au moins 16 caractères').default('change-me-with-a-long-random-string'),
   FIVEM_API_KEY: z.string().min(8).default('change-me-fivem-api-key'),
   TEBEX_WEBHOOK_SECRET: z.string().optional().default(''),
+  /** Traduction automatique FR → EN : DeepL (prioritaire, clé « …:fx » = API Free), Google Cloud, sinon MyMemory gratuit. */
+  DEEPL_API_KEY: z.string().trim().optional().default(''),
+  GOOGLE_TRANSLATE_API_KEY: z.string().trim().optional().default(''),
+  MYMEMORY_EMAIL: z.union([z.literal(''), z.string().trim().email('MYMEMORY_EMAIL doit être une adresse e-mail')]).optional().default(''),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']).default('info'),
   TZ: z.string().default('Europe/Paris'),

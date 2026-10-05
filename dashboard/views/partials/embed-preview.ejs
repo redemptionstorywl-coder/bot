@@ -1,10 +1,11 @@
 <%#
   Aperçu d'un message Discord (rendu serveur — même moteur que le JS : public/js/discord-preview.js).
-  Attend : embed (EmbedSpec | null), buttons (ButtonSpec[]), content (string), compact (bool),
+  Attend : embed (EmbedSpec | null) ou embeds (EmbedSpec[] : message bilingue…), buttons (ButtonSpec[]), content (string), compact (bool),
            components ([{ type: 'select', placeholder, options, open } | { type: 'buttons', buttons }]), ephemeral (bool).
 %><%- discordPreview.render({
   content: typeof content === 'string' ? content : '',
   embed: typeof embed !== 'undefined' && embed ? embed : null,
+  embeds: typeof embeds !== 'undefined' && Array.isArray(embeds) ? embeds : undefined,
   buttons: typeof buttons !== 'undefined' && Array.isArray(buttons) ? buttons : [],
   components: typeof components !== 'undefined' && Array.isArray(components) ? components : [],
   compact: typeof compact !== 'undefined' && compact,

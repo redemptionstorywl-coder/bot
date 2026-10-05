@@ -25,6 +25,7 @@ import type { Translator } from '../../services/TranslationService';
 import { guildConfigService, type ResolvedGuildConfig } from '../../services/GuildConfigService';
 import { REMINDER_PING_MODES, ticketReminderService, type ReminderPingMode } from '../../services/TicketReminderService';
 import { liveChannel, liveRoles } from '../../utils/liveIds';
+import { autoTranslateService } from '../../services/AutoTranslateService';
 
 /**
  * Panneau interactif `/config tickets` (éphémère, re-rendu depuis la base après chaque action).
@@ -65,6 +66,8 @@ export interface PanelDraft {
   channelId?: string;
   style: PanelStyle;
   typeIds: number[];
+  /** « Version anglaise » du panneau (absent = réglage du serveur) */
+  english?: boolean;
 }
 
 const drafts = new TTLCache<PanelDraft>(15 * 60_000, 1000);
@@ -360,8 +363,9 @@ export function renderDeleteConfirm(opts: { type: TicketType; t: Translator }): 
 
 export async function renderPanelView(opts: { guild: Guild; t: Translator; draft: PanelDraft; notice?: PanelNotice }): Promise<PanelPayload> {
   const { guild, t, draft, notice } = opts;
-  const [types, panels] = await Promise.all([ticketService.listTypes(guild.id, { enabledOnly: true }), ticketService.listPanels(guild.id)]);
+  const [types, panels, translate] = await Promise.all([ticketService.listTypes(guild.id, { enabledOnly: true }), ticketService.listPanels(guild.id), autoTranslateService.getSettings(guild.id)]);
   const selected = draft.typeIds.filter((id) => types.some((ty) => ty.id === id));
+  const english = draft.english ?? translate.enabled;
   const styleLabel = (s: PanelStyle) => (s === PanelStyle.SELECT ? t('tickets.config.style_select') : t('tickets.config.style_buttons'));
 
   const embed = embedService.brand(t('tickets.config.panel_title', { server: guild.name }));
@@ -370,6 +374,7 @@ export async function renderPanelView(opts: { guild: Guild; t: Translator; draft
     { name: t('core.channel'), value: draft.channelId ? `<#${draft.channelId}>` : t('tickets.config.panel_no_channel'), inline: true },
     { name: t('tickets.config.panel_style'), value: styleLabel(draft.style), inline: true },
     { name: t('tickets.config.panel_types'), value: selected.length ? selected.map((id) => types.find((ty) => ty.id === id)!.label).join(', ') : t('tickets.config.panel_all_types', { count: types.length }), inline: true },
+    { name: `🇬🇧 ${t('tickets.config.panel_english')}`, value: `${english ? t('core.enabled') : t('core.disabled')}${draft.english === undefined ? ` _(${t('embeds.builder.english_default')})_` : ''}`, inline: true },
     {
       name: t('tickets.config.panel_existing'),
       value: panels.length
@@ -395,6 +400,7 @@ export async function renderPanelView(opts: { guild: Guild; t: Translator; draft
     row(
       btn(cid('pstyle', 'buttons'), t('tickets.config.style_buttons'), draft.style === PanelStyle.BUTTONS ? ButtonStyle.Primary : ButtonStyle.Secondary, '🎫'),
       btn(cid('pstyle', 'select'), t('tickets.config.style_select'), draft.style === PanelStyle.SELECT ? ButtonStyle.Primary : ButtonStyle.Secondary, '📋'),
+      btn(cid('pen'), t('embeds.builder.btn_english'), english ? ButtonStyle.Success : ButtonStyle.Secondary, '🇬🇧'),
       btn(cid('publish'), t('tickets.config.btn_publish'), ButtonStyle.Success, '🚀', !draft.channelId || !types.length),
       btn(cid('main'), t('core.back'), ButtonStyle.Secondary, '↩️'),
     ),

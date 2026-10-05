@@ -148,14 +148,15 @@
       var style = fieldValue(panelForm, 'style') || 'BUTTONS';
       var reasons = selectedReasons();
       var color = fieldValue(panelForm, 'embed[color]');
-      var spec = D.applyVarsDeep({
+      var raw = {
         title: fieldValue(panelForm, 'embed[title]') || undefined,
         description: fieldValue(panelForm, 'embed[description]') || undefined,
         color: /^#?[0-9a-fA-F]{6}$/.test(color) ? color : undefined,
         image: fieldValue(panelForm, 'embed[image]') || undefined,
         footer: fieldValue(panelForm, 'embed[footerText]') ? { text: fieldValue(panelForm, 'embed[footerText]') } : undefined,
-      }, { server: g.name || '' });
-      if (!D.hasEmbedContent(spec)) spec = D.applyVarsDeep(data.defaultEmbed || {}, { server: g.name || '' });
+      };
+      if (!D.hasEmbedContent(raw)) raw = data.defaultEmbed || {};
+      var spec = D.applyVarsDeep(raw, { server: g.name || '' });
       var p = texts.panel || {};
       var comps = style === 'SELECT'
         ? [{ type: 'select', placeholder: p.placeholder, open: true, options: options(reasons) }]
@@ -170,6 +171,24 @@
       var sel = panelForm.elements.namedItem('channelId');
       var opt = sel && sel.selectedOptions && sel.selectedOptions[0];
       if (chanLabel) chanLabel.textContent = opt && opt.value ? (opt.getAttribute('data-name') || opt.textContent.replace(/^#\s*/, '')) : 'salon';
+      renderEnglish(style, raw, reasons);
+    }
+    /** Version anglaise du panneau : embed traduit + raisons « FR / EN » calculés côté serveur (mêmes règles que le bot). */
+    function renderEnglish(style, raw, reasons) {
+      var english = window.TranslatePreview ? window.TranslatePreview.get('panel') : null;
+      if (!english) return;
+      var list = reasons.slice(0, 25);
+      english.update({ embed: raw, options: list.map(function (r) { return { label: r.label, description: r.description || null }; }) }, {
+        transform: function (m, res) {
+          m.embeds = (m.embeds || []).map(function (e) { return D.applyVarsDeep(e, { server: g.name || '' }); });
+          var p = res.panel || texts.panel || {};
+          var opts = (res.options || []).map(function (o, i) { return { label: o.label, description: o.description || undefined, emoji: list[i] && list[i].emoji ? list[i].emoji : undefined }; });
+          m.components = style === 'SELECT'
+            ? [{ type: 'select', placeholder: p.placeholder, open: true, options: opts.length ? opts : options(list) }]
+            : [{ type: 'buttons', buttons: [{ label: p.open, emoji: '🎫', style: 'primary' }] }];
+          return m;
+        },
+      });
     }
     ['input', 'change', 'picker:change'].forEach(function (ev) { panelForm.addEventListener(ev, render); });
     render();

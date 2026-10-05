@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { prisma } from '../database/client';
 import { buttonSpecSchema, embedService, embedSpecSchema, messageSpecSchema, type ButtonSpec, type EmbedSpec, type MessageSpec } from './EmbedService';
 import type { TemplateContext } from '../utils/variables';
+import { autoTranslateService } from './AutoTranslateService';
 import { childLogger } from '../utils/logger';
 
 const log = childLogger('EmbedTemplateService');
@@ -30,6 +31,8 @@ export interface EmbedTemplateInput {
 /** Contexte d'envoi : variables de template + client Discord (optionnel si attach() a été appelé). */
 export interface SendContext extends TemplateContext {
   client?: Client;
+  /** Ajouter la version anglaise (traduction automatique, choix « Version anglaise » déjà résolu) */
+  translate?: boolean;
 }
 
 export interface MessageReference {
@@ -216,12 +219,22 @@ export class EmbedTemplateService {
     return message;
   }
 
-  /** Envoie un MessageSpec dans un salon (variables rendues avec `ctx`). */
+  /**
+   * Version bilingue d'un MessageSpec (traduite AVANT le remplacement des variables).
+   * Sans `translate` ou en cas d'échec de la traduction : spec inchangée (français seul).
+   */
+  async localize(guildId: string, spec: MessageSpec, translate: boolean | undefined): Promise<MessageSpec> {
+    if (!translate) return spec;
+    const loc = await autoTranslateService.localizeMessage(guildId, { content: spec.content, embeds: spec.embeds }, { enabled: true });
+    return loc.translated ? { ...spec, content: loc.content, embeds: loc.embeds } : spec;
+  }
+
+  /** Envoie un MessageSpec dans un salon (variables rendues avec `ctx`, version anglaise si `ctx.translate`). */
   async sendSpec(guildId: string, channelId: string, spec: MessageSpec, ctx: SendContext = {}): Promise<Message> {
     const client = this.resolveClient(ctx);
     const channel = await this.fetchChannel(channelId, ctx);
     const guild = ctx.guild ?? client.guilds.cache.get(guildId) ?? null;
-    const built = embedService.buildMessage(spec, { ...ctx, guild });
+    const built = embedService.buildMessage(await this.localize(guildId, spec, ctx.translate), { ...ctx, guild });
     const payload: MessageCreateOptions = {
       content: built.content || undefined,
       embeds: built.embeds.length ? built.embeds : undefined,
@@ -236,7 +249,8 @@ export class EmbedTemplateService {
   /** Met à jour un message existant du bot avec un MessageSpec. */
   async editMessage(channelId: string, messageId: string, spec: MessageSpec, ctx: SendContext = {}): Promise<Message> {
     const message = await this.fetchBotMessage(channelId, messageId, ctx);
-    const built = embedService.buildMessage(spec, { ...ctx, guild: ctx.guild ?? message.guild ?? null });
+    const localized = message.guildId ? await this.localize(message.guildId, spec, ctx.translate) : spec;
+    const built = embedService.buildMessage(localized, { ...ctx, guild: ctx.guild ?? message.guild ?? null });
     const payload: MessageEditOptions = {
       content: built.content || null,
       embeds: built.embeds,

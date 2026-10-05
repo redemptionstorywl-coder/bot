@@ -138,6 +138,7 @@ import { honeypotService } from '../../src/services/HoneypotService';
 import { eventService } from '../../src/services/EventService';
 import { pollService } from '../../src/services/PollService';
 import { welcomeService } from '../../src/services/WelcomeService';
+import { autoTranslateService } from '../../src/services/AutoTranslateService';
 import { parseLocalDateTime, toLocalInputValue } from '../../dashboard/lib/dates';
 import { NAVIGATION } from '../../dashboard/lib/navigation';
 
@@ -890,5 +891,54 @@ describe('Événements & sondages', () => {
     const end = await post(`/guilds/${GUILD_ID}/events/polls/3/end`, {});
     expect(end.status).toBe(302);
     expect(pollService.end).toHaveBeenCalledWith(3, USER_ID);
+  });
+});
+
+describe('Traduction automatique (dashboard)', () => {
+  const fakeProvider = { name: 'fake', translate: vi.fn(async (texts: string[]) => texts.map((t) => ({ text: `EN:${t}` }))) };
+  beforeEach(() => {
+    autoTranslateService.setProviders([fakeProvider]);
+    autoTranslateService.clearMemory();
+    prisma.translationCache.findMany.mockResolvedValue([]);
+    prisma.translationCache.createMany.mockResolvedValue({ count: 0 });
+  });
+
+  it('les formulaires affichent l’interrupteur « Version anglaise » et l’aperçu anglais', async () => {
+    for (const p of ['/announcements/new', '/announcements/4', '/embeds/5', '/welcome', '/tickets/panels']) {
+      const r = await get(`/guilds/${GUILD_ID}${p}`);
+      expect(r.status, p).toBe(200);
+      expect(r.text, p).toContain('data-translate-panel');
+      expect(r.text, p).toContain('/js/translate-preview.js');
+    }
+    const settings = await get(`/guilds/${GUILD_ID}/settings`);
+    expect(settings.text).toContain('Traduction automatique en anglais');
+    expect(settings.text).toContain('name="translateLayout"');
+  });
+
+  it('POST /translate/preview : version bilingue (CSRF obligatoire), embed invalide ignoré', async () => {
+    const r = await post(`/guilds/${GUILD_ID}/translate/preview`, { content: 'Bonjour à tous', embed: { title: 'Règles du serveur', description: 'Lis-les avant de jouer.' } } as never, { json: true });
+    expect(r.status).toBe(200);
+    const body = JSON.parse(r.text) as { ok: boolean; translated: boolean; message: { content: string; embeds: { title?: string }[] } };
+    expect(body.ok).toBe(true);
+    expect(body.translated).toBe(true);
+    expect(body.message.content).toContain('EN:Bonjour à tous');
+    expect(body.message.embeds).toHaveLength(2);
+    expect(body.message.embeds[1]!.title).toBe('EN:Règles du serveur');
+    const opts = await post(`/guilds/${GUILD_ID}/translate/preview`, { content: '', embed: { image: 'pas une url' }, options: [{ label: 'Signalement', description: 'Signaler un joueur' }] } as never, { json: true });
+    expect(opts.status).toBe(200);
+    const parsed = JSON.parse(opts.text) as { options: { label: string }[]; panel: { open: string } };
+    expect(parsed.options[0]!.label).toBe('Signalement / EN:Signalement');
+    expect(parsed.panel.open).toContain(' / ');
+    const noCsrf = await request(base, 'POST', `/guilds/${GUILD_ID}/translate/preview`, { cookie: signedCookie(env().SESSION_SECRET), 'content-type': 'application/json', accept: 'application/json' }, JSON.stringify({ content: 'x' }));
+    expect(noCsrf.status).toBe(403);
+  });
+
+  it('paramètres : enregistre le réglage ; annonce : le choix « Version anglaise » est mémorisé', async () => {
+    const s = await post(`/guilds/${GUILD_ID}/settings`, { kind: 'GENERIC', defaultLanguage: 'fr', brandColor: '#7C3AED', timezone: 'Europe/Paris', autoTranslate: 'on', translateLayout: 'content' });
+    expect(s.status).toBe(302);
+    expect(prisma.autoTranslateSettings.upsert).toHaveBeenCalledWith(expect.objectContaining({ update: { enabled: true, layout: 'content' } }));
+    const a = await post(`/guilds/${GUILD_ID}/announcements/4`, { title: 'Nouvelle saison', content: 'Hello', channelId: TEXT_CHANNEL_ID, 'embed[title]': 'Saison 2', 'embed[fieldsJson]': '[]', buttonsJson: '[]', english: 'on' });
+    expect(a.status).toBe(302);
+    expect(prisma.autoTranslateOverride.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: expect.objectContaining({ scope: 'announcement', targetId: '4', enabled: true }) }));
   });
 });

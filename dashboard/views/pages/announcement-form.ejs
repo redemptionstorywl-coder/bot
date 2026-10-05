@@ -49,6 +49,10 @@
         <textarea id="a-content" name="content" class="textarea" rows="3" maxlength="2000" placeholder="Texte libre, Markdown Discord et variables acceptés"><%= a && a.content ? a.content : '' %></textarea>
         <div class="var-chips mt-2" data-insert-target="#a-content"><% for (const v of chips) { %><button type="button" class="var-chip" data-insert="<%= v %>"><%= v %></button><% } %></div>
       </div>
+      <div class="field mt-4">
+        <label class="toggle"><input type="checkbox" id="a-english" name="english" <%= english ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">🇬🇧 Version anglaise automatique</span></label>
+        <small class="hint">Traduit le texte et l'embed en anglais à la publication, à la programmation et à chaque modification. Réglage du serveur : <%= guildEnglish ? 'activée' : 'désactivée' %> (<a class="link" href="/guilds/<%= guild.id %>/settings#traduction">Paramètres</a>).</small>
+      </div>
     </section>
 
     <section class="card">
@@ -75,6 +79,7 @@
       <div class="preview-panel-body" data-announcement-preview><%- include('../partials/embed-preview', { embed: spec, buttons, content: initialContent }) %></div>
       <div class="preview-panel-note">Les variables sont remplacées à l'envoi. « Aperçu final » montre le rendu exact de la version enregistrée.</div>
     </div>
+    <%- include('../partials/translate-preview', { key: 'announcement', toggle: '#a-english' }) %>
 
     <section class="card">
       <h2 class="card-title"><%- icon('send') %>Publication</h2>

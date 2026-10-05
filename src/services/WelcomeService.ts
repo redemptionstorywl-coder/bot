@@ -10,6 +10,8 @@ import { guildConfigService } from './GuildConfigService';
 import { loggingService } from './LoggingService';
 import { translationService, type Translator } from './TranslationService';
 import { welcomeImageService } from './WelcomeImageService';
+import { autoTranslateService } from './AutoTranslateService';
+import { composeContent, truncate, DISCORD_LIMITS } from './autotranslate/bilingual';
 
 const log = childLogger('WelcomeService');
 
@@ -48,6 +50,17 @@ export interface RenderedMessage {
   components: ActionRowBuilder<ButtonBuilder>[];
 }
 
+/**
+ * Version bilingue du message de bienvenue, calculée sur le TEMPLATE (variables `{user}`… intactes) :
+ * texte composé « FR + 🇬🇧 EN », embeds composés (FR puis EN, ou fusionnés selon la mise en page).
+ */
+export interface WelcomeTranslation {
+  content?: string;
+  embeds: EmbedSpec[];
+  /** Ajouter la version anglaise du message par défaut (ni message ni embed configurés) */
+  defaultEnglish: boolean;
+}
+
 export interface RenderOptions {
   /** Langue de rendu (langue du serveur) */
   language: string;
@@ -61,6 +74,8 @@ export interface RenderOptions {
   brandColor?: number;
   /** Inclure les boutons (false pour l'aperçu éphémère) */
   withButtons?: boolean;
+  /** Version anglaise (traduction automatique) ; absente = français seul */
+  translation?: WelcomeTranslation | null;
 }
 
 type AnyMember = GuildMember | PartialGuildMember;
@@ -96,15 +111,26 @@ export function renderWelcome(member: AnyMember, config: WelcomeConfig, opts: Re
   const files: AttachmentBuilder[] = [];
   const embeds: EmbedBuilder[] = [];
 
+  const translation = opts.translation ?? null;
   if (opts.image) files.push(new AttachmentBuilder(opts.image, { name: WELCOME_IMAGE_FILENAME }));
   if (embedSpec) {
-    const embed = embedService.build({ color: colorToHex(opts.brandColor ?? BRAND.colors.primary), ...embedSpec }, ctx);
-    if (opts.image && !embedSpec.image) embed.setImage(`attachment://${WELCOME_IMAGE_FILENAME}`);
-    embeds.push(embed);
+    // Embed français (index 0, porte l'image générée) puis, le cas échéant, l'embed anglais.
+    const specs = translation?.embeds.length ? translation.embeds : [{ color: colorToHex(opts.brandColor ?? BRAND.colors.primary), ...embedSpec }];
+    specs.forEach((spec, i) => {
+      const embed = embedService.build(spec, ctx);
+      if (i === 0 && opts.image && !embedSpec.image) embed.setImage(`attachment://${WELCOME_IMAGE_FILENAME}`);
+      embeds.push(embed);
+    });
   }
 
-  let content = message ? renderTemplate(message, ctx) : undefined;
-  if (!content && !embedSpec) content = t('welcome.default_message', { user: `<@${member.id}>`, server: member.guild.name });
+  const template = translation?.content ?? message;
+  let content = template ? renderTemplate(template, ctx) : undefined;
+  if (content && translation) content = truncate(content, DISCORD_LIMITS.content);
+  if (!content && !embedSpec) {
+    const vars = { user: `<@${member.id}>`, server: member.guild.name };
+    content = t('welcome.default_message', vars);
+    if (translation?.defaultEnglish) content = composeContent(content, translationService.bind('en', member.guild.id)('welcome.default_message', vars));
+  }
 
   const components: ActionRowBuilder<ButtonBuilder>[] = [];
   if (opts.withButtons !== false) {
@@ -203,7 +229,32 @@ export class WelcomeService {
               accentColor: langs.brandColor,
             })
           : null;
-    return renderWelcome(member, config, { ...opts, language, fallbackLanguage: opts.fallbackLanguage ?? langs.fallback, image, brandColor: langs.brandColor, t: opts.t ?? translationService.bind(language, member.guild.id) });
+    const fallbackLanguage = opts.fallbackLanguage ?? langs.fallback;
+    const translation = opts.translation !== undefined ? opts.translation : await this.welcomeTranslation(member.guild.id, config, language, fallbackLanguage, langs.brandColor);
+    return renderWelcome(member, config, { ...opts, language, fallbackLanguage, image, brandColor: langs.brandColor, t: opts.t ?? translationService.bind(language, member.guild.id), translation });
+  }
+
+  /**
+   * Version anglaise du message de bienvenue (choix « Version anglaise » de la bienvenue, sinon réglage du serveur).
+   * Le TEMPLATE est traduit (variables, mentions, emojis, URLs et Markdown protégés) : le cache sert toutes les arrivées.
+   */
+  async welcomeTranslation(guildId: string, config: WelcomeConfig, language: string, fallback: string, brandColor: number): Promise<WelcomeTranslation | null> {
+    const resolved = await autoTranslateService.resolve(guildId, { scope: 'welcome', targetId: 'welcome' });
+    if (!resolved.enabled) return null;
+    const message = resolveLocalized<string>(config.message as Localized<string> | null, language, fallback);
+    const embedSpec = safeEmbed(resolveLocalized<unknown>(config.embed as Localized<unknown> | null, language, fallback));
+    const loc = await autoTranslateService.localizeMessage(guildId, { content: message, embeds: embedSpec ? [{ color: colorToHex(brandColor), ...embedSpec }] : [] }, { enabled: true, layout: resolved.layout });
+    return { content: loc.content, embeds: loc.translated ? loc.embeds : [], defaultEnglish: !message && !embedSpec && language !== 'en' };
+  }
+
+  /** Choix « Version anglaise » de la bienvenue (`null` = réglage du serveur). */
+  getEnglish(guildId: string): Promise<boolean | null> {
+    return autoTranslateService.getOverride(guildId, 'welcome', 'welcome');
+  }
+
+  /** Enregistre le choix « Version anglaise » (identique au réglage du serveur → la bienvenue suit le serveur). */
+  setEnglish(guildId: string, enabled: boolean | null): Promise<void> {
+    return autoTranslateService.setChoice(guildId, 'welcome', 'welcome', enabled);
   }
 
   /** Construit le message de départ complet. */
@@ -256,9 +307,10 @@ export class WelcomeService {
     const message = resolveLocalized<string>(config.dmMessage as Localized<string> | null, language, fallback);
     const embedSpec = safeEmbed(resolveLocalized<unknown>(config.dmEmbed as Localized<unknown> | null, language, fallback));
     if (!message && !embedSpec) return false;
-    const embeds = embedSpec ? [embedService.build(embedSpec, ctx)] : [];
+    const loc = await autoTranslateService.localizeMessage(member.guild.id, { content: message, embeds: embedSpec ? [embedSpec] : [] }, { scope: 'welcome', targetId: 'welcome' });
+    const embeds = loc.embeds.map((spec) => embedService.build(spec, ctx));
     try {
-      await member.send({ content: message ? renderTemplate(message, ctx) : undefined, embeds });
+      await member.send({ content: loc.content ? truncate(renderTemplate(loc.content, ctx), DISCORD_LIMITS.content) : undefined, embeds });
       return true;
     } catch (err) {
       log.debug({ err, user: member.id }, 'DM de bienvenue impossible (DM fermés ?)');

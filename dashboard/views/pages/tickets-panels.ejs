@@ -42,6 +42,7 @@
           <div class="field"><label for="p-image">Image <span class="field-optional">URL</span></label><input id="p-image" name="embed[image]" type="url" class="input" maxlength="2048" placeholder="https://…" data-panel-key="image"></div>
         </div>
         <div class="field"><label for="p-footer">Pied de page</label><input id="p-footer" name="embed[footerText]" class="input" maxlength="2048" value="<%= d.footer ? d.footer.text : '' %>" data-panel-key="footerText"></div>
+        <div class="field"><label class="toggle"><input type="checkbox" id="p-english" name="english" <%= guildEnglish ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">🇬🇧 Version anglaise automatique</span></label><small class="hint">Embed traduit sous l'embed français et raisons affichées « FR / EN » (ou description anglaise si le libellé ne tient pas en 100 caractères). Réglage du serveur : <%= guildEnglish ? 'activée' : 'désactivée' %>.</small></div>
         <div class="form-footer"><button type="submit" class="btn btn-primary" <%= botReady ? '' : 'disabled' %>><%- icon('send', { size: 16 }) %>Publier le panneau</button></div>
       </div>
       <aside class="split-preview">
@@ -58,6 +59,7 @@
           </div>
           <div class="preview-panel-note" data-panel-note>Le bouton ouvre directement le ticket s'il n'y a qu'une raison ; sinon le membre choisit dans un menu visible de lui seul.</div>
         </div>
+        <%- include('../partials/translate-preview', { key: 'panel', toggle: '#p-english' }) %>
       </aside>
     </div>
   </form>

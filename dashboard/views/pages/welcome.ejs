@@ -27,6 +27,7 @@
         </div>
         <div class="field"><label for="w-channel">Salon</label><%- include('../partials/channel-select', { name: 'channelId', id: 'w-channel', selected: w ? w.channelId : '', emptyLabel: '— Aucun —' }) %></div>
         <div class="field"><label for="w-message">Message</label><textarea id="w-message" name="message" class="textarea" rows="3" maxlength="2000" placeholder="Bienvenue {user} sur {server} ! Tu es le membre n°{memberCount}."><%= welcomeMessage %></textarea><%- varChips('#w-message') %><small class="hint">Sans message ni embed, un message par défaut est envoyé.</small></div>
+        <div class="field"><label class="toggle"><input type="checkbox" id="w-english" name="english" <%= english ? 'checked' : '' %>><span class="toggle-track"></span><span class="toggle-label">🇬🇧 Version anglaise automatique</span></label><small class="hint">Le modèle (message, embed et message privé) est traduit une seule fois, avant le remplacement des variables : <code>{user}</code>, mentions, emojis et liens sont conservés. Réglage du serveur : <%= guildEnglish ? 'activée' : 'désactivée' %>.</small></div>
       </section>
 
       <section class="card">
@@ -76,6 +77,7 @@
         <div class="preview-panel-head"><span class="row"><%- icon('hash', { size: 15 }) %><span data-preview-channel>salon</span></span><span class="badge badge-muted">Aperçu</span></div>
         <div class="preview-panel-body" data-welcome-preview></div>
       </div>
+      <%- include('../partials/translate-preview', { key: 'welcome', toggle: '#w-english' }) %>
       <div class="preview-panel" data-dm-panel>
         <div class="preview-panel-head"><span class="row"><%- icon('message-square', { size: 15 }) %>Message privé</span></div>
         <div class="preview-panel-body" data-dm-preview></div>

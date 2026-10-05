@@ -70,6 +70,8 @@ export interface BuilderSession {
   target?: { channelId: string; messageId: string };
   /** Données propres au mode annonce */
   announcement?: AnnouncementDraft;
+  /** « Version anglaise » choisie dans le builder (absent = réglage du serveur) */
+  english?: boolean;
   /** Message d'information affiché une seule fois lors du prochain rendu */
   notice?: BuilderNotice;
   createdAt: number;
@@ -85,6 +87,7 @@ export interface CreateSessionInput {
   buttons?: ButtonSpec[];
   target?: BuilderSession['target'];
   announcement?: AnnouncementDraft;
+  english?: boolean;
 }
 
 /** Génère un identifiant court (8 caractères, alphabet base64url → sûr dans un customId). */
@@ -121,6 +124,7 @@ export class EmbedBuilderSessionStore {
       buttons: input.buttons ?? [],
       target: input.target,
       announcement: input.announcement,
+      english: input.english,
       createdAt: now,
       updatedAt: now,
     };
@@ -182,6 +186,23 @@ function button(ns: string, action: string, sid: string, label: string, style: B
   return b;
 }
 
+/** « Version anglaise » effective de la session : choix du builder, sinon réglage du serveur. */
+export function sessionEnglish(session: Pick<BuilderSession, 'english'>, config: Pick<ResolvedGuildConfig, 'autoTranslate'> | null | undefined): boolean {
+  return session.english ?? config?.autoTranslate?.enabled ?? false;
+}
+
+function englishLine(session: BuilderSession, rc: BuilderRenderContext): string {
+  const { t } = rc;
+  const on = sessionEnglish(session, rc.config);
+  const state = on ? t('core.enabled') : t('core.disabled');
+  return `🇬🇧 **${t('embeds.builder.english')}** : ${state}${session.english === undefined ? ` _(${t('embeds.builder.english_default')})_` : ''}`;
+}
+
+function englishButton(ns: 'embed' | 'announce', session: BuilderSession, rc: BuilderRenderContext): ButtonBuilder {
+  const on = sessionEnglish(session, rc.config);
+  return button(ns, 'english', session.id, rc.t('embeds.builder.btn_english'), on ? ButtonStyle.Success : ButtonStyle.Secondary, '🇬🇧');
+}
+
 function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
@@ -218,6 +239,7 @@ function embedStatusEmbed(session: BuilderSession, rc: BuilderRenderContext): Em
   lines.push(`💬 **${t('embeds.builder.content')}** : ${session.content ? truncate(session.content.replace(/\n/g, ' '), 200) : '—'}`);
   lines.push(`🔘 **${t('embeds.builder.buttons')}** (${session.buttons.length}/${MAX_BUTTONS}) : ${session.buttons.length ? session.buttons.map(describeButton).join(' • ') : '—'}`);
   lines.push(`📋 **${t('embeds.builder.fields')}** : ${session.spec.fields?.length ?? 0}/${MAX_EMBED_FIELDS} • 🕒 ${t('embeds.builder.timestamp')} : ${session.spec.timestamp ? t('core.enabled') : t('core.disabled')}`);
+  lines.push(englishLine(session, rc));
   if (session.target) lines.push(`🔗 **${t('embeds.builder.target')}** : https://discord.com/channels/${session.guildId}/${session.target.channelId}/${session.target.messageId}`);
   lines.push('');
   lines.push(`_${t('embeds.builder.hint')}_`);
@@ -241,7 +263,8 @@ function announceStatusEmbed(session: BuilderSession, rc: BuilderRenderContext):
     .setDescription(
       noticeLine(session) +
         `💬 **${t('embeds.builder.content')}** : ${session.content ? truncate(session.content.replace(/\n/g, ' '), 150) : '—'}\n` +
-        `🔘 **${t('embeds.builder.buttons')}** : ${session.buttons.length ? session.buttons.map(describeButton).join(' • ') : '—'}\n\n_${t('announcements.builder.hint')}_`,
+        `🔘 **${t('embeds.builder.buttons')}** : ${session.buttons.length ? session.buttons.map(describeButton).join(' • ') : '—'}\n` +
+        `${englishLine(session, rc)}\n\n_${t('announcements.builder.hint')}_`,
     )
     .addFields(
       { name: t('announcements.builder.status'), value: t(`announcements.status.${ann.status}`), inline: true },
@@ -314,6 +337,7 @@ function embedEditRows(session: BuilderSession, rc: BuilderRenderContext): Row[]
   if (session.mode === 'embed') {
     const third = [];
     if (session.target) third.push(button('embed', 'update', sid, t('embeds.builder.btn_update'), ButtonStyle.Success, '✅'));
+    third.push(englishButton('embed', session, rc));
     third.push(button('embed', 'cancel', sid, t('core.cancel'), ButtonStyle.Danger, '✖️'));
     rows.push(row(...third));
   }
@@ -356,6 +380,7 @@ function announceMainRows(session: BuilderSession, rc: BuilderRenderContext): Ro
       button('announce', 'embed', sid, t('announcements.builder.btn_embed'), ButtonStyle.Primary, '🎨'),
       button('announce', 'mentions', sid, t('announcements.builder.btn_mentions'), ButtonStyle.Secondary, '📣'),
       button('announce', 'channel', sid, t('announcements.builder.btn_channel'), ann.channelId ? ButtonStyle.Secondary : ButtonStyle.Danger, '📍'),
+      englishButton('announce', session, rc),
     ),
     row(
       button('announce', 'date', sid, t('announcements.builder.btn_date'), ButtonStyle.Secondary, '📅'),

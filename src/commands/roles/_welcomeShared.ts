@@ -154,12 +154,16 @@ export async function renderPanel(opts: PanelRenderOptions): Promise<PanelPayloa
 
   embed.addFields({ name: t('welcome.config.field_enabled'), value: onOff(enabled, t), inline: true }, { name: t('core.channel'), value: channel, inline: true }, { name: t('welcome.config.field_image'), value: imageValue, inline: true });
 
+  let english = false;
   if (tab === 'welcome') {
     const c = config as WelcomeConfig | null;
     const buttons = Array.isArray(c?.buttons) ? c!.buttons.length : 0;
+    const override = await welcomeService.getEnglish(guild.id);
+    english = override ?? (await guildConfigService.get(guild.id))?.autoTranslate?.enabled ?? false;
     embed.addFields(
       { name: t('welcome.config.field_dm'), value: onOff(c?.dmEnabled ?? false, t), inline: true },
       { name: t('welcome.config.field_buttons'), value: String(buttons), inline: true },
+      { name: `🇬🇧 ${t('embeds.builder.english')}`, value: `${onOff(english, t)}${override === null ? ` _(${t('embeds.builder.english_default')})_` : ''}`, inline: true },
     );
   } else {
     const c = config as LeaveConfig | null;
@@ -197,6 +201,7 @@ export async function renderPanel(opts: PanelRenderOptions): Promise<PanelPayloa
         btn(id('dmmsg'), t('welcome.panel.btn_dm_message'), ButtonStyle.Secondary, '✉️'),
         btn(id('buttons'), t('welcome.panel.btn_buttons'), ButtonStyle.Secondary, '🔘'),
         btn(id('vars'), t('welcome.panel.btn_variables'), ButtonStyle.Secondary, '📖'),
+        btn(id('english'), t('embeds.builder.btn_english'), english ? ButtonStyle.Success : ButtonStyle.Secondary, '🇬🇧'),
       ),
     );
   } else {

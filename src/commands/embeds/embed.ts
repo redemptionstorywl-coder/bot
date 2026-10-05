@@ -5,6 +5,7 @@ import { embedService, type ButtonSpec, type EmbedSpec, type MessageSpec } from 
 import { EmbedTemplateError, embedTemplateService } from '../../services/EmbedTemplateService';
 import { embedBuilderSessions, renderBuilder, renderContextFromInteraction } from '../../services/EmbedBuilderSession';
 import { buildMessageWithBrand } from '../../services/AnnouncementService';
+import { isEnglishEmbed, SEPARATOR_LINE, stripContentTranslation, stripEmbedTranslation } from '../../services/autotranslate/bilingual';
 import { TEMPLATE_VARIABLES } from '../../config/constants';
 import { chunk, paginate } from '../../utils/pagination';
 
@@ -172,16 +173,20 @@ export default defineCommand({
           await interaction.deferReply(EPHEMERAL);
           const message = await embedTemplateService.fetchBotMessage(ref.channelId, ref.messageId, { client: interaction.client });
           if (message.guildId !== guildId) throw new EmbedTemplateError('message_not_found', ref.messageId);
-          const first = message.embeds[0];
+          // Message bilingue : on recharge la version française (la version anglaise est régénérée à l'enregistrement).
+          const english = message.embeds.some((e) => isEnglishEmbed(e.footer?.text) || !!e.description?.includes(SEPARATOR_LINE)) || message.content.includes(SEPARATOR_LINE);
+          const first = message.embeds.find((e) => !isEnglishEmbed(e.footer?.text));
           if (!first) throw new EmbedTemplateError('no_embed', ref.messageId);
+          const content = stripContentTranslation(message.content);
           const session = embedBuilderSessions.create({
             guildId,
             userId: interaction.user.id,
             mode: 'embed',
-            spec: embedService.fromApiEmbed(first.toJSON()),
-            content: message.content || undefined,
+            spec: stripEmbedTranslation(embedService.fromApiEmbed(first.toJSON())),
+            content: content || undefined,
             buttons: embedTemplateService.buttonsFromMessage(message),
             target: { channelId: ref.channelId, messageId: ref.messageId },
+            english: english ? true : undefined,
           });
           await interaction.editReply(renderBuilder(session, renderContextFromInteraction(interaction, ctx)));
           return;

@@ -3,7 +3,7 @@ import { defineSelectMenu } from '../structures';
 import type { InteractionContext } from '../structures/types';
 import { embedService, type ButtonSpec } from '../services/EmbedService';
 import { EmbedTemplateError, embedTemplateService } from '../services/EmbedTemplateService';
-import { embedBuilderSessions, isEmbedEmpty, parentView, renderBuilder, renderContextFromInteraction, MAX_BUTTONS, type BuilderSession } from '../services/EmbedBuilderSession';
+import { embedBuilderSessions, isEmbedEmpty, parentView, renderBuilder, renderContextFromInteraction, sessionEnglish, MAX_BUTTONS, type BuilderSession } from '../services/EmbedBuilderSession';
 import { buildEmbedModal } from '../modals/embed';
 import { buildCustomId } from '../utils/customId';
 
@@ -109,7 +109,7 @@ export default defineSelectMenu({
             interaction.guildId,
             channelId,
             { content: session.content, embeds: isEmbedEmpty(session.spec) ? [] : [session.spec], buttons: session.buttons },
-            { client: interaction.client, guild: interaction.guild, language: ctx.lang },
+            { client: interaction.client, guild: interaction.guild, language: ctx.lang, translate: sessionEnglish(session, ctx.config) },
           );
           session.notice = { type: 'success', text: t('embeds.builder.sent', { channel: `<#${channelId}>`, url: message.url }) };
         } catch (err) {

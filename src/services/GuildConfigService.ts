@@ -5,11 +5,14 @@ import { DEFAULT_MODULES_BY_KIND, MODULE_KEYS, type ModuleKey } from '../config/
 import { TTLCache } from '../utils/cache';
 import { childLogger } from '../utils/logger';
 import { EventEmitter } from 'node:events';
+import { DEFAULT_AUTO_TRANSLATE, type AutoTranslateConfig } from './autotranslate/bilingual';
 
 const log = childLogger('GuildConfigService');
 
 /** Émis (guildId) après la recréation d'un salon (/clear salon) : les services gardant des IDs de salons en cache les invalident. */
 export const CHANNELS_REMAPPED_EVENT = 'channels:remapped';
+
+export type { AutoTranslateConfig };
 
 export interface ResolvedGuildConfig {
   guildId: string;
@@ -24,6 +27,7 @@ export interface ResolvedGuildConfig {
   logChannels: Partial<Record<string, string>>;
   footerText: string | null;
   footerIconUrl: string | null;
+  autoTranslate: AutoTranslateConfig;
   raw: Guild & { settings: GuildSettings | null; logChannels: LogChannel[] };
 }
 
@@ -65,7 +69,7 @@ export class GuildConfigService extends EventEmitter {
     if (cached) return cached;
     const raw = await prisma.guild.findUnique({ where: { id: guildId }, include: { settings: true, logChannels: true } });
     if (!raw) return null;
-    const resolved = this.resolve(raw);
+    const resolved = this.resolve(raw, await this.loadAutoTranslate(guildId));
     this.cache.set(guildId, resolved);
     return resolved;
   }
@@ -80,7 +84,19 @@ export class GuildConfigService extends EventEmitter {
     return created;
   }
 
-  private resolve(raw: Guild & { settings: GuildSettings | null; logChannels: LogChannel[] }): ResolvedGuildConfig {
+  /** Réglage de traduction automatique (défaut : désactivé ; table absente ou erreur → défaut). */
+  private async loadAutoTranslate(guildId: string): Promise<AutoTranslateConfig> {
+    try {
+      const row = await prisma.autoTranslateSettings.findUnique({ where: { guildId } });
+      if (!row) return { ...DEFAULT_AUTO_TRANSLATE };
+      return { enabled: row.enabled === true, layout: row.layout === 'content' ? 'content' : 'embed' };
+    } catch (err) {
+      log.debug({ err, guildId }, 'Lecture du réglage de traduction automatique impossible');
+      return { ...DEFAULT_AUTO_TRANSLATE };
+    }
+  }
+
+  private resolve(raw: Guild & { settings: GuildSettings | null; logChannels: LogChannel[] }, autoTranslate: AutoTranslateConfig = { ...DEFAULT_AUTO_TRANSLATE }): ResolvedGuildConfig {
     const s = raw.settings;
     const defaults = DEFAULT_MODULES_BY_KIND[raw.kind] ?? {};
     const stored = (s?.modules && typeof s.modules === 'object' && !Array.isArray(s.modules) ? (s.modules as Record<string, unknown>) : {}) as Record<string, unknown>;
@@ -105,6 +121,7 @@ export class GuildConfigService extends EventEmitter {
       logChannels,
       footerText: s?.footerText ?? null,
       footerIconUrl: s?.footerIconUrl ?? null,
+      autoTranslate,
       raw,
     };
   }
