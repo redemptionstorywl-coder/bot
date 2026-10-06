@@ -130,7 +130,8 @@
     "buttons_limit": "Limite atteinte : {max} boutons maximum."
   },
   "palette": {
-    "violet": "Violet (marque)",
+    "brand_blue": "Bleu (marque)",
+    "violet": "Violet",
     "purple_dark": "Violet foncé",
     "lavender": "Lavande",
     "blurple": "Blurple Discord",

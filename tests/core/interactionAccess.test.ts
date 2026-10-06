@@ -15,7 +15,7 @@ vi.mock('../../src/services/GuildConfigService', () => {
     guildId: '444444444444444444',
     kind: 'PRISON',
     defaultLanguage: 'fr',
-    brandColor: 0x7c3aed,
+    brandColor: 0x2f8bff,
     adminRoleIds: [],
     staffRoleIds: ['111111111111111111'],
     modules: { moderation: true },

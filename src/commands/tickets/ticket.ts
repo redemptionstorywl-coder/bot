@@ -2,14 +2,15 @@ import { ChannelType, PermissionFlagsBits, SlashCommandBuilder } from 'discord.j
 import { TicketStatus } from '@prisma/client';
 import { defineCommand } from '../../structures';
 import { embedService } from '../../services/EmbedService';
-import { TicketError, canCloseTicket, canManageTicket, canViewTicket, ticketService, type TicketListFilters } from '../../services/TicketService';
+import { TicketError, canCloseTicket, canManageTicket, canViewTicket, isTicketOpen, ticketService, type TicketListFilters } from '../../services/TicketService';
 import { discordTimestamp } from '../../utils/time';
 import { chunk, paginate } from '../../utils/pagination';
 import { EPHEMERAL, autocompleteTypes, fetchMember, loadChannelTicket, replyTicketError } from './_shared';
 
 /**
- * /ticket — actions staff dans un ticket (close, add, remove, claim, transcript, rename, info) + liste paginée.
+ * /ticket — actions dans un ticket (close, add, remove, transcript, rename, info) + liste paginée.
  * Les permissions sont vérifiées par action : le créateur peut fermer, le staff (rôles du type inclus) gère tout.
+ * Fermer conserve le salon (catégorie « Tickets fermés ») ; `/ticket transcript` dans un ticket fermé = bouton 📄 (DM au créateur).
  */
 export default defineCommand({
   data: new SlashCommandBuilder()
@@ -18,8 +19,7 @@ export default defineCommand({
     .addSubcommand((s) => s.setName('close').setDescription('Fermer le ticket').addStringOption((o) => o.setName('reason').setDescription('Raison').setMaxLength(500)))
     .addSubcommand((s) => s.setName('add').setDescription('Ajouter un membre au ticket').addUserOption((o) => o.setName('user').setDescription('Membre').setRequired(true)))
     .addSubcommand((s) => s.setName('remove').setDescription('Retirer un membre du ticket').addUserOption((o) => o.setName('user').setDescription('Membre').setRequired(true)))
-    .addSubcommand((s) => s.setName('claim').setDescription('Prendre en charge le ticket'))
-    .addSubcommand((s) => s.setName('transcript').setDescription('Générer et envoyer le transcript'))
+    .addSubcommand((s) => s.setName('transcript').setDescription('Générer le transcript (ticket fermé : envoyé en DM au créateur)'))
     .addSubcommand((s) => s.setName('rename').setDescription('Renommer le salon du ticket').addStringOption((o) => o.setName('name').setDescription('Nouveau nom').setRequired(true).setMaxLength(100)))
     .addSubcommand((s) => s.setName('info').setDescription('Informations sur un ticket').addIntegerOption((o) => o.setName('number').setDescription('Numéro du ticket (vide = salon courant)').setMinValue(1)))
     .addSubcommand((s) =>
@@ -30,7 +30,7 @@ export default defineCommand({
           o
             .setName('status')
             .setDescription('Statut')
-            .addChoices({ name: 'Ouverts', value: 'open' }, { name: 'Fermés', value: 'closed' }, { name: 'Pris en charge', value: 'CLAIMED' }, { name: 'Supprimés', value: 'DELETED' }, { name: 'Tous', value: 'all' }),
+            .addChoices({ name: 'Ouverts', value: 'open' }, { name: 'Fermés', value: 'closed' }, { name: 'Supprimés', value: 'DELETED' }, { name: 'Tous', value: 'all' }),
         )
         .addUserOption((o) => o.setName('user').setDescription('Filtrer par créateur'))
         .addStringOption((o) => o.setName('type').setDescription('Filtrer par type').setAutocomplete(true)),
@@ -48,7 +48,7 @@ export default defineCommand({
       switch (sub) {
         case 'close': {
           const { ticket, actor } = await loadChannelTicket(interaction, ctx);
-          if (!canCloseTicket(ticket, actor)) throw new TicketError(ticket.status === TicketStatus.OPEN || ticket.status === TicketStatus.CLAIMED ? 'no_permission' : 'already_closed');
+          if (!canCloseTicket(ticket, actor)) throw new TicketError(isTicketOpen(ticket) ? 'no_permission' : 'already_closed');
           await interaction.deferReply(EPHEMERAL);
           const { ticket: closed } = await ticketService.closeTicket({ ticketId: ticket.id, closedById: interaction.user.id, reason: interaction.options.getString('reason') });
           await interaction.editReply({ embeds: [embedService.success(t('tickets.actions.closed_confirm', { number: closed.number }))] }).catch(() => null);
@@ -69,21 +69,21 @@ export default defineCommand({
           }
           return;
         }
-        case 'claim': {
-          const { ticket, actor } = await loadChannelTicket(interaction, ctx);
-          if (!canManageTicket(ticket, actor)) throw new TicketError('staff_only');
-          await interaction.deferReply(EPHEMERAL);
-          const updated = await ticketService.claimTicket({ ticketId: ticket.id, staffId: interaction.user.id });
-          await interaction.editReply({ embeds: [embedService.success(t('tickets.actions.claimed_confirm', { number: updated.number }))] });
-          return;
-        }
         case 'transcript': {
           const { ticket, actor } = await loadChannelTicket(interaction, ctx);
+          if (!isTicketOpen(ticket)) {
+            if (!canManageTicket(ticket, actor)) throw new TicketError('staff_only');
+            await interaction.deferReply(EPHEMERAL);
+            const { dm } = await ticketService.sendClosedTranscript({ ticketId: ticket.id, byId: interaction.user.id });
+            const user = `<@${ticket.userId}>`;
+            await interaction.editReply({ embeds: [dm === 'sent' ? embedService.success(t('tickets.actions.transcript_closed_sent', { user })) : embedService.warning(t('tickets.actions.transcript_closed_dm_failed', { user }))] });
+            return;
+          }
           if (!canViewTicket(ticket, actor)) throw new TicketError('no_permission');
           await interaction.deferReply(EPHEMERAL);
           const result = await ticketService.generateTranscript(ticket.id, { closedById: ticket.closedById, closedAt: ticket.closedAt ?? new Date() });
           const channel = interaction.channel?.type === ChannelType.GuildText ? interaction.channel : null;
-          await ticketService.sendTranscript(ticket, result, { channel, dm: false });
+          await ticketService.sendTranscript(ticket, result, { channel });
           await interaction.editReply({ embeds: [embedService.success(t('tickets.actions.transcript_sent'))] });
           return;
         }

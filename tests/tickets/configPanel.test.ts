@@ -111,22 +111,41 @@ describe('renderMain', () => {
 });
 
 describe('renderOptions', () => {
-  it('transcripts (log TICKET) pré-remplis, mention des relances pré-sélectionnée, 5 boutons', () => {
+  it('transcripts (log TICKET) et tickets fermés pré-remplis, mention des relances pré-sélectionnée, 5 rangées', () => {
     const config = { guildId: guild.id, modules: { tickets: false }, logChannels: { TICKET: '444444444444444444' }, staffRoleIds: ['555555555555555555'] } as never;
-    const payload = renderOptions({ guild, config, reminders: { remindersEnabled: true, reminderHours: 12, reminderPing: 'staff' }, t });
-    expect(payload.components.length).toBeLessThanOrEqual(5);
-    const rows = payload.components.map((r) => r.toJSON().components as (Component & { default_values?: { id: string }[]; style?: number; options?: { value: string; default?: boolean }[] })[]);
+    const payload = renderOptions({ guild, config, reminders: { remindersEnabled: true, reminderHours: 12, reminderPing: 'staff', closedCategoryId: '444444444444444444' }, t });
+    expect(payload.components).toHaveLength(5);
+    const rows = payload.components.map((r) => r.toJSON().components as (Component & { default_values?: { id: string }[]; style?: number; channel_types?: number[]; options?: { value: string; default?: boolean }[] })[]);
     expect(rows[0]![0]!.custom_id).toBe('tcfg:translog');
     expect(rows[0]![0]!.default_values).toEqual([{ id: '444444444444444444', type: 'channel' }]);
-    expect(rows[1]![0]!.custom_id).toBe('tcfg:rping');
-    expect(rows[1]![0]!.options!.find((o) => o.default)!.value).toBe('staff');
-    expect(rows[2]!.map((c) => c.custom_id)).toEqual(['tcfg:rtoggle', 'tcfg:rhours', 'tcfg:translog-off', 'tcfg:module', 'tcfg:main']);
-    expect(rows[2]![0]!.style).toBe(3); // Success : relances actives
-    expect(rows[2]![3]!.style).toBe(4); // Danger : module désactivé
+    expect(rows[1]![0]!.custom_id).toBe('tcfg:closedcat');
+    expect(rows[1]![0]!.channel_types).toEqual([4]); // catégories uniquement
+    expect(rows[1]![0]!.default_values).toEqual([{ id: '444444444444444444', type: 'channel' }]);
+    expect(rows[2]![0]!.custom_id).toBe('tcfg:rping');
+    expect(rows[2]![0]!.options!.map((o) => o.value)).toEqual(['staff', 'none']);
+    expect(rows[2]![0]!.options!.find((o) => o.default)!.value).toBe('staff');
+    expect(rows[3]!.map((c) => c.custom_id)).toEqual(['tcfg:rtoggle', 'tcfg:rhours', 'tcfg:translog-off', 'tcfg:module', 'tcfg:main']);
+    expect(rows[3]![0]!.style).toBe(3); // Success : relances actives
+    expect(rows[3]![3]!.style).toBe(4); // Danger : module désactivé
+    expect(rows[4]!.map((c) => c.custom_id)).toEqual(['tcfg:closed-off']);
+    expect(rows[4]![0]!.disabled).toBe(false);
     const embed = payload.embeds[0]!.toJSON();
     expect(embed.fields!.some((f) => f.value.includes('<@&555555555555555555>'))).toBe(true);
     expect(embed.fields!.some((f) => f.value.includes('12'))).toBe(true);
     expect(embed.description).toContain('panels_core.tickets.permanent_hint');
+  });
+
+  it('ancienne mention « claimer » → rôles staff ; catégorie par défaut affichée si elle existe, sinon « aucune »', () => {
+    const config = { guildId: guild.id, modules: { tickets: true }, logChannels: {}, staffRoleIds: [] } as never;
+    const legacy = renderOptions({ guild, config, reminders: { remindersEnabled: true, reminderHours: 24, reminderPing: 'claimer', closedCategoryId: null }, t });
+    const rows = legacy.components.map((r) => r.toJSON().components as (Component & { default_values?: unknown[]; options?: { value: string; default?: boolean }[] })[]);
+    expect(rows[2]![0]!.options!.find((o) => o.default)!.value).toBe('staff');
+    expect(rows[1]![0]!.default_values).toBeUndefined();
+    expect(rows[4]![0]!.disabled).toBe(true);
+    expect(legacy.embeds[0]!.toJSON().fields!.some((f) => f.value === 'panels_core.tickets.closed_none')).toBe(true);
+    const brGuild = { ...guild, channels: { cache: new Map([['1557072815700574240', { name: 'Tickets fermés', type: 4 }]]) } } as unknown as Guild;
+    const br = renderOptions({ guild: brGuild, config, reminders: { remindersEnabled: true, reminderHours: 24, reminderPing: 'staff', closedCategoryId: null }, t });
+    expect(br.embeds[0]!.toJSON().fields!.some((f) => f.value === 'panels_core.tickets.closed_default[<#1557072815700574240>]')).toBe(true);
   });
 
   it('parseReminderHours : 1–168, suffixe h accepté', () => {
@@ -185,7 +204,8 @@ describe('modals', () => {
     expect(info.components).toHaveLength(5);
     const questions = buildQuestionsModal(baseType as never, t).toJSON();
     expect(questions.custom_id).toBe('tcfg:questions:7');
-    expect(questions.components).toHaveLength(5);
+    // 4 questions : le titre du ticket occupe toujours la première place du formulaire d'ouverture
+    expect(questions.components).toHaveLength(4);
     const first = (questions.components[0] as { component: { value?: string } }).component;
     expect(first.value).toBe('Sujet |  | short | required');
   });

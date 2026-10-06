@@ -33,6 +33,7 @@ export const REMOVED_COMMANDS: Record<string, string> = {
 /** Sous-commandes supprimées (`commande sous-commande` → remplacement / motif). Détecte aussi `/clear messages|serveur`. */
 export const REMOVED_SUBCOMMANDS: Record<string, string> = {
   'clear serveur': 'retirée (trop destructrice) — /clear salon pour un salon',
+  'ticket claim': 'retirée avec le bouton Claim — le staff répond directement dans le ticket',
 };
 /** Variables d'environnement retirées (DEEPL_API_KEY / MYMEMORY_EMAIL sont de nouveau utilisées par la traduction automatique FR → EN). */
 export const REMOVED_ENV: string[] = [];

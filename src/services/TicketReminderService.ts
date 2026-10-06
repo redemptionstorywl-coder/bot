@@ -14,17 +14,29 @@ import { childLogger } from '../utils/logger';
 
 const log = childLogger('TicketReminders');
 
-export const REMINDER_PING_MODES = ['claimer', 'staff', 'none'] as const;
+/** Qui mentionner lors d'une relance : rôles d'accès de la raison (sinon rôles staff du serveur) ou personne. */
+export const REMINDER_PING_MODES = ['staff', 'none'] as const;
 export type ReminderPingMode = (typeof REMINDER_PING_MODES)[number];
 
 export const ticketSettingsSchema = z.object({
   remindersEnabled: z.boolean().optional(),
   reminderHours: z.number().int().min(1).max(168).optional(),
   reminderPing: z.enum(REMINDER_PING_MODES).optional(),
+  /** Catégorie « Tickets fermés » (null = catégorie par défaut si elle existe, sinon le salon reste en place) */
+  closedCategoryId: z
+    .string()
+    .regex(/^\d{15,22}$/)
+    .nullable()
+    .optional(),
 });
 export type TicketSettingsPatch = z.infer<typeof ticketSettingsSchema>;
 
-export const DEFAULT_TICKET_SETTINGS = { remindersEnabled: true, reminderHours: 24, reminderPing: 'claimer' as ReminderPingMode };
+export const DEFAULT_TICKET_SETTINGS = { remindersEnabled: true, reminderHours: 24, reminderPing: 'staff' as ReminderPingMode, closedCategoryId: null as string | null };
+
+/** Ancienne valeur `claimer` (claim supprimé) ou valeur inconnue → `staff`. */
+export function normalizeReminderPing(value: string | null | undefined): ReminderPingMode {
+  return value === 'none' ? 'none' : 'staff';
+}
 
 export interface ReminderState {
   createdAt: Date;
@@ -63,7 +75,7 @@ interface TicketMeta {
 /**
  * Relances automatiques des tickets sans réponse du staff.
  * - Suit l'activité (dernier message staff / membre) en mémoire, écrite en base toutes les 30 s.
- * - Toutes les 10 min, relance les tickets dus : mention du staff (ou du claimer) + boutons « Je m'en occupe » / « Ne plus relancer ».
+ * - Toutes les 10 min, relance les tickets dus : mention des rôles staff (ou aucune) + bouton « Ne plus relancer ».
  * - Un ticket peut être marqué « permanent » (relances coupées) depuis ses boutons.
  */
 export class TicketReminderService {
@@ -81,7 +93,7 @@ export class TicketReminderService {
     scheduler.register({ name: 'tickets:reminders', intervalMs: 10 * 60_000, run: async () => { await this.tick(); } });
   }
 
-  // ───── Réglages ─────
+  // ───── Réglages (relances + catégorie des tickets fermés, table TicketSettings) ─────
 
   async getSettings(guildId: string): Promise<TicketSettings> {
     const cached = this.settings.get(guildId);
@@ -152,7 +164,7 @@ export class TicketReminderService {
     if (!this.client) return 0;
     await this.flushActivity();
     const tickets = await prisma.ticket.findMany({
-      where: { status: { in: [TicketStatus.OPEN, TicketStatus.CLAIMED] }, remindersMuted: false },
+      where: { status: TicketStatus.OPEN, remindersMuted: false },
       include: { type: true },
       take: 500,
     });
@@ -169,9 +181,7 @@ export class TicketReminderService {
         const lang = ticket.language ?? config?.defaultLanguage ?? 'fr';
         const t = translationService.bind(lang, ticket.guildId);
         const roles = asStringArray(ticket.type?.staffRoleIds).length ? asStringArray(ticket.type?.staffRoleIds) : (config?.staffRoleIds ?? []);
-        const mode = settings.reminderPing as ReminderPingMode;
-        const pingUsers = mode === 'claimer' && ticket.claimedById ? [ticket.claimedById] : [];
-        const pingRoles = mode === 'none' || pingUsers.length ? [] : roles;
+        const pingRoles = normalizeReminderPing(settings.reminderPing) === 'none' ? [] : roles;
         const since = waitingSince(ticket);
         const waitedSeconds = Math.floor((now.getTime() - since.getTime()) / 1000);
         const embed = new EmbedBuilder()
@@ -179,11 +189,9 @@ export class TicketReminderService {
           .setTitle(t('ticket_reminders.title'))
           .setDescription(t('ticket_reminders.description', { duration: formatDuration(waitedSeconds, lang), since: discordTimestamp(since, 'R'), hours: settings.reminderHours }))
           .setFooter({ text: t('ticket_reminders.footer', { hours: settings.reminderHours }) });
-        const row = new ActionRowBuilder<ButtonBuilder>();
-        if (!ticket.claimedById) row.addComponents(new ButtonBuilder().setCustomId(buildCustomId('ticket', 'claim', ticket.id)).setLabel(t('ticket_reminders.btn_claim')).setEmoji('🙋').setStyle(ButtonStyle.Primary));
-        row.addComponents(new ButtonBuilder().setCustomId(buildCustomId('ticket', 'mute', ticket.id)).setLabel(t('ticket_reminders.btn_mute')).setEmoji('🔕').setStyle(ButtonStyle.Secondary));
-        const mentions = [...pingUsers.map((u) => `<@${u}>`), ...pingRoles.map((r) => `<@&${r}>`)].join(' ');
-        await channel.send({ content: mentions || undefined, embeds: [embed], components: [row], allowedMentions: { users: pingUsers, roles: pingRoles } });
+        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(new ButtonBuilder().setCustomId(buildCustomId('ticket', 'mute', ticket.id)).setLabel(t('ticket_reminders.btn_mute')).setEmoji('🔕').setStyle(ButtonStyle.Secondary));
+        const mentions = pingRoles.map((r) => `<@&${r}>`).join(' ');
+        await channel.send({ content: mentions || undefined, embeds: [embed], components: [row], allowedMentions: { users: [], roles: pingRoles } });
         await prisma.ticket.update({ where: { id: ticket.id }, data: { lastReminderAt: now } });
         sent++;
       } catch (err) {

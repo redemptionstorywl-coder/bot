@@ -9,7 +9,7 @@ const prismaMock = prisma as unknown as ReturnType<typeof createPrismaMock>;
 vi.mock('../../src/services/LoggingService', () => ({ loggingService: { log: vi.fn(async () => undefined) } }));
 vi.mock('../../src/services/GuildConfigService', () => ({
   guildConfigService: {
-    get: vi.fn(async () => ({ guildId: 'g', defaultLanguage: 'fr', brandColor: 0x7c3aed })),
+    get: vi.fn(async () => ({ guildId: 'g', defaultLanguage: 'fr', brandColor: 0x2f8bff })),
   },
 }));
 

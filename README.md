@@ -39,7 +39,7 @@ Node.js 22 · TypeScript · discord.js v14 · Prisma · MySQL · Express · Sock
 | 🎨 Embed Builder | `/embed` : création sans code, aperçu live, vos propres templates réutilisables, import/export JSON |
 | 👋 Bienvenue / Départ | Message, embed, image générée, DM, boutons, rôle automatique, variables documentées |
 | 🎭 Rôles | Auto-roles (arrivée, bot, vérifié, spécial), role menus (boutons / select), reaction roles, rôles de notifications |
-| 🎫 Tickets | 11 types configurables, formulaire, numérotation, claim, ajout/retrait, transfert, transcripts HTML/TXT/PDF |
+| 🎫 Tickets | 11 types configurables, titre demandé à l'ouverture (= nom du salon), formulaire, numérotation, ajout/retrait, transfert ; fermeture sans suppression (catégorie « Tickets fermés ») avec 📄 Transcript (HTML/TXT/PDF + DM au membre, sur demande) · 🔓 Rouvrir · 🗑️ Supprimer |
 | 🛡️ Modération | ban, tempban, unban, kick, warn (seuils automatiques), timeout, `/clear` (messages ou salon entier), `/unban-all` (débannissement de masse), slowmode, lock/unlock, mute-salon (sourdine programmée), lockdown, historique des sanctions |
 | 🚨 Anti-raid | anti-spam, anti-mass-mention, anti-link/invite/pub, anti-compte-récent, anti-bot, anti-mass-join → lockdown automatique, anti-nuke (audit log : bans/kicks/salons/rôles/webhooks en masse, bots ajoutés → strip des rôles dangereux / kick / ban) |
 | 📜 Logs | 14 catégories, un salon par catégorie, historique consultable dans le dashboard |
@@ -218,7 +218,7 @@ Toute la configuration passe par **une seule commande** : `/config module:<modul
 | `permissions` | Qui peut utiliser chaque commande : rôles autorisés par commande ou par catégorie, commande désactivée, retour au défaut |
 | `logs` | Salon de chaque catégorie de logs, salon de logs privé en un clic |
 | `bienvenue` | Bienvenue et départ : salon, message, embed, image, DM, boutons, test |
-| `tickets` | Raisons de ticket, catégorie d'ouverture, rôles d'accès, questions, message d'accueil, panneau, salon des transcripts, relances automatiques |
+| `tickets` | Raisons de ticket, catégorie d'ouverture, rôles d'accès, questions, message d'accueil, panneau, salon des transcripts, catégorie « Tickets fermés », relances automatiques |
 | `moderation` | Seuils de warns, rôle mute, anti-raid, anti-nuke, lockdown, salon piège `get-banned` |
 | `roles` | Auto-roles, role menus, reaction roles, rôles de notifications |
 | `fivem` | Serveurs FiveM, statut, synchronisation bans/pseudos/rôles, rôles Discord → groupes en jeu (🛡️ Groupes), salon compteur, installation |
@@ -232,7 +232,7 @@ Toute la configuration passe par **une seule commande** : `/config module:<modul
 | --- | --- |
 | Administration | `/info` (fiche du serveur avec IDs), `/dm user|all|status|cancel`, `/help`, `/status` |
 | Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |
-| Tickets | `/ticket close|add|remove|claim|transcript|rename|info|list` (+ boutons dans chaque ticket, dont 📌 « Ticket permanent ») |
+| Tickets | `/ticket close|add|remove|transcript|rename|info|list` (+ boutons dans chaque ticket, dont 📌 « Ticket permanent ») |
 | Modération | `/ban`, `/tempban`, `/unban` (option `en_jeu` : appliquer aussi sur les serveurs FiveM), `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/clear messages|salon`, `/unban-all`, `/slowmode`, `/lock`, `/unlock`, `/mute-salon`, `/lockdown on|off|status`, `/case`, `/history` |
 | Communauté | `/event`, `/giveaway`, `/poll` |
 | Whitelist | `/whitelist apply|status|review|list` |
@@ -255,6 +255,13 @@ Les commandes Battle Royale, School RP et Shop ne sont proposées que sur les se
 - **Nom selon la langue** : les règles `rôle → drapeau + modèle` sont évaluées dans l'ordre (ex. rôle Français → `🇫🇷 Salon de {name}`, rôle English → `🇬🇧 {name}'s lobby`) ; sans rôle de langue, la règle de repli (anglais par défaut) s'applique. 11 langues proposées (fr, en, es, de, it, pt, ar, tr, pl, ru, nl), bouton « Détecter les rôles ». `{name}` = pseudo nettoyé, nom limité à 100 caractères.
 - Le salon reprend les permissions, le débit et la limite du lobby (limite et catégorie réglables) ; le créateur peut le gérer (renommer, limite, déplacer des membres). S'il part, ses droits passent au membre présent depuis le plus longtemps.
 - **Suppression** 5 s après le départ du dernier membre (une reconnexion rapide l'annule). Les salons actifs sont enregistrés en base : au redémarrage, ceux restés vides sont supprimés et ceux disparus oubliés. Permissions requises pour le bot : Gérer les salons, Déplacer des membres ; une erreur est notée dans les logs **Vocal**.
+
+### Tickets : ouverture et fermeture (`/config module:tickets`)
+
+- **Ouverture** : le bouton du panneau (ou le choix d'une raison) affiche toujours un formulaire : **Titre du ticket** (obligatoire, 50 caractères), puis les questions de la raison (4 au maximum), puis **Message** (facultatif) s'il reste une place (5 champs max par fenêtre Discord). Le salon prend le nom du titre (minuscules, espaces → `-`, accents et emojis conservés, caractères interdits retirés) ; si le titre est inutilisable, le format de nom de la raison sert de repli, et `-<numéro>` n'est ajouté que si un salon porte déjà ce nom. Le titre apparaît dans l'embed d'accueil ; le message facultatif est posté dans le ticket au nom du membre.
+- **Fermeture** (bouton 🔒 ou `/ticket close`) : le salon n'est **plus supprimé**. Le membre qui l'a ouvert et les membres ajoutés perdent l'accès (le staff le garde), les relances s'arrêtent et le salon est déplacé dans la catégorie « Tickets fermés » : catégorie propre à la raison si définie, sinon le réglage du serveur (⚙️ Options du panneau tickets ou dashboard → Tickets → Réglages), sinon la catégorie `1557072815700574240` si elle existe sur le serveur (RS Battle Royale), sinon le salon reste en place. Une catégorie pleine (50 salons) laisse le salon en place (noté dans les logs).
+- Le bot poste ensuite un message réservé au staff : **📄 Transcript** (génère le transcript, l'enregistre — base + salon des transcripts — et l'envoie en DM au membre ; le bouton passe à « Transcript envoyé », DM fermés signalés au staff), **🔓 Rouvrir** (accès rendu, catégorie d'origine, relances relancées) et **🗑️ Supprimer** (confirmation puis suppression après 5 s, sans transcript). Sans clic sur 📄, aucun transcript n'est généré et rien n'est envoyé au membre.
+- Le bouton « Claim » (prise en charge) n'existe plus ; les relances mentionnent les rôles d'accès de la raison (ou personne).
 
 ### `/unban-all [raison] [inclure_jeu]`
 
@@ -348,7 +355,7 @@ Voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). En résumé :
 npm test
 ```
 
-Les tests (Vitest) couvrent les systèmes critiques : tickets, permissions, traductions de l'interface, traduction automatique (protection des variables, composition bilingue et limites Discord, fournisseurs, cache, repli en cas d'échec — sans aucun accès réseau), rôles, sanctions, `/clear salon`, `/unban-all`, permissions des commandes par rôle, salons vocaux temporaires, annonces, programmation, FiveM (rôles → groupes en jeu, option « en jeu » des bans, statut), Battle Royale (classement en direct, `/stat`), base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
+Les tests (Vitest) couvrent les systèmes critiques : tickets (fermeture sans suppression, catégorie « Tickets fermés », transcript à la demande, réouverture, titre → nom du salon, formulaire d'ouverture), permissions, traductions de l'interface, traduction automatique (protection des variables, composition bilingue et limites Discord, fournisseurs, cache, repli en cas d'échec — sans aucun accès réseau), rôles, sanctions, `/clear salon`, `/unban-all`, permissions des commandes par rôle, salons vocaux temporaires, annonces, programmation, FiveM (rôles → groupes en jeu, option « en jeu » des bans, statut), Battle Royale (classement en direct, `/stat`), base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
 
 ```bash
 npm run check            # vérifications statiques (aussi exécutées par npm test)

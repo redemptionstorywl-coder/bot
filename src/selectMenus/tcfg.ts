@@ -12,13 +12,14 @@ import { guildConfigService } from '../services/GuildConfigService';
  * Menus du panneau `/config tickets` (namespace `tcfg`, admin ; utilisable module désactivé) :
  *  - `tcfg:pick`            (StringSelect)  → ouvre la vue d'une raison
  *  - `tcfg:category:<id>`   (ChannelSelect) → catégorie des tickets
- *  - `tcfg:archive:<id>`    (ChannelSelect) → catégorie d'archive
+ *  - `tcfg:archive:<id>`    (ChannelSelect) → catégorie des tickets fermés propre à la raison (prioritaire)
  *  - `tcfg:roles:<id>`      (RoleSelect)    → rôles ayant accès (0–10, vide = staff/admin)
  *  - `tcfg:pchannel`        (ChannelSelect) → salon du panneau (brouillon)
  *  - `tcfg:ptypes`          (StringSelect)  → raisons incluses (brouillon, vide = toutes)
  *  - `tcfg:pdelete`         (StringSelect)  → supprime un panneau publié
  *  - `tcfg:translog`        (ChannelSelect) → salon des transcripts / logs tickets (log TICKET)
- *  - `tcfg:rping`           (StringSelect)  → qui mentionner lors des relances (claimer / staff / none)
+ *  - `tcfg:closedcat`       (ChannelSelect) → catégorie « Tickets fermés » du serveur (TicketSettings.closedCategoryId)
+ *  - `tcfg:rping`           (StringSelect)  → qui mentionner lors des relances (staff / none)
  */
 export default defineSelectMenu({
   id: 'tcfg',
@@ -106,6 +107,13 @@ async function handle(interaction: AnySelectMenuInteraction<'cached'>, action: s
       if (!channelId) return;
       await guildConfigService.setLogChannel(guildId, 'TICKET', channelId);
       return interaction.update(await loadOptions({ guild, t, fallback: ctx.config!, notice: ok(t('panels_core.tickets.transcripts_set', { channel: `<#${channelId}>` })) }));
+    }
+    case 'closedcat': {
+      if (!interaction.isChannelSelectMenu()) return;
+      const channelId = interaction.values[0];
+      if (!channelId) return;
+      await ticketReminderService.updateSettings(guildId, { closedCategoryId: channelId });
+      return interaction.update(await loadOptions({ guild, t, fallback: ctx.config!, notice: ok(t('panels_core.tickets.closed_set', { channel: `<#${channelId}>` })) }));
     }
     case 'rping': {
       if (!interaction.isStringSelectMenu()) return;

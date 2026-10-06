@@ -41,7 +41,6 @@ enum LogCategory {
 
 enum TicketStatus {
   OPEN
-  CLAIMED
   CLOSED
   ARCHIVED
   DELETED
@@ -188,7 +187,7 @@ model GuildSettings {
   guildId         String          @id @db.VarChar(32)
   defaultLanguage String          @default("fr") @db.VarChar(8)
   timezone        String          @default("Europe/Paris")
-  brandColor      String          @default("#7C3AED") @db.VarChar(9)
+  brandColor      String          @default("#2F8BFF") @db.VarChar(9)
   /// Rôles considérés comme administrateurs du bot
   adminRoleIds    Json            @default("[]")
   /// Rôles considérés comme staff (modération, tickets)
@@ -297,7 +296,8 @@ model Ticket {
   typeId       Int?
   userId       String       @db.VarChar(32)
   status       TicketStatus @default(OPEN)
-  claimedById  String?      @db.VarChar(32)
+  /// Titre saisi à l'ouverture (nom du salon dérivé de ce titre)
+  title        String?      @db.VarChar(100)
   closedById   String?      @db.VarChar(32)
   closeReason  String?      @db.Text
   closedAt     DateTime?
@@ -314,6 +314,12 @@ model Ticket {
   lastReminderAt      DateTime?
   /// Ticket « permanent » : plus de relance automatique
   remindersMuted      Boolean   @default(false)
+  /// Catégorie du salon avant la fermeture (rétablie à la réouverture)
+  openCategoryId      String?   @db.VarChar(32)
+  /// Message de contrôle posté à la fermeture (📄 Transcript · 🔓 Rouvrir · 🗑️ Supprimer)
+  closeMessageId      String?   @db.VarChar(32)
+  /// Transcript généré et envoyé (bouton 📄) depuis la dernière fermeture
+  transcriptSentAt    DateTime?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -1155,14 +1161,16 @@ model HoneypotChannel {
   updatedAt           DateTime @updatedAt
 }
 
-/// Réglages des relances automatiques des tickets sans réponse du staff.
+/// Réglages des tickets : relances automatiques sans réponse du staff, catégorie des tickets fermés.
 model TicketSettings {
   guildId          String   @id @db.VarChar(32)
   remindersEnabled Boolean  @default(true)
   /// Délai sans réponse du staff avant une relance (heures)
   reminderHours    Int      @default(24)
-  /// Qui mentionner : staff (rôles du type) | claimer (staff ayant pris le ticket, sinon rôles) | none
-  reminderPing     String   @default("claimer") @db.VarChar(16)
+  /// Qui mentionner : staff (rôles du type, sinon rôles staff du serveur) | none
+  reminderPing     String   @default("staff") @db.VarChar(16)
+  /// Catégorie « Tickets fermés » où sont déplacés les salons à la fermeture (null = catégorie par défaut si elle existe, sinon sur place)
+  closedCategoryId String?  @db.VarChar(32)
   updatedAt        DateTime @updatedAt
 }
 

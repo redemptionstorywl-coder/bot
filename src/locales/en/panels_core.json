@@ -90,7 +90,7 @@
     "invalid_color": "Invalid color: `{details}` (expected format: #RRGGBB).",
     "modal_color_title": "Brand color",
     "modal_color_label": "Hex code",
-    "modal_color_help": "Example: #7C3AED",
+    "modal_color_help": "Example: #2F8BFF (default blue)",
     "modal_footer_title": "Embed footer",
     "modal_footer_text": "Footer text",
     "modal_footer_text_help": "Empty = default footer",
@@ -140,7 +140,7 @@
     "options_hint": "Settings shared by every ticket reason.",
     "field_module": "Module",
     "field_transcripts": "Transcripts channel",
-    "transcripts_none": "None (transcripts are sent in the ticket and by DM)",
+    "transcripts_none": "None (transcripts stored in the database, sent by DM to the member with 📄)",
     "transcripts_system": "System log channel: {channel}",
     "field_staff": "Staff roles (access to every reason)",
     "staff_hint": "{roles}\nEditable in `/config general`.",
@@ -152,13 +152,11 @@
     "reminders_value": "{state} · after **{hours} h** without a staff reply · mention: {ping}",
     "permanent_hint": "📌 A ticket can be marked as permanent (no more reminders) with its “Permanent ticket” button.",
     "ping": {
-      "claimer": "The staff member who claimed it",
       "staff": "Staff roles",
       "none": "Nobody"
     },
     "ping_desc": {
-      "claimer": "Otherwise the ticket type's staff roles",
-      "staff": "The ticket type's staff roles",
+      "staff": "The ticket type's access roles, otherwise the server staff roles",
       "none": "Reminder without mention"
     },
     "ping_placeholder": "Who to mention in reminders…",
@@ -170,7 +168,15 @@
     "modal_hours_label": "Delay without a staff reply (hours)",
     "modal_hours_help": "Between {min} and {max} hours.",
     "hours_set": "Reminder delay: **{hours} h**.",
-    "invalid_hours": "Invalid delay: `{details}` (between {min} and {max} hours)."
+    "invalid_hours": "Invalid delay: `{details}` (between {min} and {max} hours).",
+    "field_closed": "“Closed tickets” category",
+    "closed_default": "{channel} (default category)",
+    "closed_none": "None: the closed channel stays where it is",
+    "closed_placeholder": "🔒 “Closed tickets” category…",
+    "closed_set": "Closed tickets → {channel}",
+    "closed_cleared": "“Closed tickets” category removed.",
+    "btn_closed_off": "Remove category",
+    "closed_hint": "🔒 On close, the channel is kept and moved to the “Closed tickets” category (unless the reason has its own category)."
   },
   "moderation": {
     "title": "🛡️ Moderation — {server}",

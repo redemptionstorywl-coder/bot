@@ -34,7 +34,7 @@ const guild = {
 
 function guildConfig(overrides: Partial<ResolvedGuildConfig> = {}): ResolvedGuildConfig {
   const modules = Object.fromEntries(MODULE_KEYS.map((k) => [k, true])) as Record<ModuleKey, boolean>;
-  return { guildId: guild.id, kind: 'PRISON', name: guild.name, defaultLanguage: 'fr', timezone: 'Europe/Paris', brandColor: 0x7c3aed, adminRoleIds: [], staffRoleIds: [], modules, logChannels: {}, footerText: null, footerIconUrl: null, raw: {} as never, ...overrides };
+  return { guildId: guild.id, kind: 'PRISON', name: guild.name, defaultLanguage: 'fr', timezone: 'Europe/Paris', brandColor: 0x2f8bff, adminRoleIds: [], staffRoleIds: [], modules, logChannels: {}, footerText: null, footerIconUrl: null, raw: {} as never, ...overrides };
 }
 
 const cmd = (name: string, category: string, internal?: 'everyone' | 'staff' | 'admin', extra: Partial<Command> = {}): Command =>

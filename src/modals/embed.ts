@@ -38,7 +38,7 @@ export function buildEmbedModal(kind: EmbedModalKind, session: BuilderSession, t
       );
       break;
     case 'color':
-      modal.addLabelComponents(label(t, 'embeds.modal.color.field_hex', text('color', TextInputStyle.Short, { value: s.color, placeholder: `#7C3AED · ${BRAND_COLOR_NAMES.join(', ')}`, max: 20 })));
+      modal.addLabelComponents(label(t, 'embeds.modal.color.field_hex', text('color', TextInputStyle.Short, { value: s.color, placeholder: `#2F8BFF · ${BRAND_COLOR_NAMES.join(', ')}`, max: 20 })));
       break;
     case 'images':
       modal.addLabelComponents(

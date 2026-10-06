@@ -8,14 +8,12 @@ import { parseUserId } from '../../src/commands/tickets/_shared';
 import { parseQuestionLine, serializeQuestion } from '../../src/commands/tickets/_configPanel';
 
 const open = { userId: 'creator', status: 'OPEN' as const };
-const claimed = { userId: 'creator', status: 'CLAIMED' as const };
 const closed = { userId: 'creator', status: 'CLOSED' as const };
 const deleted = { userId: 'creator', status: 'DELETED' as const };
 
 describe('Permissions de fermeture', () => {
   it('le créateur peut fermer son ticket ouvert', () => {
     expect(canCloseTicket(open, { userId: 'creator', staff: false })).toBe(true);
-    expect(canCloseTicket(claimed, { userId: 'creator', staff: false })).toBe(true);
   });
   it('le staff peut fermer tout ticket ouvert', () => {
     expect(canCloseTicket(open, { userId: 'mod', staff: true })).toBe(true);
@@ -31,12 +29,12 @@ describe('Permissions de fermeture', () => {
 });
 
 describe('Permissions de gestion / consultation', () => {
-  it('claim/add/remove/transfer/delete = staff uniquement', () => {
+  it('add/remove/transfer/delete/réouverture = staff uniquement', () => {
     expect(canManageTicket(open, { userId: 'creator', staff: false })).toBe(false);
     expect(canManageTicket(open, { userId: 'mod', staff: true })).toBe(true);
     expect(canManageTicket(deleted, { userId: 'mod', staff: true })).toBe(false);
   });
-  it('transcript/réouverture = créateur ou staff, jamais sur un ticket supprimé', () => {
+  it('consultation = créateur ou staff, jamais sur un ticket supprimé', () => {
     expect(canViewTicket(closed, { userId: 'creator', staff: false })).toBe(true);
     expect(canViewTicket(closed, { userId: 'random', staff: false })).toBe(false);
     expect(canViewTicket(closed, { userId: 'mod', staff: true })).toBe(true);
@@ -47,20 +45,14 @@ describe('Permissions de gestion / consultation', () => {
 describe('Boutons de contrôle', () => {
   const t = (key: string) => key;
   it('propose les actions de gestion sur un ticket ouvert', () => {
-    const rows = ticketService.buildControls({ id: 5, status: 'OPEN', claimedById: null }, t);
+    const rows = ticketService.buildControls({ id: 5, status: 'OPEN' }, t);
     const ids = rows.flatMap((r) => r.components.map((c) => (c.toJSON() as { custom_id: string }).custom_id));
-    expect(ids).toEqual(['ticket:close:5', 'ticket:claim:5', 'ticket:transcript:5', 'ticket:add:5', 'ticket:remove:5', 'ticket:transfer:5', 'ticket:mute:5', 'ticket:delete:5']);
+    expect(ids).toEqual(['ticket:close:5', 'ticket:transcript:5', 'ticket:add:5', 'ticket:remove:5', 'ticket:transfer:5', 'ticket:mute:5', 'ticket:delete:5']);
+    expect(ids.some((id) => id.includes('claim'))).toBe(false);
   });
-  it('désactive le claim une fois pris en charge', () => {
-    const rows = ticketService.buildControls({ id: 5, status: 'CLAIMED', claimedById: 'mod' }, t);
-    const claim = rows[0]!.components[1]!.toJSON() as { disabled?: boolean };
-    expect(claim.disabled).toBe(true);
-  });
-  it('propose réouverture / transcript / suppression sur un ticket fermé', () => {
-    const rows = ticketService.buildControls({ id: 5, status: 'CLOSED', claimedById: null }, t);
-    const ids = rows.flatMap((r) => r.components.map((c) => (c.toJSON() as { custom_id: string }).custom_id));
-    expect(ids).toEqual(['ticket:reopen:5', 'ticket:transcript:5', 'ticket:delete:5']);
-    expect(ticketService.buildControls({ id: 5, status: 'DELETED', claimedById: null }, t)).toEqual([]);
+  it('message d’accueil sans bouton une fois fermé ou supprimé (actions dans le message de contrôle)', () => {
+    expect(ticketService.buildControls({ id: 5, status: 'CLOSED' }, t)).toEqual([]);
+    expect(ticketService.buildControls({ id: 5, status: 'DELETED' }, t)).toEqual([]);
   });
 });
 
@@ -71,9 +63,9 @@ describe('Helpers', () => {
     expect(parseUserId('<@!123456789012345678>')).toBe('123456789012345678');
     expect(parseUserId('bob')).toBeNull();
   });
-  it('parseQuestions ignore les entrées invalides et limite à 5', () => {
+  it('parseQuestions ignore les entrées invalides et limite à 4 (le titre prend la 5e place du formulaire)', () => {
     const qs = parseQuestions([{ id: 'a', label: 'A' }, { bad: true }, ...Array.from({ length: 6 }, (_, i) => ({ id: `q${i}`, label: `Q${i}` }))]);
-    expect(qs).toHaveLength(5);
+    expect(qs).toHaveLength(4);
     expect(qs[0]).toMatchObject({ id: 'a', label: 'A', style: 'short', required: true });
   });
   it('parseQuestionLine / serializeQuestion sont cohérents', () => {

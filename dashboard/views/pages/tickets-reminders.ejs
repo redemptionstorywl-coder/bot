@@ -6,6 +6,18 @@
   <div class="split">
     <div class="stack">
       <section class="card">
+        <h2 class="card-title"><%- icon('lock') %>Tickets fermés</h2>
+        <p class="card-desc mb-4">Fermer un ticket ne supprime plus le salon : il est conservé et rangé dans cette catégorie. Le membre qui l'a ouvert et les membres ajoutés n'y ont plus accès ; le staff garde l'accès.</p>
+        <div class="field">
+          <label for="rm-closed">Catégorie « Tickets fermés »</label>
+          <%- include('../partials/channel-select', { name: 'closedCategoryId', id: 'rm-closed', kind: 'category', selected: settings.closedCategoryId || '', emptyLabel: defaultClosedCategory ? `Par défaut : ${defaultClosedCategory.name}` : 'Aucune (le salon reste à sa place)', placeholder: defaultClosedCategory ? `Par défaut : ${defaultClosedCategory.name}` : 'Aucune (le salon reste à sa place)' }) %>
+          <small class="hint">Une catégorie propre à une raison (éditeur de raison, « Catégorie des tickets fermés ») est prioritaire. Limite Discord : 50 salons par catégorie — si elle est pleine, le salon reste à sa place.</small>
+        </div>
+        <div class="callout mt-4"><%- icon('info') %><div>Après la fermeture, le bot poste dans le ticket un message réservé au staff : <strong>📄 <%= texts.closed.transcript %></strong> (génère le transcript, l'enregistre et l'envoie en DM au membre), <strong>🔓 <%= texts.closed.reopen %></strong> et <strong>🗑️ <%= texts.closed.delete %></strong> (sans transcript). Aucun transcript n'est généré ni envoyé tant que 📄 n'est pas pressé.</div></div>
+        <div class="form-footer dirty-hide"><button type="submit" class="btn btn-primary">Enregistrer</button></div>
+      </section>
+
+      <section class="card">
         <div class="card-head">
           <div><h2 class="card-title"><%- icon('bell') %>Relances automatiques</h2><p class="card-desc">Le bot relance le staff dans un ticket resté sans réponse de sa part.</p></div>
           <label class="toggle"><input type="checkbox" name="remindersEnabled" <%= settings.remindersEnabled ? 'checked' : '' %> data-check-toggle="#reminder-options"><span class="toggle-track"></span><span class="toggle-label">Activées</span></label>
@@ -37,7 +49,7 @@
         <div class="preview-panel mt-4">
           <div class="preview-panel-body">
             <%- include('../partials/embed-preview', { compact: true, components: [
-              { type: 'buttons', buttons: [{ label: texts.buttons.close, emoji: '🔒', style: 'danger' }, { label: texts.buttons.claim, emoji: '👤', style: 'primary' }, { label: texts.buttons.transcript, emoji: '📋', style: 'secondary' }] },
+              { type: 'buttons', buttons: [{ label: texts.buttons.close, emoji: '🔒', style: 'danger' }, { label: texts.buttons.transcript, emoji: '📋', style: 'secondary' }, { label: texts.buttons.add, emoji: '👥', style: 'secondary' }, { label: texts.buttons.remove, emoji: '🚫', style: 'secondary' }] },
               { type: 'buttons', buttons: [{ label: texts.buttons.transfer, emoji: '🔄', style: 'secondary' }, { label: texts.buttons.permanent, emoji: '📌', style: 'secondary', highlight: true }, { label: texts.buttons.delete, emoji: '🗑️', style: 'danger' }] },
             ] }) %>
           </div>
@@ -49,7 +61,7 @@
       <div class="preview-panel">
         <div class="preview-panel-head"><span class="row"><%- icon('hash', { size: 15 }) %>ticket-42</span><span class="badge badge-muted">Aperçu de la relance</span></div>
         <div class="preview-panel-body" data-reminder-preview></div>
-        <div class="preview-panel-note">Exemple pour un ticket non pris en charge. Le bouton « <%= texts.reminders.claim %> » disparaît si un membre du staff l'a déjà pris.</div>
+        <div class="preview-panel-note">Exemple de relance : mention des rôles d'accès (selon le réglage) et bouton « <%= texts.reminders.mute %> ».</div>
       </div>
     </aside>
   </div>
@@ -62,13 +74,13 @@
   <% } else { %>
   <div class="table-wrap">
     <table class="table table-responsive">
-      <thead><tr><th>Ticket</th><th>Créateur</th><th>Pris en charge</th><th>Ouvert</th><th class="shrink"></th></tr></thead>
+      <thead><tr><th>Ticket</th><th>Créateur</th><th>Titre</th><th>Ouvert</th><th class="shrink"></th></tr></thead>
       <tbody>
-        <% for (const tk of permanent) { const c = profiles[tk.userId]; const s = tk.claimedById ? profiles[tk.claimedById] : null; %>
+        <% for (const tk of permanent) { const c = profiles[tk.userId]; %>
           <tr>
             <td class="cell-primary"><a class="link" href="<%= b %>/<%= tk.id %>">#<%= tk.number %></a> <span class="text-2"><%= tk.type ? (tk.type.emoji ? tk.type.emoji + ' ' : '') + tk.type.label : '—' %></span></td>
             <td data-label="Créateur"><span class="user-cell"><% if (c) { %><img class="avatar avatar-xs" src="<%= c.avatarUrl %>" alt=""><% } %><span class="truncate"><%= c ? c.name : tk.userId %></span></span></td>
-            <td data-label="Pris en charge"><%= tk.claimedById ? (s ? s.name : tk.claimedById) : '—' %></td>
+            <td data-label="Titre"><%= tk.title || '—' %></td>
             <td data-label="Ouvert" class="nowrap" title="<%= fmt.dateTime(tk.createdAt) %>"><%= fmt.relative(tk.createdAt) %></td>
             <td class="shrink"><form method="post" action="<%= b %>/<%= tk.id %>/permanent?back=reminders" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="enabled" value=""><button type="submit" class="btn btn-sm"><%- icon('bell', { size: 14 }) %>Réactiver les relances</button></form></td>
           </tr>

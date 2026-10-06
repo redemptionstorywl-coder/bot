@@ -72,7 +72,7 @@ export const fmt = {
   /** Couleur numérique Discord → #RRGGBB */
   hex(color: number | string | null | undefined): string {
     if (typeof color === 'string') return color.startsWith('#') ? color : `#${color}`;
-    if (typeof color !== 'number') return '#7C3AED';
+    if (typeof color !== 'number') return '#2F8BFF';
     return `#${color.toString(16).padStart(6, '0').toUpperCase()}`;
   },
   percent(part: number, total: number): number {

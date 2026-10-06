@@ -20,7 +20,7 @@ const data: TranscriptData = {
   typeLabel: 'Support',
   typeEmoji: '🎫',
   creator: { id: '1', tag: '@alice', staff: false },
-  claimedBy: { id: '2', tag: '@bob', staff: true },
+  title: 'Mon jeu plante <au lancement>',
   closedBy: { id: '2', tag: '@bob', staff: true },
   closeReason: 'Résolu <ok>',
   openedAt: new Date('2026-01-01T10:00:00Z'),
@@ -61,6 +61,8 @@ describe('TranscriptService', () => {
     expect(txt).toContain('[Embed] Info — Détails');
     expect(txt).toContain('1h 30m');
     expect(txt).toContain('Résolu <ok>');
+    expect(txt).toContain('Titre: Mon jeu plante <au lancement>');
+    expect(txt).not.toContain('Pris en charge');
   });
 
   it('génère un HTML sombre avec échappement des messages', () => {
@@ -73,6 +75,7 @@ describe('TranscriptService', () => {
     expect(html).toContain('class="msg staff"');
     expect(html).toContain('href="https://cdn.example/log.txt"');
     expect(html).toContain('Mon jeu crash &amp; plante');
+    expect(html).toContain('Mon jeu plante &lt;au lancement&gt;');
   });
 
   it('écrit les trois fichiers (html, txt, pdf) dans uploads/transcripts/<guildId>/', async () => {

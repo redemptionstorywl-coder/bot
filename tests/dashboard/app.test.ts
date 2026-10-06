@@ -109,7 +109,7 @@ const guildRow = {
   leftAt: null,
   createdAt: new Date(),
   updatedAt: new Date(),
-  settings: { guildId: GUILD_ID, defaultLanguage: 'fr', timezone: 'Europe/Paris', brandColor: '#7C3AED', adminRoleIds: [], staffRoleIds: ['400000000000000001'], modules: { tickets: true, logs: true }, displayName: null, footerText: null, footerIconUrl: null },
+  settings: { guildId: GUILD_ID, defaultLanguage: 'fr', timezone: 'Europe/Paris', brandColor: '#2F8BFF', adminRoleIds: [], staffRoleIds: ['400000000000000001'], modules: { tickets: true, logs: true }, displayName: null, footerText: null, footerIconUrl: null },
   logChannels: [{ id: 1, guildId: GUILD_ID, category: 'TICKET', channelId: '300000000000000002', enabled: true }],
 };
 

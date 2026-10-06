@@ -5,8 +5,10 @@ import { z } from 'zod';
 import { ChannelType, type NewsChannel, type TextChannel } from 'discord.js';
 import { PanelStyle, TicketStatus, type TicketType } from '@prisma/client';
 import type { RedemptionClient } from '../../../src/core/Client';
-import { ticketService, ticketQuestionSchema, parseQuestions, parseEmbedSpec, asFormAnswers, asStringArray, DEFAULT_TICKET_TYPES } from '../../../src/services/TicketService';
-import { ticketReminderService, REMINDER_PING_MODES } from '../../../src/services/TicketReminderService';
+import { ticketService, ticketQuestionSchema, parseQuestions, parseEmbedSpec, asFormAnswers, asStringArray, isTicketOpen, DEFAULT_TICKET_TYPES } from '../../../src/services/TicketService';
+import { ticketReminderService, normalizeReminderPing, REMINDER_PING_MODES } from '../../../src/services/TicketReminderService';
+import { DEFAULT_CLOSED_CATEGORY_ID } from '../../../src/services/tickets/closeFlow';
+import { MAX_TYPE_QUESTIONS, TICKET_MESSAGE_MAX, TICKET_TITLE_MAX, planOpenModal } from '../../../src/services/tickets/title';
 import { transcriptService } from '../../../src/services/TranscriptService';
 import { translationService, type Translator } from '../../../src/services/TranslationService';
 import { uniqueKey } from '../../../src/commands/tickets/_configPanel';
@@ -21,22 +23,20 @@ import { jsonArray, embedFormOptional, toEmbedSpec } from '../../lib/embedForm';
 import { formAction } from '../../lib/serviceErrors';
 import { resolveUserProfiles, requireBotGuild } from '../../lib/names';
 import { wantsJson } from '../../lib/rateLimit';
-import { firstResponseStats, dailyActivity, topClaimers } from '../../lib/ticketStats';
+import { firstResponseStats, dailyActivity, topClosers } from '../../lib/ticketStats';
 import { broadcastToGuild } from '../../sockets';
 
 const PAGE_SIZE = 20;
 
 export const TICKET_STATUS_LABELS: Record<string, string> = {
   OPEN: 'Ouvert',
-  CLAIMED: 'Pris en charge',
   CLOSED: 'Fermé',
   ARCHIVED: 'Archivé',
   DELETED: 'Supprimé',
 };
 
 export const REMINDER_PING_LABELS: Record<(typeof REMINDER_PING_MODES)[number], { label: string; description: string }> = {
-  claimer: { label: 'Le staff en charge', description: 'Mentionne le membre du staff qui a pris le ticket, sinon les rôles d’accès.' },
-  staff: { label: 'Les rôles d’accès', description: 'Mentionne toujours les rôles staff de la raison.' },
+  staff: { label: 'Les rôles d’accès', description: 'Mentionne les rôles d’accès de la raison (sinon les rôles staff du serveur).' },
   none: { label: 'Personne', description: 'Relance sans mention (simple message dans le ticket).' },
 };
 
@@ -73,7 +73,7 @@ const questionInput = z.preprocess((v) => {
 }, ticketQuestionSchema);
 
 /** Questions : identifiants rendus uniques (deux libellés identiques → suffixe). */
-const questionsField = jsonArray(questionInput, 5).transform((list) => {
+const questionsField = jsonArray(questionInput, MAX_TYPE_QUESTIONS).transform((list) => {
   const seen = new Set<string>();
   return list.map((q) => {
     let id = q.id;
@@ -115,10 +115,12 @@ const panelBody = z.object({
   english: checkbox,
 });
 
+/** Réglages des tickets (table TicketSettings) : relances automatiques + catégorie « Tickets fermés ». */
 const remindersBody = z.object({
   remindersEnabled: checkbox,
   reminderHours: z.coerce.number().int().min(1, 'minimum 1 h').max(168, 'maximum 168 h (7 jours)'),
   reminderPing: z.enum(REMINDER_PING_MODES),
+  closedCategoryId: optionalDiscordId,
 });
 
 const permanentBody = z.object({ enabled: checkbox });
@@ -149,7 +151,6 @@ function discordTexts(t: Translator) {
   return {
     buttons: {
       close: t('tickets.buttons.close'),
-      claim: t('tickets.buttons.claim'),
       transcript: t('tickets.buttons.transcript'),
       add: t('tickets.buttons.add'),
       remove: t('tickets.buttons.remove'),
@@ -157,6 +158,15 @@ function discordTexts(t: Translator) {
       delete: t('tickets.buttons.delete'),
       permanent: t('ticket_reminders.btn_unmuted_control'),
       permanentOn: t('ticket_reminders.btn_muted_control'),
+    },
+    closed: {
+      title: t('tickets.closed.title', { number: '{number}' }),
+      description: t('tickets.closed.description', { user: '{user}' }),
+      hint: t('tickets.closed.hint'),
+      transcript: t('tickets.closed.btn_transcript'),
+      transcriptSent: t('tickets.closed.btn_transcript_sent'),
+      reopen: t('tickets.closed.btn_reopen'),
+      delete: t('tickets.closed.btn_delete'),
     },
     panel: { open: t('tickets.panel.open_button'), placeholder: t('tickets.panel.select_placeholder'), pick: t('tickets.panel.pick_prompt') },
     open: {
@@ -167,17 +177,34 @@ function discordTexts(t: Translator) {
       fieldType: t('tickets.open.field_type'),
       fieldStatus: t('tickets.open.field_status'),
       statusOpen: t('tickets.status.OPEN'),
+      fieldTitle: t('tickets.open.field_title'),
       modalTitle: t('tickets.open.modal_title', { emoji: '{emoji}', type: '{type}' }),
+      titleLabel: t('tickets.open.modal_title_label'),
+      titlePlaceholder: t('tickets.open.modal_title_placeholder'),
+      messageLabel: t('tickets.open.modal_message_label'),
+      messagePlaceholder: t('tickets.open.modal_message_placeholder'),
     },
     reminders: {
       title: t('ticket_reminders.title'),
       description: t('ticket_reminders.description', { duration: '{duration}', since: '{since}', hours: '{hours}' }),
       footer: t('ticket_reminders.footer', { hours: '{hours}' }),
-      claim: t('ticket_reminders.btn_claim'),
       mute: t('ticket_reminders.btn_mute'),
     },
     footer: BRAND.footer,
   };
+}
+
+/**
+ * Champs de la fenêtre d'ouverture (aperçu) : titre, questions de la raison, message facultatif s'il reste une place —
+ * même composition que le bot (`planOpenModal`).
+ */
+export function openModalFields(questions: unknown[], texts: ReturnType<typeof discordTexts>) {
+  const plan = planOpenModal(questions);
+  return [
+    { label: texts.open.titleLabel, placeholder: texts.open.titlePlaceholder, style: 'short', required: true, maxLength: TICKET_TITLE_MAX },
+    ...plan.questions,
+    ...(plan.message ? [{ label: texts.open.messageLabel, placeholder: texts.open.messagePlaceholder, style: 'paragraph', required: false, maxLength: TICKET_MESSAGE_MAX }] : []),
+  ];
 }
 
 function translator(res: Response): Translator {
@@ -249,6 +276,8 @@ export function createTicketsRouter(client: RedemptionClient): Router {
     const t = translator(res);
     const counts = await tabCounts(guild.id);
     const spec = type ? parseEmbedSpec(type.embed) : null;
+    const questions = type ? parseQuestions(type.questions) : [{ id: 'details', label: t('tickets.defaults.question_label').slice(0, 45), placeholder: t('tickets.defaults.question_placeholder').slice(0, 100), style: 'paragraph', required: true, maxLength: 1000 }];
+    const texts = discordTexts(t);
     render(res, 'ticket-reason', {
       title: type ? `Raison · ${type.label}` : 'Nouvelle raison',
       page: 'tickets',
@@ -256,10 +285,12 @@ export function createTicketsRouter(client: RedemptionClient): Router {
       crumbs: [{ label: 'Raisons', href: base(guild.id) }, { label: type ? type.label : 'Nouvelle raison' }],
       type,
       counts,
-      questions: type ? parseQuestions(type.questions) : [{ id: 'details', label: t('tickets.defaults.question_label').slice(0, 45), placeholder: t('tickets.defaults.question_placeholder').slice(0, 100), style: 'paragraph', required: true, maxLength: 1000 }],
+      questions,
+      maxQuestions: MAX_TYPE_QUESTIONS,
+      modalFields: openModalFields(questions, texts),
       embed: spec,
       staffRoleIds: type ? asStringArray(type.staffRoleIds) : [],
-      texts: discordTexts(t),
+      texts,
       globalStaffRoleIds: [...new Set([...config.staffRoleIds, ...config.adminRoleIds])],
       scripts: ['tickets'],
     });
@@ -487,14 +518,17 @@ export function createTicketsRouter(client: RedemptionClient): Router {
       const guild = res.locals.guild!;
       const t = translator(res);
       const [counts, settings, permanent] = await Promise.all([tabCounts(guild.id), ticketReminderService.getSettings(guild.id), permanentTickets(guild.id)]);
-      const profiles = await resolveUserProfiles(client, guild.id, permanent.flatMap((x) => [x.userId, x.claimedById]));
+      const profiles = await resolveUserProfiles(client, guild.id, permanent.map((x) => x.userId));
+      const botGuild = client.isReady() ? client.guilds.cache.get(guild.id) : null;
+      const defaultClosed = botGuild?.channels.cache.get(DEFAULT_CLOSED_CATEGORY_ID);
       render(res, 'tickets-reminders', {
-        title: 'Relances des tickets',
+        title: 'Réglages des tickets',
         page: 'tickets',
         tab: 'reminders',
-        crumbs: [{ label: 'Relances' }],
+        crumbs: [{ label: 'Réglages' }],
         counts,
-        settings,
+        settings: { ...settings, reminderPing: normalizeReminderPing(settings.reminderPing) },
+        defaultClosedCategory: defaultClosed && defaultClosed.type === ChannelType.GuildCategory ? { id: defaultClosed.id, name: defaultClosed.name } : null,
         permanent,
         profiles,
         pingModes: REMINDER_PING_MODES.map((m) => ({ value: m, ...REMINDER_PING_LABELS[m] })),
@@ -515,7 +549,7 @@ export function createTicketsRouter(client: RedemptionClient): Router {
         const { body } = valid<z.infer<typeof remindersBody>>(req);
         await ticketReminderService.updateSettings(guild.id, body);
         broadcastToGuild(guild.id, 'ticket:update', { guildId: guild.id, action: 'reminders' });
-        flash(req, 'success', body.remindersEnabled ? `Relances activées : toutes les ${body.reminderHours} h sans réponse du staff.` : 'Relances automatiques désactivées.');
+        flash(req, 'success', `${body.remindersEnabled ? `Relances activées : toutes les ${body.reminderHours} h sans réponse du staff.` : 'Relances automatiques désactivées.'} Catégorie des tickets fermés ${body.closedCategoryId ? 'enregistrée' : 'par défaut'}.`);
       },
     ),
   );
@@ -529,7 +563,7 @@ export function createTicketsRouter(client: RedemptionClient): Router {
       const guild = res.locals.guild!;
       const { query } = valid<unknown, z.infer<typeof listQuery>>(req);
       const [counts, list] = await Promise.all([tabCounts(guild.id), ticketService.listTickets(guild.id, { status: query.status, typeId: query.type, userId: query.user, search: query.q || undefined }, query.page, PAGE_SIZE)]);
-      const profiles = await resolveUserProfiles(client, guild.id, list.items.flatMap((t) => [t.userId, t.claimedById]));
+      const profiles = await resolveUserProfiles(client, guild.id, list.items.map((t) => t.userId));
       const baseQuery = new URLSearchParams({ ...(query.status ? { status: query.status } : {}), ...(query.type ? { type: String(query.type) } : {}), ...(query.user ? { user: query.user } : {}), ...(query.q ? { q: query.q } : {}) }).toString();
       render(res, 'tickets-list', {
         title: 'Tickets',
@@ -554,14 +588,14 @@ export function createTicketsRouter(client: RedemptionClient): Router {
     wrap(async (_req, res) => {
       const guild = res.locals.guild!;
       const config = res.locals.config!;
-      const [counts, stats, response, daily, claimers] = await Promise.all([
+      const [counts, stats, response, daily, closers] = await Promise.all([
         tabCounts(guild.id),
         ticketService.getStats(guild.id),
         firstResponseStats(guild.id),
         dailyActivity(guild.id, config.timezone, 14),
-        topClaimers(guild.id, 5),
+        topClosers(guild.id, 5),
       ]);
-      const profiles = await resolveUserProfiles(client, guild.id, claimers.map((c) => c.userId));
+      const profiles = await resolveUserProfiles(client, guild.id, closers.map((c) => c.userId));
       render(res, 'tickets-stats', {
         title: 'Statistiques des tickets',
         page: 'tickets',
@@ -576,7 +610,7 @@ export function createTicketsRouter(client: RedemptionClient): Router {
           { key: 'opened', label: 'Ouverts', slot: 1, values: daily.map((d) => d.opened) },
           { key: 'closed', label: 'Fermés', slot: 2, values: daily.map((d) => d.closed) },
         ]),
-        claimers: claimers.map((c) => ({ ...c, profile: profiles[c.userId] ?? null })),
+        closers: closers.map((c) => ({ ...c, profile: profiles[c.userId] ?? null })),
       });
     }),
   );
@@ -592,11 +626,11 @@ export function createTicketsRouter(client: RedemptionClient): Router {
       const ticket = await loadTicket(guild.id, params.ticketId);
       const participants = asStringArray(ticket.participants);
       const staffIds = asStringArray(ticket.transcript?.staffIds);
-      const profiles = await resolveUserProfiles(client, guild.id, [ticket.userId, ticket.claimedById, ticket.closedById, ...participants, ...staffIds]);
+      const profiles = await resolveUserProfiles(client, guild.id, [ticket.userId, ticket.closedById, ...participants, ...staffIds]);
       const transcript = ticket.transcript;
       const formats = transcript ? (['html', 'txt', 'pdf'] as const).filter((f) => Boolean(transcript[`${f}Path`])) : [];
       const channelExists = client.isReady() ? Boolean(client.guilds.cache.get(guild.id)?.channels.cache.has(ticket.channelId)) : false;
-      const isOpen = ticket.status === TicketStatus.OPEN || ticket.status === TicketStatus.CLAIMED;
+      const isOpen = isTicketOpen(ticket);
       const end = ticket.closedAt ?? new Date();
       render(res, 'ticket', {
         title: `Ticket #${ticket.number}`,
@@ -624,19 +658,33 @@ export function createTicketsRouter(client: RedemptionClient): Router {
       const { params, body } = valid<z.infer<typeof closeBody>, unknown, z.infer<typeof idParams>>(req);
       const existing = await loadTicket(guild.id, params.ticketId);
       await ticketService.closeTicket({ ticketId: params.ticketId, closedById: req.session.user!.id, reason: body.reason ?? null });
-      flash(req, 'success', `Ticket #${existing.number} fermé.`);
+      flash(req, 'success', `Ticket #${existing.number} fermé : salon conservé, le membre n’y a plus accès.`);
     }),
   );
 
   router.post(
-    '/tickets/:ticketId(\\d+)/claim',
+    '/tickets/:ticketId(\\d+)/reopen',
     validate({ params: idParams }),
     formAction(ticketBack, async (req, res) => {
       const guild = res.locals.guild!;
       const { params } = valid<unknown, unknown, z.infer<typeof idParams>>(req);
       const existing = await loadTicket(guild.id, params.ticketId);
-      await ticketService.claimTicket({ ticketId: params.ticketId, staffId: req.session.user!.id });
-      flash(req, 'success', `Ticket #${existing.number} pris en charge.`);
+      if (isTicketOpen(existing)) throw new HttpError(400, 'Ce ticket est déjà ouvert.');
+      await ticketService.reopenTicket({ ticketId: params.ticketId, byId: req.session.user!.id });
+      flash(req, 'success', `Ticket #${existing.number} rouvert : le membre a de nouveau accès au salon.`);
+    }),
+  );
+
+  router.post(
+    '/tickets/:ticketId(\\d+)/transcript',
+    validate({ params: idParams }),
+    formAction(ticketBack, async (req, res) => {
+      const guild = res.locals.guild!;
+      const { params } = valid<unknown, unknown, z.infer<typeof idParams>>(req);
+      const existing = await loadTicket(guild.id, params.ticketId);
+      if (isTicketOpen(existing)) throw new HttpError(400, 'Ce ticket est ouvert : fermez-le d’abord.');
+      const { dm } = await ticketService.sendClosedTranscript({ ticketId: params.ticketId, byId: req.session.user!.id });
+      flash(req, dm === 'sent' ? 'success' : 'warning', dm === 'sent' ? `Transcript du ticket #${existing.number} enregistré et envoyé en DM au membre.` : `Transcript du ticket #${existing.number} enregistré, mais le DM au membre a échoué (messages privés fermés ou membre parti).`);
     }),
   );
 
@@ -649,7 +697,7 @@ export function createTicketsRouter(client: RedemptionClient): Router {
         const guild = res.locals.guild!;
         const { params, body } = valid<z.infer<typeof permanentBody>, unknown, z.infer<typeof idParams>>(req);
         const ticket = await loadTicket(guild.id, params.ticketId);
-        if (ticket.status !== TicketStatus.OPEN && ticket.status !== TicketStatus.CLAIMED) throw new HttpError(400, 'Ce ticket est fermé : les relances ne le concernent plus.');
+        if (!isTicketOpen(ticket)) throw new HttpError(400, 'Ce ticket est fermé : les relances ne le concernent plus.');
         await ticketReminderService.setMuted(ticket.id, body.enabled);
         // Mise à jour du bouton 📌 dans Discord + message d'information (au mieux)
         const channel = client.isReady() ? client.channels.cache.get(ticket.channelId) : null;
@@ -675,7 +723,7 @@ export function createTicketsRouter(client: RedemptionClient): Router {
         const existing = await loadTicket(guild.id, params.ticketId);
         await ticketService.deleteTicket({ ticketId: params.ticketId, byId: req.session.user!.id });
         broadcastToGuild(guild.id, 'ticket:update', { guildId: guild.id, ticketId: params.ticketId, action: 'delete' });
-        flash(req, 'success', `Ticket #${existing.number} supprimé (transcript conservé).`);
+        flash(req, 'success', existing.transcript ? `Ticket #${existing.number} supprimé (transcript conservé).` : `Ticket #${existing.number} supprimé (aucun transcript n’avait été généré).`);
       },
     ),
   );

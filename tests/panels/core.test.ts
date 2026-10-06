@@ -60,7 +60,7 @@ function guildConfig(overrides: Partial<ResolvedGuildConfig> = {}): ResolvedGuil
     name: guild.name,
     defaultLanguage: 'en',
     timezone: 'Europe/Paris',
-    brandColor: 0x7c3aed,
+    brandColor: 0x2f8bff,
     adminRoleIds: [ROLE_A, GONE_ROLE],
     staffRoleIds: [ROLE_B],
     modules,
@@ -186,13 +186,13 @@ describe('panneau general', () => {
 
   it('vue couleur : palette pré-sélectionnée sur la couleur actuelle', () => {
     const rows = checkPayload(renderGeneral({ guild, config: guildConfig(), t, view: 'color' }));
-    expect(rows[0]![0]!.options!.find((o) => o.default)!.value).toBe('violet');
+    expect(rows[0]![0]!.options!.find((o) => o.default)!.value).toBe('brand_blue');
     expect(rows[1]!.map((c) => c.custom_id)).toEqual(['cfg-general:hex', 'cfg-general:view:main']);
   });
 
   it('modals couleur / footer pré-remplis', () => {
     const hex = checkModal(buildHexModal(guildConfig(), t), 'cfg-general:hex');
-    expect(hex[0]!.component.value).toBe('#7C3AED');
+    expect(hex[0]!.component.value).toBe('#2F8BFF');
     const footer = checkModal(buildFooterModal(guildConfig(), t), 'cfg-general:footer');
     expect(footer.map((c) => c.custom_id)).toEqual(['text', 'icon']);
     expect(footer[0]!.component.value).toBe('Footer');

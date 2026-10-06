@@ -2,7 +2,7 @@
 <%- include('../partials/tickets-header', { tab: 'stats' }) %>
 
 <section class="stat-grid" data-live-reload>
-  <div class="stat"><span class="stat-label"><%- icon('inbox', { size: 14 }) %>Ouverts</span><strong class="stat-value"><%= fmt.number(stats.open + stats.claimed) %></strong><span class="stat-sub"><%= fmt.number(stats.claimed) %> pris en charge</span></div>
+  <div class="stat"><span class="stat-label"><%- icon('inbox', { size: 14 }) %>Ouverts</span><strong class="stat-value"><%= fmt.number(stats.open) %></strong><span class="stat-sub">en attente de fermeture</span></div>
   <div class="stat"><span class="stat-label"><%- icon('archive', { size: 14 }) %>Fermés</span><strong class="stat-value"><%= fmt.number(stats.closed) %></strong><span class="stat-sub"><%= fmt.number(stats.deleted) %> supprimés · <%= fmt.number(stats.total) %> au total</span></div>
   <div class="stat"><span class="stat-label"><%- icon('clock', { size: 14 }) %>1re réponse du staff</span><strong class="stat-value stat-value-sm"><%= response.avgSeconds !== null ? fmt.duration(response.avgSeconds) : '—' %></strong><span class="stat-sub"><%= response.avgSeconds !== null ? 'moyenne sur ' + response.sample + ' tickets · médiane ' + fmt.duration(response.medianSeconds) : 'calculée sur les tickets fermés' %></span></div>
   <div class="stat"><span class="stat-label"><%- icon('hourglass', { size: 14 }) %>Durée moyenne</span><strong class="stat-value stat-value-sm"><%= stats.avgDurationSeconds ? fmt.duration(stats.avgDurationSeconds) : '—' %></strong><span class="stat-sub"><%= stats.avgMessages ? stats.avgMessages + ' messages en moyenne' : 'de l’ouverture à la fermeture' %></span></div>
@@ -27,11 +27,12 @@
   </section>
   <section class="card">
     <h2 class="card-title"><%- icon('user-check') %>Staff le plus actif</h2>
-    <% if (!claimers.length) { %>
-      <%- include('../partials/empty', { glyph: 'users', title: 'Aucun ticket pris en charge', compact: true }) %>
+    <p class="card-desc">Tickets fermés par membre du staff (hors fermeture par le créateur).</p>
+    <% if (!closers.length) { %>
+      <%- include('../partials/empty', { glyph: 'users', title: 'Aucun ticket fermé par le staff', compact: true }) %>
     <% } else { %>
     <ul class="list">
-      <% claimers.forEach((c, i) => { %>
+      <% closers.forEach((c, i) => { %>
         <li class="list-item">
           <span class="text-3 tabular strong">#<%= i + 1 %></span>
           <% if (c.profile) { %><img class="avatar avatar-sm" src="<%= c.profile.avatarUrl %>" alt=""><% } else { %><span class="avatar avatar-sm avatar-fallback">?</span><% } %>

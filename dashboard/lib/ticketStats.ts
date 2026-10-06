@@ -94,17 +94,20 @@ export async function dailyActivity(guildId: string, timezone: string, days = 14
   return points;
 }
 
-/** Membres du staff ayant pris en charge le plus de tickets. */
-export async function topClaimers(guildId: string, limit = 5): Promise<{ userId: string; count: number }[]> {
-  const rawGrouped: unknown = await prisma.ticket.groupBy({
-    by: ['claimedById'],
-    where: { guildId, claimedById: { not: null } },
-    _count: { _all: true },
+/** Membres ayant fermé le plus de tickets (le créateur d'un ticket qui le ferme lui-même n'est pas compté). */
+export async function topClosers(guildId: string, limit = 5): Promise<{ userId: string; count: number }[]> {
+  const rawRows: unknown = await prisma.ticket.findMany({
+    where: { guildId, closedById: { not: null } },
+    select: { userId: true, closedById: true },
+    take: 50_000,
   });
-  const grouped = (rawGrouped ?? []) as { claimedById: string | null; _count: { _all: number } }[];
-  return grouped
-    .filter((g): g is { claimedById: string; _count: { _all: number } } => Boolean(g.claimedById))
-    .map((g) => ({ userId: g.claimedById, count: g._count._all }))
+  const counts = new Map<string, number>();
+  for (const r of (rawRows ?? []) as { userId: string; closedById: string | null }[]) {
+    if (!r.closedById || r.closedById === r.userId) continue;
+    counts.set(r.closedById, (counts.get(r.closedById) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([userId, count]) => ({ userId, count }))
     .sort((a, b) => b.count - a.count)
     .slice(0, limit);
 }

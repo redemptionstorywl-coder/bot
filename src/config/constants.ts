@@ -4,17 +4,20 @@ import { GuildKind } from '@prisma/client';
 export const BRAND = {
   name: 'Redemption Story Studio',
   colors: {
-    primary: 0x7c3aed, // violet identité
+    primary: 0x2f8bff, // bleu : couleur par défaut des embeds (identité Discord)
     dark: 0x111113, // noir
     anthracite: 0x2a2a2e,
     white: 0xf5f5f7,
-    success: 0x7c3aed, // on reste sur le violet pour les succès (pas de vert criard)
+    success: 0x2f8bff, // on reste sur le bleu des embeds pour les succès (pas de vert criard)
     neutral: 0x3f3f46,
     danger: 0xef4444, // rouge uniquement pour les alertes
     warning: 0xf59e0b,
   },
   footer: 'Redemption Story Studio',
 } as const;
+
+/** Couleur des embeds par défaut d'un serveur (GuildSettings.brandColor) : bleu, = BRAND.colors.primary. */
+export const DEFAULT_BRAND_HEX = '#2F8BFF';
 
 /** Clés des modules activables / désactivables par serveur. */
 export const MODULE_KEYS = [
@@ -167,6 +170,7 @@ export interface PaletteColor {
   emoji: string;
 }
 export const EMBED_COLOR_PALETTE: PaletteColor[] = [
+  { key: 'brand_blue', hex: '#2F8BFF', emoji: '🔵' },
   { key: 'violet', hex: '#7C3AED', emoji: '🟣' },
   { key: 'purple_dark', hex: '#5B21B6', emoji: '🟣' },
   { key: 'lavender', hex: '#A78BFA', emoji: '🟣' },

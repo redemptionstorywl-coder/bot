@@ -72,10 +72,18 @@
       var name = sanitizeChannelName(D.applyVars(fmtStr, { number: NUMBER, username: me.username || me.name, type: fixedKey || slugKey(label()) }));
       $$('[data-name-preview]').forEach(function (el) { el.textContent = name; });
     }
+    /** Même composition que le bot : titre, questions (4 max), message facultatif s'il reste une place (5 champs max). */
+    function modalFields() {
+      var o = texts.open || {};
+      var qs = readQuestions().slice(0, 4);
+      var fields = [{ label: o.titleLabel, placeholder: o.titlePlaceholder, style: 'short', required: true, maxLength: 50 }].concat(qs);
+      if (fields.length < 5) fields.push({ label: o.messageLabel, placeholder: o.messagePlaceholder, style: 'paragraph', required: false, maxLength: 2000 });
+      return fields;
+    }
     function renderModal() {
       if (!modalHost) return;
       var title = D.applyVars(texts.open && texts.open.modalTitle ? texts.open.modalTitle : '{emoji} {type}', { emoji: emoji(), type: label() }).slice(0, 45);
-      paint(modalHost, D.renderModal({ title: title, fields: readQuestions() }, ctx()));
+      paint(modalHost, D.renderModal({ title: title, fields: modalFields() }, ctx()));
     }
     function renderOpening() {
       if (!openingHost) return;
@@ -92,6 +100,7 @@
       spec.thumbnail = me.avatarUrl || undefined;
       spec.timestamp = true;
       var fields = (spec.fields || []).slice();
+      fields.push({ name: texts.open.fieldTitle, value: '**' + (texts.open.titlePlaceholder || '…') + '**' });
       fields.push({ name: texts.open.fieldUser, value: mention, inline: true });
       fields.push({ name: texts.open.fieldType, value: (emoji() + ' ' + label()).trim(), inline: true });
       fields.push({ name: texts.open.fieldStatus, value: texts.open.statusOpen, inline: true });
@@ -102,7 +111,7 @@
         content: content,
         embed: spec,
         components: [
-          { type: 'buttons', buttons: [{ label: b.close, emoji: '🔒', style: 'danger' }, { label: b.claim, emoji: '👤', style: 'primary' }, { label: b.transcript, emoji: '📋', style: 'secondary' }, { label: b.add, emoji: '👥', style: 'secondary' }, { label: b.remove, emoji: '🚫', style: 'secondary' }] },
+          { type: 'buttons', buttons: [{ label: b.close, emoji: '🔒', style: 'danger' }, { label: b.transcript, emoji: '📋', style: 'secondary' }, { label: b.add, emoji: '👥', style: 'secondary' }, { label: b.remove, emoji: '🚫', style: 'secondary' }] },
           { type: 'buttons', buttons: [{ label: b.transfer, emoji: '🔄', style: 'secondary' }, { label: b.permanent, emoji: '📌', style: 'secondary' }, { label: b.delete, emoji: '🗑️', style: 'danger' }] },
         ],
       }, ctx()));
@@ -206,14 +215,14 @@
     function render() {
       if (!host) return;
       var h = Math.max(1, Math.min(168, parseInt(hours.value, 10) || 24));
-      var mode = fieldValue(remForm, 'reminderPing') || 'claimer';
+      var mode = fieldValue(remForm, 'reminderPing') || 'staff';
       var enabled = checked(remForm, 'remindersEnabled');
       var roles = (data.globalStaffRoleIds || []).filter(function (id) { return (g.roles || []).some(function (r) { return r.id === id; }); });
       var content = mode === 'none' ? '' : roles.map(function (r) { return '<@&' + r + '>'; }).join(' ');
       var since = Math.floor(Date.now() / 1000) - h * 3600;
       var r = texts.reminders || {};
       var embed = { color: '#F59E0B', title: r.title, description: D.applyVars(r.description || '', { duration: duration(h), since: '<t:' + since + ':R>', hours: h }), footer: { text: D.applyVars(r.footer || '', { hours: h }) } };
-      paint(host, D.render({ content: content, embed: embed, buttons: [{ label: r.claim, emoji: '🙋', style: 'primary' }, { label: r.mute, emoji: '🔕', style: 'secondary' }], emptyText: '' }, ctx()));
+      paint(host, D.render({ content: content, embed: embed, buttons: [{ label: r.mute, emoji: '🔕', style: 'secondary' }], emptyText: '' }, ctx()));
       host.classList.toggle('is-muted-preview', !enabled);
     }
     ['input', 'change'].forEach(function (ev) { remForm.addEventListener(ev, render); });

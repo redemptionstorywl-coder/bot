@@ -258,7 +258,7 @@ export function buildEmbedModal(tab: WelcomeTab, current: Localized<unknown> | n
   return modal('embed', tab, t('welcome.config.modal_title_embed', { target: t(`welcome.config.target_${tab}`) })).addLabelComponents(
     labelled(t('welcome.config.modal_label_embed_title'), input('title', TextInputStyle.Short, { value: spec.title, max: 256 }), t('welcome.config.modal_help_embed')),
     labelled(t('welcome.config.modal_label_embed_description'), input('description', TextInputStyle.Paragraph, { value: spec.description, max: 4000 })),
-    labelled(t('welcome.config.modal_label_embed_color'), input('color', TextInputStyle.Short, { value: spec.color, placeholder: '#7C3AED', max: 7 })),
+    labelled(t('welcome.config.modal_label_embed_color'), input('color', TextInputStyle.Short, { value: spec.color, placeholder: '#2F8BFF', max: 7 })),
     labelled(t('welcome.config.modal_label_embed_image'), input('image', TextInputStyle.Short, { value: spec.image, placeholder: 'https://…', max: 2048 })),
     labelled(t('welcome.config.modal_label_embed_thumbnail'), input('thumbnail', TextInputStyle.Short, { value: spec.thumbnail, placeholder: 'https://…', max: 2048 })),
   );
@@ -287,7 +287,7 @@ export function buildDmModal(current: WelcomeConfig | null, t: Translator, lang:
     labelled(t('welcome.config.modal_label_message'), input('value', TextInputStyle.Paragraph, { value: typeof message === 'string' ? message : undefined, max: 2000 }), t('welcome.config.modal_help_message')),
     labelled(t('welcome.config.modal_label_embed_title'), input('title', TextInputStyle.Short, { value: spec.title, max: 256 }), t('welcome.config.modal_help_embed')),
     labelled(t('welcome.config.modal_label_embed_description'), input('description', TextInputStyle.Paragraph, { value: spec.description, max: 4000 })),
-    labelled(t('welcome.config.modal_label_embed_color'), input('color', TextInputStyle.Short, { value: spec.color, placeholder: '#7C3AED', max: 7 })),
+    labelled(t('welcome.config.modal_label_embed_color'), input('color', TextInputStyle.Short, { value: spec.color, placeholder: '#2F8BFF', max: 7 })),
   );
 }
 

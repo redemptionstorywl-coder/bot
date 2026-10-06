@@ -5,8 +5,8 @@
 <% const _val = typeof value === 'string' && value ? (value.startsWith('#') ? value.toUpperCase() : '#' + value.toUpperCase()) : ''; %>
 <div class="color-picker" data-color-picker>
   <div class="color-field">
-    <input type="color" value="<%= (_val || (config ? fmt.hex(config.brandColor) : '#7C3AED')).toLowerCase() %>" data-color-input aria-label="Choisir une couleur">
-    <input id="<%= id %>" type="text" class="input input-mono" name="<%= name %>" value="<%= _val %>" data-color-text<%- typeof dataKey === 'string' ? ` data-embed-key="${dataKey}"` : '' %> placeholder="<%= typeof placeholder === 'string' ? placeholder : '#7C3AED' %>" pattern="^#?[0-9a-fA-F]{6}$" maxlength="7" autocomplete="off" spellcheck="false">
+    <input type="color" value="<%= (_val || (config ? fmt.hex(config.brandColor) : '#2F8BFF')).toLowerCase() %>" data-color-input aria-label="Choisir une couleur">
+    <input id="<%= id %>" type="text" class="input input-mono" name="<%= name %>" value="<%= _val %>" data-color-text<%- typeof dataKey === 'string' ? ` data-embed-key="${dataKey}"` : '' %> placeholder="<%= typeof placeholder === 'string' ? placeholder : '#2F8BFF' %>" pattern="^#?[0-9a-fA-F]{6}$" maxlength="7" autocomplete="off" spellcheck="false">
   </div>
   <div class="swatches" role="group" aria-label="Palette de couleurs">
     <% if (typeof allowEmpty !== 'undefined' && allowEmpty) { %><button type="button" class="swatch swatch-reset" data-swatch="" data-tooltip="Couleur par défaut" aria-label="Couleur par défaut">✕</button><% } %>

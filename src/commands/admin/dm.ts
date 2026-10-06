@@ -37,7 +37,7 @@ export default defineCommand({
         .addStringOption((o) => o.setName('message').setDescription('Message (variables : {user} {username} {server}…)').setRequired(true).setMaxLength(2000))
         .addBooleanOption((o) => o.setName('embed').setDescription('Envoyer dans un embed (défaut : oui)'))
         .addStringOption((o) => o.setName('title').setDescription('Titre de l’embed').setMaxLength(256))
-        .addStringOption((o) => o.setName('color').setDescription('Couleur hex de l’embed (#7C3AED)').setMaxLength(9))
+        .addStringOption((o) => o.setName('color').setDescription('Couleur hex de l’embed (#2F8BFF)').setMaxLength(9))
         .addStringOption((o) => o.setName('image').setDescription('URL d’une image').setMaxLength(2048)),
     )
     .addSubcommand((s) =>
@@ -48,7 +48,7 @@ export default defineCommand({
         .addRoleOption((o) => o.setName('role').setDescription('Limiter aux membres ayant ce rôle'))
         .addBooleanOption((o) => o.setName('embed').setDescription('Envoyer dans un embed (défaut : oui)'))
         .addStringOption((o) => o.setName('title').setDescription('Titre de l’embed').setMaxLength(256))
-        .addStringOption((o) => o.setName('color').setDescription('Couleur hex de l’embed (#7C3AED)').setMaxLength(9))
+        .addStringOption((o) => o.setName('color').setDescription('Couleur hex de l’embed (#2F8BFF)').setMaxLength(9))
         .addStringOption((o) => o.setName('image').setDescription('URL d’une image').setMaxLength(2048)),
     )
     .addSubcommand((s) => s.setName('status').setDescription('Progression de l’envoi massif en cours'))

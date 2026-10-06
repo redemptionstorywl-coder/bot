@@ -90,7 +90,7 @@
     "invalid_color": "Couleur invalide : `{details}` (format attendu : #RRGGBB).",
     "modal_color_title": "Couleur de marque",
     "modal_color_label": "Code hexadécimal",
-    "modal_color_help": "Exemple : #7C3AED",
+    "modal_color_help": "Exemple : #2F8BFF (bleu par défaut)",
     "modal_footer_title": "Footer des embeds",
     "modal_footer_text": "Texte du footer",
     "modal_footer_text_help": "Vide = footer par défaut",
@@ -140,7 +140,7 @@
     "options_hint": "Réglages communs à toutes les raisons de tickets.",
     "field_module": "Module",
     "field_transcripts": "Salon des transcripts",
-    "transcripts_none": "Aucun (transcripts envoyés dans le ticket et en DM)",
+    "transcripts_none": "Aucun (transcripts enregistrés en base, envoyés en DM au membre avec 📄)",
     "transcripts_system": "Salon de logs Système : {channel}",
     "field_staff": "Rôles staff (accès à toutes les raisons)",
     "staff_hint": "{roles}\nModifiable dans `/config general`.",
@@ -152,13 +152,11 @@
     "reminders_value": "{state} · après **{hours} h** sans réponse du staff · mention : {ping}",
     "permanent_hint": "📌 Un ticket peut être marqué permanent (plus de relance) avec son bouton « Ticket permanent ».",
     "ping": {
-      "claimer": "Le staff qui a pris le ticket",
       "staff": "Les rôles staff",
       "none": "Personne"
     },
     "ping_desc": {
-      "claimer": "Sinon les rôles staff du type de ticket",
-      "staff": "Rôles staff du type de ticket",
+      "staff": "Rôles d'accès du type de ticket, sinon rôles staff du serveur",
       "none": "Relance sans mention"
     },
     "ping_placeholder": "Qui mentionner lors des relances…",
@@ -170,7 +168,15 @@
     "modal_hours_label": "Délai sans réponse du staff (heures)",
     "modal_hours_help": "Entre {min} et {max} heures.",
     "hours_set": "Délai des relances : **{hours} h**.",
-    "invalid_hours": "Délai invalide : `{details}` (entre {min} et {max} heures)."
+    "invalid_hours": "Délai invalide : `{details}` (entre {min} et {max} heures).",
+    "field_closed": "Catégorie « Tickets fermés »",
+    "closed_default": "{channel} (catégorie par défaut)",
+    "closed_none": "Aucune : le salon fermé reste à sa place",
+    "closed_placeholder": "🔒 Catégorie « Tickets fermés »…",
+    "closed_set": "Tickets fermés → {channel}",
+    "closed_cleared": "Catégorie « Tickets fermés » retirée.",
+    "btn_closed_off": "Retirer la catégorie",
+    "closed_hint": "🔒 À la fermeture, le salon est conservé et déplacé dans la catégorie « Tickets fermés » (sauf catégorie propre à la raison)."
   },
   "moderation": {
     "title": "🛡️ Modération — {server}",

@@ -2,7 +2,7 @@ import { ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, ModalBuilder
 import { defineButton } from '../structures';
 import type { InteractionContext } from '../structures/types';
 import { embedService } from '../services/EmbedService';
-import { DELETE_COUNTDOWN_SECONDS, TicketError, canCloseTicket, canManageTicket, canViewTicket, ticketService } from '../services/TicketService';
+import { DELETE_COUNTDOWN_SECONDS, TicketError, canCloseTicket, canManageTicket, canViewTicket, isTicketOpen, ticketService } from '../services/TicketService';
 import { buildCustomId } from '../utils/customId';
 import { ticketReminderService } from '../services/TicketReminderService';
 import { composeContent } from '../services/autotranslate/bilingual';
@@ -28,7 +28,7 @@ const handlers: Record<string, Handler> = {
   async close(interaction, arg, ctx) {
     const { t } = ctx;
     const { ticket, actor } = await loadTicketContext(interaction, arg, ctx);
-    if (!canCloseTicket(ticket, actor)) throw new TicketError(ticket.status === 'OPEN' || ticket.status === 'CLAIMED' ? 'no_permission' : 'already_closed');
+    if (!canCloseTicket(ticket, actor)) throw new TicketError(isTicketOpen(ticket) ? 'no_permission' : 'already_closed');
     const modal = new ModalBuilder()
       .setCustomId(buildCustomId('ticket', 'close-modal', ticket.id))
       .setTitle(t('tickets.modal.close_title', { number: ticket.number }).slice(0, 45))
@@ -40,22 +40,14 @@ const handlers: Record<string, Handler> = {
     await interaction.showModal(modal);
   },
 
+  /** 🔓 Rouvrir (message de contrôle d'un ticket fermé, staff uniquement). */
   async reopen(interaction, arg, ctx) {
-    const { t } = ctx;
-    const { ticket, actor } = await loadTicketContext(interaction, arg, ctx);
-    if (!canViewTicket(ticket, actor)) throw new TicketError('no_permission');
-    await interaction.deferReply(EPHEMERAL);
-    const updated = await ticketService.reopenTicket({ ticketId: ticket.id, byId: interaction.user.id });
-    await interaction.editReply({ embeds: [embedService.success(t('tickets.actions.reopened_confirm', { number: updated.number }))] });
-  },
-
-  async claim(interaction, arg, ctx) {
     const { t } = ctx;
     const { ticket, actor } = await loadTicketContext(interaction, arg, ctx);
     if (!canManageTicket(ticket, actor)) throw new TicketError('staff_only');
     await interaction.deferReply(EPHEMERAL);
-    const updated = await ticketService.claimTicket({ ticketId: ticket.id, staffId: interaction.user.id, message: interaction.message });
-    await interaction.editReply({ embeds: [embedService.success(t('tickets.actions.claimed_confirm', { number: updated.number }))] });
+    const updated = await ticketService.reopenTicket({ ticketId: ticket.id, byId: interaction.user.id });
+    await interaction.editReply({ embeds: [embedService.success(t('tickets.actions.reopened_confirm', { number: updated.number }))] });
   },
 
   /** Ticket permanent : coupe / réactive les relances automatiques (staff uniquement). */
@@ -80,14 +72,26 @@ const handlers: Record<string, Handler> = {
     return memberModal(interaction, arg, ctx, 'remove');
   },
 
+  /**
+   * Ticket ouvert (📋) : transcript posté dans le ticket (créateur ou staff), sans DM.
+   * Ticket fermé (📄, message de contrôle, staff) : transcript enregistré + envoyé en DM au créateur, une seule fois.
+   */
   async transcript(interaction, arg, ctx) {
     const { t } = ctx;
     const { ticket, actor } = await loadTicketContext(interaction, arg, ctx);
+    if (!isTicketOpen(ticket)) {
+      if (!canManageTicket(ticket, actor)) throw new TicketError('staff_only');
+      await interaction.deferReply(EPHEMERAL);
+      const { dm } = await ticketService.sendClosedTranscript({ ticketId: ticket.id, byId: interaction.user.id, message: interaction.message });
+      const user = `<@${ticket.userId}>`;
+      await interaction.editReply({ embeds: [dm === 'sent' ? embedService.success(t('tickets.actions.transcript_closed_sent', { user })) : embedService.warning(t('tickets.actions.transcript_closed_dm_failed', { user }))] });
+      return;
+    }
     if (!canViewTicket(ticket, actor)) throw new TicketError('no_permission');
     await interaction.deferReply(EPHEMERAL);
     const result = await ticketService.generateTranscript(ticket.id, { closedById: ticket.closedById, closedAt: ticket.closedAt ?? new Date() });
     const channel = interaction.channel?.type === ChannelType.GuildText ? interaction.channel : null;
-    await ticketService.sendTranscript(ticket, result, { channel, dm: false });
+    await ticketService.sendTranscript(ticket, result, { channel });
     await interaction.editReply({ embeds: [embedService.success(t('tickets.actions.transcript_sent'))] });
   },
 

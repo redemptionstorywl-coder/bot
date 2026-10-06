@@ -45,8 +45,9 @@ vi.mock('../../src/services/TranscriptService', async (importOriginal) => {
 vi.mock('../../src/services/TicketService', async (importOriginal) => {
   const mod = await importOriginal<typeof import('../../src/services/TicketService')>();
   const svc = mod.ticketService;
-  svc.closeTicket = vi.fn(async (input: { ticketId: number }) => ({ ticket: { id: input.ticketId, number: 7 }, transcript: null })) as never;
-  svc.claimTicket = vi.fn(async (input: { ticketId: number }) => ({ id: input.ticketId, number: 7 })) as never;
+  svc.closeTicket = vi.fn(async (input: { ticketId: number }) => ({ ticket: { id: input.ticketId, number: 7 }, category: null })) as never;
+  svc.reopenTicket = vi.fn(async (input: { ticketId: number }) => ({ id: input.ticketId, number: 7 })) as never;
+  svc.sendClosedTranscript = vi.fn(async (input: { ticketId: number }) => ({ ticket: { id: input.ticketId, number: 7 }, dm: 'sent', logged: true })) as never;
   svc.deleteTicket = vi.fn(async (input: { ticketId: number }) => ({ id: input.ticketId, number: 7 })) as never;
   svc.createPanel = vi.fn(async (opts: { channel: { id: string }; style: string; typeIds: number[] }) => ({ id: 3, guildId: GUILD_ID, channelId: opts.channel.id, messageId: '600000000000000001', embed: {}, typeIds: opts.typeIds, style: opts.style, createdAt: new Date() })) as never;
   svc.deletePanel = vi.fn(async (_guildId: string, id: number) => ({ id })) as never;
@@ -189,7 +190,7 @@ const MODELS = [
 ];
 
 const ticketType = { id: 1, guildId: GUILD_ID, key: 'support', label: 'Support', emoji: '🎫', description: 'Aide', categoryId: CATEGORY_ID, archiveCategoryId: null, staffRoleIds: [STAFF_ROLE_ID], questions: [{ id: 'details', label: 'Détails', style: 'paragraph', required: true }], embed: null, welcomeMessage: null, language: 'fr', nameFormat: 'ticket-{number}', maxPerUser: 1, enabled: true, order: 0, createdAt: new Date(), updatedAt: new Date() };
-const ticketRow = { id: 10, guildId: GUILD_ID, number: 7, channelId: TEXT_CHANNEL_ID, typeId: 1, userId: USER_ID, status: 'OPEN', claimedById: null, closedById: null, closeReason: null, closedAt: null, formAnswers: [{ question: 'Détails', answer: 'Mon souci' }], participants: [], language: 'fr', createdAt: new Date(), updatedAt: new Date(), type: ticketType, transcript: null };
+const ticketRow = { id: 10, guildId: GUILD_ID, number: 7, channelId: TEXT_CHANNEL_ID, typeId: 1, userId: USER_ID, status: 'OPEN', title: 'Problème de connexion', closedById: null, closeReason: null, closedAt: null, formAnswers: [{ question: 'Détails', answer: 'Mon souci' }], participants: [], language: 'fr', createdAt: new Date(), updatedAt: new Date(), type: ticketType, transcript: null };
 const embedTemplate = { id: 5, guildId: GUILD_ID, name: 'Maintenance', description: 'Annonce de maintenance', spec: { title: '🛠️ Maintenance', description: 'Le serveur sera indisponible.', color: '#7C3AED' }, buttons: [{ label: 'Statut', style: 'link', url: 'https://example.com' }], createdById: USER_ID, createdAt: new Date(), updatedAt: new Date() };
 const announcementRow = { id: 4, guildId: GUILD_ID, title: 'Nouvelle saison', content: 'Hello', spec: { title: 'Saison 2', description: 'C’est parti !' }, channelId: TEXT_CHANNEL_ID, mentionRoleIds: [], mentionEveryone: false, buttons: [], status: 'DRAFT', messages: [], createdById: USER_ID, publishedAt: null, archivedAt: null, createdAt: new Date(), updatedAt: new Date() };
 const welcomeRow = { guildId: GUILD_ID, enabled: true, channelId: TEXT_CHANNEL_ID, message: { fr: 'Bienvenue {user}', en: 'Welcome {user}' }, embed: null, imageEnabled: false, imageBackgroundUrl: null, imageTitle: 'BIENVENUE', imageSubtitle: '{username}', dmEnabled: false, dmMessage: null, dmEmbed: null, buttons: [], updatedAt: new Date() };
@@ -397,7 +398,12 @@ describe('Tickets', () => {
     const r = await post(`/guilds/${GUILD_ID}/tickets/reminders`, { remindersEnabled: 'on', reminderHours: '48', reminderPing: 'staff' });
     expect(r.status).toBe(302);
     expect(r.location).toBe(`/guilds/${GUILD_ID}/tickets/reminders`);
-    expect(prisma.ticketSettings.upsert).toHaveBeenCalledWith(expect.objectContaining({ update: { remindersEnabled: true, reminderHours: 48, reminderPing: 'staff' } }));
+    expect(prisma.ticketSettings.upsert).toHaveBeenCalledWith(expect.objectContaining({ update: { remindersEnabled: true, reminderHours: 48, reminderPing: 'staff', closedCategoryId: null } }));
+    const closed = await post(`/guilds/${GUILD_ID}/tickets/reminders`, { remindersEnabled: '', reminderHours: '24', reminderPing: 'none', closedCategoryId: CATEGORY_ID });
+    expect(closed.status).toBe(302);
+    expect(prisma.ticketSettings.upsert).toHaveBeenLastCalledWith(expect.objectContaining({ update: { remindersEnabled: false, reminderHours: 24, reminderPing: 'none', closedCategoryId: CATEGORY_ID } }));
+    const legacy = await post(`/guilds/${GUILD_ID}/tickets/reminders`, { remindersEnabled: 'on', reminderHours: '24', reminderPing: 'claimer' });
+    expect(legacy.status).toBe(400);
     const invalid = await post(`/guilds/${GUILD_ID}/tickets/reminders`, { remindersEnabled: 'on', reminderHours: '500', reminderPing: 'staff' });
     expect(invalid.status).toBe(400);
     const perm = await post(`/guilds/${GUILD_ID}/tickets/10/permanent`, { enabled: 'on' });
@@ -409,21 +415,38 @@ describe('Tickets', () => {
     prisma.ticket.findMany.mockResolvedValue([{ ...ticketRow, remindersMuted: true }]);
     const page = await get(`/guilds/${GUILD_ID}/tickets/reminders`);
     expect(page.text).toContain('Réactiver les relances');
+    expect(page.text).toContain('name="closedCategoryId"');
+    expect(page.text).toContain('Tickets fermés');
+    expect(page.text).toContain('Problème de connexion');
   });
-  it('ferme, prend en charge et supprime un ticket', async () => {
+  it('ferme, envoie le transcript, rouvre et supprime un ticket (plus de prise en charge)', async () => {
     const close = await post(`/guilds/${GUILD_ID}/tickets/10/close`, { reason: 'Résolu' });
     expect(close.status).toBe(302);
     expect(ticketService.closeTicket).toHaveBeenCalledWith({ ticketId: 10, closedById: USER_ID, reason: 'Résolu' });
+    // Ticket ouvert : pas de transcript « fermé » ni de réouverture
+    const early = await post(`/guilds/${GUILD_ID}/tickets/10/transcript`, {});
+    expect(early.status).toBe(302);
+    expect(ticketService.sendClosedTranscript).not.toHaveBeenCalled();
+    prisma.ticket.findUnique.mockResolvedValue({ ...ticketRow, status: 'CLOSED', closedById: USER_ID, closedAt: new Date() });
+    const sheet = await get(`/guilds/${GUILD_ID}/tickets/10`);
+    expect(sheet.text).toContain('Envoyer le transcript');
+    expect(sheet.text).toContain('/tickets/10/reopen');
+    expect(sheet.text).not.toContain('Prendre en charge');
+    const transcript = await post(`/guilds/${GUILD_ID}/tickets/10/transcript`, {});
+    expect(transcript.status).toBe(302);
+    expect(ticketService.sendClosedTranscript).toHaveBeenCalledWith({ ticketId: 10, byId: USER_ID });
+    const reopen = await post(`/guilds/${GUILD_ID}/tickets/10/reopen`, {});
+    expect(reopen.status).toBe(302);
+    expect(ticketService.reopenTicket).toHaveBeenCalledWith({ ticketId: 10, byId: USER_ID });
     const claim = await post(`/guilds/${GUILD_ID}/tickets/10/claim`, {});
-    expect(claim.status).toBe(302);
-    expect(ticketService.claimTicket).toHaveBeenCalledWith({ ticketId: 10, staffId: USER_ID });
+    expect(claim.status).toBe(404);
     const del = await post(`/guilds/${GUILD_ID}/tickets/10/delete`, {});
     expect(del.location).toBe(`/guilds/${GUILD_ID}/tickets/list`);
     expect(ticketService.deleteTicket).toHaveBeenCalledWith({ ticketId: 10, byId: USER_ID });
   });
   it('convertit une TicketError en flash lisible', async () => {
-    (ticketService.claimTicket as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new (await import('../../src/services/TicketService')).TicketError('already_closed'));
-    const r = await post(`/guilds/${GUILD_ID}/tickets/10/claim`, {});
+    (ticketService.closeTicket as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new (await import('../../src/services/TicketService')).TicketError('already_closed'));
+    const r = await post(`/guilds/${GUILD_ID}/tickets/10/close`, {});
     expect(r.status).toBe(302);
     const page = await follow(r);
     expect(page.text).toContain('Ce ticket est déjà fermé.');

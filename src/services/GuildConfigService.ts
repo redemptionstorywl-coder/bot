@@ -1,7 +1,7 @@
 import type { Guild as DiscordGuild } from 'discord.js';
 import { GuildKind, Prisma, type Guild, type GuildSettings, type LogChannel } from '@prisma/client';
 import { prisma } from '../database/client';
-import { DEFAULT_MODULES_BY_KIND, MODULE_KEYS, type ModuleKey } from '../config/constants';
+import { BRAND, DEFAULT_BRAND_HEX, DEFAULT_MODULES_BY_KIND, MODULE_KEYS, type ModuleKey } from '../config/constants';
 import { TTLCache } from '../utils/cache';
 import { childLogger } from '../utils/logger';
 import { EventEmitter } from 'node:events';
@@ -107,14 +107,14 @@ export class GuildConfigService extends EventEmitter {
     }
     const logChannels: Partial<Record<string, string>> = {};
     for (const lc of raw.logChannels) if (lc.enabled) logChannels[lc.category] = lc.channelId;
-    const brand = s?.brandColor ?? '#7C3AED';
+    const brand = s?.brandColor ?? DEFAULT_BRAND_HEX;
     return {
       guildId: raw.id,
       kind: raw.kind,
       name: raw.name,
       defaultLanguage: s?.defaultLanguage === 'en' ? 'en' : 'fr',
       timezone: s?.timezone ?? 'Europe/Paris',
-      brandColor: parseInt(brand.replace('#', ''), 16) || 0x7c3aed,
+      brandColor: parseInt(brand.replace('#', ''), 16) || BRAND.colors.primary,
       adminRoleIds: asStringArray(s?.adminRoleIds),
       staffRoleIds: asStringArray(s?.staffRoleIds),
       modules,

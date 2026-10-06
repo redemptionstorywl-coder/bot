@@ -57,7 +57,7 @@
 
   /** Contexte depuis une vue de serveur (GuildView côté serveur ou #guild-data côté client). */
   function contextFromGuild(guild, bot, extra) {
-    var ctx = { roles: {}, channels: {}, users: {}, botName: 'Redemption Story', botAvatarUrl: null, defaultColor: '#7C3AED' };
+    var ctx = { roles: {}, channels: {}, users: {}, botName: 'Redemption Story', botAvatarUrl: null, defaultColor: '#2F8BFF' };
     if (guild) {
       (guild.roles || []).forEach(function (r) { ctx.roles[r.id] = { name: r.name, color: r.color }; });
       [].concat(guild.channels || [], guild.textChannels || [], guild.voiceChannels || [], guild.categories || []).forEach(function (c) { if (c && c.id) ctx.channels[c.id] = c.name; });
@@ -207,7 +207,7 @@
   }
 
   function renderEmbed(e, ctx) {
-    var color = e.color ? (String(e.color).charAt(0) === '#' ? e.color : '#' + e.color) : ctx.defaultColor || '#7C3AED';
+    var color = e.color ? (String(e.color).charAt(0) === '#' ? e.color : '#' + e.color) : ctx.defaultColor || '#2F8BFF';
     var hasThumb = Boolean(e.thumbnail);
     var h = '<div class="dembed" data-embed-color="' + esc(String(color).toUpperCase()) + '"><div class="dembed-grid"><div class="dembed-main">';
     if (e.author && e.author.name) {

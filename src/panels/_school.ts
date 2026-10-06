@@ -45,7 +45,7 @@ export const isSchoolRoleKey = (v: string | undefined): v is SchoolRoleKey => v 
 
 // ───── Fonctions pures ─────
 
-/** Couleur hexadécimale (`#7C3AED` / `7c3aed`) → `#7C3AED` ; vide → null. */
+/** Couleur hexadécimale (`#2F8BFF` / `2f8bff`) → `#2F8BFF` ; vide → null. */
 export function normalizeColor(raw: string | undefined): string | null {
   const v = (raw ?? '').trim();
   if (!v) return null;
@@ -229,7 +229,7 @@ export function buildEntityModal(kind: EntityKind, t: Translator, current?: Scho
       title,
       name,
       labelled(t('panels_modules.school.modal_emoji'), textInput('emoji', TextInputStyle.Short, { max: 32, value: h?.emoji, placeholder: '🦁' })),
-      labelled(t('panels_modules.school.modal_color'), textInput('color', TextInputStyle.Short, { max: 7, value: h?.color, placeholder: '#7C3AED' })),
+      labelled(t('panels_modules.school.modal_color'), textInput('color', TextInputStyle.Short, { max: 7, value: h?.color, placeholder: '#2F8BFF' })),
     );
   }
   const c = current as SchoolClub | undefined;

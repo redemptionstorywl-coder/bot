@@ -1,11 +1,12 @@
 import { defineModal } from '../structures';
 import { embedService } from '../services/EmbedService';
-import { TicketError, canCloseTicket, canManageTicket, parseQuestions, ticketService } from '../services/TicketService';
-import { EPHEMERAL, createTicketAndReply, loadTicketContext, parseUserId, readAnswers, replyTicketError } from '../commands/tickets/_shared';
+import { TicketError, canCloseTicket, canManageTicket, isTicketOpen, parseQuestions, ticketService } from '../services/TicketService';
+import { planOpenModal } from '../services/tickets/title';
+import { EPHEMERAL, createTicketAndReply, loadTicketContext, parseUserId, readAnswers, readOpenFields, replyTicketError } from '../commands/tickets/_shared';
 
 /**
  * Modals du module tickets :
- *  - `ticket:open:<typeId>`          : formulaire d'ouverture (questions du type)
+ *  - `ticket:open:<typeId>`          : formulaire d'ouverture (titre, questions du type, message facultatif)
  *  - `ticket:close-modal:<ticketId>` : raison de fermeture
  *  - `ticket:add-modal:<ticketId>` / `ticket:remove-modal:<ticketId>` : membre (ID ou mention)
  */
@@ -22,13 +23,13 @@ export default defineModal({
           await interaction.deferReply(EPHEMERAL);
           const type = await ticketService.getType(interaction.guildId, Number(arg));
           if (!type) throw new TicketError('type_not_found');
-          const answers = readAnswers(interaction, parseQuestions(type.questions));
-          await createTicketAndReply(interaction, type, answers, ctx);
+          const answers = readAnswers(interaction, planOpenModal(parseQuestions(type.questions)).questions);
+          await createTicketAndReply(interaction, type, answers, ctx, readOpenFields(interaction));
           return;
         }
         case 'close-modal': {
           const { ticket, actor } = await loadTicketContext(interaction, arg, ctx);
-          if (!canCloseTicket(ticket, actor)) throw new TicketError(ticket.status === 'OPEN' || ticket.status === 'CLAIMED' ? 'no_permission' : 'already_closed');
+          if (!canCloseTicket(ticket, actor)) throw new TicketError(isTicketOpen(ticket) ? 'no_permission' : 'already_closed');
           await interaction.deferReply(EPHEMERAL);
           const reason = interaction.fields.getTextInputValue('reason').trim() || null;
           const { ticket: closed } = await ticketService.closeTicket({ ticketId: ticket.id, closedById: interaction.user.id, reason });

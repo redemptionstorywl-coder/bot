@@ -7,7 +7,8 @@ import { ROOT, runStandalone, type CheckResult } from './_lib';
  * Migrations ⇄ schema.prisma, sans base de données :
  *  1. SQL attendu = `prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script` ;
  *  2. SQL réel = toutes les migrations de prisma/migrations appliquées dans l'ordre à un modèle en mémoire
- *     (CREATE / ALTER / DROP TABLE, index, clés primaires et étrangères) ;
+ *     (CREATE / ALTER / DROP TABLE, index, clés primaires et étrangères ; UPDATE / INSERT / DELETE = migration de données,
+ *     sans effet sur la structure mais la table doit exister) ;
  *  3. comparaison table par table, colonne par colonne (type, nullabilité, défaut), index, clés primaires / étrangères, options.
  * Un écart se corrige par une NOUVELLE migration (ne jamais modifier une migration déjà appliquée).
  *
@@ -106,6 +107,9 @@ class SqlModel {
         const t = this.table(m[1]!, origin);
         if (!t) continue;
         for (const clause of splitTop(m[2]!, ',').map(norm)) this.alter(t, m[1]!, clause, origin);
+      } else if ((m = s.match(/^(?:UPDATE|DELETE FROM|INSERT INTO) `([^`]+)`/i))) {
+        // Migration de données : aucune incidence sur la structure, mais la table doit exister à ce stade.
+        this.table(m[1]!, origin);
       } else this.errors.push(`${origin} : instruction non reconnue « ${s.slice(0, 80)} »`);
     }
   }

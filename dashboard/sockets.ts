@@ -20,7 +20,6 @@ const log = childLogger('DashboardSockets');
 export const RELAYED_BUS_EVENTS = [
   'log:new',
   'ticket:open',
-  'ticket:claim',
   'ticket:close',
   'ticket:update',
   'ticket:type',

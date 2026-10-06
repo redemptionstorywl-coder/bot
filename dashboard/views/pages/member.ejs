@@ -1,8 +1,8 @@
 <%
   const base = `/guilds/${guild.id}`;
   const activeWarns = warnings.filter((w) => w.active).length;
-  const openTickets = tickets.filter((t) => t.status === 'OPEN' || t.status === 'CLAIMED').length;
-  const statusLabels = { OPEN: 'Ouvert', CLAIMED: 'Pris en charge', CLOSED: 'Fermé', ARCHIVED: 'Archivé', DELETED: 'Supprimé' };
+  const openTickets = tickets.filter((t) => t.status === 'OPEN').length;
+  const statusLabels = { OPEN: 'Ouvert', CLOSED: 'Fermé', ARCHIVED: 'Archivé', DELETED: 'Supprimé' };
 %>
 <a class="back-link" href="<%= base %>/members"><%- icon('arrow-left', { size: 16 }) %>Membres</a>
 <header class="page-header">

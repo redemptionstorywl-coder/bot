@@ -17,7 +17,7 @@ describe('TicketService — maxPerUser', () => {
   it('autorise l’ouverture sous la limite', async () => {
     mock.ticket.count.mockResolvedValue(0);
     await expect(ticketService.assertCanOpen('g1', 'u1', type)).resolves.toBeUndefined();
-    expect(mock.ticket.count).toHaveBeenCalledWith({ where: { guildId: 'g1', userId: 'u1', typeId: 7, status: { in: ['OPEN', 'CLAIMED'] } } });
+    expect(mock.ticket.count).toHaveBeenCalledWith({ where: { guildId: 'g1', userId: 'u1', typeId: 7, status: { in: ['OPEN'] } } });
   });
 
   it('refuse quand la limite est atteinte', async () => {

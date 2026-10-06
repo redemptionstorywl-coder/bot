@@ -58,7 +58,7 @@ function fakeConfig(guild: Guild, modules: Partial<Record<ModuleKey, boolean>> =
     name: guild.name,
     defaultLanguage: 'fr',
     timezone: 'Europe/Paris',
-    brandColor: 0x7c3aed,
+    brandColor: 0x2f8bff,
     adminRoleIds: [],
     staffRoleIds: [],
     modules: { ...(Object.fromEntries(MODULE_KEYS.map((k) => [k, true])) as Record<ModuleKey, boolean>), ...modules },

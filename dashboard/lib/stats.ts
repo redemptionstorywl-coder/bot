@@ -35,7 +35,7 @@ export function onlineCount(client: RedemptionClient, guildId: string): number |
 export async function buildOverview(client: RedemptionClient, guild: GuildView, config: ResolvedGuildConfig): Promise<GuildOverview> {
   const weekAgo = new Date(Date.now() - 7 * 86_400_000);
   const [openTickets, activeWarnings, sanctions, sanctions7d, logs] = await Promise.all([
-    prisma.ticket.count({ where: { guildId: guild.id, status: { in: ['OPEN', 'CLAIMED'] } } }),
+    prisma.ticket.count({ where: { guildId: guild.id, status: 'OPEN' } }),
     prisma.warning.count({ where: { guildId: guild.id, active: true } }),
     prisma.sanction.count({ where: { guildId: guild.id } }),
     prisma.sanction.count({ where: { guildId: guild.id, createdAt: { gte: weekAgo } } }),

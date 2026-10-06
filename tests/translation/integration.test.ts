@@ -56,7 +56,7 @@ describe('bienvenue bilingue', () => {
   it('traduit le MODÈLE avant le remplacement des variables (cache commun à toutes les arrivées)', async () => {
     enableTranslation(true, 'embed');
     const config = welcomeConfig({ message: 'Bienvenue {user} sur {server} !', embed: { title: 'Bienvenue', description: 'Lis <#444444444444444444> avant de jouer.' } });
-    const translation = await welcomeService.welcomeTranslation(GUILD, config, 'fr', 'fr', 0x7c3aed);
+    const translation = await welcomeService.welcomeTranslation(GUILD, config, 'fr', 'fr', 0x2f8bff);
     expect(translation).not.toBeNull();
     expect(provider.calls.flat().some((t) => t.includes('{user}') || t.includes('<#'))).toBe(false);
     const r = renderWelcome(fakeMember(), config, { language: 'fr', translation, image: Buffer.from('png') });
@@ -68,7 +68,7 @@ describe('bienvenue bilingue', () => {
     expect(en!.description).toBe('EN:Lis <#444444444444444444> avant de jouer.');
     expect(en!.image).toBeUndefined();
     // Deuxième arrivée : tout vient du cache.
-    await welcomeService.welcomeTranslation(GUILD, config, 'fr', 'fr', 0x7c3aed);
+    await welcomeService.welcomeTranslation(GUILD, config, 'fr', 'fr', 0x2f8bff);
     expect(provider.calls).toHaveLength(1);
   });
 
@@ -111,7 +111,7 @@ describe('panneau de tickets bilingue', () => {
     enableTranslation(true);
     const types = [type(1, 'Signalement', 'Signaler un joueur'), type(2, 'Remboursement d’un achat sur la boutique du serveur Redemption', null)];
     const english = await ticketService.panelEnglish(panel, types, 'fr');
-    const message = ticketService.buildPanelMessage(panel, types, guild, 'fr', 0x7c3aed, english);
+    const message = ticketService.buildPanelMessage(panel, types, guild, 'fr', 0x2f8bff, english);
     expect(message.embeds).toHaveLength(2);
     expect(message.embeds[1]!.toJSON().description).toBe('EN:Ouvrez un ticket pour contacter l’équipe.');
     const select = message.components[0]!.toJSON().components[0] as { placeholder: string; options: { label: string; description?: string }[] };

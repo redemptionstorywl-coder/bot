@@ -6,6 +6,7 @@ import {
   ChannelType,
   ComponentType,
   EmbedBuilder,
+  OverwriteType,
   PermissionFlagsBits,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
@@ -36,6 +37,8 @@ import { hasInternalPermission } from '../utils/permissions';
 import { renderTemplate, type TemplateContext } from '../utils/variables';
 import { discordTimestamp, formatDuration } from '../utils/time';
 import { childLogger } from '../utils/logger';
+import { planMemberAccess, resolveClosedCategory, resolveReopenCategory, type CategoryDecision, type CategoryInfo } from './tickets/closeFlow';
+import { MAX_TYPE_QUESTIONS, slugifyTicketTitle, uniqueChannelName } from './tickets/title';
 
 const log = childLogger('TicketService');
 
@@ -60,7 +63,8 @@ export const ticketQuestionSchema = z.object({
   required: z.boolean().default(true),
   maxLength: z.number().int().min(1).max(4000).optional(),
 });
-export const ticketQuestionsSchema = z.array(ticketQuestionSchema).max(5);
+/** 4 questions max : le titre du ticket occupe la première des 5 places du formulaire Discord. */
+export const ticketQuestionsSchema = z.array(ticketQuestionSchema).max(MAX_TYPE_QUESTIONS);
 export type TicketQuestion = z.infer<typeof ticketQuestionSchema>;
 
 const snowflake = z.string().regex(/^\d{15,22}$/);
@@ -101,7 +105,6 @@ export interface TicketListFilters {
   status?: TicketStatus | TicketStatus[] | 'open' | 'closed';
   userId?: string;
   typeId?: number;
-  claimedById?: string;
   search?: string;
 }
 
@@ -115,7 +118,6 @@ export interface TicketListResult {
 
 export interface TicketStats {
   open: number;
-  claimed: number;
   closed: number;
   deleted: number;
   total: number;
@@ -159,7 +161,7 @@ export const DEFAULT_TICKET_TYPES: { key: string; emoji: string }[] = [
   { key: 'report', emoji: '🚨' },
 ];
 
-const OPEN_STATUSES: TicketStatus[] = [TicketStatus.OPEN, TicketStatus.CLAIMED];
+const OPEN_STATUSES: TicketStatus[] = [TicketStatus.OPEN];
 const CLOSED_STATUSES: TicketStatus[] = [TicketStatus.CLOSED, TicketStatus.ARCHIVED];
 const USER_PERMS = [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.EmbedLinks];
 const STAFF_PERMS = [...USER_PERMS, PermissionFlagsBits.ManageMessages];
@@ -179,14 +181,14 @@ export function asFormAnswers(v: unknown): FormAnswer[] {
     .filter((a) => a.question);
 }
 
-/** Lit les questions d'un type (JSON) en ignorant les entrées invalides. */
+/** Lit les questions d'un type (JSON) en ignorant les entrées invalides (4 max, cf. `MAX_TYPE_QUESTIONS`). */
 export function parseQuestions(v: unknown): TicketQuestion[] {
   if (!Array.isArray(v)) return [];
   const out: TicketQuestion[] = [];
   for (const raw of v) {
     const r = ticketQuestionSchema.safeParse(raw);
     if (r.success) out.push(r.data);
-    if (out.length === 5) break;
+    if (out.length === MAX_TYPE_QUESTIONS) break;
   }
   return out;
 }
@@ -213,18 +215,23 @@ function sanitizeChannelName(name: string): string {
   return (cleaned || 'ticket').slice(0, 100);
 }
 
+/** Pure : ticket ouvert (le salon est accessible au créateur, les relances tournent). */
+export function isTicketOpen(ticket: Pick<Ticket, 'status'>): boolean {
+  return OPEN_STATUSES.includes(ticket.status);
+}
+
 /** Pure : le créateur ou le staff peut fermer un ticket ouvert. */
 export function canCloseTicket(ticket: Pick<Ticket, 'userId' | 'status'>, actor: TicketActor): boolean {
   if (!OPEN_STATUSES.includes(ticket.status)) return false;
   return actor.staff || ticket.userId === actor.userId;
 }
 
-/** Pure : seul le staff gère le ticket (claim, add, remove, transfer, delete). */
+/** Pure : seul le staff gère le ticket (add, remove, transfer, delete, transcript / réouverture d'un ticket fermé). */
 export function canManageTicket(ticket: Pick<Ticket, 'status'>, actor: TicketActor): boolean {
   return actor.staff && ticket.status !== TicketStatus.DELETED;
 }
 
-/** Pure : le créateur ou le staff peut consulter le transcript / réouvrir. */
+/** Pure : le créateur ou le staff peut consulter un ticket (transcript d'un ticket ouvert, /ticket info). */
 export function canViewTicket(ticket: Pick<Ticket, 'userId' | 'status'>, actor: TicketActor): boolean {
   if (ticket.status === TicketStatus.DELETED) return false;
   return actor.staff || ticket.userId === actor.userId;
@@ -233,8 +240,11 @@ export function canViewTicket(ticket: Pick<Ticket, 'userId' | 'status'>, actor: 
 // ───────────────────────── Service ─────────────────────────
 
 /**
- * Système de tickets : types configurables, panneaux, cycle de vie (open/claim/close/reopen/transfer/delete),
+ * Système de tickets : types configurables, panneaux, cycle de vie (open/close/reopen/transfer/delete),
  * transcripts, logs et événements temps réel (`client.bus`).
+ * Fermer ne supprime plus le salon : il est conservé (catégorie « Tickets fermés »), le créateur et les membres ajoutés
+ * perdent l'accès, et un message de contrôle staff propose 📄 Transcript (généré + envoyé en DM au créateur uniquement
+ * sur demande), 🔓 Rouvrir et 🗑️ Supprimer (sans transcript).
  */
 export class TicketService {
   private client: RedemptionClient | null = null;
@@ -244,6 +254,8 @@ export class TicketService {
   /** Écriture en cours du buffer : un flush concurrent (transcript à la fermeture) l'attend avant d'écrire le reste. */
   private flushInFlight: Promise<void> | null = null;
   private schedulerRegistered = false;
+  /** Transcripts de fermeture en cours (évite deux envois si deux membres du staff cliquent en même temps) */
+  private readonly transcriptLocks = new Set<number>();
 
   // ───── Cycle de vie ─────
 
@@ -579,6 +591,38 @@ export class TicketService {
     return overwrites;
   }
 
+  /** Créateur + membres ajoutés qui ne sont pas staff (accès retiré à la fermeture, rétabli à la réouverture). */
+  private async memberAccess(guild: Guild, ticket: Pick<Ticket, 'userId' | 'participants'> & { type: TicketType | null }, config: ResolvedGuildConfig | null): Promise<string[]> {
+    const ids = [ticket.userId, ...asStringArray(ticket.participants)];
+    const staff = new Set<string>();
+    for (const id of new Set(ids)) {
+      const member = await guild.members.fetch(id).catch(() => null);
+      if (this.isStaff(member, config, ticket.type)) staff.add(id);
+    }
+    return planMemberAccess({ openerId: ticket.userId, participants: asStringArray(ticket.participants), isStaff: (id) => staff.has(id) }).members;
+  }
+
+  /** Catégorie vue depuis le cache (null = inexistante / pas une catégorie). */
+  private categoryInfo(guild: Guild, id: string): CategoryInfo | null {
+    const cat = guild.channels.cache.get(id);
+    return cat && cat.type === ChannelType.GuildCategory ? { id: cat.id, childCount: cat.children.cache.size } : null;
+  }
+
+  /** Déplace le salon selon la décision ; retourne la décision effectivement appliquée (échec du déplacement = sur place). */
+  private async applyCategory(channel: TextChannel, decision: CategoryDecision, ticketId: number): Promise<CategoryDecision> {
+    if (decision.action === 'stay') {
+      if (decision.reason === 'full') log.warn({ ticket: ticketId, category: decision.categoryId }, 'Catégorie pleine (50 salons) : salon du ticket laissé en place');
+      return decision;
+    }
+    try {
+      await channel.setParent(decision.categoryId, { lockPermissions: false });
+      return decision;
+    } catch (err) {
+      log.warn({ err, ticket: ticketId, category: decision.categoryId }, 'Déplacement du salon du ticket échoué : salon laissé en place');
+      return { action: 'stay', reason: 'full', categoryId: decision.categoryId, source: decision.source };
+    }
+  }
+
   // ───── Ouverture ─────
 
   /** Vérifie maxPerUser : lance `TicketError('max_per_user')` si la limite est atteinte. */
@@ -592,7 +636,7 @@ export class TicketService {
    * Réserve un numéro séquentiel (TicketCounter, atomique) et crée la ligne Ticket dans la même transaction.
    * Le salon n'existant pas encore, `channelId` reçoit un placeholder remplacé juste après.
    */
-  async reserveTicket(input: { guildId: string; typeId: number | null; userId: string; formAnswers: FormAnswer[]; language?: string | null }): Promise<Ticket> {
+  async reserveTicket(input: { guildId: string; typeId: number | null; userId: string; formAnswers: FormAnswer[]; language?: string | null; title?: string | null }): Promise<Ticket> {
     return prisma.$transaction(async (tx) => {
       const counter = await tx.ticketCounter.upsert({
         where: { guildId: input.guildId },
@@ -610,6 +654,7 @@ export class TicketService {
           formAnswers: input.formAnswers as unknown as Prisma.InputJsonValue,
           participants: [] as unknown as Prisma.InputJsonValue,
           language: input.language ?? null,
+          title: input.title?.trim().slice(0, 100) || null,
         },
       });
     });
@@ -620,6 +665,16 @@ export class TicketService {
     return sanitizeChannelName(raw);
   }
 
+  /**
+   * Nom du salon : le titre saisi (slug Discord, accents / emojis conservés) ; s'il est vide après nettoyage, le format de la
+   * raison. Suffixe `-<numéro>` uniquement si un salon du serveur porte déjà ce nom.
+   */
+  ticketChannelName(opts: { type: Pick<TicketType, 'nameFormat' | 'key'>; number: number; username: string; title?: string | null; taken: Iterable<string> }): string {
+    const fromTitle = opts.title ? slugifyTicketTitle(opts.title) : null;
+    if (!fromTitle) return this.buildChannelName(opts.type, opts.number, opts.username);
+    return uniqueChannelName(fromTitle, opts.taken, opts.number);
+  }
+
   private resolveCategory(guild: Guild, categoryId: string | null | undefined): string | undefined {
     if (!categoryId) return undefined;
     const cat = guild.channels.cache.get(categoryId);
@@ -628,23 +683,28 @@ export class TicketService {
     return cat.id;
   }
 
-  /** Ouvre un ticket complet : numéro, salon, permissions, embed, mention staff, logs, bus. */
-  async openTicket(opts: { guild: Guild; member: GuildMember; type: TicketType; answers: FormAnswer[]; lang: string; config: ResolvedGuildConfig | null }): Promise<{ ticket: Ticket; channel: TextChannel }> {
+  /**
+   * Ouvre un ticket complet : numéro, salon (nommé d'après le titre), permissions, embed, mention staff, message facultatif
+   * du membre, logs, bus.
+   */
+  async openTicket(opts: { guild: Guild; member: GuildMember; type: TicketType; answers: FormAnswer[]; lang: string; config: ResolvedGuildConfig | null; title?: string | null; message?: string | null }): Promise<{ ticket: Ticket; channel: TextChannel }> {
     const { guild, member, type, answers, config } = opts;
     const lang = type.language ?? opts.lang;
     const t = translationService.bind(lang, guild.id);
+    const title = opts.title?.trim() || null;
     await this.assertCanOpen(guild.id, member.id, type);
-    const reserved = await this.reserveTicket({ guildId: guild.id, typeId: type.id, userId: member.id, formAnswers: answers, language: lang });
+    const reserved = await this.reserveTicket({ guildId: guild.id, typeId: type.id, userId: member.id, formAnswers: answers, language: lang, title });
 
     let channel: TextChannel;
     try {
-      const name = this.buildChannelName(type, reserved.number, member.user.username);
+      const taken = guild.channels.cache.filter((c) => c.type === ChannelType.GuildText).map((c) => c.name);
+      const name = this.ticketChannelName({ type, number: reserved.number, username: member.user.username, title, taken });
       const create = (parent: string | undefined) =>
         guild.channels.create({
           name,
           type: ChannelType.GuildText,
           parent,
-          topic: `🎫 #${reserved.number} • ${type.label} • <@${member.id}>`,
+          topic: `🎫 #${reserved.number} • ${type.label}${title ? ` • ${title.replace(/\s+/g, ' ')}` : ''} • <@${member.id}>`.slice(0, 1024),
           permissionOverwrites: this.buildOverwrites(guild, type, config, [member.id]),
           reason: `Ticket #${reserved.number} (${member.user.tag})`,
         });
@@ -674,6 +734,8 @@ export class TicketService {
       return null;
     });
     if (message) await message.pin().catch(() => null);
+    const firstMessage = opts.message?.trim();
+    if (firstMessage) await this.postMemberMessage(ticket, channel, member, firstMessage, config?.brandColor);
 
     void loggingService.log({
       guildId: guild.id,
@@ -684,6 +746,7 @@ export class TicketService {
         { name: t('tickets.log.field_user'), value: `<@${member.id}> (${member.id})`, inline: true },
         { name: t('tickets.log.field_type'), value: `${type.emoji ?? ''} ${type.label}`.trim(), inline: true },
         { name: t('tickets.log.field_channel'), value: `<#${channel.id}>`, inline: true },
+        ...(title ? [{ name: t('tickets.log.field_title'), value: title.slice(0, 1024), inline: false }] : []),
       ],
       actorId: member.id,
       targetId: member.id,
@@ -692,6 +755,35 @@ export class TicketService {
     });
     this.emit('ticket:open', guild.id, ticket.id);
     return { ticket, channel };
+  }
+
+  /**
+   * Message facultatif saisi à l'ouverture : embed signé du membre (avatar + nom) posté dans le ticket, et enregistré
+   * comme son premier message (le transcript l'attribue au membre, pas au bot).
+   */
+  private async postMemberMessage(ticket: Ticket, channel: TextChannel, member: GuildMember, text: string, brandColor: number = BRAND.colors.primary): Promise<void> {
+    const content = text.slice(0, 4000);
+    const embed = new EmbedBuilder()
+      .setColor(brandColor)
+      .setAuthor({ name: member.displayName.slice(0, 256), iconURL: member.displayAvatarURL({ size: 128 }) })
+      .setDescription(content)
+      .setTimestamp();
+    const sent = await channel.send({ embeds: [embed], allowedMentions: { parse: [] } }).catch((err) => {
+      log.warn({ err, ticket: ticket.id }, 'Envoi du message du membre échoué');
+      return null;
+    });
+    if (!sent) return;
+    this.messageBuffer.push({
+      ticketId: ticket.id,
+      messageId: sent.id,
+      authorId: member.id,
+      authorTag: member.user.tag,
+      authorAvatar: member.user.displayAvatarURL({ extension: 'png', size: 128 }),
+      content,
+      attachments: [] as unknown as Prisma.InputJsonValue,
+      embeds: [] as unknown as Prisma.InputJsonValue,
+      createdAt: sent.createdAt,
+    });
   }
 
   // ───── Embeds & contrôles ─────
@@ -707,12 +799,12 @@ export class TicketService {
         });
     if (user) embed.setThumbnail(user.displayAvatarURL({ size: 128 }));
     embed.setTimestamp(ticket.createdAt);
+    if (ticket.title) embed.addFields({ name: t('tickets.open.field_title'), value: `**${ticket.title.slice(0, 1000)}**` });
     embed.addFields(
       { name: t('tickets.open.field_user'), value: `<@${ticket.userId}>`, inline: true },
       { name: t('tickets.open.field_type'), value: `${type?.emoji ?? ''} ${type?.label ?? '—'}`.trim(), inline: true },
       { name: t('tickets.open.field_status'), value: t(`tickets.status.${ticket.status}`), inline: true },
     );
-    if (ticket.claimedById) embed.addFields({ name: t('tickets.open.field_claimed'), value: `<@${ticket.claimedById}>`, inline: true });
     if (ticket.closedById) embed.addFields({ name: t('tickets.open.field_closed_by'), value: `<@${ticket.closedById}>`, inline: true });
     if (ticket.closedAt) embed.addFields({ name: t('tickets.open.field_closed'), value: discordTimestamp(ticket.closedAt, 'f'), inline: true });
     if (ticket.closeReason) embed.addFields({ name: t('tickets.open.field_reason'), value: ticket.closeReason.slice(0, 1024) });
@@ -724,46 +816,70 @@ export class TicketService {
     return embed;
   }
 
-  buildControls(ticket: Pick<Ticket, 'id' | 'status' | 'claimedById'> & { remindersMuted?: boolean }, t: Translator): ActionRowBuilder<ButtonBuilder>[] {
+  /**
+   * Boutons du message d'accueil (épinglé). Ticket ouvert : gestion complète. Ticket fermé : aucun bouton — les actions
+   * passent par le message de contrôle posté à la fermeture (`buildClosedControls`).
+   */
+  buildControls(ticket: Pick<Ticket, 'id' | 'status'> & { remindersMuted?: boolean }, t: Translator): ActionRowBuilder<ButtonBuilder>[] {
+    if (!OPEN_STATUSES.includes(ticket.status)) return [];
     const id = ticket.id;
-    const btn = (action: string, label: string, emoji: string, style: ButtonStyle, disabled = false) =>
-      new ButtonBuilder().setCustomId(buildCustomId('ticket', action, id)).setLabel(label).setEmoji(emoji).setStyle(style).setDisabled(disabled);
-    if (OPEN_STATUSES.includes(ticket.status)) {
-      return [
-        new ActionRowBuilder<ButtonBuilder>().addComponents(
-          btn('close', t('tickets.buttons.close'), '🔒', ButtonStyle.Danger),
-          btn('claim', ticket.claimedById ? t('tickets.buttons.claimed') : t('tickets.buttons.claim'), '👤', ButtonStyle.Primary, !!ticket.claimedById),
-          btn('transcript', t('tickets.buttons.transcript'), '📋', ButtonStyle.Secondary),
-          btn('add', t('tickets.buttons.add'), '👥', ButtonStyle.Secondary),
-          btn('remove', t('tickets.buttons.remove'), '🚫', ButtonStyle.Secondary),
-        ),
-        new ActionRowBuilder<ButtonBuilder>().addComponents(
-          btn('transfer', t('tickets.buttons.transfer'), '🔄', ButtonStyle.Secondary),
-          ticket.remindersMuted
-            ? btn('mute', t('ticket_reminders.btn_muted_control'), '🔕', ButtonStyle.Success)
-            : btn('mute', t('ticket_reminders.btn_unmuted_control'), '📌', ButtonStyle.Secondary),
-          btn('delete', t('tickets.buttons.delete'), '🗑️', ButtonStyle.Danger),
-        ),
-      ];
-    }
-    if (ticket.status === TicketStatus.DELETED) return [];
+    const btn = (action: string, label: string, emoji: string, style: ButtonStyle) => new ButtonBuilder().setCustomId(buildCustomId('ticket', action, id)).setLabel(label).setEmoji(emoji).setStyle(style);
     return [
       new ActionRowBuilder<ButtonBuilder>().addComponents(
-        btn('reopen', t('tickets.buttons.reopen'), '🔓', ButtonStyle.Success),
+        btn('close', t('tickets.buttons.close'), '🔒', ButtonStyle.Danger),
         btn('transcript', t('tickets.buttons.transcript'), '📋', ButtonStyle.Secondary),
+        btn('add', t('tickets.buttons.add'), '👥', ButtonStyle.Secondary),
+        btn('remove', t('tickets.buttons.remove'), '🚫', ButtonStyle.Secondary),
+      ),
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        btn('transfer', t('tickets.buttons.transfer'), '🔄', ButtonStyle.Secondary),
+        ticket.remindersMuted ? btn('mute', t('ticket_reminders.btn_muted_control'), '🔕', ButtonStyle.Success) : btn('mute', t('ticket_reminders.btn_unmuted_control'), '📌', ButtonStyle.Secondary),
         btn('delete', t('tickets.buttons.delete'), '🗑️', ButtonStyle.Danger),
       ),
     ];
   }
 
-  /** Retrouve le message de contrôle (épinglé ou parmi les premiers messages du salon). */
+  /**
+   * Message de contrôle d'un ticket fermé (staff) : 📄 Transcript · 🔓 Rouvrir · 🗑️ Supprimer.
+   * Une fois le transcript envoyé, son bouton devient « Transcript envoyé » (désactivé) pour éviter les doublons.
+   */
+  buildClosedControls(ticket: Pick<Ticket, 'id'> & { transcriptSentAt?: Date | null }, t: Translator): ActionRowBuilder<ButtonBuilder>[] {
+    const sent = !!ticket.transcriptSentAt;
+    const id = ticket.id;
+    return [
+      new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId(buildCustomId('ticket', 'transcript', id))
+          .setLabel(sent ? t('tickets.closed.btn_transcript_sent') : t('tickets.closed.btn_transcript'))
+          .setEmoji(sent ? '✅' : '📄')
+          .setStyle(sent ? ButtonStyle.Success : ButtonStyle.Primary)
+          .setDisabled(sent),
+        new ButtonBuilder().setCustomId(buildCustomId('ticket', 'reopen', id)).setLabel(t('tickets.closed.btn_reopen')).setEmoji('🔓').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId(buildCustomId('ticket', 'delete', id)).setLabel(t('tickets.closed.btn_delete')).setEmoji('🗑️').setStyle(ButtonStyle.Danger),
+      ),
+    ];
+  }
+
+  /** Embed du message de contrôle posté à la fermeture. */
+  closedEmbed(ticket: Pick<Ticket, 'number' | 'closedById' | 'closeReason' | 'transcriptSentAt'>, t: Translator, categoryNote: string | null): EmbedBuilder {
+    const lines = [t('tickets.closed.description', { user: ticket.closedById ? `<@${ticket.closedById}>` : '—' })];
+    if (ticket.closeReason) lines.push(t('tickets.actions.closed_reason', { reason: ticket.closeReason.slice(0, 1000) }));
+    if (categoryNote) lines.push(categoryNote);
+    lines.push('', ticket.transcriptSentAt ? t('tickets.closed.hint_sent') : t('tickets.closed.hint'));
+    return new EmbedBuilder().setColor(BRAND.colors.anthracite).setTitle(t('tickets.closed.title', { number: ticket.number })).setDescription(lines.join('\n').slice(0, 4096)).setFooter({ text: BRAND.footer }).setTimestamp();
+  }
+
+  /**
+   * Retrouve le message d'accueil : épinglé avec des boutons `ticket:` (ticket ouvert), sinon le message épinglé du bot
+   * (ticket fermé : ses boutons ont été retirés), sinon parmi les premiers messages du salon.
+   */
   async findControlMessage(channel: TextChannel): Promise<Message | null> {
     const me = channel.client.user?.id;
     const isControl = (m: Message) =>
       m.author.id === me &&
       m.components.some((row) => row.type === ComponentType.ActionRow && row.components.some((c) => 'customId' in c && typeof c.customId === 'string' && c.customId.startsWith('ticket:')));
     const pinned = await channel.messages.fetchPinned().catch(() => null);
-    const fromPinned = pinned?.find(isControl);
+    const fromPinned = pinned?.find(isControl) ?? pinned?.find((m) => m.author.id === me && m.embeds.length > 0);
     if (fromPinned) return fromPinned;
     const first = await channel.messages.fetch({ after: channel.id, limit: 10 }).catch(() => null);
     return first?.find(isControl) ?? null;
@@ -819,10 +935,9 @@ export class TicketService {
     else if (filters.status) where.status = filters.status;
     if (filters.userId) where.userId = filters.userId;
     if (filters.typeId) where.typeId = filters.typeId;
-    if (filters.claimedById) where.claimedById = filters.claimedById;
     if (filters.search) {
       const n = Number(filters.search);
-      where.OR = [...(Number.isInteger(n) ? [{ number: n }] : []), { userId: filters.search }, { closeReason: { contains: filters.search } }];
+      where.OR = [...(Number.isInteger(n) ? [{ number: n }] : []), { userId: filters.search }, { title: { contains: filters.search } }, { closeReason: { contains: filters.search } }];
     }
     const size = Math.min(Math.max(1, pageSize), 50);
     const current = Math.max(1, page);
@@ -834,9 +949,8 @@ export class TicketService {
   }
 
   async getStats(guildId: string): Promise<TicketStats> {
-    const [open, claimed, closed, deleted, total, agg, grouped, types] = await Promise.all([
+    const [open, closed, deleted, total, agg, grouped, types] = await Promise.all([
       prisma.ticket.count({ where: { guildId, status: TicketStatus.OPEN } }),
-      prisma.ticket.count({ where: { guildId, status: TicketStatus.CLAIMED } }),
       prisma.ticket.count({ where: { guildId, status: { in: CLOSED_STATUSES } } }),
       prisma.ticket.count({ where: { guildId, status: TicketStatus.DELETED } }),
       prisma.ticket.count({ where: { guildId } }),
@@ -847,7 +961,6 @@ export class TicketService {
     const byType = (grouped ?? []).map((g) => ({ typeId: g.typeId, label: types.find((t) => t.id === g.typeId)?.label ?? '—', count: g._count._all }));
     return {
       open,
-      claimed,
       closed,
       deleted,
       total,
@@ -956,11 +1069,9 @@ export class TicketService {
 
     const cache = new Map<string, TranscriptParticipant>();
     const creator = await this.participant(ticket.userId, guild, config, ticket.type, t, cache);
-    const claimedBy = ticket.claimedById ? await this.participant(ticket.claimedById, guild, config, ticket.type, t, cache) : null;
     const closerId = opts.closedById ?? ticket.closedById;
     const closedBy = closerId ? await this.participant(closerId, guild, config, ticket.type, t, cache) : null;
     const ids = new Set<string>([ticket.userId, ...asStringArray(ticket.participants), ...messages.map((m) => m.authorId)]);
-    if (ticket.claimedById) ids.add(ticket.claimedById);
     if (closerId) ids.add(closerId);
     const participants: TranscriptParticipant[] = [];
     for (const id of [...ids].slice(0, 50)) participants.push(await this.participant(id, guild, config, ticket.type, t, cache));
@@ -973,8 +1084,8 @@ export class TicketService {
       ticketId: ticket.id,
       typeLabel: ticket.type?.label ?? '—',
       typeEmoji: ticket.type?.emoji ?? null,
+      title: ticket.title ?? null,
       creator,
-      claimedBy,
       closedBy,
       closeReason: opts.reason ?? ticket.closeReason,
       openedAt: ticket.createdAt,
@@ -1037,31 +1148,60 @@ export class TicketService {
       .setTimestamp(data.closedAt);
   }
 
-  /** Envoie le transcript : fichiers dans le ticket, dans le salon de logs TICKET, et en DM au créateur. */
-  async sendTranscript(ticket: TicketFull, result: { files: TranscriptFiles; data: TranscriptData }, opts: { channel?: TextChannel | null; dm?: boolean; logChannel?: boolean } = {}): Promise<void> {
+  /**
+   * Envoie le transcript : fichiers dans le ticket (option `channel`), dans le salon de logs TICKET (sinon SYSTEM),
+   * et en DM au créateur (option `dm`, désactivée par défaut). Retourne le résultat de chaque envoi.
+   */
+  async sendTranscript(
+    ticket: TicketFull,
+    result: { files: TranscriptFiles; data: TranscriptData },
+    opts: { channel?: TextChannel | null; dm?: boolean; logChannel?: boolean } = {},
+  ): Promise<{ dm: 'sent' | 'failed' | 'skipped'; logged: boolean }> {
     const config = await guildConfigService.get(ticket.guildId);
     const lang = ticket.language ?? config?.defaultLanguage ?? 'fr';
     const t = translationService.bind(lang, ticket.guildId);
     const embed = this.transcriptEmbed(result.data, t, config?.brandColor);
     const files = () => this.transcriptAttachments(result.files, ticket.number);
     if (opts.channel) await opts.channel.send({ embeds: [embed], files: files() }).catch((err) => log.warn({ err, ticket: ticket.id }, 'Envoi du transcript dans le ticket échoué'));
+    let logged = false;
     if (opts.logChannel !== false && this.client) {
       const logChannelId = config?.logChannels.TICKET ?? config?.logChannels.SYSTEM;
       if (logChannelId && config?.modules.logs) {
         const ch = await this.client.channels.fetch(logChannelId).catch(() => null);
-        if (ch?.type === ChannelType.GuildText) await ch.send({ embeds: [embed], files: files() }).catch((err) => log.warn({ err }, 'Envoi du transcript dans les logs échoué'));
+        if (ch?.type === ChannelType.GuildText) {
+          logged = await ch
+            .send({ embeds: [embed], files: files() })
+            .then(() => true)
+            .catch((err) => {
+              log.warn({ err }, 'Envoi du transcript dans les logs échoué');
+              return false;
+            });
+        }
       }
     }
-    if (opts.dm !== false && this.client) {
+    let dm: 'sent' | 'failed' | 'skipped' = 'skipped';
+    if (opts.dm === true && this.client) {
       const user = await this.client.users.fetch(ticket.userId).catch(() => null);
-      if (user) await user.send({ content: t('tickets.actions.transcript_dm', { number: ticket.number, server: result.data.guildName }), embeds: [embed], files: files() }).catch(() => null);
+      dm = user
+        ? await user
+            .send({ content: t('tickets.actions.transcript_dm', { number: ticket.number, server: result.data.guildName }), embeds: [embed], files: files() })
+            .then(() => 'sent' as const)
+            .catch(() => 'failed' as const)
+        : 'failed';
     }
+    return { dm, logged };
   }
 
   // ───── Actions ─────
 
-  /** Ferme un ticket : permissions retirées, archivage, transcript, logs, bus. Utilisable depuis le dashboard. */
-  async closeTicket(input: { ticketId: number; closedById: string; reason?: string | null }): Promise<{ ticket: TicketFull; transcript: TicketTranscript | null }> {
+  /**
+   * Ferme un ticket SANS supprimer le salon : statut CLOSED, relances arrêtées, accès retiré au créateur et aux membres
+   * ajoutés (jamais au staff), salon déplacé dans la catégorie « Tickets fermés » (catégorie d'archive de la raison →
+   * réglage du serveur → catégorie par défaut si elle existe → sur place ; une catégorie pleine laisse le salon en place),
+   * boutons du message d'accueil retirés et message de contrôle staff posté (📄 Transcript · 🔓 Rouvrir · 🗑️ Supprimer).
+   * Aucun transcript n'est généré et rien n'est envoyé au créateur tant que 📄 Transcript n'est pas pressé.
+   */
+  async closeTicket(input: { ticketId: number; closedById: string; reason?: string | null }): Promise<{ ticket: TicketFull; category: CategoryDecision | null }> {
     const current = await this.loadTicket(input.ticketId);
     if (!OPEN_STATUSES.includes(current.status)) throw new TicketError('already_closed');
     const reason = input.reason?.trim() || null;
@@ -1069,37 +1209,39 @@ export class TicketService {
     const config = await guildConfigService.get(current.guildId);
     const lang = current.language ?? config?.defaultLanguage ?? 'fr';
     const t = translationService.bind(lang, current.guildId);
-
     const channel = await this.fetchChannel(current.channelId);
-    const archiveId = current.type?.archiveCategoryId ?? null;
-    const archived = !!(channel && archiveId && channel.guild.channels.cache.get(archiveId)?.type === ChannelType.GuildCategory);
 
     await prisma.ticket.update({
       where: { id: current.id },
-      data: { status: archived ? TicketStatus.ARCHIVED : TicketStatus.CLOSED, closedById: input.closedById, closeReason: reason, closedAt },
+      data: { status: TicketStatus.CLOSED, closedById: input.closedById, closeReason: reason, closedAt, openCategoryId: channel?.parentId ?? null, closeMessageId: null, transcriptSentAt: null },
     });
     this.openChannels.delete(current.channelId);
 
+    let category: CategoryDecision | null = null;
     if (channel) {
-      for (const id of [current.userId, ...asStringArray(current.participants)]) {
-        await channel.permissionOverwrites.edit(id, { SendMessages: false, ViewChannel: false }).catch(() => null);
+      for (const id of await this.memberAccess(channel.guild, current, config)) {
+        await channel.permissionOverwrites.edit(id, { ViewChannel: false, SendMessages: false }, { type: OverwriteType.Member }).catch((err) => log.warn({ err, ticket: current.id, member: id }, 'Retrait de l’accès au ticket échoué'));
       }
-      if (archived && archiveId) await channel.setParent(archiveId, { lockPermissions: false }).catch((err) => log.warn({ err, ticket: current.id }, 'Déplacement en archive échoué'));
-      await channel.send({ content: [t('tickets.actions.closed', { user: `<@${input.closedById}>` }), reason ? t('tickets.actions.closed_reason', { reason }) : ''].filter(Boolean).join('\n') }).catch(() => null);
-    }
-
-    let transcript: TicketTranscript | null = null;
-    try {
-      const result = await this.generateTranscript(current.id, { reason, closedById: input.closedById, closedAt });
-      transcript = result.record;
-      const reloaded = (await this.getTicket(current.id)) ?? current;
-      await this.sendTranscript(reloaded, result, { channel });
-    } catch (err) {
-      log.error({ err, ticket: current.id }, 'Transcript de fermeture échoué');
+      const settings = await prisma.ticketSettings.findUnique({ where: { guildId: current.guildId } }).catch(() => null);
+      const decision = resolveClosedCategory({
+        typeArchiveId: current.type?.archiveCategoryId,
+        settingId: settings?.closedCategoryId,
+        currentParentId: channel.parentId,
+        lookup: (id) => this.categoryInfo(channel.guild, id),
+      });
+      category = await this.applyCategory(channel, decision, current.id);
     }
 
     const ticket = (await this.getTicket(current.id)) ?? current;
-    await this.refreshControlMessage(ticket, channel);
+    if (channel) {
+      await this.refreshControlMessage(ticket, channel);
+      const note = category?.action === 'stay' && category.reason === 'full' ? t('tickets.closed.category_full', { category: `<#${category.categoryId}>` }) : null;
+      const message = await channel.send({ embeds: [this.closedEmbed(ticket, t, note)], components: this.buildClosedControls(ticket, t), allowedMentions: { parse: [] } }).catch((err) => {
+        log.error({ err, ticket: ticket.id }, 'Envoi du message de contrôle de fermeture échoué');
+        return null;
+      });
+      if (message) await prisma.ticket.update({ where: { id: ticket.id }, data: { closeMessageId: message.id } }).catch((err) => log.warn({ err, ticket: ticket.id }, 'Message de contrôle non mémorisé'));
+    }
 
     void loggingService.log({
       guildId: ticket.guildId,
@@ -1110,19 +1252,91 @@ export class TicketService {
         { name: t('tickets.log.field_user'), value: `<@${ticket.userId}>`, inline: true },
         { name: t('tickets.log.field_staff'), value: `<@${input.closedById}>`, inline: true },
         { name: t('tickets.log.field_type'), value: ticket.type?.label ?? '—', inline: true },
-        { name: t('tickets.log.field_duration'), value: formatDuration(transcript?.durationSeconds ?? Math.floor((closedAt.getTime() - ticket.createdAt.getTime()) / 1000), lang), inline: true },
-        { name: t('tickets.log.field_messages'), value: String(transcript?.messageCount ?? 0), inline: true },
+        { name: t('tickets.log.field_duration'), value: formatDuration(Math.floor((closedAt.getTime() - ticket.createdAt.getTime()) / 1000), lang), inline: true },
+        { name: t('tickets.log.field_channel'), value: channel ? `<#${channel.id}>` : '—', inline: true },
+        { name: t('tickets.log.field_category'), value: this.categoryLabel(category, t), inline: true },
         { name: t('tickets.log.field_reason'), value: reason ?? '—', inline: false },
       ],
       actorId: input.closedById,
       targetId: ticket.userId,
       color: BRAND.colors.anthracite,
-      data: { ticketId: ticket.id, number: ticket.number, reason, transcriptId: transcript?.id ?? null },
+      data: { ticketId: ticket.id, number: ticket.number, reason, category: category ? { ...category } : null },
     });
     this.emit('ticket:close', ticket.guildId, ticket.id);
-    return { ticket, transcript };
+    return { ticket, category };
   }
 
+  private categoryLabel(decision: CategoryDecision | null, t: Translator): string {
+    if (!decision) return '—';
+    if (decision.action === 'move') return `<#${decision.categoryId}>`;
+    if (decision.reason === 'full') return t('tickets.log.category_full', { category: `<#${decision.categoryId}>` });
+    if (decision.reason === 'already') return `<#${decision.categoryId}>`;
+    return t('tickets.log.category_none');
+  }
+
+  /**
+   * 📄 Transcript d'un ticket fermé (staff) : génère le transcript, l'enregistre (base + salon des transcripts) et l'envoie
+   * en DM au créateur. Une seule fois par fermeture : le bouton passe ensuite à « Transcript envoyé ».
+   */
+  async sendClosedTranscript(input: { ticketId: number; byId: string; message?: Message | null }): Promise<{ ticket: TicketFull; dm: 'sent' | 'failed' | 'skipped'; logged: boolean }> {
+    const current = await this.loadTicket(input.ticketId);
+    if (!CLOSED_STATUSES.includes(current.status)) throw new TicketError('not_closed');
+    if (current.transcriptSentAt) throw new TicketError('transcript_already_sent');
+    if (this.transcriptLocks.has(current.id)) throw new TicketError('transcript_in_progress');
+    this.transcriptLocks.add(current.id);
+    try {
+      const result = await this.generateTranscript(current.id, { closedById: current.closedById, closedAt: current.closedAt ?? new Date() });
+      const sentAt = new Date();
+      await prisma.ticket.update({ where: { id: current.id }, data: { transcriptSentAt: sentAt } });
+      const ticket = (await this.getTicket(current.id)) ?? { ...current, transcriptSentAt: sentAt };
+      const delivery = await this.sendTranscript(ticket, result, { channel: null, dm: true, logChannel: true });
+      await this.refreshClosedMessage(ticket, input.message);
+
+      const config = await guildConfigService.get(ticket.guildId);
+      const t = translationService.bind(ticket.language ?? config?.defaultLanguage ?? 'fr', ticket.guildId);
+      void loggingService.log({
+        guildId: ticket.guildId,
+        category: LogCategory.TICKET,
+        action: 'ticket.transcript',
+        title: t('tickets.log.transcript', { number: ticket.number }),
+        fields: [
+          { name: t('tickets.log.field_user'), value: `<@${ticket.userId}>`, inline: true },
+          { name: t('tickets.log.field_staff'), value: `<@${input.byId}>`, inline: true },
+          { name: t('tickets.log.field_dm'), value: t(`tickets.log.dm_${delivery.dm}`), inline: true },
+          { name: t('tickets.log.field_messages'), value: String(result.record.messageCount), inline: true },
+        ],
+        actorId: input.byId,
+        targetId: ticket.userId,
+        data: { ticketId: ticket.id, number: ticket.number, transcriptId: result.record.id, dm: delivery.dm },
+      });
+      this.emit('ticket:update', ticket.guildId, ticket.id, { action: 'transcript' });
+      return { ticket, ...delivery };
+    } finally {
+      this.transcriptLocks.delete(current.id);
+    }
+  }
+
+  /**
+   * Met à jour le message de contrôle d'un ticket fermé (état du bouton 📄). Un clic sur un ancien message (ticket fermé
+   * avant l'arrivée du message de contrôle) ne remplace que ses boutons, pas son embed.
+   */
+  private async refreshClosedMessage(ticket: TicketFull, message?: Message | null): Promise<void> {
+    const config = await guildConfigService.get(ticket.guildId);
+    const t = translationService.bind(ticket.language ?? config?.defaultLanguage ?? 'fr', ticket.guildId);
+    if (message && message.id !== ticket.closeMessageId) {
+      await message.edit({ components: this.buildClosedControls(ticket, t) }).catch((err) => log.warn({ err, ticket: ticket.id }, 'Mise à jour des boutons du ticket fermé échouée'));
+      return;
+    }
+    const channel = await this.fetchChannel(ticket.channelId);
+    const target = message ?? (channel && ticket.closeMessageId ? await channel.messages.fetch(ticket.closeMessageId).catch(() => null) : null);
+    if (!target) return;
+    await target.edit({ embeds: [this.closedEmbed(ticket, t, null)], components: this.buildClosedControls(ticket, t) }).catch((err) => log.warn({ err, ticket: ticket.id }, 'Mise à jour du message de contrôle de fermeture échouée'));
+  }
+
+  /**
+   * 🔓 Rouvre un ticket fermé (staff) : accès rendu au créateur et aux membres ajoutés, salon remis dans sa catégorie
+   * d'origine (sinon celle de la raison), statut OPEN, relances relancées à partir de maintenant, message de contrôle retiré.
+   */
   async reopenTicket(input: { ticketId: number; byId: string }): Promise<TicketFull> {
     const current = await this.loadTicket(input.ticketId);
     if (!CLOSED_STATUSES.includes(current.status)) throw new TicketError('not_closed');
@@ -1134,15 +1348,18 @@ export class TicketService {
 
     await prisma.ticket.update({
       where: { id: current.id },
-      data: { status: current.claimedById ? TicketStatus.CLAIMED : TicketStatus.OPEN, closedById: null, closeReason: null, closedAt: null },
+      data: { status: TicketStatus.OPEN, closedById: null, closeReason: null, closedAt: null, openCategoryId: null, closeMessageId: null, transcriptSentAt: null, lastReminderAt: new Date() },
     });
     this.openChannels.set(channel.id, current.id);
 
-    for (const id of [current.userId, ...asStringArray(current.participants)]) {
-      await channel.permissionOverwrites.edit(id, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true, AttachFiles: true, EmbedLinks: true }).catch(() => null);
+    for (const id of await this.memberAccess(channel.guild, current, config)) {
+      await channel.permissionOverwrites
+        .edit(id, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true, AttachFiles: true, EmbedLinks: true }, { type: OverwriteType.Member })
+        .catch((err) => log.warn({ err, ticket: current.id, member: id }, 'Accès au ticket non rétabli'));
     }
-    const parent = this.resolveCategory(channel.guild, current.type?.categoryId);
-    if (parent && channel.parentId !== parent) await channel.setParent(parent, { lockPermissions: false }).catch(() => null);
+    const decision = resolveReopenCategory({ openCategoryId: current.openCategoryId, typeCategoryId: current.type?.categoryId, currentParentId: channel.parentId, lookup: (id) => this.categoryInfo(channel.guild, id) });
+    await this.applyCategory(channel, decision, current.id);
+    if (current.closeMessageId) await channel.messages.delete(current.closeMessageId).catch(() => null);
     await channel.send({ content: `<@${current.userId}> ${t('tickets.actions.reopened', { user: `<@${input.byId}>` })}` }).catch(() => null);
 
     const ticket = (await this.getTicket(current.id)) ?? current;
@@ -1166,43 +1383,10 @@ export class TicketService {
     return ticket;
   }
 
-  async claimTicket(input: { ticketId: number; staffId: string; message?: Message | null }): Promise<TicketFull> {
-    const current = await this.loadTicket(input.ticketId);
-    if (!OPEN_STATUSES.includes(current.status)) throw new TicketError('already_closed');
-    if (current.claimedById && current.claimedById !== input.staffId) throw new TicketError('already_claimed', { user: `<@${current.claimedById}>` });
-    const config = await guildConfigService.get(current.guildId);
-    const lang = current.language ?? config?.defaultLanguage ?? 'fr';
-    const t = translationService.bind(lang, current.guildId);
-
-    await prisma.ticket.update({ where: { id: current.id }, data: { status: TicketStatus.CLAIMED, claimedById: input.staffId } });
-    const channel = await this.fetchChannel(current.channelId);
-    if (channel) {
-      await channel.permissionOverwrites.edit(input.staffId, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true, ManageMessages: true }).catch(() => null);
-      await channel.send({ content: t('tickets.actions.claimed', { user: `<@${input.staffId}>` }) }).catch(() => null);
-    }
-    const ticket = (await this.getTicket(current.id)) ?? current;
-    await this.refreshControlMessage(ticket, channel, input.message);
-    void loggingService.log({
-      guildId: ticket.guildId,
-      category: LogCategory.TICKET,
-      action: 'ticket.claim',
-      title: t('tickets.log.claim', { number: ticket.number }),
-      fields: [
-        { name: t('tickets.log.field_user'), value: `<@${ticket.userId}>`, inline: true },
-        { name: t('tickets.log.field_staff'), value: `<@${input.staffId}>`, inline: true },
-        { name: t('tickets.log.field_channel'), value: `<#${ticket.channelId}>`, inline: true },
-      ],
-      actorId: input.staffId,
-      targetId: ticket.userId,
-      color: BRAND.colors.primary,
-      data: { ticketId: ticket.id, number: ticket.number },
-    });
-    this.emit('ticket:update', ticket.guildId, ticket.id, { action: 'claim' });
-    return ticket;
-  }
-
   async addMember(input: { ticketId: number; targetId: string; byId: string }): Promise<TicketFull> {
     const current = await this.loadTicket(input.ticketId);
+    // Ticket fermé : ajouter un membre lui rendrait l'accès au salon conservé
+    if (!OPEN_STATUSES.includes(current.status)) throw new TicketError('already_closed');
     const channel = await this.fetchChannel(current.channelId);
     if (!channel) throw new TicketError('channel_missing');
     const member = await channel.guild.members.fetch(input.targetId).catch(() => null);
@@ -1213,7 +1397,7 @@ export class TicketService {
 
     const participants = [...new Set([...asStringArray(current.participants), input.targetId])].filter((id) => id !== current.userId);
     await prisma.ticket.update({ where: { id: current.id }, data: { participants: participants as unknown as Prisma.InputJsonValue } });
-    await channel.permissionOverwrites.edit(input.targetId, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true, AttachFiles: true, EmbedLinks: true });
+    await channel.permissionOverwrites.edit(input.targetId, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true, AttachFiles: true, EmbedLinks: true }, { type: OverwriteType.Member });
     await channel.send({ content: t('tickets.actions.member_added', { target: `<@${input.targetId}>`, user: `<@${input.byId}>` }) }).catch(() => null);
 
     const ticket = (await this.getTicket(current.id)) ?? current;
@@ -1284,7 +1468,8 @@ export class TicketService {
       const keep = new Set([...(config?.staffRoleIds ?? []), ...(config?.adminRoleIds ?? []), ...newRoles]);
       for (const r of oldRoles) if (!keep.has(r)) await channel.permissionOverwrites.delete(r).catch(() => null);
       for (const r of newRoles) await channel.permissionOverwrites.edit(r, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true, ManageMessages: true, AttachFiles: true, EmbedLinks: true }).catch(() => null);
-      const parent = this.resolveCategory(guild, OPEN_STATUSES.includes(current.status) ? newType.categoryId : (newType.archiveCategoryId ?? newType.categoryId));
+      // Ticket fermé : le salon reste dans la catégorie des tickets fermés
+      const parent = OPEN_STATUSES.includes(current.status) ? this.resolveCategory(guild, newType.categoryId) : undefined;
       if (parent && channel.parentId !== parent) await channel.setParent(parent, { lockPermissions: false }).catch(() => null);
       const ping = newRoles.map((r) => `<@&${r}>`).join(' ');
       await channel.send({ content: [t('tickets.actions.transferred', { type: newType.label, user: `<@${input.byId}>` }), ping].filter(Boolean).join('\n') }).catch(() => null);
@@ -1314,27 +1499,21 @@ export class TicketService {
     const current = await this.loadTicket(input.ticketId);
     const channel = await this.fetchChannel(current.channelId);
     if (!channel) throw new TicketError('channel_missing');
-    const name = sanitizeChannelName(input.name);
+    const name = slugifyTicketTitle(input.name) ?? sanitizeChannelName(input.name);
     await channel.setName(name);
     this.emit('ticket:update', current.guildId, current.id, { action: 'rename' });
     return name;
   }
 
-  /** Supprime définitivement : transcript garanti, statut DELETED, salon supprimé, log, bus. */
+  /**
+   * Supprime définitivement : statut DELETED, salon supprimé, log, bus. Aucun transcript n'est généré ici : seul le bouton
+   * 📄 Transcript (avant suppression) en produit un.
+   */
   async deleteTicket(input: { ticketId: number; byId: string }): Promise<TicketFull> {
     const current = await this.loadTicket(input.ticketId);
     const config = await guildConfigService.get(current.guildId);
     const t = translationService.bind(current.language ?? config?.defaultLanguage ?? 'fr', current.guildId);
     const channel = await this.fetchChannel(current.channelId);
-
-    if (!current.transcript) {
-      try {
-        const result = await this.generateTranscript(current.id, { closedById: current.closedById ?? input.byId, closedAt: current.closedAt ?? new Date() });
-        await this.sendTranscript(current, result, { channel: null, dm: OPEN_STATUSES.includes(current.status) });
-      } catch (err) {
-        log.error({ err, ticket: current.id }, 'Transcript avant suppression échoué');
-      }
-    }
 
     await prisma.ticket.update({
       where: { id: current.id },
@@ -1353,26 +1532,24 @@ export class TicketService {
         { name: t('tickets.log.field_user'), value: `<@${ticket.userId}>`, inline: true },
         { name: t('tickets.log.field_staff'), value: `<@${input.byId}>`, inline: true },
         { name: t('tickets.log.field_type'), value: ticket.type?.label ?? '—', inline: true },
+        { name: t('tickets.log.field_transcript'), value: ticket.transcript ? t('core.yes') : t('core.no'), inline: true },
       ],
       actorId: input.byId,
       targetId: ticket.userId,
       color: BRAND.colors.danger,
-      data: { ticketId: ticket.id, number: ticket.number },
+      data: { ticketId: ticket.id, number: ticket.number, transcript: !!ticket.transcript },
     });
     this.emit('ticket:update', ticket.guildId, ticket.id, { action: 'delete' });
     return ticket;
   }
 
-  /** Salon supprimé à la main → statut DELETED. */
+  /** Salon supprimé à la main → statut DELETED (sans transcript automatique). */
   async markChannelDeleted(channelId: string, guildId: string): Promise<TicketFull | null> {
     const ticket = await this.getTicketByChannel(channelId);
     this.openChannels.delete(channelId);
     if (!ticket) return null;
     const config = await guildConfigService.get(guildId);
     const t = translationService.bind(ticket.language ?? config?.defaultLanguage ?? 'fr', guildId);
-    if (!ticket.transcript && (await prisma.ticketMessage.count({ where: { ticketId: ticket.id } })) > 0) {
-      await this.generateTranscript(ticket.id, { closedAt: new Date() }).catch((err) => log.warn({ err, ticket: ticket.id }, 'Transcript après suppression manuelle échoué'));
-    }
     await prisma.ticket.update({ where: { id: ticket.id }, data: { status: TicketStatus.DELETED, closedAt: ticket.closedAt ?? new Date() } });
     void loggingService.log({
       guildId,
@@ -1402,7 +1579,7 @@ export class TicketService {
         { name: t('tickets.info.created_at'), value: discordTimestamp(ticket.createdAt, 'f'), inline: true },
       )
       .setFooter({ text: `${BRAND.footer} • ID ${ticket.id}` });
-    if (ticket.claimedById) embed.addFields({ name: t('tickets.open.field_claimed'), value: `<@${ticket.claimedById}>`, inline: true });
+    if (ticket.title) embed.setDescription(`**${ticket.title.slice(0, 200)}**`);
     if (ticket.closedAt) embed.addFields({ name: t('tickets.info.closed_at'), value: discordTimestamp(ticket.closedAt, 'f'), inline: true });
     if (ticket.closedById) embed.addFields({ name: t('tickets.open.field_closed_by'), value: `<@${ticket.closedById}>`, inline: true });
     const duration = ticket.transcript?.durationSeconds ?? Math.floor(((ticket.closedAt ?? new Date()).getTime() - ticket.createdAt.getTime()) / 1000);

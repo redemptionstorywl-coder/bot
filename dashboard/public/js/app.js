@@ -99,7 +99,7 @@
     var g = guildData();
     var users = {};
     if (g && g.user) users[g.user.id] = g.user.name;
-    var ctx = window.DiscordPreview ? window.DiscordPreview.contextFromGuild(g, g && g.bot ? { name: g.bot.name, avatarUrl: g.bot.avatarUrl } : null, { defaultColor: (g && g.brandColor) || body.getAttribute('data-brand-color') || '#7C3AED', users: users }) : {};
+    var ctx = window.DiscordPreview ? window.DiscordPreview.contextFromGuild(g, g && g.bot ? { name: g.bot.name, avatarUrl: g.bot.avatarUrl } : null, { defaultColor: (g && g.brandColor) || body.getAttribute('data-brand-color') || '#2F8BFF', users: users }) : {};
     if (extra) Object.keys(extra).forEach(function (k) { ctx[k] = extra[k]; });
     return ctx;
   }

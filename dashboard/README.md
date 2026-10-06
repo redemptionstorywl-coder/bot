@@ -178,7 +178,11 @@ rangé sous « Autres modules ». Un module coupé reste visible avec l'étiquet
   **Débannir tout le monde** (`massUnbanService`) : `GET /moderation/unban-all/status` (nombre de bannis mis en cache 60 s, progression),
   `POST /moderation/unban-all` (confirmation `UNBAN ALL` tapée, raison, « aussi débannir en jeu » ; réservé au propriétaire / Administrator),
   `POST /moderation/unban-all/cancel` ; progression sondée par `public/js/moderation.js`.
-- **Tickets** (`/tickets`) : Raisons, éditeur de raison, Panneaux, Relances, Tickets, Statistiques.
+- **Tickets** (`/tickets`) : Raisons, éditeur de raison (aperçu de la fenêtre d'ouverture : titre + questions + message), Panneaux,
+  Réglages (`/tickets/reminders` : catégorie « Tickets fermés » + relances), Tickets, Statistiques (staff le plus actif = tickets fermés).
+  Fiche d'un ticket fermé : « Envoyer le transcript » (`POST …/transcript`, DM au membre, une fois par fermeture) et « Rouvrir »
+  (`POST …/reopen`) ; la fermeture conserve le salon, la suppression ne génère pas de transcript. Plus de prise en charge (claim).
+  Les aperçus Discord utilisent la couleur des embeds du serveur (bleu `#2F8BFF` par défaut) ; le violet reste réservé à l'interface.
 - **Événements** : `/events`, `/events?tab=polls`, `/giveaways` ; création avec aperçu serveur (`POST …/preview`).
 - **FiveM** : `/fivem` (Serveurs · Joueurs · Installation rs_bridge), fiche `?server=<clé>&stab=overview|settings|sync`.
 - **Whitelist / School / Boutique / Battle Royale** : onglets d'objets, fiches maître/détail (`?id=`, `?user=`, `?app=`, `?order=`).

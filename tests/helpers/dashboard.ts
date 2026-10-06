@@ -143,7 +143,7 @@ export const guildRow = {
     guildId: GUILD_ID,
     defaultLanguage: 'fr',
     timezone: 'Europe/Paris',
-    brandColor: '#7C3AED',
+    brandColor: '#2F8BFF',
     adminRoleIds: [],
     staffRoleIds: [STAFF_ROLE_ID],
     modules: { tickets: true, logs: true, embeds: true, announcements: true, welcome: true, rolemenu: true, reactionrole: true, moderation: true, giveaways: true, events: true },

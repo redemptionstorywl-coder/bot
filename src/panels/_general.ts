@@ -204,7 +204,7 @@ function renderColor({ guild, config, t, notice }: GeneralRenderOptions): PanelP
 // ───── Modals ─────
 
 export function buildHexModal(config: ResolvedGuildConfig, t: Translator) {
-  return modal(gid('hex'), t('panels_core.general.modal_color_title'), labelled(t('panels_core.general.modal_color_label'), textInput('hex', TextInputStyle.Short, { value: hexOf(config.brandColor), placeholder: '#7C3AED', required: true, max: 7 }), t('panels_core.general.modal_color_help')));
+  return modal(gid('hex'), t('panels_core.general.modal_color_title'), labelled(t('panels_core.general.modal_color_label'), textInput('hex', TextInputStyle.Short, { value: hexOf(config.brandColor), placeholder: '#2F8BFF', required: true, max: 7 }), t('panels_core.general.modal_color_help')));
 }
 
 export function buildFooterModal(config: ResolvedGuildConfig, t: Translator) {

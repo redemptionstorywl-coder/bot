@@ -131,7 +131,7 @@ export async function buildOverviewCharts(guildId: string, timeZone: string, typ
       [] as { createdAt: Date; closedAt: Date | null }[],
     ),
     soft('sanctions', () => moderationService.stats(guildId, DAYS), { total: 0, byType: {} as Partial<Record<SanctionType, number>>, activeWarnings: 0, activeBans: 0, activeMutes: 0 }),
-    soft('backlog', () => prisma.ticket.count({ where: { guildId, status: { in: ['OPEN', 'CLAIMED'] } } }), 0),
+    soft('backlog', () => prisma.ticket.count({ where: { guildId, status: 'OPEN' } }), 0),
   ]);
 
   // Un départ peut être journalisé deux fois (événement + module Départ) : un membre compte une fois par jour et par sens.

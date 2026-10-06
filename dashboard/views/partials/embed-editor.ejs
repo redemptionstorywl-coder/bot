@@ -17,7 +17,7 @@
   const _compact = typeof compact !== 'undefined' && compact;
   const n = (k) => `${prefix}[${k}]`;
 %>
-<div class="embed-editor<%= _preview ? ' has-preview' : '' %>" data-embed-editor <%- typeof contentSource === 'string' ? `data-content-source="${contentSource}"` : '' %> <%- typeof previewTarget === 'string' ? `data-preview-target="${previewTarget}"` : '' %> data-default-color="<%= config && config.brandColor !== undefined ? fmt.hex(config.brandColor) : '#7C3AED' %>">
+<div class="embed-editor<%= _preview ? ' has-preview' : '' %>" data-embed-editor <%- typeof contentSource === 'string' ? `data-content-source="${contentSource}"` : '' %> <%- typeof previewTarget === 'string' ? `data-preview-target="${previewTarget}"` : '' %> data-default-color="<%= config && config.brandColor !== undefined ? fmt.hex(config.brandColor) : '#2F8BFF' %>">
   <div class="embed-editor-form">
     <div class="field-row">
       <div class="field"><label for="<%= _id %>-title">Titre</label><input id="<%= _id %>-title" class="input" name="<%= n('title') %>" data-embed-key="title" maxlength="256" value="<%= _spec.title || '' %>" placeholder="Titre de l'embed"></div>

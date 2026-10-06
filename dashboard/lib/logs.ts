@@ -20,9 +20,9 @@ export const LOG_CATEGORY_META: Record<string, { label: string; icon: string; de
 const ACTION_LABELS: Record<string, string> = {
   'ticket.open': 'Ticket ouvert',
   'ticket.close': 'Ticket fermé',
-  'ticket.claim': 'Ticket pris en charge',
   'ticket.reopen': 'Ticket réouvert',
   'ticket.delete': 'Ticket supprimé',
+  'ticket.transcript': 'Transcript de ticket envoyé',
   'ticket.transfer': 'Ticket transféré',
   'ticket.member_add': 'Membre ajouté à un ticket',
   'ticket.member_remove': 'Membre retiré d’un ticket',

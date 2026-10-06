@@ -45,14 +45,14 @@
         <div class="field mt-4"><label for="r-description">Description <span class="field-optional">100 caractères</span></label><input id="r-description" name="description" class="input" maxlength="100" value="<%= t && t.description ? t.description : '' %>" placeholder="Besoin d'aide ? Ouvrez un ticket support." data-reason-description></div>
         <div class="field-row mt-4">
           <div class="field">
-            <label for="r-nameFormat">Nom du salon</label>
+            <label for="r-nameFormat">Nom du salon <span class="field-optional">si le titre est inutilisable</span></label>
             <input id="r-nameFormat" name="nameFormat" class="input input-mono" maxlength="60" value="<%= t ? t.nameFormat : 'ticket-{number}' %>" data-name-format>
             <div class="var-chips mt-2" data-insert-target="#r-nameFormat"><% for (const v of ['{number}', '{username}', '{type}']) { %><button type="button" class="var-chip" data-insert="<%= v %>"><%= v %></button><% } %></div>
           </div>
           <div class="field">
             <span class="field-label">Aperçu</span>
             <div class="dchannel"><%- icon('hash') %><span data-name-preview>ticket-42</span></div>
-            <small class="hint">Exemple pour le ticket n°42 ouvert par vous.</small>
+            <small class="hint">Le salon prend le titre saisi par le membre (ex. « Problème de connexion » → <code>problème-de-connexion</code>). Ce format sert de repli — exemple pour le ticket n°42 ouvert par vous.</small>
           </div>
         </div>
         <div class="field mt-4"><label for="r-max">Tickets ouverts maximum par membre</label><input id="r-max" name="maxPerUser" type="number" class="input" min="1" max="25" value="<%= t ? t.maxPerUser : 1 %>" data-input-narrow><small class="hint">Au-delà, le membre doit fermer un ticket de cette raison avant d'en ouvrir un autre.</small></div>
@@ -64,7 +64,7 @@
         <p class="card-desc mb-4">Où le salon du ticket est créé, puis rangé à la fermeture.</p>
         <div class="field-row">
           <div class="field"><label for="r-category">Catégorie de création</label><%- include('../partials/channel-select', { name: 'categoryId', id: 'r-category', kind: 'category', selected: t ? t.categoryId : '', emptyLabel: 'Racine du serveur', placeholder: 'Racine du serveur' }) %><small class="hint">Limite Discord : 50 salons par catégorie (au-delà, création à la racine).</small></div>
-          <div class="field"><label for="r-archive">Catégorie d'archive</label><%- include('../partials/channel-select', { name: 'archiveCategoryId', id: 'r-archive', kind: 'category', selected: t ? t.archiveCategoryId : '', emptyLabel: 'Aucune (verrouillé sur place)', placeholder: 'Aucune (verrouillé sur place)' }) %><small class="hint">À la fermeture, le salon y est déplacé et le membre n'y a plus accès.</small></div>
+          <div class="field"><label for="r-archive">Catégorie des tickets fermés</label><%- include('../partials/channel-select', { name: 'archiveCategoryId', id: 'r-archive', kind: 'category', selected: t ? t.archiveCategoryId : '', emptyLabel: 'Celle du serveur (Réglages)', placeholder: 'Celle du serveur (Réglages)' }) %><small class="hint">À la fermeture, le salon est conservé, déplacé ici (prioritaire sur la catégorie « Tickets fermés » du serveur) et le membre n'y a plus accès.</small></div>
         </div>
       </section>
 
@@ -92,9 +92,9 @@
 
       <!-- ───── Formulaire ───── -->
       <section class="card editor-section-card" id="form">
-        <div class="card-head"><div><h2 class="card-title">Formulaire d'ouverture</h2><p class="card-desc">Jusqu'à 5 questions posées dans une fenêtre Discord avant la création du ticket. Sans question, le ticket s'ouvre directement.</p></div></div>
+        <div class="card-head"><div><h2 class="card-title">Formulaire d'ouverture</h2><p class="card-desc">Le titre du ticket est toujours demandé en premier (il devient le nom du salon), puis jusqu'à <%= maxQuestions %> questions, puis un message facultatif s'il reste une place (5 champs max dans une fenêtre Discord).</p></div></div>
         <div class="editor-columns">
-          <div class="repeater" data-repeater data-repeater-max="5" data-repeater-json="#questions-json" data-repeater-require="label" data-questions>
+          <div class="repeater" data-repeater data-repeater-max="<%= maxQuestions %>" data-repeater-json="#questions-json" data-repeater-require="label" data-questions>
             <div class="q-list repeater-rows" data-repeater-rows>
               <% questions.forEach((q, i) => { %><%- include('../partials/question-row', { q, index: i }) %><% }) %>
             </div>
@@ -105,7 +105,7 @@
           <aside class="split-preview">
             <div class="preview-panel">
               <div class="preview-panel-head"><span class="row"><%- icon('eye', { size: 15 }) %>Fenêtre affichée au membre</span><span class="badge badge-muted">Discord</span></div>
-              <div class="preview-panel-body"><div class="dmodal-stage" data-modal-preview><%- discordPreview.renderModal({ title: texts.open.modalTitle.replace('{emoji}', t && t.emoji ? t.emoji : '🎫').replace('{type}', t ? t.label : 'Nouvelle raison'), fields: questions }) %></div></div>
+              <div class="preview-panel-body"><div class="dmodal-stage" data-modal-preview><%- discordPreview.renderModal({ title: texts.open.modalTitle.replace('{emoji}', t && t.emoji ? t.emoji : '🎫').replace('{type}', t ? t.label : 'Nouvelle raison'), fields: modalFields }) %></div></div>
             </div>
           </aside>
         </div>

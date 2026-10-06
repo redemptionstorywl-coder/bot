@@ -28,7 +28,7 @@
   function setup(editor) {
     // Aperçu intégré, ou hôte externe ([data-preview-target="#id"]) pour les mises en page « split ».
     var previewHost = $('[data-embed-preview]', editor) || (editor.getAttribute('data-preview-target') ? $(editor.getAttribute('data-preview-target')) : null);
-    var defaultColor = editor.getAttribute('data-default-color') || '#7C3AED';
+    var defaultColor = editor.getAttribute('data-default-color') || '#2F8BFF';
     var contentSource = editor.getAttribute('data-content-source');
     var contentEl = contentSource ? $(contentSource) : null;
     var fieldsRep = $('[data-embed-fields] [data-repeater]', editor);

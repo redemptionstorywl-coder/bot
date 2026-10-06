@@ -34,7 +34,8 @@ import {
  *  - vue d'une raison : `tcfg:type:<id>`, `tcfg:info:<id>` / `questions` / `welcome` (modals), `tcfg:toggle:<id>`,
  *    `tcfg:archivenone:<id>`, `tcfg:delete:<id>` → `tcfg:delete-confirm:<id>`
  *  - vue panneau : `tcfg:pstyle:<buttons|select>`, `tcfg:pen` (version anglaise), `tcfg:publish`
- *  - vue options : `tcfg:options`, `tcfg:translog-off` (retire le salon des transcripts), `tcfg:module` (active / désactive le module),
+ *  - vue options : `tcfg:options`, `tcfg:translog-off` (retire le salon des transcripts), `tcfg:closed-off` (retire la catégorie
+ *    « Tickets fermés »), `tcfg:module` (active / désactive le module),
  *    `tcfg:rtoggle` (relances automatiques on/off), `tcfg:rhours` (modal délai des relances)
  */
 export default defineButton({
@@ -92,6 +93,10 @@ async function handle(interaction: ButtonInteraction<'cached'>, action: string, 
     case 'translog-off': {
       await guildConfigService.setLogChannel(guildId, 'TICKET', null);
       return show(interaction, await optionsView(ok(t('panels_core.tickets.transcripts_off'))));
+    }
+    case 'closed-off': {
+      await ticketReminderService.updateSettings(guildId, { closedCategoryId: null });
+      return show(interaction, await optionsView(ok(t('panels_core.tickets.closed_cleared'))));
     }
     case 'module': {
       const enabled = !config!.modules.tickets;

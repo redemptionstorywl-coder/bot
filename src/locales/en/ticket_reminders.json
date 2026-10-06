@@ -1,8 +1,7 @@
 {
   "title": "⏰ Ticket waiting for staff",
-  "description": "This ticket has had no staff reply for **{duration}** ({since}).\nPlease claim it or answer the member.\n\nIf this ticket must stay open without activity (long follow-up, permanent contact with a lead…), click **Stop reminders**.",
+  "description": "This ticket has had no staff reply for **{duration}** ({since}).\nPlease answer the member.\n\nIf this ticket must stay open without activity (long follow-up, permanent contact with a lead…), click **Stop reminders**.",
   "footer": "Automatic reminder every {hours} h without a staff reply",
-  "btn_claim": "I'll handle it",
   "btn_mute": "Stop reminders",
   "btn_muted_control": "Reminders off",
   "btn_unmuted_control": "Permanent ticket",

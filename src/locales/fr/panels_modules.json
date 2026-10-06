@@ -336,7 +336,7 @@
     "saved": "Modifications enregistrées.",
     "assigned": "Assigné(s) : {users}",
     "assign_failed": "Non assigné(s) : {users}",
-    "invalid_color": "Couleur invalide : « {value} » (ex. #7C3AED).",
+    "invalid_color": "Couleur invalide : « {value} » (ex. #2F8BFF).",
     "modal_name": "Nom",
     "modal_capacity": "Capacité",
     "modal_capacity_help": "Vide = illimitée.",

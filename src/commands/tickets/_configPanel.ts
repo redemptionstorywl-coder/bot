@@ -23,7 +23,9 @@ import { embedService } from '../../services/EmbedService';
 import { TicketError, asStringArray, parseEmbedSpec, parseQuestions, ticketQuestionSchema, ticketService, type TicketQuestion } from '../../services/TicketService';
 import type { Translator } from '../../services/TranslationService';
 import { guildConfigService, type ResolvedGuildConfig } from '../../services/GuildConfigService';
-import { REMINDER_PING_MODES, ticketReminderService, type ReminderPingMode } from '../../services/TicketReminderService';
+import { REMINDER_PING_MODES, normalizeReminderPing, ticketReminderService, type ReminderPingMode } from '../../services/TicketReminderService';
+import { DEFAULT_CLOSED_CATEGORY_ID } from '../../services/tickets/closeFlow';
+import { MAX_TYPE_QUESTIONS } from '../../services/tickets/title';
 import { liveChannel, liveRoles } from '../../utils/liveIds';
 import { autoTranslateService } from '../../services/AutoTranslateService';
 
@@ -38,7 +40,8 @@ import { autoTranslateService } from '../../services/AutoTranslateService';
 
 export const TCFG = 'tcfg';
 export const MAX_ACCESS_ROLES = 10;
-export const QUESTION_SLOTS = 5;
+/** Champs « Question » du modal : le titre du ticket occupe toujours la première place du formulaire d'ouverture. */
+export const QUESTION_SLOTS = MAX_TYPE_QUESTIONS;
 const KEY_MAX = 32;
 
 export function cid(action: string, arg?: string | number): string {
@@ -208,13 +211,14 @@ export async function renderMain(opts: { guild: Guild; t: Translator; notice?: P
   return { embeds: [embed], components };
 }
 
-// ───── Vue « options » (module, salon des transcripts, relances) ─────
+// ───── Vue « options » (module, salon des transcripts, tickets fermés, relances) ─────
 
-/** Réglages des relances automatiques affichés dans les options. */
+/** Réglages TicketSettings affichés dans les options (relances + catégorie des tickets fermés). */
 export interface ReminderOptions {
   remindersEnabled: boolean;
   reminderHours: number;
   reminderPing: string;
+  closedCategoryId?: string | null;
 }
 
 export const REMINDER_HOURS = { min: 1, max: 168 } as const;
@@ -229,10 +233,21 @@ export function parseReminderHours(raw: string | undefined): number | null {
   return n >= REMINDER_HOURS.min && n <= REMINDER_HOURS.max ? n : null;
 }
 
-/** Options communes : module, salon des transcripts / logs tickets (log TICKET), relances automatiques, rappel des rôles staff. */
+/** Catégorie « Tickets fermés » affichée : réglage (s'il existe encore), sinon catégorie par défaut présente sur le serveur. */
+function closedCategoryText(guild: Guild, id: string | null | undefined, t: Translator): string {
+  if (id && liveChannel(guild, id)) return `<#${id}>`;
+  if (guild.channels.cache.get(DEFAULT_CLOSED_CATEGORY_ID)?.type === ChannelType.GuildCategory) return t('panels_core.tickets.closed_default', { channel: `<#${DEFAULT_CLOSED_CATEGORY_ID}>` });
+  return t('panels_core.tickets.closed_none');
+}
+
+/**
+ * Options communes : module, salon des transcripts / logs tickets (log TICKET), catégorie « Tickets fermés »,
+ * relances automatiques, rappel des rôles staff.
+ */
 export function renderOptions(opts: { guild: Guild; config: ResolvedGuildConfig; reminders: ReminderOptions; t: Translator; notice?: PanelNotice }): PanelPayload {
   const { guild, config, reminders, t, notice } = opts;
-  const ping: ReminderPingMode = isReminderPing(reminders.reminderPing) ? reminders.reminderPing : 'claimer';
+  const ping: ReminderPingMode = normalizeReminderPing(reminders.reminderPing);
+  const closedId = reminders.closedCategoryId ?? null;
   const enabled = config.modules.tickets;
   const ticketLog = config.logChannels.TICKET;
   const systemLog = config.logChannels.SYSTEM;
@@ -240,10 +255,11 @@ export function renderOptions(opts: { guild: Guild; config: ResolvedGuildConfig;
   const staff = config.staffRoleIds.length ? config.staffRoleIds.map((r) => `<@&${r}>`).join(' ') : t('core.none');
 
   const embed = embedService.brand(t('panels_core.tickets.options_title', { server: guild.name }));
-  embed.setDescription(description(notice, `${t('panels_core.tickets.options_hint')}\n${t('panels_core.tickets.permanent_hint')}`));
+  embed.setDescription(description(notice, `${t('panels_core.tickets.options_hint')}\n${t('panels_core.tickets.closed_hint')}\n${t('panels_core.tickets.permanent_hint')}`));
   embed.addFields(
     { name: t('panels_core.tickets.field_module'), value: stateLabel(enabled, t), inline: true },
     { name: t('panels_core.tickets.field_transcripts'), value: transcripts, inline: true },
+    { name: t('panels_core.tickets.field_closed'), value: closedCategoryText(guild, closedId, t), inline: true },
     {
       name: t('panels_core.tickets.field_reminders'),
       value: t('panels_core.tickets.reminders_value', { state: stateLabel(reminders.remindersEnabled, t), hours: reminders.reminderHours, ping: t(`panels_core.tickets.ping.${ping}`) }),
@@ -253,6 +269,8 @@ export function renderOptions(opts: { guild: Guild; config: ResolvedGuildConfig;
 
   const select = new ChannelSelectMenuBuilder().setCustomId(cid('translog')).setPlaceholder(t('panels_core.tickets.transcripts_placeholder').slice(0, 150)).addChannelTypes(ChannelType.GuildText).setMinValues(1).setMaxValues(1);
   if (ticketLog && guild.channels.cache.get(ticketLog)?.type === ChannelType.GuildText) select.setDefaultChannels(ticketLog);
+  const closedSelect = new ChannelSelectMenuBuilder().setCustomId(cid('closedcat')).setPlaceholder(t('panels_core.tickets.closed_placeholder').slice(0, 150)).addChannelTypes(ChannelType.GuildCategory).setMinValues(1).setMaxValues(1);
+  if (liveChannel(guild, closedId)) closedSelect.setDefaultChannels(closedId!);
   const pingSelect = new StringSelectMenuBuilder()
     .setCustomId(cid('rping'))
     .setPlaceholder(t('panels_core.tickets.ping_placeholder').slice(0, 150))
@@ -271,6 +289,7 @@ export function renderOptions(opts: { guild: Guild; config: ResolvedGuildConfig;
     embeds: [embed],
     components: [
       row(select),
+      row(closedSelect),
       row(pingSelect),
       row(
         btn(cid('rtoggle'), t('panels_core.tickets.btn_reminders', { state: reminders.remindersEnabled ? t('panels_core.common.on') : t('panels_core.common.off') }), reminders.remindersEnabled ? ButtonStyle.Success : ButtonStyle.Secondary, '🔔'),
@@ -279,6 +298,7 @@ export function renderOptions(opts: { guild: Guild; config: ResolvedGuildConfig;
         btn(cid('module'), enabled ? t('panels_core.common.module_on') : t('panels_core.common.module_off'), enabled ? ButtonStyle.Success : ButtonStyle.Danger, enabled ? '🟢' : '🔴'),
         btn(cid('main'), t('core.back'), ButtonStyle.Secondary, '↩️'),
       ),
+      row(btn(cid('closed-off'), t('panels_core.tickets.btn_closed_off'), ButtonStyle.Secondary, '🔒', !closedId)),
     ],
   };
 }

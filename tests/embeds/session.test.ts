@@ -12,7 +12,7 @@ const translator = new TranslationService(path.resolve(__dirname, '../../src/loc
 
 const config = {
   guildId: 'g',
-  brandColor: 0x7c3aed,
+  brandColor: 0x2f8bff,
   defaultLanguage: 'fr',
 } as unknown as ResolvedGuildConfig;
 

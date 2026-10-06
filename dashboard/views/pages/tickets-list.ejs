@@ -8,7 +8,6 @@
 <div class="row-wrap justify-between mb-4">
   <nav class="segmented" aria-label="Filtrer par statut">
     <a href="<%= q('open') %>"<%- statusFilter === 'open' ? ' aria-current="page"' : '' %>>Ouverts</a>
-    <a href="<%= q('CLAIMED') %>"<%- statusFilter === 'CLAIMED' ? ' aria-current="page"' : '' %>>Pris en charge</a>
     <a href="<%= q('closed') %>"<%- statusFilter === 'closed' ? ' aria-current="page"' : '' %>>Fermés</a>
     <a href="<%= q('all') %>"<%- statusFilter === 'all' ? ' aria-current="page"' : '' %>>Tous</a>
   </nav>
@@ -18,7 +17,7 @@
       <option value="">Toutes les raisons</option>
       <% for (const t of counts.types) { %><option value="<%= t.id %>" <%= filters.type === t.id ? 'selected' : '' %>><%= t.emoji ? t.emoji + ' ' : '' %><%= t.label %></option><% } %>
     </select>
-    <label class="search"><%- icon('search', { size: 16 }) %><input name="q" class="input input-sm" value="<%= filters.q %>" placeholder="N°, ID du membre…" aria-label="Rechercher un ticket"></label>
+    <label class="search"><%- icon('search', { size: 16 }) %><input name="q" class="input input-sm" value="<%= filters.q %>" placeholder="N°, titre, ID du membre…" aria-label="Rechercher un ticket"></label>
     <% if (filters.user) { %><input type="hidden" name="user" value="<%= filters.user %>"><% } %>
     <button type="submit" class="btn btn-sm">Filtrer</button>
     <% if (filters.type || filters.q || filters.user) { %><a class="btn btn-ghost btn-sm" href="<%= q(statusFilter) %>">Effacer</a><% } %>
@@ -31,14 +30,14 @@
   <% } else { %>
   <div class="table-wrap">
     <table class="table table-responsive table-clickable">
-      <thead><tr><th>Ticket</th><th>Membre</th><th>Statut</th><th>Pris en charge par</th><th>Ouvert</th><th>Dernière activité</th></tr></thead>
+      <thead><tr><th>Ticket</th><th>Membre</th><th>Statut</th><th>Titre</th><th>Ouvert</th><th>Dernière activité</th></tr></thead>
       <tbody>
-        <% for (const t of tickets) { const c = profiles[t.userId]; const s = t.claimedById ? profiles[t.claimedById] : null; const last = [t.lastStaffReplyAt, t.lastMemberMessageAt].filter(Boolean).sort((x, y) => new Date(y) - new Date(x))[0]; %>
+        <% for (const t of tickets) { const c = profiles[t.userId]; const last = [t.lastStaffReplyAt, t.lastMemberMessageAt].filter(Boolean).sort((x, y) => new Date(y) - new Date(x))[0]; %>
           <tr data-href="<%= b %>/<%= t.id %>">
             <td class="cell-primary"><div class="row"><a class="link strong" href="<%= b %>/<%= t.id %>">#<%= t.number %></a><span class="text-2 truncate"><%= t.type ? (t.type.emoji ? t.type.emoji + ' ' : '') + t.type.label : 'Sans raison' %></span><% if (t.remindersMuted) { %><span class="badge" data-tooltip="Ticket permanent : relances coupées"><%- icon('pin', { size: 12 }) %></span><% } %></div></td>
             <td data-label="Membre"><span class="user-cell"><% if (c) { %><img class="avatar avatar-xs" src="<%= c.avatarUrl %>" alt=""><% } %><span class="truncate"><%= c ? c.name : t.userId %></span></span></td>
             <td data-label="Statut"><span class="badge badge-status-<%= t.status %>"><%= statusLabels[t.status] || t.status %></span></td>
-            <td data-label="Pris en charge"><% if (s || t.claimedById) { %><span class="user-cell"><% if (s) { %><img class="avatar avatar-xs" src="<%= s.avatarUrl %>" alt=""><% } %><span class="truncate"><%= s ? s.name : t.claimedById %></span></span><% } else { %><span class="text-3">—</span><% } %></td>
+            <td data-label="Titre"><% if (t.title) { %><span class="truncate"><%= t.title %></span><% } else { %><span class="text-3">—</span><% } %></td>
             <td data-label="Ouvert" class="nowrap" title="<%= fmt.dateTime(t.createdAt) %>"><%= fmt.relative(t.createdAt) %></td>
             <td data-label="Activité" class="nowrap text-2"><%= t.closedAt ? 'fermé ' + fmt.relative(t.closedAt) : last ? fmt.relative(last) : '—' %></td>
           </tr>

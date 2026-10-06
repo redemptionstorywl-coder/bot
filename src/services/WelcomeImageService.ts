@@ -15,7 +15,7 @@ export interface WelcomeImageOptions {
   subtitle?: string;
   avatarUrl?: string | null;
   backgroundUrl?: string | null;
-  /** Couleur d'accent (0xRRGGBB). Violet par défaut. */
+  /** Couleur d'accent (0xRRGGBB). Couleur du serveur, bleu #2F8BFF par défaut. */
   accentColor?: number;
   width?: number;
   height?: number;
@@ -64,7 +64,7 @@ export async function fetchBuffer(url: string, timeoutMs = FETCH_TIMEOUT_MS): Pr
 }
 
 /**
- * Génère les cartes de bienvenue / départ : fond sombre (#111113), accent violet,
+ * Génère les cartes de bienvenue / départ : fond sombre (#111113), accent bleu (couleur du serveur),
  * fond personnalisé optionnel (assombri), avatar rond au centre, titre + sous-titre.
  */
 export class WelcomeImageService {

@@ -45,8 +45,9 @@ export interface TranscriptData {
   ticketId: number;
   typeLabel: string;
   typeEmoji?: string | null;
+  /** Titre saisi à l'ouverture */
+  title?: string | null;
   creator: TranscriptParticipant;
-  claimedBy?: TranscriptParticipant | null;
   closedBy?: TranscriptParticipant | null;
   closeReason?: string | null;
   openedAt: Date;
@@ -136,9 +137,9 @@ export class TranscriptService {
     lines.push(`${BRAND.name} — ${t('tickets.transcript.title', { number: data.ticketNumber })}`);
     lines.push(sep);
     lines.push(`${t('tickets.transcript.ticket')}: #${data.ticketNumber} (${data.guildName})`);
+    if (data.title) lines.push(`${t('tickets.transcript.title_field')}: ${data.title}`);
     lines.push(`${t('tickets.transcript.type')}: ${data.typeEmoji ? `${data.typeEmoji} ` : ''}${data.typeLabel}`);
     lines.push(`${t('tickets.transcript.opened_by')}: ${data.creator.tag} (${data.creator.id})`);
-    lines.push(`${t('tickets.transcript.claimed_by')}: ${data.claimedBy ? `${data.claimedBy.tag} (${data.claimedBy.id})` : t('tickets.transcript.none')}`);
     lines.push(`${t('tickets.transcript.closed_by')}: ${data.closedBy ? `${data.closedBy.tag} (${data.closedBy.id})` : t('tickets.transcript.none')}`);
     lines.push(`${t('tickets.transcript.reason')}: ${data.closeReason?.trim() || t('tickets.transcript.none')}`);
     lines.push(`${t('tickets.transcript.opened_at')}: ${fmtDate(data.openedAt, data.language)}`);
@@ -178,9 +179,9 @@ export class TranscriptService {
     const person = (p?: TranscriptParticipant | null) => (p ? `${escapeHtml(p.tag)} <span class="id">${escapeHtml(p.id)}</span>` : none);
 
     const meta = [
+      ...(data.title ? [[t('tickets.transcript.title_field'), escapeHtml(data.title)]] : []),
       [t('tickets.transcript.type'), `${escapeHtml(data.typeEmoji ?? '')} ${escapeHtml(data.typeLabel)}`.trim()],
       [t('tickets.transcript.opened_by'), person(data.creator)],
-      [t('tickets.transcript.claimed_by'), person(data.claimedBy)],
       [t('tickets.transcript.closed_by'), person(data.closedBy)],
       [t('tickets.transcript.reason'), escapeHtml(data.closeReason?.trim()) || none],
       [t('tickets.transcript.opened_at'), escapeHtml(fmtDate(data.openedAt, data.language))],
@@ -342,9 +343,9 @@ ${messages}
       // Métadonnées
       const none = t('tickets.transcript.none');
       const rows: [string, string][] = [
+        ...(data.title ? ([[t('tickets.transcript.title_field'), data.title]] as [string, string][]) : []),
         [t('tickets.transcript.type'), data.typeLabel],
         [t('tickets.transcript.opened_by'), `${data.creator.tag} (${data.creator.id})`],
-        [t('tickets.transcript.claimed_by'), data.claimedBy ? `${data.claimedBy.tag} (${data.claimedBy.id})` : none],
         [t('tickets.transcript.closed_by'), data.closedBy ? `${data.closedBy.tag} (${data.closedBy.id})` : none],
         [t('tickets.transcript.reason'), data.closeReason?.trim() || none],
         [t('tickets.transcript.opened_at'), fmtDate(data.openedAt, data.language)],

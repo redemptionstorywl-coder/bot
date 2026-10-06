@@ -4,7 +4,7 @@ import { BRAND } from '../config/constants';
 import { renderObject, type TemplateContext } from '../utils/variables';
 import { buildCustomId } from '../utils/customId';
 
-const hexColor = z.string().regex(/^#?[0-9a-fA-F]{6}$/, 'Couleur hexadécimale attendue (#7C3AED)');
+const hexColor = z.string().regex(/^#?[0-9a-fA-F]{6}$/, 'Couleur hexadécimale attendue (#2F8BFF)');
 const url = z.string().url().max(2048);
 
 export const embedFieldSchema = z.object({

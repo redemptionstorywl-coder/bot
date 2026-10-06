@@ -336,7 +336,7 @@
     "saved": "Changes saved.",
     "assigned": "Assigned: {users}",
     "assign_failed": "Not assigned: {users}",
-    "invalid_color": "Invalid color: “{value}” (e.g. #7C3AED).",
+    "invalid_color": "Invalid color: “{value}” (e.g. #2F8BFF).",
     "modal_name": "Name",
     "modal_capacity": "Capacity",
     "modal_capacity_help": "Empty = unlimited.",

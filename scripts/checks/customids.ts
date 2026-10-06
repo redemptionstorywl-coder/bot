@@ -10,12 +10,17 @@ import { ROOT, rel, runStandalone, walkFiles, type CheckResult } from './_lib';
  *  2. Chaque handler doit être atteignable (namespace généré quelque part) et chaque action qu'il déclare
  *     (`case 'x'`, `action === 'x'`, méthodes d'un objet `handlers`, tableaux `*_ACTIONS`, regex sur l'action) doit être générée.
  *  3. Les handlers de configuration (`cfg-*`, `tcfg`, `welcome`) exigent `permissions: { internal: 'admin' }`.
+ *  4. Les actions supprimées (REMOVED_ACTIONS) ne sont plus ni générées ni traitées.
  */
 
 type Kind = 'button' | 'select' | 'modal' | 'unknown';
 const SRC = path.join(ROOT, 'src');
 /** Namespaces réservés aux collectors locaux (pagination…). */
 const RESERVED = new Set(['noop', 'pg']);
+/** Actions supprimées (`namespace:action` → motif) : aucun customId ne doit encore les générer ni aucun handler les traiter. */
+export const REMOVED_ACTIONS: Record<string, string> = {
+  'ticket:claim': 'bouton Claim / « Je m\'en occupe » supprimé (tickets)',
+};
 /** Actions traitées par la branche par défaut d'un handler (vérifiées à la main). */
 const DEFAULT_BRANCH = new Set(['dm:confirm']);
 /** Namespaces de configuration : admin obligatoire. */
@@ -290,6 +295,7 @@ export async function run(): Promise<CheckResult> {
       continue;
     }
     for (const a of g.actions) {
+      if (REMOVED_ACTIONS[`${g.ns}:${a}`]) problems.push(`action supprimée ${g.ns}:${a} encore générée (${REMOVED_ACTIONS[`${g.ns}:${a}`]}) — ${rel(g.file)}:${g.line} ${g.text}`);
       if (a === '*') {
         dynamicSites++;
         notes.push(`action dynamique ${g.ns}:* (${g.kind}) — ${rel(g.file)}:${g.line} ${g.text}`);
@@ -307,6 +313,7 @@ export async function run(): Promise<CheckResult> {
     }
     const generated = mine.flatMap((g) => [...g.actions, ...g.subs]);
     for (const [action, line] of h.declared) {
+      if (REMOVED_ACTIONS[`${h.id}:${action}`]) problems.push(`action supprimée ${h.id}:${action} encore traitée (${REMOVED_ACTIONS[`${h.id}:${action}`]}) — ${rel(h.file)}:${line}`);
       if (!generated.some((g) => match(g, action))) problems.push(`action déclarée jamais générée : ${h.id}:${action} — ${rel(h.file)}:${line}`);
     }
     if (isConfigNamespace(h.id) && !/internal:\s*'admin'/.test(h.permissions)) problems.push(`permissions de configuration sans internal: 'admin' — ${rel(h.file)} (${h.permissions || 'aucune'})`);

@@ -45,7 +45,7 @@ export default defineCommand({
 });
 ```
 - `ctx.t(key, vars)` traduit dans la langue du serveur (`GuildSettings.defaultLanguage`, `fr` ou `en`). **Aucun texte utilisateur en dur** : tout passe par `t()` avec les fichiers `locales/fr/<ns>.json` **et** `locales/en/<ns>.json` (seules langues, parité des clés testée).
-- `ctx.config` = `ResolvedGuildConfig` (kind, modules, defaultLanguage, staffRoleIds, adminRoleIds, brandColor, logChannels).
+- `ctx.config` = `ResolvedGuildConfig` (kind, modules, defaultLanguage, staffRoleIds, adminRoleIds, brandColor — bleu #2F8BFF par défaut —, logChannels).
 - Réponses de confirmation/erreur : `MessageFlags.Ephemeral`. Embeds : `embedService.brand/success/error/warning/info`. Couleur par défaut `config.brandColor`.
 - Permissions internes : `'everyone' | 'staff' | 'admin' | 'owner'` (staff = rôles staff configurés ou ModerateMembers/ManageGuild ; admin = rôles admin ou Administrator).
 - Permissions par rôle configurables par serveur (`/config module:permissions`, dashboard) : `commandPermissionService` (src/services/CommandPermissionService.ts) + `decideCommandAccess`, appliqués par `src/events/interactionCreate.ts` AVANT le niveau interne et les permissions Discord : `allow` (rôle autorisé, administrateur Discord, propriétaire) saute niveau + permissions Discord de l'utilisateur (celles du bot restent vérifiées), `deny_disabled` / `deny_role` refusent, `default` = comportement ci-dessus. `config` et `help` sont verrouillées. Les vérifications faites DANS une commande (ex. `/clear salon` réservé aux admins) restent en place.
@@ -73,12 +73,12 @@ export default defineCommand({
 
 ### Qualité
 - `npx tsc -p tsconfig.json --noEmit` doit passer sans erreur.
-- `npm run check` (scripts/checks/) doit être vert : customIds ⇄ handlers, clés fr/en, références mortes, Lua ⇄ API FiveM, migrations ⇄ schéma. Toute modification du schéma passe par une **nouvelle** migration.
+- `npm run check` (scripts/checks/) doit être vert : customIds ⇄ handlers (actions supprimées interdites : `REMOVED_ACTIONS`), clés fr/en, références mortes, Lua ⇄ API FiveM, migrations ⇄ schéma. Toute modification du schéma passe par une **nouvelle** migration (les `UPDATE` de données y sont acceptés).
 - Tests Vitest dans `tests/<module>/*.test.ts`, en mockant Prisma : `vi.mock('../../src/database/client', () => ({ prisma: mockPrisma }))` (voir `tests/helpers/prisma.ts`).
 - Aucune fonctionnalité simulée : pas de `TODO`, pas de bouton qui ne fait rien. Si une intégration externe est requise (Tebex, FiveM), implémenter l'architecture + documenter précisément ce qu'il faut brancher.
 
 ### Design
-Sobre, premium, sombre. Violet `BRAND.colors.primary` (0x7C3AED) pour l'identité, rouge uniquement pour alertes/sanctions. Pas d'embeds surchargés.
+Sobre, premium, sombre. Embeds Discord en **bleu** `BRAND.colors.primary` (0x2F8BFF, couleur par défaut `GuildSettings.brandColor` = `DEFAULT_BRAND_HEX`, accent des cartes de bienvenue), rouge uniquement pour alertes/sanctions. Pas d'embeds surchargés. Le violet reste l'identité de l'interface du dashboard (`dashboard/public/css`), pas des embeds.
 
 ### Panneaux /config
 - Toute la configuration passe par `/config module:<clé>` (src/commands/admin/config.ts). Un panneau = un fichier `src/panels/<clé>.ts` exportant `defineConfigPanel({ key, label, emoji, order, module?, open })` (src/structures/configPanel.ts), découvert automatiquement (max 25).
@@ -87,6 +87,11 @@ Sobre, premium, sombre. Violet `BRAND.colors.primary` (0x7C3AED) pour l'identit�
 - Pas de commande de configuration séparée : les commandes slash restantes sont des ACTIONS (modération, tickets, annonces, profils…).
 - Ordre actuel : general (1), permissions (2), logs (3), bienvenue (4), tickets (5), moderation (6), roles (7), fivem (8), battleroyale (9), whitelist (10), school (11), shop (12), vocal (13).
 - Respecter les limites Discord : 5 rangées, un menu seul sur sa rangée, 25 options (paginer au-delà, cf. `src/panels/_permissions.ts`), customIds < 100, embed ≤ 6000 caractères ; pré-remplir les menus de rôles / salons uniquement avec des IDs encore présents (`src/utils/liveIds.ts`).
+
+### Tickets : ouverture, fermeture, transcript (module `tickets`)
+- Fonctions pures : `src/services/tickets/title.ts` (`slugifyTicketTitle`, `uniqueChannelName`, `planOpenModal` : titre + 4 questions max + message facultatif) et `src/services/tickets/closeFlow.ts` (`resolveClosedCategory` : archive de la raison → `TicketSettings.closedCategoryId` → `DEFAULT_CLOSED_CATEGORY_ID` → sur place, limite de 50 salons ; `resolveReopenCategory` ; `planMemberAccess` : créateur + membres ajoutés, jamais le staff).
+- `ticketService.closeTicket` conserve le salon (statut CLOSED, `openCategoryId` mémorisé, accès retiré, message de contrôle `closeMessageId` avec `ticket:transcript|reopen|delete:<id>`) ; **aucun transcript automatique** (ni à la fermeture, ni à la suppression, ni quand un salon est supprimé à la main). `sendClosedTranscript` (bouton 📄, staff, une fois par fermeture : `transcriptSentAt`) génère, enregistre et envoie en DM ; `reopenTicket` rétablit accès, catégorie et relances.
+- Le claim n'existe plus (statut `CLAIMED` et colonne `claimedById` supprimés par la migration `20261012000000_ticket_close_flow`) ; `npm run check` refuse toute action `ticket:claim` (`REMOVED_ACTIONS`) et la sous-commande « ticket claim » (`REMOVED_SUBCOMMANDS`).
 
 ### Salons vocaux temporaires (module `vocal`)
 - `src/services/TempVoiceService.ts` : fonctions pures (`resolveRule`, `buildChannelName`, `sanitizeMemberName`, `decideLobbyJoin`, `decideLeave`, `planStartupCleanup`, `buildOverwrites`) + service `tempVoiceService` (config `TempVoiceConfig`, salons actifs `TempVoiceChannel`, état en mémoire, suppression après `DELETE_GRACE_MS`, tâche `vocal:sweep`).
