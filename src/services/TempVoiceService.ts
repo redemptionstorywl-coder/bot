@@ -226,9 +226,12 @@ export function resolveRule(memberRoleIds: Iterable<string>, rules: readonly Voi
   return { rule: rules[index]!, index, roleId: rules[index]!.roleId };
 }
 
-/** Nom complet du salon d'un membre (rôles → règle → modèle → nettoyage → 100 caractères). */
-export function resolveChannelName(memberRoleIds: Iterable<string>, displayName: string, settings: Pick<TempVoiceSettings, 'rules' | 'fallback'>): string {
-  return buildChannelName(resolveRule(memberRoleIds, settings.rules, settings.fallback).rule, displayName);
+/** Modèle unique des salons créés : « <pseudo> Lobby » (sans drapeau ni langue). */
+export const LOBBY_NAME_RULE: Pick<VoiceNameRule, 'emoji' | 'template'> = { emoji: '', template: '{name} Lobby' };
+
+/** Nom complet du salon d'un membre : « <pseudo> Lobby », nettoyé, 100 caractères maximum. */
+export function resolveChannelName(_memberRoleIds: Iterable<string>, displayName: string, _settings?: Pick<TempVoiceSettings, 'rules' | 'fallback'>): string {
+  return buildChannelName(LOBBY_NAME_RULE, displayName);
 }
 
 const normalizeRoleName = (s: string): string =>

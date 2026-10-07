@@ -68,12 +68,12 @@ describe('résolution de la règle depuis les rôles', () => {
   it('aucun rôle de langue → règle de repli (anglais par défaut)', () => {
     const r = resolveRule([OTHER_ROLE], rules, defaultFallback());
     expect(r).toMatchObject({ index: -1, roleId: null });
-    expect(resolveChannelName([OTHER_ROLE], 'Bob', { rules, fallback: defaultFallback() })).toBe("🇬🇧 Bob's lobby");
-    expect(resolveChannelName([], 'Bob', { rules: [], fallback: { preset: 'custom', emoji: '', template: 'Vocal {name}' } })).toBe('Vocal Bob');
   });
 
-  it('l’ordre des règles change le résultat', () => {
-    expect(resolveChannelName([FR_ROLE, EN_ROLE], 'Bob', { rules: [en, fr], fallback: defaultFallback() })).toBe("🇬🇧 Bob's lobby");
+  it('le salon s’appelle toujours « <pseudo> Lobby », quels que soient les rôles', () => {
+    expect(resolveChannelName([OTHER_ROLE], 'Bob', { rules, fallback: defaultFallback() })).toBe('Bob Lobby');
+    expect(resolveChannelName([FR_ROLE, EN_ROLE], 'Bob', { rules: [en, fr], fallback: defaultFallback() })).toBe('Bob Lobby');
+    expect(resolveChannelName([], 'Bob')).toBe('Bob Lobby');
   });
 });
 

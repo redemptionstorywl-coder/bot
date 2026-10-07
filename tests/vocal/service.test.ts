@@ -156,12 +156,12 @@ afterEach(() => {
 });
 
 describe('création au lobby', () => {
-  it('crée « 🇫🇷 Salon de <pseudo> » (rôle français), y déplace le membre et l’enregistre', async () => {
+  it('crée « <pseudo> Lobby », y déplace le membre et l’enregistre', async () => {
     const bob = member('400000000000000001', 'Bob', [FR_ROLE]);
     await move(bob, LOBBY);
     expect(guild.channels.create).toHaveBeenCalledTimes(1);
     const opts = guild.channels.create.mock.calls[0]![0] as { name: string; parent: string; userLimit: number; bitrate: number; permissionOverwrites: { id: string; allow: bigint }[] };
-    expect(opts).toMatchObject({ name: '🇫🇷 Salon de Bob', parent: CATEGORY, userLimit: 5, bitrate: 96_000 });
+    expect(opts).toMatchObject({ name: 'Bob Lobby', parent: CATEGORY, userLimit: 5, bitrate: 96_000 });
     const owner = opts.permissionOverwrites.find((o) => o.id === bob.id)!;
     expect(owner.allow & PermissionFlagsBits.ManageChannels).toBe(PermissionFlagsBits.ManageChannels);
     expect(opts.permissionOverwrites.some((o) => o.id === GUILD)).toBe(true);
@@ -172,13 +172,13 @@ describe('création au lobby', () => {
     expect(svc.ownedChannel(GUILD, bob.id)).toBe(created!.id);
   });
 
-  it('sans rôle de langue → anglais ; catégorie et limite configurées', async () => {
+  it('sans rôle de langue → même nom ; catégorie et limite configurées', async () => {
     primeConfig({ categoryId: CATEGORY, userLimit: 0 });
     guild.channels.cache.set(CATEGORY, { id: CATEGORY, type: ChannelType.GuildCategory, isVoiceBased: () => false });
     svc = new TempVoiceService();
     await svc.attach(client);
     await move(member('400000000000000002', 'Ann'), LOBBY);
-    expect(guild.channels.create.mock.calls[0]![0]).toMatchObject({ name: "🇬🇧 Ann's lobby", parent: CATEGORY, userLimit: 0 });
+    expect(guild.channels.create.mock.calls[0]![0]).toMatchObject({ name: 'Ann Lobby', parent: CATEGORY, userLimit: 0 });
   });
 
   it('possède déjà un salon : déplacé dedans au lieu d’en créer un second', async () => {
