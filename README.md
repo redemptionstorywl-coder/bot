@@ -19,13 +19,14 @@ Node.js 22 · TypeScript · discord.js v14 · Prisma · MySQL · Express · Sock
 4. [Lancement](#lancement)
 5. [Configuration du premier serveur](#configuration-du-premier-serveur)
 6. [Dashboard web](#dashboard-web)
-7. [Commandes](#commandes)
-8. [Variables](#variables)
-9. [Traduction automatique en anglais](#traduction-automatique-en-anglais)
-10. [Intégration FiveM](#intégration-fivem)
-11. [Architecture & extension](#architecture--extension)
-12. [Tests](#tests)
-13. [Dépannage](#dépannage)
+7. [Serveur de logs central](#serveur-de-logs-central)
+8. [Commandes](#commandes)
+9. [Variables](#variables)
+10. [Traduction automatique en anglais](#traduction-automatique-en-anglais)
+11. [Intégration FiveM](#intégration-fivem)
+12. [Architecture & extension](#architecture--extension)
+13. [Tests](#tests)
+14. [Dépannage](#dépannage)
 
 ---
 
@@ -42,7 +43,8 @@ Node.js 22 · TypeScript · discord.js v14 · Prisma · MySQL · Express · Sock
 | 🎫 Tickets | 11 types configurables, titre demandé à l'ouverture (= nom du salon), formulaire, numérotation, ajout/retrait, transfert ; fermeture sans suppression (catégorie « Tickets fermés ») avec 📄 Transcript (HTML/TXT/PDF + DM au membre, sur demande) · 🔓 Rouvrir · 🗑️ Supprimer |
 | 🛡️ Modération | ban, tempban, unban, kick, warn (seuils automatiques), timeout, `/clear` (messages ou salon entier), `/unban-all` (débannissement de masse), slowmode, lock/unlock, mute-salon (sourdine programmée), lockdown, historique des sanctions |
 | 🚨 Anti-raid | anti-spam, anti-mass-mention, anti-link/invite/pub, anti-compte-récent, anti-bot, anti-mass-join → lockdown automatique, anti-nuke (audit log : bans/kicks/salons/rôles/webhooks en masse, bots ajoutés → strip des rôles dangereux / kick / ban) |
-| 📜 Logs | 14 catégories, un salon par catégorie, historique consultable dans le dashboard |
+| 📜 Logs | 15 catégories (dont 🎮 Jeu), un salon par catégorie, historique consultable dans le dashboard ; modifications `/config` et dashboard, paramètres du serveur, webhooks, emojis, applications ajoutées |
+| 🗂️ Serveur de logs central | `/template logs` : un serveur Discord dédié reçoit **tous les logs** de vos serveurs (un salon par type de log, une section par serveur) et les **logs en jeu** FiveM (connexions, kills, parties, sanctions, admin, anticheat) |
 | 📅 Événements | inscriptions, participants max, rappels automatiques (24h, 1h, 30, 10, 5 min) |
 | 🎁 Giveaways | rôle requis, nombre minimal de messages, tirage automatique, reroll |
 | 📊 Sondages | oui/non, choix multiples, anonyme, durée, résultats automatiques |
@@ -201,10 +203,53 @@ Tout est aussi modifiable depuis le dashboard.
 Démarre avec le bot sur `DASHBOARD_URL` (par défaut http://localhost:3000).
 
 - Connexion via **Discord OAuth2** ; accès réservé aux administrateurs des serveurs (ou `OWNER_IDS`).
-- Pages : Dashboard, Serveurs, Membres, Tickets, Embeds, Annonces, Bienvenue, Rôles, Reaction Roles, Salons vocaux, Logs, Modération, Giveaways, Événements, FiveM, Whitelist, Battle Royale, School RP, Shop, Paramètres (+ une vue Administration globale pour les `OWNER_IDS`).
+- Pages : Dashboard, Serveurs, Membres, Tickets, Embeds, Annonces, Bienvenue, Rôles, Reaction Roles, Salons vocaux, Logs, Hub de logs, Modération, Giveaways, Événements, FiveM, Whitelist, Battle Royale, School RP, Shop, Paramètres (+ une vue Administration globale pour les `OWNER_IDS`).
 - Chaque modification est appliquée **immédiatement** au bot (cache invalidé + Socket.IO).
 
 Voir [`dashboard/README.md`](dashboard/README.md) pour la structure et l'ajout de pages.
+
+---
+
+## Serveur de logs central
+
+Un serveur Discord **dédié aux logs** : il reçoit une copie de **tous les logs** de vos serveurs (RS Battle Royale, RS Studio…) et les **logs en jeu** du serveur FiveM, rangés par serveur et par type. Chaque log garde ses couleurs et ses champs ; l'en-tête indique le serveur d'origine (nom + icône), le pied de page l'action (`mod.ban`, `message.delete`…).
+
+### Mise en place (5 minutes)
+
+1. **Créez un serveur Discord vide** (bouton ➕ de Discord → *Créer le mien*), par exemple « RS Logs ».
+2. **Invitez le bot** sur ce serveur avec le lien habituel (`permissions=8`, Administrateur) — ou au minimum **Gérer les salons** + **Gérer les rôles** + Voir les salons / Envoyer des messages / Intégrer des liens.
+3. Sur ce nouveau serveur, tapez **`/template logs`**.
+4. Dans le menu, **choisissez les serveurs** à relier (RS Battle Royale et RS Studio sont pré-cochés). Seuls les serveurs où **vous êtes administrateur ou propriétaire** apparaissent : le bot le vérifie sur chaque serveur.
+5. Sous le menu, un bouton par **serveur FiveM** déclaré sur ces serveurs : cliquez pour activer ses logs en jeu (⬜ non → 🎮 oui → 💬 oui + chat en jeu).
+6. Cliquez sur **🏗️ Créer la structure**. Le bot crée les catégories et salons (privés : @everyone ne les voit pas), affiche la progression, puis épingle un **📌 sommaire** qui explique tout. **C'est fini** : les logs arrivent.
+
+Relancer `/template logs` affiche l'état (serveurs, jeux, salons manquants) et propose **Réparer / compléter** (recrée les salons supprimés, ajoute un nouveau serveur — rien n'est dupliqué) et **Retirer une source** (les salons sont conservés). Tout se gère aussi dans le dashboard : **Sécurité → Hub de logs** (salon de chaque type de log, copie locale oui/non, nom de section, ajout / retrait de serveurs et de jeux, bouton *Créer les salons manquants*).
+
+### Structure créée
+
+| Catégorie | Salons |
+| --- | --- |
+| `🌐 GÉNÉRAL` | `📌・sommaire` · `🔨・sanctions-globales` (toutes les sanctions de tous les serveurs + jeu) · `🚨・alertes-sécurité` (anti-raid, anti-nuke, lockdown, salon piège, bots / applications ajoutés, anticheat) · `🤖・bot-système` (démarrage, erreurs, déploiements, serveurs rejoints / quittés, changements de configuration) |
+| `🎯 RS BATTLE ROYALE · MODÉRATION` (une section par serveur, emoji selon le serveur) | `🔨・sanctions` · `🧹・clear-salons` · `🚨・sécurité` · `🔄・sync-fivem` |
+| `… · MESSAGES & MEMBRES` | `🗑️・messages-supprimés` · `✏️・messages-modifiés` · `🧨・suppressions-en-masse` · `📥・arrivées` · `📤・départs` · `🏷️・pseudos` · `🎭・rôles-membres` · `✉️・invitations` · `🔊・vocal` |
+| `… · SERVEUR & ACTIVITÉ` | `📁・salons` · `🎖️・rôles` · `⚙️・paramètres` · `🎫・tickets` · `📝・whitelist` · `📢・annonces` · `📅・événements` · `🛒・boutique` · `⚔️・battle-royale` · `🎓・school-rp` · `🤖・config-bot` |
+| `🎮 JEU · <serveur de jeu>` | `🟢・connexions` · `🏷️・comptes-pseudos` · `💀・kills` · `🏆・parties` · `🔨・sanctions-jeu` · `🛡️・actions-admin` · `💬・chat-jeu` (si activé) · `🚨・anticheat` · `⚙️・serveur-jeu` |
+
+Les salons de modules inutiles pour un serveur ne sont pas créés (un salon « module » n'existe que si le module est actif sur ce serveur ou prévu pour son type : pas de `whitelist` ni de `boutique` pour RS Battle Royale, pas de `sync-fivem` sans serveur FiveM). Leurs logs éventuels vont dans le salon de la catégorie, sinon `config-bot`.
+
+### Règles
+
+- **Sécurité** : un serveur ne peut être relié que par son **propriétaire**, un membre **Administrateur** de CE serveur (relu sur Discord au moment du lien) ou un propriétaire du bot (`OWNER_IDS`) — inviter le bot sur un serveur ne permet donc pas de récupérer les logs d'un serveur qu'on ne gère pas. Il faut aussi être administrateur du serveur de logs. Chaque lien est journalisé dans les logs du serveur relié.
+- Un serveur est relié à **un seul** serveur de logs (10 serveurs Discord et 10 serveurs de jeu maximum par serveur de logs). Un serveur de logs ne peut pas être lui-même relié à un autre.
+- **Délier** : depuis le serveur de logs (`/template logs` → *Retirer une source*, dashboard) ou depuis le serveur relié (`/config module:logs` → *Délier du serveur de logs*, dashboard → Hub de logs).
+- **Copie locale** : par défaut, chaque serveur continue de publier dans ses propres salons de logs ; décochez « Aussi en local » (dashboard) ou cliquez *Ne plus publier ici* (`/config module:logs`) pour n'utiliser que le serveur de logs. L'historique du dashboard reste complet dans tous les cas.
+- **Débit** : les logs sont regroupés (jusqu'à 10 par message, envoi toutes les 2 secondes, nouvel essai automatique si Discord limite le débit) : un serveur très actif ne sature pas Discord.
+
+### Ajouter les logs en jeu (FiveM)
+
+1. Mettez à jour la ressource **`rs_bridge`** (version 1.2 : nouveau fichier `server/logs.lua`) — même installation que d'habitude ([`docs/INSTALL-BATTLEROYALE.md`](docs/INSTALL-BATTLEROYALE.md), section « Logs en jeu »). Rien à ajouter dans `server.cfg` : les logs utilisent les mêmes `rs_bridge_url` / `rs_bridge_guild` / `rs_bridge_server_key` / `rs_bridge_api_key`.
+2. Dans `/template logs` (ou le dashboard → Hub de logs), activez le serveur de jeu (🎮), puis **Créer / Réparer**.
+3. Connexions, déconnexions, connexions refusées, groupes en jeu, sanctions, annonces / redémarrages txAdmin, ressources démarrées / arrêtées et kills (`baseevents`) arrivent tout seuls. Le chat en jeu : `Config.Logs.Chat = true` dans `config.lua` + « 💬 oui + chat ». Pour les parties, comptes et l'anticheat du gamemode : `exports.rs_bridge:Log('match_end', { … })` (exemples dans le guide).
 
 ---
 
@@ -228,9 +273,11 @@ Toute la configuration passe par **une seule commande** : `/config module:<modul
 | `shop` | Produits, catégories, Tebex, annonces produits |
 | `vocal` | Salons vocaux temporaires : lobbies « Créer un salon », catégorie, limite de membres, règles de langue (rôle → drapeau + nom), droits du créateur |
 
+`/template logs` (admin) transforme le serveur courant en **serveur de logs central** (voir [Serveur de logs central](#serveur-de-logs-central)).
+
 | Catégorie | Commandes d'action |
 | --- | --- |
-| Administration | `/info` (fiche du serveur avec IDs), `/dm user|all|status|cancel`, `/help`, `/status` |
+| Administration | `/info` (fiche du serveur avec IDs), `/dm user|all|status|cancel`, `/help`, `/status`, `/template logs` (serveur de logs central) |
 | Annonces & embeds | `/announce create|edit|delete|duplicate|schedule|preview|publish|archive|list`, `/embed create|edit|variables|template` |
 | Tickets | `/ticket close|add|remove|transcript|rename|info|list` (+ boutons dans chaque ticket, dont 📌 « Ticket permanent ») |
 | Modération | `/ban`, `/tempban`, `/unban` (option `en_jeu` : appliquer aussi sur les serveurs FiveM), `/kick`, `/warn`, `/warnings list|remove|clear`, `/timeout`, `/untimeout`, `/mute`, `/unmute`, `/clear messages|salon`, `/unban-all`, `/slowmode`, `/lock`, `/unlock`, `/mute-salon`, `/lockdown on|off|status`, `/case`, `/history` |
@@ -329,7 +376,7 @@ Le fournisseur actif est affiché dans `/config module:general` et dans les Para
 
 ## Intégration FiveM
 
-Le bot expose une API REST (`/api/fivem/...`) et un namespace Socket.IO (`/fivem`) protégés par `FIVEM_API_KEY`. Les serveurs FiveM envoient : statut, joueurs, version, maintenance, statistiques Battle Royale, sanctions ; et interrogent la whitelist.
+Le bot expose une API REST (`/api/fivem/...`) et un namespace Socket.IO (`/fivem`) protégés par `FIVEM_API_KEY`. Les serveurs FiveM envoient : statut, joueurs, version, maintenance, statistiques Battle Royale, sanctions, **logs en jeu** (`POST /logs`, vers le [serveur de logs central](#serveur-de-logs-central)) ; et interrogent la whitelist.
 
 Les frameworks **ESX**, **QBCore** et **custom** sont pris en charge via des adaptateurs (`src/services/fivem/adapters`). Documentation complète, exemples `curl` et script Lua : [`docs/FIVEM.md`](docs/FIVEM.md).
 
@@ -355,14 +402,14 @@ Voir [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). En résumé :
 npm test
 ```
 
-Les tests (Vitest) couvrent les systèmes critiques : tickets (fermeture sans suppression, catégorie « Tickets fermés », transcript à la demande, réouverture, titre → nom du salon, formulaire d'ouverture), permissions, traductions de l'interface, traduction automatique (protection des variables, composition bilingue et limites Discord, fournisseurs, cache, repli en cas d'échec — sans aucun accès réseau), rôles, sanctions, `/clear salon`, `/unban-all`, permissions des commandes par rôle, salons vocaux temporaires, annonces, programmation, FiveM (rôles → groupes en jeu, option « en jeu » des bans, statut), Battle Royale (classement en direct, `/stat`), base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
+Les tests (Vitest) couvrent les systèmes critiques : serveur de logs central (table action → route complète, routage local / hub / section générale / replis / copie locale, sécurité des liens, plan `/template logs` idempotent et limites Discord, file d'envoi groupée 10 embeds / 6000 caractères / 429, logs en jeu : schéma, rendu, API), tickets (fermeture sans suppression, catégorie « Tickets fermés », transcript à la demande, réouverture, titre → nom du salon, formulaire d'ouverture), permissions, traductions de l'interface, traduction automatique (protection des variables, composition bilingue et limites Discord, fournisseurs, cache, repli en cas d'échec — sans aucun accès réseau), rôles, sanctions, `/clear salon`, `/unban-all`, permissions des commandes par rôle, salons vocaux temporaires, annonces, programmation, FiveM (rôles → groupes en jeu, option « en jeu » des bans, statut), Battle Royale (classement en direct, `/stat`), base de données (mockée). Aucune base MySQL n'est nécessaire pour les lancer.
 
 ```bash
 npm run check            # vérifications statiques (aussi exécutées par npm test)
 npm run check -- --verbose
 ```
 
-`scripts/checks/` : customIds ⇄ handlers (chaque bouton / menu / modal généré a un handler qui traite son action, aucun handler orphelin, admin requis sur la configuration), clés de traduction fr/en (littérales, dynamiques, codes d'erreur, parité), références mortes (commandes supprimées, anciennes variables), ressource Lua `rs_bridge` ⇄ API FiveM (routes, en-têtes, corps, champs de réponse), migrations ⇄ `schema.prisma` (table par table, colonne par colonne ; `SHADOW_DATABASE_URL=mysql://…` ajoute la comparaison sur une vraie base).
+`scripts/checks/` : customIds ⇄ handlers (chaque bouton / menu / modal généré a un handler qui traite son action, aucun handler orphelin, admin requis sur la configuration), clés de traduction fr/en (littérales, dynamiques, codes d'erreur, parité), références mortes (commandes supprimées, anciennes variables), ressource Lua `rs_bridge` ⇄ API FiveM (routes, en-têtes, corps — dont le lot de `POST /logs` —, champs de réponse), migrations ⇄ `schema.prisma` (table par table, colonne par colonne ; `SHADOW_DATABASE_URL=mysql://…` ajoute la comparaison sur une vraie base), actions de logs ⇄ routes du serveur de logs central (chaque `action` journalisée a sa route dans `src/services/logs/routes.ts`).
 
 ---
 
@@ -377,6 +424,8 @@ npm run check -- --verbose
 | `Missing Permissions` sur les rôles | Montez le rôle du bot au-dessus des rôles à gérer. |
 | Le dashboard refuse la connexion | `DISCORD_CLIENT_SECRET` vide ou redirect URI non ajoutée dans OAuth2. |
 | Image de bienvenue absente | `sharp` n'a pas pu s'installer : `npm rebuild sharp`. Le message est envoyé sans image. |
+| Rien n'arrive dans le serveur de logs | Le serveur est-il relié (`/template logs` sur le serveur de logs) ? Le salon existe-t-il encore (*Réparer / compléter*) ? Le bot peut-il écrire dans la catégorie ? Logs en jeu : `rs_bridge` 1.2 et serveur de jeu activé (🎮). |
+| `/template logs` ne propose pas un serveur | Vous devez être administrateur ou propriétaire de ce serveur, et il ne doit pas être déjà relié à un autre serveur de logs. |
 | Pas de version anglaise | Activez-la (`/config module:general` ou Paramètres) et vérifiez l'interrupteur « Version anglaise » du message. Les logs indiquent l'erreur du fournisseur (`DeepL: quota exceeded`, `invalid key`…) ; le message part alors en français seul. |
 
 Les logs sont écrits dans `logs/bot.log` et `logs/error.log` (le token n'y apparaît jamais).

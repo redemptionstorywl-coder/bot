@@ -31,6 +31,8 @@ export class RedemptionClient extends Client {
         GatewayIntentBits.GuildPresences,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.DirectMessages,
+        // Invitations créées / supprimées (logs membres : invitations)
+        GatewayIntentBits.GuildInvites,
       ],
       partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.GuildMember, Partials.User],
       makeCache: Options.cacheWithLimits({

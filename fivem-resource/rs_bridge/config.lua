@@ -9,6 +9,7 @@
        add_ace resource.rs_bridge command.add_principal allow
        add_ace resource.rs_bridge command.remove_principal allow
        ensure rs_bridge   (après es_extended / qb-core si vous les utilisez)
+  Facultatif : set rs_bridge_logs "false" coupe les logs en jeu (Config.Logs).
   Guide pas à pas : docs/INSTALL-BATTLEROYALE.md du bot. Référence : docs/FIVEM.md.
 ]]
 
@@ -70,6 +71,24 @@ Config.TxAdminHooks = true
 
 -- Convar signalant la maintenance dans le statut (set rs_maintenance true). Non définie = ignorée (le bouton Maintenance de /config module:fivem fait foi).
 Config.MaintenanceConvar = 'rs_maintenance'
+
+-- Logs en jeu → serveur de logs central Discord (/template logs sur Discord, catégorie « 🎮 JEU »).
+-- Tout couper sans toucher à ce fichier : set rs_bridge_logs "false" dans server.cfg.
+Config.Logs = {
+  Enabled = true,
+  FlushInterval = 5,  -- secondes entre deux envois groupés
+  BatchSize = 25,     -- entrées max par envoi (le bot en accepte 50)
+  MaxQueue = 500,     -- entrées gardées en mémoire si le bot est injoignable (les plus anciennes sont abandonnées)
+  Chat = false,       -- chat en jeu (activez aussi « 💬 oui + chat » dans /template logs)
+  BaseEvents = true,  -- kills / morts de la ressource baseevents (si elle tourne)
+  TxAdmin = true,     -- événements txAdmin : annonces, redémarrage programmé, arrêt, heal (+ sanctions si TxAdminHooks = false)
+  Resources = true,   -- démarrage / arrêt des autres ressources (hors démarrage du serveur)
+  -- Types envoyés (false = jamais envoyé, même par exports.rs_bridge:Log)
+  Types = {
+    connect = true, disconnect = true, account = true, kill = true, death = true, match_start = true, match_end = true,
+    ban = true, kick = true, warn = true, unban = true, admin = true, chat = true, anticheat = true, server = true, custom = true,
+  },
+}
 
 -- Logs détaillés dans la console serveur
 Config.Debug = false

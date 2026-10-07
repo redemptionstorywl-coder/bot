@@ -98,6 +98,48 @@ export const connectionCheckSchema = z.object({
   name: z.string().max(128).optional(),
 });
 
+// ───────────── Logs en jeu (POST /logs, rs_bridge server/logs.lua) ─────────────
+
+export const GAME_LOG_TYPES = ['connect', 'disconnect', 'account', 'kill', 'death', 'match_start', 'match_end', 'ban', 'kick', 'warn', 'unban', 'admin', 'chat', 'anticheat', 'server', 'custom'] as const;
+export type GameLogType = (typeof GAME_LOG_TYPES)[number];
+
+/** Salons qu'un log `custom` peut viser (`data.channel`). */
+export const GAME_LOG_CHANNELS = ['connections', 'accounts', 'kills', 'matches', 'sanctions', 'admin', 'chat', 'anticheat', 'server'] as const;
+export type GameLogChannel = (typeof GAME_LOG_CHANNELS)[number];
+
+export const GAME_LOG_MAX_BATCH = 50;
+/** Taille max du JSON `data` d'une entrée (octets) et profondeur max. */
+export const GAME_LOG_MAX_DATA_BYTES = 8 * 1024;
+export const GAME_LOG_MAX_DEPTH = 4;
+
+function depthOf(v: unknown, depth = 0): number {
+  if (!v || typeof v !== 'object') return depth;
+  let max = depth + 1;
+  for (const child of Object.values(v as Record<string, unknown>)) max = Math.max(max, depthOf(child, depth + 1));
+  return max;
+}
+
+/** Données libres d'un log : objet JSON (tableau vide Lua `[]` accepté = objet vide), 8 ko et 4 niveaux max. */
+export const gameLogDataSchema = z.preprocess(
+  (v) => (v === undefined || v === null || (Array.isArray(v) && v.length === 0) ? {} : v),
+  z
+    .record(z.string().max(64), z.unknown())
+    .refine((d) => Object.keys(d).length <= 40, { message: '40 champs max' })
+    .refine((d) => depthOf(d) <= GAME_LOG_MAX_DEPTH, { message: `${GAME_LOG_MAX_DEPTH} niveaux max` })
+    .refine((d) => JSON.stringify(d).length <= GAME_LOG_MAX_DATA_BYTES, { message: `${GAME_LOG_MAX_DATA_BYTES} octets max` }),
+);
+
+export const gameLogEntrySchema = z.object({
+  type: z.enum(GAME_LOG_TYPES),
+  /** Horodatage Unix (secondes) côté serveur de jeu ; absent = réception */
+  ts: z.coerce.number().int().min(0).max(4_102_444_800).optional(),
+  data: gameLogDataSchema,
+});
+export type GameLogEntry = z.infer<typeof gameLogEntrySchema>;
+
+/** `POST /logs` : lot d'entrées (rs_bridge envoie au plus 25 entrées toutes les 5 s). */
+export const gameLogBatchSchema = z.array(gameLogEntrySchema).min(1).max(GAME_LOG_MAX_BATCH);
+
 export const socketAuthSchema = z.object({
   apiKey: z.string().min(1),
   serverKey: z.string().min(1).max(64),

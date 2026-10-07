@@ -1,6 +1,7 @@
 import { AuditLogEvent, PermissionsBitField, type Guild, type GuildAuditLogsEntry, type User } from 'discord.js';
 import { guildConfigService, type ResolvedGuildConfig } from '../services/GuildConfigService';
 import { translationService, type Translator } from '../services/TranslationService';
+import { logHubService } from '../services/LogHubService';
 
 /**
  * Helpers partagés par les événements de logs (fichier préfixé `_` : ignoré par le loader).
@@ -11,10 +12,14 @@ export interface LogCtx {
   lang: string;
 }
 
-/** Contexte de log d'un serveur (langue par défaut), null si le module logs est désactivé. */
+/**
+ * Contexte de log d'un serveur (langue par défaut), null si le module logs est désactivé ET que le serveur n'est pas relié
+ * à un serveur de logs central (hub) : une source reliée envoie ses logs au hub même sans salons de logs locaux.
+ */
 export async function logContext(guildId: string): Promise<LogCtx | null> {
   const cfg = await guildConfigService.get(guildId);
-  if (!cfg || !cfg.modules.logs) return null;
+  if (!cfg) return null;
+  if (!cfg.modules.logs && !(await logHubService.getSourceLink(guildId).catch(() => null))) return null;
   return { cfg, t: translationService.bind(cfg.defaultLanguage, guildId), lang: cfg.defaultLanguage };
 }
 

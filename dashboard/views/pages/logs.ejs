@@ -5,6 +5,7 @@
   </div>
 </header>
 
+<% if (hub && hub.linked) { %><div class="callout mb-4"><%- icon('layers') %><div>Les logs de ce serveur sont copiés dans le hub de logs <strong><%= hub.name %></strong><%= hub.keepLocal ? ' (et toujours publiés dans les salons ci-dessous)' : ' uniquement (plus publiés dans les salons ci-dessous)' %>. <a class="link" href="<%= base %>/log-hub">Gérer le lien</a></div></div><% } else if (hub) { %><div class="callout mb-4"><%- icon('layers') %><div>Ce serveur est un <strong>serveur de logs central</strong>. <a class="link" href="<%= base %>/log-hub">Ouvrir le hub de logs</a></div></div><% } %>
 <% if (!moduleEnabled) { %><div class="alert alert-warning"><%- icon('alert-triangle') %><span class="alert-text">Le module Logs est désactivé : rien n'est publié dans Discord (l'historique reste enregistré). <a class="link" href="<%= base %>/settings#modules">Activer le module</a></span></div><% } %>
 
 <%- include('../partials/tabs', { active: tab, label: 'Sections des logs', tabs: [
@@ -33,7 +34,7 @@
     <form method="post" action="<%= base %>/logs/channels/all" class="card form">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <h2 class="card-title"><%- icon('zap') %>Tout dans un salon</h2>
-      <p class="card-desc mb-4">Envoie les <%= categories.length %> catégories dans un seul salon, en un clic.</p>
+      <p class="card-desc mb-4">Envoie les <%= categories.length - 1 %> catégories dans un seul salon, en un clic (sauf Jeu : les logs en jeu ont besoin de leur propre salon).</p>
       <div class="field"><label for="all-channel">Salon</label><%- include('../partials/channel-select', { name: 'channelId', id: 'all-channel', selected: '', allowEmpty: true, emptyLabel: '— Choisir —', required: true }) %></div>
       <button type="submit" class="btn btn-block" data-confirm="Remplacer le salon de toutes les catégories par ce salon ?" data-confirm-title="Tout dans un salon" data-confirm-label="Appliquer" data-confirm-variant="primary">Appliquer à toutes les catégories</button>
     </form>

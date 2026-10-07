@@ -2,6 +2,7 @@ import { ActivityType, Events } from 'discord.js';
 import { defineEvent } from '../structures';
 import { guildConfigService } from '../services/GuildConfigService';
 import { loggingService } from '../services/LoggingService';
+import { logHubService } from '../services/LogHubService';
 import { scheduler } from '../services/SchedulerService';
 import { childLogger } from '../utils/logger';
 
@@ -27,6 +28,17 @@ export default defineEvent({
     }
 
     scheduler.start();
+
+    // Serveurs de logs centraux : « bot démarré » dans 🤖・bot-système
+    const commit = (process.env.RENDER_GIT_COMMIT ?? process.env.SOURCE_VERSION ?? '').slice(0, 7);
+    void logHubService.system(client, 'bot.startup', (t) => ({
+      title: t('loghub.system.startup_title'),
+      fields: [
+        { name: t('loghub.system.guilds'), value: String(readyClient.guilds.cache.size), inline: true },
+        { name: 'Node.js', value: process.version, inline: true },
+        ...(commit ? [{ name: t('loghub.system.commit'), value: `\`${commit}\``, inline: true }] : []),
+      ],
+    }));
 
     const statuses = [
       { name: 'Redemption Story Studio', type: ActivityType.Watching },

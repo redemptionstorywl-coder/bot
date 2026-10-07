@@ -35,6 +35,7 @@ export const NAVIGATION: NavEntry[] = [
   { key: 'tickets', label: 'Tickets', icon: 'ticket', path: 'tickets', module: 'tickets', group: 'support', keywords: 'support raisons panneaux transcripts relances' },
   { key: 'moderation', label: 'Modération', icon: 'shield', path: 'moderation', module: 'moderation', group: 'security', keywords: 'sanctions avertissements anti-raid anti-nuke lockdown salon piège bannis' },
   { key: 'logs', label: 'Logs', icon: 'scroll-text', path: 'logs', module: 'logs', group: 'security', keywords: 'journal historique salons de logs' },
+  { key: 'logHub', label: 'Hub de logs', icon: 'layers', path: 'log-hub', group: 'security', keywords: 'serveur de logs central template sources jeu fivem routes réparer' },
   { key: 'fivem', label: 'Serveurs FiveM', icon: 'gamepad', path: 'fivem', module: 'fivem', group: 'game', keywords: 'jeu joueurs statut rs_bridge synchronisation' },
   { key: 'battleRoyale', label: 'Battle Royale', icon: 'swords', path: 'battle-royale', module: 'battleRoyale', group: 'game', keywords: 'classement saisons battle pass' },
   { key: 'whitelist', label: 'Whitelist', icon: 'clipboard-check', path: 'whitelist', module: 'whitelist', group: 'game', keywords: 'candidatures dossiers formulaire' },

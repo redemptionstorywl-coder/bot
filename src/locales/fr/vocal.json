@@ -79,6 +79,10 @@
     "transfer": "{channel} : le créateur {from} est parti, {to} gère maintenant le salon.",
     "error_title": "⚠️ Salons vocaux temporaires",
     "missing_permissions": "Impossible de créer ou gérer un salon vocal temporaire : permissions du bot manquantes ({permissions}). Donnez-lui « Gérer les salons » et « Déplacer des membres » (serveur ou catégorie).",
-    "error": "Échec de l'étape « {step} » : {details}"
+    "error": "Échec de l'étape « {step} » : {details}",
+    "create_title": "🔊 Salon vocal temporaire créé",
+    "create": "{channel} (`{name}`) créé pour {user}.",
+    "delete_title": "🔇 Salon vocal temporaire supprimé",
+    "delete": "`{name}` de {user} supprimé (vide) après {duration}."
   }
 }

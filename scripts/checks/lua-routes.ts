@@ -27,6 +27,7 @@ const REQUEST_SCHEMAS: Record<string, string> = {
   'POST /check': 'connectionCheckSchema',
   'POST /sanctions': 'normalizedSanctionSchema',
   'POST /stats': 'normalizedStatsSchema',
+  'POST /logs': 'gameLogBatchSchema',
 };
 
 // ───────────── Mini-analyse Lua ─────────────

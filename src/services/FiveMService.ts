@@ -6,6 +6,7 @@ import { env } from '../config/env';
 import { BRAND } from '../config/constants';
 import { scheduler } from './SchedulerService';
 import { loggingService } from './LoggingService';
+import { gameLogService } from './GameLogService';
 import { moderationService } from './ModerationService';
 import { guildConfigService } from './GuildConfigService';
 import { translationService } from './TranslationService';
@@ -93,6 +94,8 @@ export class FiveMService {
   private readonly statusLocks = new Map<number, Promise<void>>();
   /** File par serveur (id) des éditions du message de statut : jamais deux messages créés en parallèle. */
   private readonly messageLocks = new Map<number, Promise<void>>();
+  /** Anti-rebond des logs « serveur en ligne / hors ligne » */
+  private readonly transitions = new TTLCache<true>(60_000, 1000);
 
   attach(client: Client): void {
     this.client = client;
@@ -222,6 +225,7 @@ export class FiveMService {
 
   /** Applique un statut reçu (REST / socket / polling) : DB + message Discord. */
   async applyStatus(server: FiveMServer, status: ServerStatus, source: StatusSource): Promise<FiveMServer> {
+    const wasOnline = resolveStatus(server).online;
     const previous = (server.lastStatus ?? {}) as { online?: boolean; onlineSince?: number };
     const onlineSince = status.online ? (previous.online && previous.onlineSince ? previous.onlineSince : Date.now()) : undefined;
     const data: Prisma.FiveMServerUpdateInput = {
@@ -234,7 +238,17 @@ export class FiveMService {
     log.debug({ server: server.key, guildId: server.guildId, source, players: status.players }, 'Statut appliqué');
     await this.updateStatusMessage(updated).catch((err) => log.warn({ err, server: server.key }, 'Message de statut non mis à jour'));
     for (const listener of this.statusListeners) await listener(updated, status, server).catch((err) => log.warn({ err, server: server.key }, 'Écouteur de statut en erreur'));
+    const nowOnline = resolveStatus(updated).online;
+    if (nowOnline !== wasOnline) await this.logTransition(updated, nowOnline, status.players);
     return updated;
+  }
+
+  /** Passage en ligne / hors ligne d'un serveur de jeu → logs en jeu (`serveur-jeu`), au plus une fois par minute et par état. */
+  private async logTransition(server: FiveMServer, online: boolean, players: number): Promise<void> {
+    const key = `${server.id}:${online ? 'on' : 'off'}`;
+    if (this.transitions.has(key)) return;
+    this.transitions.set(key, true);
+    await gameLogService.record(server, { type: 'server', ts: Math.floor(Date.now() / 1000), data: { event: online ? 'online' : 'offline', message: online ? `${players}/${(server.lastStatus as { maxPlayers?: number } | null)?.maxPlayers ?? '?'}` : undefined } });
   }
 
   /** Marque un serveur hors ligne (plus de nouvelles). */
@@ -260,6 +274,7 @@ export class FiveMService {
       title: `🎮 ${server.name} — maintenance ${enabled ? 'ON' : 'OFF'}`,
       actorId: actorId ?? null,
       data: { serverKey: key, enabled },
+      game: { serverId: server.id, serverName: server.name },
     });
     return server;
   }

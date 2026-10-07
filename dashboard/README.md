@@ -138,7 +138,7 @@ autres serveurs, thème, déconnexion. Rendu en `textContent`, recherche sans ac
 ## Navigation
 
 Groupes par intention : Vue d'ensemble · **Communauté** (Bienvenue et départs, Rôles, Annonces, Embeds, Événements, Salons vocaux) · **Support** (Tickets) ·
-**Sécurité** (Modération, Logs) · **Jeu** (Serveurs FiveM, Battle Royale, Whitelist, School RP, Boutique) · **Serveur** (Membres, Permissions, Paramètres).
+**Sécurité** (Modération, Logs, Hub de logs) · **Jeu** (Serveurs FiveM, Battle Royale, Whitelist, School RP, Boutique) · **Serveur** (Membres, Permissions, Paramètres).
 Un module de jeu n'apparaît dans « Jeu » que s'il est recommandé pour le type de serveur (`DEFAULT_MODULES_BY_KIND`) ou déjà activé ; sinon il est
 rangé sous « Autres modules ». Un module coupé reste visible avec l'étiquette « off ».
 
@@ -185,6 +185,7 @@ rangé sous « Autres modules ». Un module coupé reste visible avec l'étiquet
   Les aperçus Discord utilisent la couleur des embeds du serveur (bleu `#2F8BFF` par défaut) ; le violet reste réservé à l'interface.
 - **Événements** : `/events`, `/events?tab=polls`, `/giveaways` ; création avec aperçu serveur (`POST …/preview`).
 - **FiveM** : `/fivem` (Serveurs · Joueurs · Installation rs_bridge), fiche `?server=<clé>&stab=overview|settings|sync`.
+- **Hub de logs** (`/log-hub`) : sur un serveur de logs central (`/template logs`) — sources (copie locale, nom de section, retrait, ajout avec vérification « administrateur de la source »), serveurs de jeu (chat, retrait, ajout), salon de chaque route (`POST /log-hub/routes`), « Créer les salons manquants » (`POST /log-hub/repair`, en arrière-plan) ; sur un serveur relié : hub et « Délier » (`POST /log-hub/unlink-self`). Actions réservées au propriétaire / Administrateur.
 - **Whitelist / School / Boutique / Battle Royale** : onglets d'objets, fiches maître/détail (`?id=`, `?user=`, `?app=`, `?order=`).
 
 ## Conventions

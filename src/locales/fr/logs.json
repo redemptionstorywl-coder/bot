@@ -84,6 +84,50 @@
     "max_uses": "Utilisations max",
     "expires": "Expire",
     "never": "Jamais",
-    "temporary": "Temporaire"
+    "temporary": "Temporaire",
+    "deleted_title": "🔗 Invitation supprimée",
+    "expired_or_unknown": "Expirée ou inconnue"
+  },
+  "server": {
+    "updated_title": "⚙️ Paramètres du serveur modifiés",
+    "view": "Voir",
+    "fields": {
+      "name": "Nom",
+      "icon": "Icône",
+      "banner": "Bannière",
+      "description": "Description",
+      "verification": "Niveau de vérification",
+      "content_filter": "Filtre de contenu",
+      "mfa": "A2F des modérateurs",
+      "system_channel": "Salon système",
+      "rules_channel": "Salon des règles",
+      "updates_channel": "Salon des mises à jour",
+      "afk_channel": "Salon AFK",
+      "afk_timeout": "Délai AFK",
+      "locale": "Langue",
+      "vanity": "Invitation personnalisée",
+      "owner": "Propriétaire"
+    }
+  },
+  "audit": {
+    "changes": "Changements",
+    "webhook": {
+      "create": "🪝 Webhook créé",
+      "update": "🪝 Webhook modifié",
+      "delete": "🪝 Webhook supprimé"
+    },
+    "emoji": {
+      "create": "😀 Emoji ajouté",
+      "update": "😀 Emoji modifié",
+      "delete": "😀 Emoji supprimé"
+    },
+    "integration": {
+      "create": "🧩 Application / intégration ajoutée",
+      "delete": "🧩 Application / intégration retirée"
+    }
+  },
+  "config": {
+    "title": "⚙️ Configuration modifiée (/config)",
+    "panel": "Panneau"
   }
 }

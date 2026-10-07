@@ -4,8 +4,8 @@ lua54 'yes'
 
 name 'rs_bridge'
 author 'Redemption Story'
-description 'Pont FiveM ⇄ bot Discord Redemption Story : bans, pseudos, rôles → groupes, statut, stats Battle Royale'
-version '1.1.0'
+description 'Pont FiveM ⇄ bot Discord Redemption Story : bans, pseudos, rôles → groupes, statut, stats Battle Royale, logs en jeu'
+version '1.2.0'
 
 -- Aucune dépendance obligatoire (ESX / QBCore / txAdmin détectés si présents).
 server_scripts {
@@ -13,4 +13,5 @@ server_scripts {
   'server/main.lua',
   'server/groups.lua',
   'server/stats.lua',
+  'server/logs.lua',
 }

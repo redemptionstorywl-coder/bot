@@ -52,7 +52,8 @@
     "BATTLE_ROYALE": "⚔️ Battle Royale",
     "SCHOOL": "🎓 School RP",
     "SECURITY": "🚨 Security",
-    "SYSTEM": "⚙️ System"
+    "SYSTEM": "⚙️ System",
+    "GAME": "🎮 Game"
   },
   "general": {
     "title": "⚙️ General — {server}",
@@ -109,7 +110,7 @@
   },
   "logs": {
     "title": "📜 Logs — {server}",
-    "hint": "Pick a category, then its channel. A category without a channel is sent to the **System** channel if one is set.",
+    "hint": "Pick a category, then its channel. A category without a channel is sent to the **System** channel if one is set (except **Game**: in-game logs need their own channel).",
     "field_channels": "Channels per category ({count}/{total})",
     "via_system": "↪️ System channel",
     "pick_placeholder": "Category to configure…",
@@ -122,16 +123,27 @@
     "set": "**{category}** logs → {channel}",
     "disabled": "**{category}** logs disabled.",
     "all_title": "📦 All logs in a single channel",
-    "all_hint": "The selected channel will receive **every** log category ({count}). You can then move some of them one by one.",
+    "all_hint": "The selected channel will receive **every** log category ({count}) except **Game** (in-game logs: dedicated channel). You can then move some of them one by one.",
     "all_placeholder": "Channel for all logs…",
     "btn_all_off": "Disable all",
     "all_set": "All categories ({count}) → {channel}",
     "all_off": "All log channels have been removed.",
-    "created": "Channel {channel} created (visible to admins and staff only): all {count} categories are sent there.",
+    "created": "Channel {channel} created (visible to admins and staff only): all {count} categories (except Game) are sent there.",
     "create_failed": "Unable to create the channel: {details}",
     "no_manage_channels": "I am missing the “Manage Channels” permission.",
     "channel_name": "📜・logs",
-    "channel_topic": "Server logs (private: admins and staff)"
+    "channel_topic": "Server logs (private: admins and staff)",
+    "hub_title": "🗂️ Central log server",
+    "hub_linked": "This server is linked to **{hub}**: all its logs are copied there. Also posted in the channels above: **{local}**.",
+    "hub_is_hub": "This server **is** a central log server ({count} linked server(s)): use `/template logs` to manage it.",
+    "btn_hub_local_off": "Stop posting here",
+    "btn_hub_local_on": "Also post here",
+    "btn_hub_unlink": "Unlink from the log server",
+    "btn_hub_unlink_confirm": "Confirm: unlink",
+    "hub_local_off": "Logs are no longer posted in this server's channels (only in the central log server).",
+    "hub_local_on": "Logs are posted in this server's channels again.",
+    "hub_unlink_confirm": "Unlink this server from the central log server? Its logs will no longer be sent there. Click **Confirm: unlink**.",
+    "hub_unlinked": "This server is unlinked from **{hub}**."
   },
   "tickets": {
     "btn_options": "Options",

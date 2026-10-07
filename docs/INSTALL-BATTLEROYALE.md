@@ -8,7 +8,8 @@ Guide pas à pas, sous Windows, sans connaissances techniques. Compter **15 minu
 - le **pseudo choisi en jeu** devient le **surnom Discord** du joueur ;
 - les **rôles Discord** (Staff, Modérateur…) donnent les **groupes en jeu** (admin, mod…) ;
 - le **statut du serveur** (en ligne, joueurs, maintenance) s'affiche et se met à jour sur Discord ;
-- les **statistiques** (victoires, kills…) arrivent sur Discord : commande `/stat` et **classement en direct**.
+- les **statistiques** (victoires, kills…) arrivent sur Discord : commande `/stat` et **classement en direct** ;
+- les **logs en jeu** (connexions, kills, parties, sanctions, actions admin, anticheat…) arrivent dans le **serveur de logs central** Discord (`/template logs`).
 
 Ce qu'il vous faut :
 
@@ -35,7 +36,10 @@ E:\battleroyale\resources\[rs]\rs_bridge\config.lua
 E:\battleroyale\resources\[rs]\rs_bridge\server\main.lua
 E:\battleroyale\resources\[rs]\rs_bridge\server\groups.lua
 E:\battleroyale\resources\[rs]\rs_bridge\server\stats.lua
+E:\battleroyale\resources\[rs]\rs_bridge\server\logs.lua
 ```
+
+> Mise à jour depuis une ancienne version : remplacez **tout** le dossier `rs_bridge` (la version 1.2 ajoute `server/logs.lua` et le bloc `Config.Logs` de `config.lua`). Vos réglages de `server.cfg` ne changent pas.
 
 > Attention à ne pas créer `rs_bridge\rs_bridge\…` (double dossier) en dézippant.
 
@@ -187,6 +191,31 @@ Un ban n'est jamais renvoyé en boucle (jeu → Discord → jeu).
 
 ---
 
+## Étape 8 — Logs en jeu (serveur de logs Discord)
+
+Les logs du jeu partent dans le **serveur de logs central** (un serveur Discord dédié aux logs, voir le README du bot, section « Serveur de logs central ») :
+
+1. Sur Discord, dans le serveur de logs : **`/template logs`** → cliquez sur le bouton du serveur de jeu (*RS Battle Royale*) jusqu'à 🎮 (ou 💬 pour avoir aussi le chat), puis **Créer la structure** / **Réparer / compléter**. Une catégorie `🎮 JEU · RS Battle Royale` apparaît.
+2. Côté FiveM : rien à ajouter dans `server.cfg` (mêmes réglages que l'étape 3). Redémarrez le serveur après avoir copié la version 1.2 de `rs_bridge`.
+3. Arrivent tout seuls :
+
+| Salon | Ce qui y arrive |
+|---|---|
+| `🟢・connexions` | Connexions, déconnexions (raison, durée de la session), connexions refusées (ban, Discord requis, whitelist…) |
+| `🏷️・comptes-pseudos` | Pseudo du compte (`SetPlayerName`) et surnom Discord appliqué, liaison automatique du compte |
+| `💀・kills` | Kills et morts (ressource `baseevents` si elle tourne, ou votre gamemode) |
+| `🏆・parties` | Début / fin de partie (envoyés par le gamemode, voir plus bas) |
+| `🔨・sanctions-jeu` | Bans, kicks, avertissements, débannissements (menu admin, txAdmin) — copiés aussi dans `🔨・sanctions-globales` |
+| `🛡️・actions-admin` | Groupes en jeu donnés par les rôles Discord, heal txAdmin, révocations |
+| `💬・chat-jeu` | Chat en jeu (seulement si activé, voir ci-dessous) |
+| `🚨・anticheat` | Alertes envoyées par votre anticheat / gamemode — copiées aussi dans `🚨・alertes-sécurité` |
+| `⚙️・serveur-jeu` | Serveur en ligne / hors ligne, maintenance, annonces et redémarrages txAdmin, ressources démarrées / arrêtées |
+
+Réglages dans `rs_bridge/config.lua` → `Config.Logs` : `Chat = true` pour le chat en jeu (à activer aussi avec 💬 dans `/template logs`), `BaseEvents`, `TxAdmin`, `Resources`, et `Types` pour couper un type précis. `set rs_bridge_logs "false"` dans `server.cfg` coupe tous les logs en jeu.
+Si le bot est injoignable, les logs attendent en mémoire (500 au maximum) et repartent tout seuls.
+
+---
+
 ## Pour ton développeur
 
 Toutes les fonctions sont des **exports serveur** de `rs_bridge` (à appeler dans des scripts `server`). `source` = l'ID du joueur sur le serveur.
@@ -275,6 +304,41 @@ if IsPlayerAceAllowed(src, 'command.kick') then … end
 ```
 
 Dans `config.lua` : `Config.GroupsMode = 'highest'` (défaut, seul le groupe le plus important est donné) ou `'all'` (tous les groupes du joueur).
+
+### Logs en jeu (serveur de logs Discord)
+
+`exports.rs_bridge:Log(type, data)` met un log en file (envoi groupé toutes les 5 secondes). Les champs joueur (`player`, `killer`, `victim`, `target`, `staff`, `winner`) acceptent directement l'**ID serveur** du joueur : `rs_bridge` le remplace par son pseudo et ses identifiants (sans IP). Sur Discord, seuls la licence (raccourcie) et le compte Discord lié sont affichés.
+
+```lua
+-- Compte créé (premier choix du pseudo) — en plus de SetPlayerName
+exports.rs_bridge:Log('account', { event = 'created', player = src, new = pseudo })
+
+-- Kill (si vous n'utilisez pas baseevents, ou pour plus de détails : arme, distance, headshot, partie)
+exports.rs_bridge:Log('kill', { killer = killerSrc, victim = victimSrc, weapon = 'WEAPON_CARBINERIFLE', distance = 87.4, headshot = true, matchId = matchId })
+
+-- Début de partie
+exports.rs_bridge:Log('match_start', { matchId = matchId, mode = 'solo', map = 'Cayo Perico', players = #joueurs })
+
+-- Fin de partie : vainqueur, durée (secondes), classement (source = ID serveur, remplacé par le pseudo)
+exports.rs_bridge:Log('match_end', {
+  matchId = matchId, winner = winnerSrc, duration = os.time() - debut, players = 48,
+  top = { { source = winnerSrc, kills = 7, place = 1 }, { source = secondSrc, kills = 4, place = 2 } },
+})
+
+-- Anticheat / détection du gamemode (copié aussi dans 🚨・alertes-sécurité)
+exports.rs_bridge:Log('anticheat', { player = src, reason = 'Vitesse anormale', severity = 'haute', details = { speed = 420 } })
+
+-- Action admin de votre menu (ex. téléportation, give)
+exports.rs_bridge:Log('admin', { staff = adminSrc, action = 'teleport', target = targetSrc, details = 'vers le joueur' })
+
+-- Erreur d'un script (salon ⚙️・serveur-jeu)
+exports.rs_bridge:Log('server', { event = 'error', resource = GetCurrentResourceName(), message = err })
+
+-- Log libre dans le salon de votre choix : connections, accounts, kills, matches, sanctions, admin, chat, anticheat, server
+exports.rs_bridge:Log('custom', { channel = 'matches', title = '🔥 Zone finale', description = 'Il reste 5 joueurs', color = '#f59e0b', fields = { { name = 'Zone', value = 'Aéroport', inline = true } } })
+```
+
+Les sanctions passées par `Ban`, `BanPlayer`, `KickPlayer`, `WarnPlayer`, `Unban` (et txAdmin si `Config.TxAdminHooks = true`) sont journalisées automatiquement par le bot : ne les renvoyez pas avec `Log`. Utilisez `Log('ban', { target = src, staff = adminSrc, reason = '…', duration = 3600 })` seulement pour une sanction qui ne passe pas par ces exports (elle n'est alors pas appliquée sur Discord).
 
 ### Commandes console utiles
 

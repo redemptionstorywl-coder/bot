@@ -21,6 +21,7 @@ import { loggingService } from './LoggingService';
 import { scheduler } from './SchedulerService';
 import { translationService } from './TranslationService';
 import { TTLCache } from '../utils/cache';
+import { formatDuration } from '../utils/time';
 import { childLogger } from '../utils/logger';
 
 const log = childLogger('TempVoice');
@@ -658,7 +659,19 @@ export class TempVoiceService {
     } catch (err) {
       await this.reportError(guild, err, 'move');
       await this.deleteChannel(channel.id);
+      return;
     }
+    const t = await this.translator(guild.id);
+    await loggingService.log({
+      guildId: guild.id,
+      category: 'VOICE',
+      action: 'vocal.create',
+      title: t('vocal.log.create_title'),
+      description: t('vocal.log.create', { channel: `<#${channel.id}>`, name: channel.name, user: `<@${member.id}>` }),
+      actorId: member.id,
+      color: BRAND.colors.primary,
+      skipDatabase: true,
+    });
   }
 
   private track(channelId: string, tracked: TrackedChannel): void {
@@ -711,6 +724,21 @@ export class TempVoiceService {
           if (guild) await this.reportError(guild, err, 'delete');
           return;
         }
+      }
+      if (guild && tracked) {
+        const config = await guildConfigService.get(guild.id).catch(() => null);
+        const lang = translationService.resolveLanguage(config?.defaultLanguage);
+        const t = translationService.bind(lang, guild.id);
+        await loggingService.log({
+          guildId: guild.id,
+          category: 'VOICE',
+          action: 'vocal.delete',
+          title: t('vocal.log.delete_title'),
+          description: t('vocal.log.delete', { name: channel.name, user: `<@${tracked.ownerId}>`, duration: formatDuration(Math.max(1, Math.round((Date.now() - tracked.createdAt.getTime()) / 1000)), lang) }),
+          targetId: tracked.ownerId,
+          color: BRAND.colors.anthracite,
+          skipDatabase: true,
+        });
       }
     }
     await this.forget(channelId);

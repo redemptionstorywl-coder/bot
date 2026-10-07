@@ -25,6 +25,7 @@ import { MODULE_LABELS, type ModuleKey } from '../config/constants';
 import { embedService } from '../services/EmbedService';
 import { guildConfigService, type ResolvedGuildConfig } from '../services/GuildConfigService';
 import type { Translator, TranslationVars } from '../services/TranslationService';
+import { configAudit } from '../services/ConfigAuditService';
 
 /**
  * Briques communes des panneaux `/config` « modules » (roles, fivem, battleroyale, whitelist, school, shop).
@@ -98,6 +99,7 @@ export function truncate(s: string, max: number): string {
 
 /** Description d'embed : notice éventuelle puis texte d'aide. */
 export function withNotice(notice: PanelNotice | undefined, text: string): string {
+  configAudit.capture(notice);
   return truncate(notice ? `${NOTICE_ICON[notice.type]} ${notice.text}\n\n${text}` : text, 4096);
 }
 

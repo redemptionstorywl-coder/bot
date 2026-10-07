@@ -10,6 +10,7 @@
     exports           → POST /sanctions    (Ban, Unban, BanPlayer, UnbanPlayer, KickPlayer, WarnPlayer)
                       → POST /players/name (SetPlayerName : pseudo du compte en jeu → surnom Discord)
     txAdmin (option)  → POST /sanctions    (relai automatique des sanctions txAdmin)
+    server/logs.lua   → POST /logs         (logs en jeu groupés : connexions, kills, parties, admin, anticheat… — /template logs)
 
   Réglages de connexion : convars server.cfg (prioritaires) ou config.lua
     set rs_bridge_url "https://…"   set rs_bridge_guild "ID Discord"   set rs_bridge_server_key "br"   set rs_bridge_api_key "…"
@@ -241,6 +242,11 @@ end
 
 -- ───────────────────────── Connexion (deferrals) ─────────────────────────
 
+--- Connexion refusée → logs en jeu (server/logs.lua, chargé après ce fichier).
+local function logRefused(name, ids, reason)
+  if RSBridge.log then RSBridge.log('connect', { name = name, identifiers = ids, refused = true, reason = reason }) end
+end
+
 AddEventHandler('playerConnecting', function(name, _setKickReason, deferrals)
   local src = source
   local ids = identifiersOf(src)
@@ -250,6 +256,7 @@ AddEventHandler('playerConnecting', function(name, _setKickReason, deferrals)
 
   local localBan = LocalBans.find(ids)
   if localBan then
+    logRefused(name, ids, 'ban local : ' .. (str(localBan.reason) or msg('no_reason')))
     deferrals.done(banMessage(localBan.reason, localBan.expires))
     return
   end
@@ -265,17 +272,21 @@ AddEventHandler('playerConnecting', function(name, _setKickReason, deferrals)
         -- Groupes ACE posés dès la connexion (par identifiant) : disponibles avant même le spawn.
         RSBridge.applyGroups({ ids = ids, discordId = str(data.discordId) }, data.groups, data.group, data.managedGroups)
         deferrals.done()
-      elseif Config.UseBotMessages and str(data.message) then
-        deferrals.done(data.message)
-      elseif data.reason == 'banned' then
-        deferrals.done(banMessage(data.banReason, isoToEpoch(data.banExpiresAt)))
       else
-        deferrals.done(msg(str(data.reason) or 'bot_unreachable'))
+        logRefused(name, ids, str(data.reason) or 'refused')
+        if Config.UseBotMessages and str(data.message) then
+          deferrals.done(data.message)
+        elseif data.reason == 'banned' then
+          deferrals.done(banMessage(data.banReason, isoToEpoch(data.banExpiresAt)))
+        else
+          deferrals.done(msg(str(data.reason) or 'bot_unreachable'))
+        end
       end
     elseif Config.FailOpen then
       debug('Bot injoignable (%d) : connexion autorisée (FailOpen)', status)
       deferrals.done()
     else
+      logRefused(name, ids, 'bot_unreachable')
       deferrals.done(msg('bot_unreachable'))
     end
   end)

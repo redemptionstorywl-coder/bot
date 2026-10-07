@@ -1,7 +1,7 @@
 # Intégration FiveM — Redemption Story Bot
 
 Ce document décrit comment relier un serveur FiveM (Battle Royale, ESX, QBCore ou standalone) au bot :
-**bans synchronisés dans les deux sens (avec choix à chaque action), pseudo du compte en jeu → surnom Discord, liaison automatique des comptes, rôles « compte lié » / « en jeu », rôles Discord → groupes en jeu (ACE), salon compteur de joueurs, contrôle à la connexion (ban, Discord requis, rôle requis, whitelist), temps de jeu, statistiques Battle Royale (classement en direct, `/stat`), statut en temps réel, maintenance, webhook Tebex.**
+**bans synchronisés dans les deux sens (avec choix à chaque action), pseudo du compte en jeu → surnom Discord, liaison automatique des comptes, rôles « compte lié » / « en jeu », rôles Discord → groupes en jeu (ACE), salon compteur de joueurs, contrôle à la connexion (ban, Discord requis, rôle requis, whitelist), temps de jeu, statistiques Battle Royale (classement en direct, `/stat`), statut en temps réel, maintenance, logs en jeu vers le serveur de logs central (§ 12), webhook Tebex.**
 
 > Installation pas à pas pour le serveur **RS Battle Royale** (Windows, sans connaissances techniques) : [`INSTALL-BATTLEROYALE.md`](INSTALL-BATTLEROYALE.md).
 
@@ -184,6 +184,7 @@ associez un rôle Discord à un groupe (`admin`, `mod`, `vip`… : minuscules, c
 | `AddMatchStats(source, { kills, deaths, win, damage, top10, xp, season? })` | Stats de fin de partie (compte une partie) → `POST /stats` |
 | `AddMatchStatsBatch({ { source, kills, … }, … })` | Idem en une requête (max 200) |
 | `GetGroups(source)` / `GetGroup(source)` / `HasGroup(source, name)` | Groupes en jeu du joueur (rôles Discord, § 2.3) |
+| `Log(type, data)` | Log en jeu mis en file puis envoyé par lots → `POST /logs` (§ 12). Champs joueur (`player`, `killer`, `victim`, `target`, `staff`, `winner`) : ID serveur accepté |
 
 Événements locaux : `rs_bridge:action` (chaque action reçue du bot, pour l'appliquer aussi dans votre système de ban ESX/QBCore) et `rs_bridge:groupsChanged` (source, groupes, principal).
 Console : `rsbridge` (réglages + test de connexion), `rsbridge unban <identifiant>`, `rsbridge groups <id>`.
@@ -222,7 +223,7 @@ Réponses : toujours JSON. Erreurs : `{ "error": "<code>", "message": "<lisible>
 | 403 | `disabled` | Serveur désactivé |
 | 404 | `not_found` | Serveur / route inconnue |
 | 413 | `payload_too_large` | Corps > 512 ko |
-| 429 | `rate_limited` | > **120 requêtes / minute / IP** (`Retry-After` fourni). `rs_bridge` en consomme ~8/min + 1 par connexion. |
+| 429 | `rate_limited` | > **120 requêtes / minute / IP** (`Retry-After` fourni). `rs_bridge` en consomme ~8/min + 1 par connexion + ~12/min de logs en jeu (au plus). `POST /logs` : en plus, 600 entrées / minute / serveur de jeu. |
 | 500 | `internal` | Erreur interne (loguée côté bot) |
 
 ---
@@ -247,6 +248,7 @@ Préfixe commun : `B = /api/fivem/servers/:guildId/:serverKey`
 | GET | `B/whitelist/:identifier` | — | `{ ok, identifier, whitelisted, status, discordId }` |
 | GET | `B/whitelist` | — | `{ ok, count, whitelist: [{ discordId, identifier, acceptedAt }] }` |
 | POST | `B/maintenance` | `{ enabled }` | `{ ok, maintenance }` |
+| POST | `B/logs` | Tableau de 1 à 50 entrées `[{ type, ts?, data }]` (§ 12) | `202 { ok, accepted }` — `429` + `Retry-After` au-delà de 600 entrées / min / serveur |
 | GET | `/api/fivem/health` | — | `{ ok, service, uptime }` (sans auth) |
 
 ### 5.1 Stats Battle Royale
@@ -282,6 +284,7 @@ curl -s -X POST "$BASE/sanctions" "${H[@]}" -d '{"identifiers":["license:abc","d
 curl -s "$BASE/actions" -H "x-api-key: $KEY"
 curl -s "$BASE/bans/222222222222222222" -H "x-api-key: $KEY"
 curl -s -X POST "$BASE/players/leave" "${H[@]}" -d '{"id":1,"identifiers":["license:abc"]}'
+curl -s -X POST "$BASE/logs" "${H[@]}" -d '[{"type":"match_end","data":{"matchId":"m-1","winner":{"name":"Viper"},"players":48}}]'
 ```
 
 ---
@@ -368,3 +371,50 @@ Logique : commande retrouvée par `tebexTransactionId`, sinon dernière commande
 4. Gamemode BR : `SetPlayerName` à la création du compte, `AddStats` / `AddMatchStats` pour les stats, `Ban` pour le menu admin, `rs_bridge:groupsChanged` / `GetGroups` pour les droits.
 5. Bot : rôle placé au-dessus des rôles gérés et des membres à renommer ; intent *Server Members* activé.
 6. Shop : `tebexPackageId` sur chaque produit et webhooks Tebex relayés vers `/api/shop/tebex`.
+7. Logs en jeu : `rs_bridge` 1.2 + serveur de jeu activé dans `/template logs` (§ 12) ; gamemode : `exports.rs_bridge:Log(…)` pour les parties, comptes et l'anticheat.
+
+---
+
+## 12. Logs en jeu → serveur de logs central (`POST /logs`)
+
+Le serveur de logs central (`/template logs` sur Discord, README § « Serveur de logs central ») a une catégorie `🎮 JEU · <serveur>` par serveur de jeu activé. `rs_bridge` 1.2 (`server/logs.lua`) y envoie les événements du jeu ; chaque entrée devient aussi un log de catégorie **GAME** du serveur Discord du jeu (dashboard → Logs ; salon local « 🎮 Jeu » de `/config module:logs`, sans repli sur le salon Système). Kills, morts et chat ne sont pas conservés en base (Discord uniquement).
+
+### 12.1 Format
+
+```json
+[
+  { "type": "connect", "ts": 1760000000, "data": { "id": 3, "name": "Viper", "identifiers": ["license:…", "discord:222…"] } },
+  { "type": "kill", "ts": 1760000042, "data": { "killer": { "id": 3, "name": "Viper", "identifiers": ["license:…"] }, "victim": { "id": 7, "name": "Bob" }, "weapon": "WEAPON_PISTOL", "distance": 23.4 } }
+]
+```
+
+- `type` : `connect`, `disconnect`, `account`, `kill`, `death`, `match_start`, `match_end`, `ban`, `kick`, `warn`, `unban`, `admin`, `chat`, `anticheat`, `server`, `custom`. `ts` : horodatage Unix (secondes) du serveur de jeu (affiché sur l'embed). `data` : objet JSON libre, 40 champs, 4 niveaux et 8 ko maximum.
+- Joueur (`data` à plat, ou `player` / `killer` / `victim` / `target` / `staff` / `winner`) : `{ id, name, identifiers }`. Le bot n'affiche que la licence raccourcie et le compte Discord (identifiant `discord:` ou liaison connue de la licence) ; les autres identifiants (IP, steam, xbl…) ne sont ni affichés ni stockés.
+- Champs reconnus : `reason`, `duration` (s), `refused` (connexion refusée), `event` (`account` : `created` | `name` | `discord_rename` ; `server` : `start` | `stop` | `restart_scheduled` | `shutdown` | `announcement` | `resource_start` | `resource_stop` | `error` | `online` | `offline`), `old` / `new`, `weapon`, `distance`, `headshot`, `matchId`, `mode`, `map`, `players`, `top: [{ name, kills, place }]`, `staff`, `origin`, `action`, `groups`, `details`, `severity`, `message`, `resource`, `secondsRemaining`. `custom` : `title`, `description`, `color` (`#rrggbb`), `fields: [{ name, value, inline }]`, `channel` (`connections` | `accounts` | `kills` | `matches` | `sanctions` | `admin` | `chat` | `anticheat` | `server`, défaut `server`).
+
+### 12.2 Salons
+
+| Type | Salon du hub | Copie dans `🌐 GÉNÉRAL` |
+|---|---|---|
+| `connect`, `disconnect` | `🟢・connexions` | — |
+| `account` | `🏷️・comptes-pseudos` | — |
+| `kill`, `death` | `💀・kills` | — |
+| `match_start`, `match_end` | `🏆・parties` | — |
+| `ban`, `kick`, `warn`, `unban` | `🔨・sanctions-jeu` | `🔨・sanctions-globales` |
+| `admin` | `🛡️・actions-admin` | — |
+| `chat` | `💬・chat-jeu` (seulement si « chat » est activé pour ce jeu) | — |
+| `anticheat` | `🚨・anticheat` | `🚨・alertes-sécurité` |
+| `server`, `custom` | `⚙️・serveur-jeu` (ou `data.channel`) | — |
+
+Générés par le bot lui-même (pas besoin de les envoyer) : sanctions reçues par `POST /sanctions` (avec leur effet sur Discord et le n° de case), pseudo reçu par `POST /players/name` (et surnom Discord appliqué), serveur en ligne / hors ligne (statut), maintenance, liaison automatique d'un compte.
+
+### 12.3 `rs_bridge` (`server/logs.lua`)
+
+File en mémoire envoyée par lots (`Config.Logs.BatchSize` = 25 entrées, toutes les `Config.Logs.FlushInterval` = 5 s, ou dès qu'un lot est plein). Bot injoignable / `429` / `5xx` : le lot est remis en tête de file et renvoyé plus tard (attente croissante, 60 s max) ; file pleine (`Config.Logs.MaxQueue` = 500) : les plus anciennes entrées sont abandonnées (avertissement console). `400` : lot abandonné (avertissement).
+
+Hooks automatiques : `playerJoining` / `playerDropped` (raison, durée) ; connexions refusées par `playerConnecting` (main.lua) ; `rs_bridge:groupsChanged` ; `chatMessage` (`Config.Logs.Chat = true`) ; `baseevents:onPlayerKilled` / `onPlayerDied` (`Config.Logs.BaseEvents`, si `baseevents` tourne) ; txAdmin (`Config.Logs.TxAdmin`) : `announcement`, `scheduledRestart`, `serverShuttingDown`, `playerHealed`, `actionRevoked` — et `playerBanned` / `playerKicked` / `playerWarned` seulement si `Config.TxAdminHooks = false` (sinon ils passent par `POST /sanctions` et le bot écrit le log) ; `onResourceStart` / `onResourceStop` (`Config.Logs.Resources`, hors démarrage du serveur). `Config.Logs.Types.<type> = false` coupe un type ; `set rs_bridge_logs "false"` coupe tout.
+
+```lua
+exports.rs_bridge:Log('match_end', { matchId = id, winner = winnerSrc, duration = 1260, players = 48, top = { { source = winnerSrc, kills = 7, place = 1 } } })
+exports.rs_bridge:Log('anticheat', { player = src, reason = 'Vitesse anormale', severity = 'haute' })
+```

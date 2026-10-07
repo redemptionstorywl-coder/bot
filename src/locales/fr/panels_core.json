@@ -52,7 +52,8 @@
     "BATTLE_ROYALE": "⚔️ Battle Royale",
     "SCHOOL": "🎓 School RP",
     "SECURITY": "🚨 Sécurité",
-    "SYSTEM": "⚙️ Système"
+    "SYSTEM": "⚙️ Système",
+    "GAME": "🎮 Jeu"
   },
   "general": {
     "title": "⚙️ Général — {server}",
@@ -109,7 +110,7 @@
   },
   "logs": {
     "title": "📜 Logs — {server}",
-    "hint": "Choisissez une catégorie puis son salon. Une catégorie sans salon est envoyée dans le salon **Système** s'il est défini.",
+    "hint": "Choisissez une catégorie puis son salon. Une catégorie sans salon est envoyée dans le salon **Système** s'il est défini (sauf **Jeu** : les logs en jeu exigent leur propre salon).",
     "field_channels": "Salons par catégorie ({count}/{total})",
     "via_system": "↪️ salon Système",
     "pick_placeholder": "Catégorie à configurer…",
@@ -122,16 +123,27 @@
     "set": "Logs **{category}** → {channel}",
     "disabled": "Logs **{category}** désactivés.",
     "all_title": "📦 Tous les logs dans un seul salon",
-    "all_hint": "Le salon choisi recevra **toutes** les catégories de logs ({count}). Vous pourrez ensuite en déplacer certaines une par une.",
+    "all_hint": "Le salon choisi recevra **toutes** les catégories de logs ({count}), sauf **Jeu** (logs en jeu : salon dédié). Vous pourrez ensuite en déplacer certaines une par une.",
     "all_placeholder": "Salon pour tous les logs…",
     "btn_all_off": "Tout désactiver",
     "all_set": "Toutes les catégories ({count}) → {channel}",
     "all_off": "Tous les salons de logs ont été retirés.",
-    "created": "Salon {channel} créé (visible uniquement par les admins et le staff) : les {count} catégories y sont envoyées.",
+    "created": "Salon {channel} créé (visible uniquement par les admins et le staff) : les {count} catégories (sauf Jeu) y sont envoyées.",
     "create_failed": "Impossible de créer le salon : {details}",
     "no_manage_channels": "Il me manque la permission « Gérer les salons ».",
     "channel_name": "📜・logs",
-    "channel_topic": "Logs du serveur (privé : admins et staff)"
+    "channel_topic": "Logs du serveur (privé : admins et staff)",
+    "hub_title": "🗂️ Serveur de logs central",
+    "hub_linked": "Ce serveur est relié à **{hub}** : tous ses logs y sont copiés. Publication aussi dans les salons ci-dessus : **{local}**.",
+    "hub_is_hub": "Ce serveur **est** un serveur de logs central ({count} serveur(s) relié(s)) : `/template logs` pour le gérer.",
+    "btn_hub_local_off": "Ne plus publier ici",
+    "btn_hub_local_on": "Publier aussi ici",
+    "btn_hub_unlink": "Délier du serveur de logs",
+    "btn_hub_unlink_confirm": "Confirmer : délier",
+    "hub_local_off": "Les logs ne sont plus publiés dans les salons de ce serveur (seulement dans le serveur de logs central).",
+    "hub_local_on": "Les logs sont de nouveau publiés aussi dans les salons de ce serveur.",
+    "hub_unlink_confirm": "Délier ce serveur du serveur de logs central ? Ses logs n'y seront plus envoyés. Cliquez sur **Confirmer : délier**.",
+    "hub_unlinked": "Ce serveur est délié de **{hub}**."
   },
   "tickets": {
     "btn_options": "Options",

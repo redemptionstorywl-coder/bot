@@ -31,6 +31,9 @@ import { guildConfigService } from './GuildConfigService';
 import { loggingService } from './LoggingService';
 import { translationService, type Translator } from './TranslationService';
 
+
+/** Actions de log des rôles donnés / retirés aux membres (route hub : member.roles). */
+export type RoleLogAction = 'role.autorole' | 'role.menu' | 'role.toggle' | 'role.reaction' | 'role.notification';
 const log = childLogger('RoleService');
 
 export const MAX_AUTOROLE_DELAY_SECONDS = 24 * 3600;
@@ -228,7 +231,7 @@ export class RoleService {
     return { added, removed, blocked, member: updated };
   }
 
-  private async logRoleChange(member: GuildMember, action: string, result: RoleChangeResult, opts: { skipDatabase?: boolean; actorId?: string | null; detail?: string } = {}): Promise<void> {
+  private async logRoleChange(member: GuildMember, action: RoleLogAction, result: RoleChangeResult, opts: { skipDatabase?: boolean; actorId?: string | null; detail?: string } = {}): Promise<void> {
     if (!result.added.length && !result.removed.length) return;
     const cfg = await guildConfigService.get(member.guild.id);
     const t = translationService.bind(cfg?.defaultLanguage ?? 'fr', member.guild.id);

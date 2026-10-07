@@ -1,8 +1,12 @@
-import { EmbedBuilder, type Client, type ColorResolvable } from 'discord.js';
+import type { Client } from 'discord.js';
 import { LogCategory, Prisma } from '@prisma/client';
 import { prisma } from '../database/client';
 import { guildConfigService } from './GuildConfigService';
-import { BRAND } from '../config/constants';
+import { logHubService, type GameLink, type SourceLink } from './LogHubService';
+import { logDispatchService } from './LogDispatchService';
+import { buildLogEmbed, toHubEmbed } from './logs/embeds';
+import { planDelivery, type RouteTable } from './logs/delivery';
+import type { GameRouteKey } from './logs/routes';
 import { childLogger } from '../utils/logger';
 
 const log = childLogger('LoggingService');
@@ -10,7 +14,7 @@ const log = childLogger('LoggingService');
 export interface LogEntry {
   guildId: string;
   category: LogCategory;
-  /** Identifiant d'action court : "message.delete", "ticket.open"… */
+  /** Identifiant d'action court : "message.delete", "ticket.open"… (route du hub : src/services/logs/routes.ts) */
   action: string;
   title: string;
   description?: string;
@@ -22,11 +26,20 @@ export interface LogEntry {
   data?: Record<string, unknown>;
   /** Ne pas écrire en base (logs très fréquents) */
   skipDatabase?: boolean;
+  /** Date de l'événement affichée dans l'embed (logs en jeu différés) ; défaut : maintenant */
+  timestamp?: Date;
+  /**
+   * Log lié à un serveur de jeu (FiveMServer) : copié dans la section de ce jeu du hub de logs.
+   * `route` force la route de jeu (log `custom` avec indication de salon).
+   */
+  game?: { serverId: number; serverName: string; route?: GameRouteKey | null };
 }
 
 /**
- * Service de logs : envoie un embed dans le salon configuré pour la catégorie
- * et conserve une trace en base (table Log) consultable dans le dashboard.
+ * Service de logs : trace en base (table Log, dashboard), embed dans le salon configuré pour la catégorie et,
+ * si le serveur est relié à un serveur de logs central (hub, `/template logs`), copie dans le salon de la route fine du hub
+ * (+ section du serveur de jeu + section générale pour les événements importants). Les embeds passent par la file
+ * d'envoi groupée (LogDispatchService : 10 embeds par message, toutes les 2 s, gestion des 429).
  */
 export class LoggingService {
   private client: Client | null = null;
@@ -35,6 +48,7 @@ export class LoggingService {
 
   attach(client: Client): void {
     this.client = client;
+    logDispatchService.attach(client);
   }
 
   async log(entry: LogEntry): Promise<void> {
@@ -69,20 +83,38 @@ export class LoggingService {
         },
       });
     }
-    if (!cfg || !cfg.modules.logs) return;
-    const channelId = cfg.logChannels[entry.category] ?? cfg.logChannels.SYSTEM;
-    if (!channelId || !this.client) return;
-    const channel = await this.client.channels.fetch(channelId).catch(() => null);
-    if (!channel || !channel.isTextBased() || channel.isDMBased()) return;
-    const embed = new EmbedBuilder()
-      .setColor((entry.color ?? BRAND.colors.anthracite) as ColorResolvable)
-      .setTitle(entry.title)
-      .setTimestamp()
-      .setFooter({ text: `${entry.category} • ${entry.action}` });
-    if (entry.description) embed.setDescription(entry.description.slice(0, 4096));
-    if (entry.fields?.length) embed.addFields(entry.fields.slice(0, 25).map((f) => ({ ...f, value: f.value.slice(0, 1024) || '—' })));
-    if (entry.thumbnail) embed.setThumbnail(entry.thumbnail);
-    if ('send' in channel) await channel.send({ embeds: [embed] }).catch((err) => log.warn({ err, channelId }, 'Impossible d’envoyer le log'));
+    if (!this.client) return;
+    const source = await logHubService.getSourceLink(entry.guildId).catch(() => null);
+    const gameLink = entry.game ? await logHubService.getGameLink(entry.game.serverId).catch(() => null) : null;
+    const selfHub = !source && !!(await logHubService.getHub(entry.guildId).catch(() => null));
+    const routes: Record<string, RouteTable | undefined> = {};
+    for (const hub of new Set([source?.hubGuildId, gameLink?.hubGuildId, selfHub ? entry.guildId : null].filter((h): h is string => !!h))) routes[hub] = await logHubService.getRoutes(hub).catch(() => undefined);
+    const targets = planDelivery({
+      guildId: entry.guildId,
+      action: entry.action,
+      category: entry.category,
+      local: cfg?.modules.logs ? cfg.logChannels : null,
+      source,
+      game: entry.game ? { serverId: entry.game.serverId, route: entry.game.route ?? null } : null,
+      gameLink,
+      selfHub,
+      routes,
+    });
+    if (!targets.length) return;
+    const embed = buildLogEmbed(entry);
+    for (const target of targets) {
+      if (target.scope === 'local') logDispatchService.enqueue(target.channelId, embed);
+      else logDispatchService.enqueue(target.channelId, toHubEmbed(embed, this.origin(entry, target.scope, source, gameLink)));
+    }
+  }
+
+  /** Auteur de la copie dans le hub : serveur Discord source, ou serveur de jeu. */
+  private origin(entry: LogEntry, scope: 'source' | 'game' | 'global', source: SourceLink | null, gameLink: GameLink | null): { name: string; iconUrl: string | null } {
+    const guild = this.client?.guilds.cache.get(entry.guildId);
+    const iconUrl = guild?.iconURL() ?? null;
+    const sourceName = source ? logHubService.originName(source) : (guild?.name ?? entry.guildId);
+    const isGame = entry.game && gameLink && (scope === 'game' || entry.action.startsWith('game.'));
+    return { name: isGame ? `🎮 ${entry.game!.serverName}` : sourceName, iconUrl };
   }
 
   /** Nettoie les logs plus vieux que `days` jours. */

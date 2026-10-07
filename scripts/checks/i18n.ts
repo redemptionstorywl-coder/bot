@@ -124,6 +124,8 @@ export async function run(): Promise<CheckResult> {
     if (!n) problem(`préfixe dynamique sans aucune clé : ${pattern.replace(/\u0000/g, '${…}')} — ${where(sf, node)}`);
   };
   const isNonKeyContext = (n: ts.Node): boolean => {
+    // Nom de propriété d'un objet (`{ 'fivem.sync.ban': 'fivem.sync' }`, table des routes de logs) : jamais une clé passée à t()
+    if (n.parent && ts.isPropertyAssignment(n.parent) && n.parent.name === n) return true;
     let p = n.parent;
     while (p && (ts.isConditionalExpression(p) || ts.isParenthesizedExpression(p) || ts.isBinaryExpression(p))) p = p.parent;
     return !!p && ts.isPropertyAssignment(p) && ts.isIdentifier(p.name) && NON_KEY_PROPS.has(p.name.text);

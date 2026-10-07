@@ -22,6 +22,7 @@ import type { InteractionContext } from '../../structures/types';
 import { resolveLocalized, welcomeService, type Localized } from '../../services/WelcomeService';
 import { embedService, embedSpecSchema, type ButtonSpec, type EmbedSpec } from '../../services/EmbedService';
 import type { Translator } from '../../services/TranslationService';
+import { configAudit } from '../../services/ConfigAuditService';
 import { guildConfigService } from '../../services/GuildConfigService';
 import { liveChannel } from '../../utils/liveIds';
 
@@ -140,6 +141,7 @@ export async function renderPanel(opts: PanelRenderOptions): Promise<PanelPayloa
 
   const embed = embedService.brand(t(`welcome.panel.title_${tab}`, { server: guild.name }));
   const lines: string[] = [];
+  configAudit.capture(notice);
   if (notice) lines.push(`${NOTICE_ICON[notice.type]} ${notice.text}`, '');
   lines.push(t('welcome.panel.hint'));
   embed.setDescription(lines.join('\n'));

@@ -12,6 +12,7 @@ import { liveRoles } from '../utils/liveIds';
 import { childLogger } from '../utils/logger';
 import { COOLDOWN_DEFAULT_SECONDS, DEFAULT_LANGUAGE, MODULE_LABELS, fromDiscordLocale, type ModuleKey } from '../config/constants';
 import { translationService } from '../services/TranslationService';
+import { configAudit, isConfigNamespace } from '../services/ConfigAuditService';
 import { formatDuration } from '../utils/time';
 
 const log = childLogger('Interactions');
@@ -231,7 +232,12 @@ export default defineEvent({
       }
     }
     try {
-      await (handler.execute as (i: unknown, a: string[], c: InteractionContext) => Promise<unknown>)(interaction, args, ctx);
+      const run = () => (handler!.execute as (i: unknown, a: string[], c: InteractionContext) => Promise<unknown>)(interaction, args, ctx);
+      if (interaction.guildId && isConfigNamespace(namespace)) {
+        // Panneaux /config : les notices ✅ rendues pendant l'action sont journalisées (log config.change)
+        const { notes } = await configAudit.run(run);
+        if (notes.length) await configAudit.log({ guildId: interaction.guildId, userId: interaction.user.id, namespace, action: args[0] ?? null, notes, t }).catch((err) => log.warn({ err, namespace }, 'Journal de configuration non écrit'));
+      } else await run();
     } catch (err) {
       log.error({ err, namespace, args }, 'Erreur composant');
       await reply(interaction, { embeds: [embedService.error(t('core.error'))] });

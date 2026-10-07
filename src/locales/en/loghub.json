@@ -1,0 +1,316 @@
+{
+  "topic": "{section} — {content}. Channel managed by the bot (/template logs).",
+  "layout": {
+    "general": "🌐 GENERAL",
+    "moderation": "MODERATION",
+    "activity": "MESSAGES & MEMBERS",
+    "server": "SERVER & ACTIVITY",
+    "game": "GAME"
+  },
+  "channels": {
+    "global": {
+      "summary": "📌・summary",
+      "sanctions": "🔨・global-sanctions",
+      "security": "🚨・security-alerts",
+      "system": "🤖・bot-system"
+    },
+    "mod": {
+      "sanctions": "🔨・sanctions",
+      "clear": "🧹・channel-clears"
+    },
+    "security": {
+      "alerts": "🚨・security"
+    },
+    "fivem": {
+      "sync": "🔄・fivem-sync"
+    },
+    "message": {
+      "deleted": "🗑️・deleted-messages",
+      "edited": "✏️・edited-messages",
+      "bulk": "🧨・bulk-deletes"
+    },
+    "member": {
+      "join": "📥・joins",
+      "leave": "📤・leaves",
+      "nickname": "🏷️・nicknames",
+      "roles": "🎭・member-roles",
+      "invites": "✉️・invites"
+    },
+    "voice": "🔊・voice",
+    "server": {
+      "channels": "📁・channels",
+      "roles": "🎖️・roles",
+      "settings": "⚙️・settings"
+    },
+    "tickets": "🎫・tickets",
+    "whitelist": "📝・whitelist",
+    "announcements": "📢・announcements",
+    "events": "📅・events",
+    "shop": "🛒・shop",
+    "battleroyale": "⚔️・battle-royale",
+    "school": "🎓・school-rp",
+    "bot": {
+      "config": "🤖・bot-config",
+      "system": "🤖・bot-system"
+    },
+    "game": {
+      "connections": "🟢・connections",
+      "accounts": "🏷️・accounts-names",
+      "kills": "💀・kills",
+      "matches": "🏆・matches",
+      "sanctions": "🔨・game-sanctions",
+      "admin": "🛡️・admin-actions",
+      "chat": "💬・game-chat",
+      "anticheat": "🚨・anticheat",
+      "server": "⚙️・game-server"
+    }
+  },
+  "routes": {
+    "global": {
+      "summary": "Structure summary (pinned)",
+      "sanctions": "Every sanction from every Discord server and game server",
+      "security": "Security alerts from every server (anti-raid, anti-nuke, lockdown, honeypot, bots and apps added, anticheat)",
+      "system": "Bot: startup, errors, deployments, servers joined or left, configuration changes"
+    },
+    "mod": {
+      "sanctions": "Ban, unban, kick, timeout, mute, warn, tempban, unban-all, cases",
+      "clear": "/clear, channel clear, channel mute, slowmode, lock / unlock"
+    },
+    "security": {
+      "alerts": "Anti-raid, anti-nuke, lockdown, honeypot, bots and apps added"
+    },
+    "fivem": {
+      "sync": "Bans, unbans and maintenance synced between Discord and the game"
+    },
+    "message": {
+      "deleted": "Deleted messages",
+      "edited": "Edited messages",
+      "bulk": "Bulk message deletions"
+    },
+    "member": {
+      "join": "Joins",
+      "leave": "Leaves",
+      "nickname": "Nickname changes",
+      "roles": "Roles given to or removed from members",
+      "invites": "Invites created or deleted"
+    },
+    "voice": "Voice connections and temporary voice channels",
+    "server": {
+      "channels": "Channels created, updated or deleted",
+      "roles": "Roles created, updated or deleted",
+      "settings": "Server settings, emojis, webhooks"
+    },
+    "tickets": "Tickets: opening, closing, transcripts",
+    "whitelist": "Whitelist applications and decisions",
+    "announcements": "Announcements, embeds, mass DMs",
+    "events": "Events, giveaways, polls",
+    "shop": "Shop: products, orders, Tebex",
+    "battleroyale": "Battle Royale: seasons, stats, Battle Pass, account linking",
+    "school": "School RP: registrations, classes, houses, clubs",
+    "bot": {
+      "config": "Bot configuration: /config, dashboard, permissions, log server",
+      "system": "Bot: startup, errors, deployments"
+    },
+    "game": {
+      "connections": "Connections and disconnections (reason, session length)",
+      "accounts": "Accounts, in-game names, Discord nicknames, account linking",
+      "kills": "Kills and deaths (weapon, distance)",
+      "matches": "Matches: start, end, winner, leaderboard",
+      "sanctions": "In-game sanctions (bans, kicks, warnings, txAdmin)",
+      "admin": "Admin actions, in-game groups (Discord roles), txAdmin",
+      "chat": "In-game chat",
+      "anticheat": "Anticheat and gamemode alerts",
+      "server": "Game server: online / offline, restarts, resources, maintenance"
+    }
+  },
+  "summary": {
+    "title": "📌 Central log server",
+    "description": "This server receives **a copy of every log** from the servers below (one channel per log type) and the **in-game logs** of the FiveM servers.\n• **🌐 GENERAL**: what matters across all servers (sanctions, security, bot).\n• **One section per Discord server**: MODERATION · MESSAGES & MEMBERS · SERVER & ACTIVITY.\n• **🎮 GAME**: connections, accounts, kills, matches, sanctions, admin actions, anticheat, server.\nEach log header shows its source server. `/template logs`: add a server, repair a deleted channel, remove a source.",
+    "general": "{sanctions} every sanction (Discord + game)\n{security} security alerts\n{system} bot: startup, errors, configuration",
+    "source": "Discord server **{server}** — also posted in its own log channels: {local}",
+    "local_on": "yes",
+    "local_off": "no",
+    "game": "In-game logs of **{server}** (rs_bridge) — in-game chat: {chat}",
+    "chat_on": "yes",
+    "chat_off": "no",
+    "footer": "Updated on every /template logs"
+  },
+  "template": {
+    "title": "🗂️ Central log server",
+    "hint": "This server will become **the log server** of your servers: every linked server gets its own categories (moderation · messages & members · server & activity), every game server gets its **GAME** category, and **GENERAL** gathers the sanctions and alerts of every server.\n1️⃣ Pick the Discord servers in the menu.\n2️⃣ Enable in-game logs for the FiveM servers (🎮 yes · 💬 yes + chat).\n3️⃣ Click **Create the structure**.",
+    "hint_existing": "This server is the **central log server**. Add a server in the menu then **Repair / complete**: missing channels are recreated, nothing is duplicated. Removing it from the menu does not unlink it: use **Remove a source**.",
+    "security": "🔒 Only servers where you are **administrator** or **owner** can be linked (checked on each server). A server can be linked to one log server only.",
+    "state_title": "📊 Current state",
+    "state": "{sources} Discord server(s) · {games} game server(s) · {missing} missing channel(s)",
+    "sources_title": "Selected Discord servers",
+    "no_source": "None: pick at least one server in the menu.",
+    "linked": "linked",
+    "games_title": "In-game logs (FiveM)",
+    "games_hint": "Click a game server: ⬜ no → 🎮 yes → 💬 yes + in-game chat.",
+    "game_off": "no",
+    "game_on": "yes",
+    "game_chat": "yes + chat",
+    "unavailable_title": "Unavailable",
+    "reason_not_admin": "you are not an administrator of this server",
+    "reason_hub": "it is a central log server",
+    "reason_other_hub": "already linked to the log server \"{hub}\"",
+    "preview_title": "Preview: {create} to create, {reuse} already in place",
+    "to_create": "{count} to create",
+    "complete": "complete",
+    "more_sections": "… and {count} more categor(y/ies)",
+    "guild_limit": "The structure would exceed Discord's 500-channel limit ({count}). Remove servers or delete unused channels.",
+    "category_full": "{count} channel(s) skipped: category full (50 channels max).",
+    "sources_placeholder": "Discord servers to link…",
+    "option_linked": "Already linked to this log server",
+    "option_free": "You are an administrator of this server",
+    "btn_create": "Create the structure",
+    "btn_repair": "Repair / complete",
+    "btn_remove": "Remove a source",
+    "btn_remove_confirm": "Remove",
+    "btn_state": "Log server state",
+    "cancelled": "Wizard closed.",
+    "running": "A creation is already running on this server: please wait.",
+    "progress_title": "🏗️ Creating the structure…",
+    "progress": "{done}/{total} channel(s) processed",
+    "progress_current": "Now: {name}",
+    "result_title": "✅ Log server ready",
+    "result_title_partial": "⚠️ Log server updated with errors",
+    "result": "{created} channel(s) created, {reused} reused.",
+    "result_summary": "Summary pinned in {channel}.",
+    "result_failed": "{name}: {error}",
+    "result_next": "Logs arrive from now on. In-game logs: install the latest `rs_bridge` (docs/INSTALL-BATTLEROYALE.md, \"Logs en jeu\" section). Run `/template logs` again to add a server or repair.",
+    "result_errors": {
+      "guild_limit": "Discord's 500-channel limit exceeded ({count} after creation): nothing was created.",
+      "running": "A creation is already running.",
+      "no_hub": "This server is not a log server yet.",
+      "missing_permissions": "I am missing the \"Manage Channels\" and \"Manage Roles\" permissions on this server."
+    },
+    "remove_title": "➖ Remove a source",
+    "remove_hint": "The chosen server will stop sending its logs here. Its channels are **kept** (history): delete them by hand if needed; if it is linked again, they are reused.",
+    "remove_placeholder": "Discord server or game server to remove…",
+    "remove_source_option": "Discord server: its logs (and its games) will no longer come here",
+    "remove_game_option": "Game server: its in-game logs will no longer come here",
+    "remove_confirm_source": "Remove **{name}** from the log server? Its game servers are removed too. Channels stay in place.",
+    "remove_confirm_game": "Remove the in-game logs of **{name}**? Channels stay in place.",
+    "removed_source": "Source removed.",
+    "removed_game": "Game server removed."
+  },
+  "errors": {
+    "bot_not_in_guild": "I am not on the server {server}.",
+    "not_member": "You are not a member of the server {server}: it cannot be linked.",
+    "not_admin": "You must be an administrator (or the owner) of the server {server} to link it.",
+    "self": "A server cannot be its own source.",
+    "is_hub": "{server} is itself a central log server.",
+    "is_source": "This server already sends its logs to another log server: it cannot become one.",
+    "is_source_here": "This server is linked to the log server \"{hub}\": it cannot become a log server. Unlink it first (`/config module:logs`).",
+    "already_linked": "{server} is already linked to the log server \"{hub}\" (one per server): unlink it first.",
+    "max_sources": "At most {max} Discord servers per log server.",
+    "max_games": "At most {max} game servers per log server.",
+    "not_found": "Link not found (already removed?).",
+    "game_source_missing": "The Discord server of the game {server} must be linked first.",
+    "hub_not_admin": "You must be an administrator (or the owner) of this server to make it a log server."
+  },
+  "audit": {
+    "link_title": "🔗 Server linked to a central log server",
+    "link": "This server's logs are now copied to **{hub}** (`{hubId}`), linked by {user}. To unlink: `/config module:logs`.",
+    "unlink_title": "🔗 Source removed from the log server",
+    "unlink": "**{server}** no longer sends its logs here (removed by {user}).",
+    "unlink_source": "This server no longer sends its logs to **{hub}** (unlinked by {user}).",
+    "template_title": "🗂️ Log server structure updated",
+    "template": "{created} channel(s) created, {reused} reused, {failed} failure(s)."
+  },
+  "system": {
+    "startup_title": "🟢 Bot started",
+    "guilds": "Servers",
+    "commit": "Version",
+    "deploy_title": "🚀 Slash commands deployed",
+    "deploy_global": "{count} commands deployed globally (up to 1 h to propagate).",
+    "deploy_dev": "{count} commands deployed to the development server.",
+    "deploy_failed_title": "❗ Command deployment failed",
+    "error_title": "❗ Bot error",
+    "guild_join_title": "➕ Bot added to a server",
+    "guild_leave_title": "➖ Bot removed from a server",
+    "server": "Server",
+    "owner": "Owner",
+    "members": "Members"
+  },
+  "game": {
+    "unknown_player": "Unknown player",
+    "not_linked": "Discord not linked",
+    "environment": "the environment",
+    "kill_line": "🔫 {killer}\n💀 {victim}",
+    "kills": "{count} kill(s)",
+    "fields": {
+      "player": "Player",
+      "reason": "Reason",
+      "session": "Session",
+      "old": "Before",
+      "new": "After",
+      "weapon": "Weapon",
+      "distance": "Distance",
+      "headshot": "Headshot",
+      "match": "Match",
+      "cause": "Cause",
+      "mode": "Mode",
+      "map": "Map",
+      "players": "Players",
+      "winner": "Winner",
+      "duration": "Duration",
+      "top": "Leaderboard",
+      "staff": "Staff",
+      "origin": "Origin",
+      "discord_outcome": "On Discord",
+      "case": "Case",
+      "action": "Action",
+      "target": "Target",
+      "groups": "Groups",
+      "details": "Details",
+      "channel": "Channel",
+      "severity": "Severity",
+      "resource": "Resource",
+      "in": "In",
+      "event": "Event"
+    },
+    "titles": {
+      "connect": "🟢 Connection",
+      "connect_refused": "⛔ Connection refused",
+      "disconnect": "🔴 Disconnection",
+      "account": "🏷️ Account",
+      "account_created": "🆕 Account created",
+      "account_name": "🏷️ In-game name",
+      "account_discord_rename": "🔁 In-game name → Discord nickname",
+      "kill": "💀 Kill",
+      "death": "☠️ Death",
+      "match_start": "🏁 Match started",
+      "match_end": "🏆 Match ended",
+      "ban": "🔨 Ban (game)",
+      "kick": "👢 Kick (game)",
+      "warn": "⚠️ Warning (game)",
+      "unban": "🔓 Unban (game)",
+      "admin": "🛡️ Admin action",
+      "chat": "💬 Chat",
+      "anticheat": "🚨 Anticheat",
+      "server": "⚙️ Game server",
+      "custom": "📝 Gamemode event"
+    },
+    "server_events": {
+      "start": "🟢 rs_bridge started",
+      "stop": "🟠 rs_bridge stopped",
+      "restart_scheduled": "⏰ Restart scheduled",
+      "shutdown": "⛔ Server shutting down",
+      "announcement": "📢 Announcement",
+      "resource_start": "📦 Resource started",
+      "resource_stop": "📦 Resource stopped",
+      "error": "❗ Error reported",
+      "online": "🟢 Server online",
+      "offline": "🔴 Server offline (no news for 3 min)"
+    },
+    "outcomes": {
+      "banned": "banned too",
+      "unbanned": "unbanned too",
+      "kicked": "kicked too",
+      "warned": "warned too",
+      "recorded": "recorded (no Discord action)"
+    }
+  }
+}

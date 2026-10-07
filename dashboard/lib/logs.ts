@@ -14,7 +14,8 @@ export const LOG_CATEGORY_META: Record<string, { label: string; icon: string; de
   BATTLE_ROYALE: { label: 'Battle Royale', icon: 'swords', description: 'Saisons, XP et statistiques.' },
   SCHOOL: { label: 'School RP', icon: 'graduation-cap', description: 'Élèves, classes, maisons et clubs.' },
   SECURITY: { label: 'Sécurité', icon: 'shield-alert', description: 'Anti-raid, anti-nuke et salon piège.' },
-  SYSTEM: { label: 'Système', icon: 'settings', description: 'Paramètres, modules et permissions modifiés.' },
+  SYSTEM: { label: 'Système', icon: 'settings', description: 'Paramètres, modules, permissions, /config et dashboard, paramètres du serveur.' },
+  GAME: { label: 'Jeu', icon: 'gamepad', description: 'Logs en jeu (FiveM) : connexions, comptes, parties, sanctions, admin, anticheat, serveur. Kills, morts et chat ne sont pas conservés ici (Discord uniquement).' },
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -66,6 +67,25 @@ const ACTION_LABELS: Record<string, string> = {
   'fivem.link.auto': 'Joueur FiveM lié automatiquement',
   'shop.order.create': 'Commande créée',
   'shop.order.status': 'Statut de commande modifié',
+  'config.change': 'Configuration modifiée (/config)',
+  'dashboard.change': 'Modification depuis le dashboard',
+  'hub.link': 'Relié à un hub de logs',
+  'hub.unlink': 'Délié du hub de logs',
+  'hub.template': 'Structure du hub de logs mise à jour',
+  'server.update': 'Paramètres du serveur modifiés',
+  'invite.delete': 'Invitation supprimée',
+  'game.connect': 'Connexion en jeu',
+  'game.disconnect': 'Déconnexion du jeu',
+  'game.account': 'Compte en jeu',
+  'game.match_start': 'Partie lancée',
+  'game.match_end': 'Fin de partie',
+  'game.ban': 'Ban en jeu',
+  'game.kick': 'Kick en jeu',
+  'game.warn': 'Avertissement en jeu',
+  'game.unban': 'Débannissement en jeu',
+  'game.admin': 'Action admin en jeu',
+  'game.anticheat': 'Alerte anticheat',
+  'game.server': 'Serveur de jeu',
 };
 
 export interface LogLike {

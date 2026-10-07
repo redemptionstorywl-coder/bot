@@ -1,7 +1,7 @@
 import { defineSelectMenu } from '../structures';
 import { guildConfigService } from '../services/GuildConfigService';
 import { ok, show, unknownAction, type PanelNotice } from '../panels/_coreKit';
-import { LOG_CATEGORIES, categoryLabel, isLogCategory, renderLogs, setAllLogChannels, type LogsView } from '../panels/_logs';
+import { ALL_IN_ONE_CATEGORIES, categoryLabel, isLogCategory, loadHubInfo, renderLogs, setAllLogChannels, type LogsView } from '../panels/_logs';
 import type { LogCategory } from '@prisma/client';
 
 /**
@@ -46,7 +46,7 @@ export default defineSelectMenu({
         if (!channelId) return;
         await interaction.deferUpdate();
         await setAllLogChannels(guild.id, channelId);
-        notice = ok(t('panels_core.logs.all_set', { count: LOG_CATEGORIES.length, channel: `<#${channelId}>` }));
+        notice = ok(t('panels_core.logs.all_set', { count: ALL_IN_ONE_CATEGORIES.length, channel: `<#${channelId}>` }));
         break;
       }
       default:
@@ -54,6 +54,6 @@ export default defineSelectMenu({
     }
 
     const config = (await guildConfigService.get(guild.id)) ?? ctx.config;
-    await show(interaction, renderLogs({ guild, config, t, view, picked, notice }));
+    await show(interaction, renderLogs({ guild, config, t, view, picked, notice, hub: await loadHubInfo(guild) }));
   },
 });

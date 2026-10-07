@@ -134,6 +134,7 @@ export const LOG_CATEGORY_LABELS: Record<string, string> = {
   SCHOOL: '🎓 School RP',
   SECURITY: '🚨 Sécurité',
   SYSTEM: '⚙️ Système',
+  GAME: '🎮 Jeu',
 };
 
 /** Variables de template documentées (bienvenue, départ, annonces...). */

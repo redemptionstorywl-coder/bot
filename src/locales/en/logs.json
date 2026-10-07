@@ -84,6 +84,50 @@
     "max_uses": "Max uses",
     "expires": "Expires",
     "never": "Never",
-    "temporary": "Temporary"
+    "temporary": "Temporary",
+    "deleted_title": "🔗 Invite deleted",
+    "expired_or_unknown": "Expired or unknown"
+  },
+  "server": {
+    "updated_title": "⚙️ Server settings updated",
+    "view": "View",
+    "fields": {
+      "name": "Name",
+      "icon": "Icon",
+      "banner": "Banner",
+      "description": "Description",
+      "verification": "Verification level",
+      "content_filter": "Content filter",
+      "mfa": "Moderator 2FA",
+      "system_channel": "System channel",
+      "rules_channel": "Rules channel",
+      "updates_channel": "Updates channel",
+      "afk_channel": "AFK channel",
+      "afk_timeout": "AFK timeout",
+      "locale": "Language",
+      "vanity": "Vanity invite",
+      "owner": "Owner"
+    }
+  },
+  "audit": {
+    "changes": "Changes",
+    "webhook": {
+      "create": "🪝 Webhook created",
+      "update": "🪝 Webhook updated",
+      "delete": "🪝 Webhook deleted"
+    },
+    "emoji": {
+      "create": "😀 Emoji added",
+      "update": "😀 Emoji updated",
+      "delete": "😀 Emoji deleted"
+    },
+    "integration": {
+      "create": "🧩 App / integration added",
+      "delete": "🧩 App / integration removed"
+    }
+  },
+  "config": {
+    "title": "⚙️ Configuration changed (/config)",
+    "panel": "Panel"
   }
 }

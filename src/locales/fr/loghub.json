@@ -1,0 +1,316 @@
+{
+  "topic": "{section} — {content}. Salon géré par le bot (/template logs).",
+  "layout": {
+    "general": "🌐 GÉNÉRAL",
+    "moderation": "MODÉRATION",
+    "activity": "MESSAGES & MEMBRES",
+    "server": "SERVEUR & ACTIVITÉ",
+    "game": "JEU"
+  },
+  "channels": {
+    "global": {
+      "summary": "📌・sommaire",
+      "sanctions": "🔨・sanctions-globales",
+      "security": "🚨・alertes-sécurité",
+      "system": "🤖・bot-système"
+    },
+    "mod": {
+      "sanctions": "🔨・sanctions",
+      "clear": "🧹・clear-salons"
+    },
+    "security": {
+      "alerts": "🚨・sécurité"
+    },
+    "fivem": {
+      "sync": "🔄・sync-fivem"
+    },
+    "message": {
+      "deleted": "🗑️・messages-supprimés",
+      "edited": "✏️・messages-modifiés",
+      "bulk": "🧨・suppressions-en-masse"
+    },
+    "member": {
+      "join": "📥・arrivées",
+      "leave": "📤・départs",
+      "nickname": "🏷️・pseudos",
+      "roles": "🎭・rôles-membres",
+      "invites": "✉️・invitations"
+    },
+    "voice": "🔊・vocal",
+    "server": {
+      "channels": "📁・salons",
+      "roles": "🎖️・rôles",
+      "settings": "⚙️・paramètres"
+    },
+    "tickets": "🎫・tickets",
+    "whitelist": "📝・whitelist",
+    "announcements": "📢・annonces",
+    "events": "📅・événements",
+    "shop": "🛒・boutique",
+    "battleroyale": "⚔️・battle-royale",
+    "school": "🎓・school-rp",
+    "bot": {
+      "config": "🤖・config-bot",
+      "system": "🤖・bot-système"
+    },
+    "game": {
+      "connections": "🟢・connexions",
+      "accounts": "🏷️・comptes-pseudos",
+      "kills": "💀・kills",
+      "matches": "🏆・parties",
+      "sanctions": "🔨・sanctions-jeu",
+      "admin": "🛡️・actions-admin",
+      "chat": "💬・chat-jeu",
+      "anticheat": "🚨・anticheat",
+      "server": "⚙️・serveur-jeu"
+    }
+  },
+  "routes": {
+    "global": {
+      "summary": "Sommaire de la structure (épinglé)",
+      "sanctions": "Toutes les sanctions de tous les serveurs Discord et des serveurs de jeu",
+      "security": "Alertes de sécurité de tous les serveurs (anti-raid, anti-nuke, lockdown, salon piège, bots et applications ajoutés, anticheat)",
+      "system": "Bot : démarrage, erreurs, déploiements, serveurs rejoints ou quittés, changements de configuration"
+    },
+    "mod": {
+      "sanctions": "Ban, unban, kick, timeout, mute, warn, tempban, unban-all, cases",
+      "clear": "/clear, clear salon, mute-salon, slowmode, lock / unlock"
+    },
+    "security": {
+      "alerts": "Anti-raid, anti-nuke, lockdown, salon piège, bots et applications ajoutés"
+    },
+    "fivem": {
+      "sync": "Bans, débannissements et maintenance synchronisés entre Discord et le jeu"
+    },
+    "message": {
+      "deleted": "Messages supprimés",
+      "edited": "Messages modifiés",
+      "bulk": "Suppressions de messages en masse"
+    },
+    "member": {
+      "join": "Arrivées",
+      "leave": "Départs",
+      "nickname": "Changements de pseudo",
+      "roles": "Rôles donnés ou retirés aux membres",
+      "invites": "Invitations créées ou supprimées"
+    },
+    "voice": "Connexions vocales et salons vocaux temporaires",
+    "server": {
+      "channels": "Salons créés, modifiés ou supprimés",
+      "roles": "Rôles créés, modifiés ou supprimés",
+      "settings": "Paramètres du serveur, emojis, webhooks"
+    },
+    "tickets": "Tickets : ouverture, fermeture, transcripts",
+    "whitelist": "Candidatures whitelist et décisions",
+    "announcements": "Annonces, embeds, messages privés de masse",
+    "events": "Événements, giveaways, sondages",
+    "shop": "Boutique : produits, commandes, Tebex",
+    "battleroyale": "Battle Royale : saisons, stats, Battle Pass, liaison des comptes",
+    "school": "School RP : inscriptions, classes, maisons, clubs",
+    "bot": {
+      "config": "Configuration du bot : /config, dashboard, permissions, serveur de logs",
+      "system": "Bot : démarrage, erreurs, déploiements"
+    },
+    "game": {
+      "connections": "Connexions et déconnexions (raison, durée de session)",
+      "accounts": "Comptes, pseudos en jeu, surnoms Discord, liaison des comptes",
+      "kills": "Kills et morts (arme, distance)",
+      "matches": "Parties : début, fin, vainqueur, classement",
+      "sanctions": "Sanctions en jeu (bans, kicks, avertissements, txAdmin)",
+      "admin": "Actions admin, groupes en jeu (rôles Discord), txAdmin",
+      "chat": "Chat en jeu",
+      "anticheat": "Anticheat et alertes du gamemode",
+      "server": "Serveur de jeu : en ligne / hors ligne, redémarrages, ressources, maintenance"
+    }
+  },
+  "summary": {
+    "title": "📌 Serveur de logs central",
+    "description": "Ce serveur reçoit **une copie de tous les logs** des serveurs ci-dessous (un salon par type de log) et les **logs en jeu** des serveurs FiveM.\n• **🌐 GÉNÉRAL** : l'essentiel de tous les serveurs (sanctions, sécurité, bot).\n• **Une section par serveur Discord** : MODÉRATION · MESSAGES & MEMBRES · SERVEUR & ACTIVITÉ.\n• **🎮 JEU** : connexions, comptes, kills, parties, sanctions, actions admin, anticheat, serveur.\nL'en-tête de chaque log indique son serveur d'origine. `/template logs` : ajouter un serveur, réparer un salon supprimé, retirer une source.",
+    "general": "{sanctions} toutes les sanctions (Discord + jeu)\n{security} alertes de sécurité\n{system} bot : démarrage, erreurs, configuration",
+    "source": "Serveur Discord **{server}** — copie aussi dans ses propres salons de logs : {local}",
+    "local_on": "oui",
+    "local_off": "non",
+    "game": "Logs en jeu de **{server}** (rs_bridge) — chat en jeu : {chat}",
+    "chat_on": "oui",
+    "chat_off": "non",
+    "footer": "Mis à jour à chaque /template logs"
+  },
+  "template": {
+    "title": "🗂️ Serveur de logs central",
+    "hint": "Ce serveur va devenir **le serveur de logs** de vos serveurs : chaque serveur relié a ses propres catégories (modération · messages & membres · serveur & activité), chaque serveur de jeu a sa catégorie **JEU**, et **GÉNÉRAL** regroupe les sanctions et alertes de tous les serveurs.\n1️⃣ Choisissez les serveurs Discord dans le menu.\n2️⃣ Activez les logs en jeu des serveurs FiveM (🎮 oui · 💬 oui + chat).\n3️⃣ Cliquez sur **Créer la structure**.",
+    "hint_existing": "Ce serveur est le **serveur de logs central**. Ajoutez un serveur dans le menu puis **Réparer / compléter** : les salons manquants sont recréés, rien n'est dupliqué. Le retirer du menu ne le délie pas : utilisez **Retirer une source**.",
+    "security": "🔒 Seuls les serveurs où vous êtes **administrateur** ou **propriétaire** peuvent être reliés (vérifié sur chaque serveur). Un serveur ne peut être relié qu'à un seul serveur de logs.",
+    "state_title": "📊 État actuel",
+    "state": "{sources} serveur(s) Discord · {games} serveur(s) de jeu · {missing} salon(s) manquant(s)",
+    "sources_title": "Serveurs Discord sélectionnés",
+    "no_source": "Aucun : choisissez au moins un serveur dans le menu.",
+    "linked": "relié",
+    "games_title": "Logs en jeu (FiveM)",
+    "games_hint": "Cliquez sur un serveur de jeu : ⬜ non → 🎮 oui → 💬 oui + chat en jeu.",
+    "game_off": "non",
+    "game_on": "oui",
+    "game_chat": "oui + chat",
+    "unavailable_title": "Non disponibles",
+    "reason_not_admin": "vous n'êtes pas administrateur de ce serveur",
+    "reason_hub": "c'est un serveur de logs central",
+    "reason_other_hub": "déjà relié au serveur de logs « {hub} »",
+    "preview_title": "Aperçu : {create} à créer, {reuse} déjà en place",
+    "to_create": "{count} à créer",
+    "complete": "complet",
+    "more_sections": "… et {count} autre(s) catégorie(s)",
+    "guild_limit": "La structure dépasserait la limite Discord de 500 salons ({count}). Retirez des serveurs ou supprimez des salons inutiles.",
+    "category_full": "{count} salon(s) ignoré(s) : catégorie pleine (50 salons maximum).",
+    "sources_placeholder": "Serveurs Discord à relier…",
+    "option_linked": "Déjà relié à ce serveur de logs",
+    "option_free": "Vous êtes administrateur de ce serveur",
+    "btn_create": "Créer la structure",
+    "btn_repair": "Réparer / compléter",
+    "btn_remove": "Retirer une source",
+    "btn_remove_confirm": "Retirer",
+    "btn_state": "État du serveur de logs",
+    "cancelled": "Assistant fermé.",
+    "running": "Une création est déjà en cours sur ce serveur : patientez.",
+    "progress_title": "🏗️ Création de la structure…",
+    "progress": "{done}/{total} salon(s) traité(s)",
+    "progress_current": "En cours : {name}",
+    "result_title": "✅ Serveur de logs prêt",
+    "result_title_partial": "⚠️ Serveur de logs mis à jour avec des erreurs",
+    "result": "{created} salon(s) créé(s), {reused} réutilisé(s).",
+    "result_summary": "Sommaire épinglé dans {channel}.",
+    "result_failed": "{name} : {error}",
+    "result_next": "Les logs arrivent dès maintenant. Logs en jeu : installez la dernière version de `rs_bridge` (docs/INSTALL-BATTLEROYALE.md, section « Logs en jeu »). Relancez `/template logs` pour ajouter un serveur ou réparer.",
+    "result_errors": {
+      "guild_limit": "Limite Discord de 500 salons dépassée ({count} après création) : rien n'a été créé.",
+      "running": "Une création est déjà en cours.",
+      "no_hub": "Ce serveur n'est pas encore un serveur de logs.",
+      "missing_permissions": "Il me manque les permissions « Gérer les salons » et « Gérer les rôles » sur ce serveur."
+    },
+    "remove_title": "➖ Retirer une source",
+    "remove_hint": "Le serveur choisi n'enverra plus ses logs ici. Ses salons sont **conservés** (historique) : supprimez-les à la main si besoin ; s'il est de nouveau relié, ils sont réutilisés.",
+    "remove_placeholder": "Serveur Discord ou serveur de jeu à retirer…",
+    "remove_source_option": "Serveur Discord : ses logs (et ses jeux) ne viendront plus ici",
+    "remove_game_option": "Serveur de jeu : ses logs en jeu ne viendront plus ici",
+    "remove_confirm_source": "Retirer **{name}** du serveur de logs ? Ses serveurs de jeu sont retirés aussi. Les salons restent en place.",
+    "remove_confirm_game": "Retirer les logs en jeu de **{name}** ? Les salons restent en place.",
+    "removed_source": "Source retirée.",
+    "removed_game": "Serveur de jeu retiré."
+  },
+  "errors": {
+    "bot_not_in_guild": "Je ne suis pas sur le serveur {server}.",
+    "not_member": "Vous n'êtes pas membre du serveur {server} : impossible de le relier.",
+    "not_admin": "Vous devez être administrateur (ou propriétaire) du serveur {server} pour le relier.",
+    "self": "Un serveur ne peut pas être sa propre source.",
+    "is_hub": "{server} est lui-même un serveur de logs central.",
+    "is_source": "Ce serveur envoie déjà ses logs à un autre serveur de logs : il ne peut pas en devenir un.",
+    "is_source_here": "Ce serveur est relié au serveur de logs « {hub} » : il ne peut pas devenir un serveur de logs. Déliez-le d'abord (`/config module:logs`).",
+    "already_linked": "{server} est déjà relié au serveur de logs « {hub} » (un seul par serveur) : déliez-le d'abord.",
+    "max_sources": "Maximum {max} serveurs Discord par serveur de logs.",
+    "max_games": "Maximum {max} serveurs de jeu par serveur de logs.",
+    "not_found": "Lien introuvable (déjà retiré ?).",
+    "game_source_missing": "Le serveur Discord du jeu {server} doit d'abord être relié.",
+    "hub_not_admin": "Vous devez être administrateur (ou propriétaire) de ce serveur pour en faire un serveur de logs."
+  },
+  "audit": {
+    "link_title": "🔗 Serveur relié à un serveur de logs central",
+    "link": "Les logs de ce serveur sont maintenant copiés dans **{hub}** (`{hubId}`), relié par {user}. Pour le délier : `/config module:logs`.",
+    "unlink_title": "🔗 Source retirée du serveur de logs",
+    "unlink": "**{server}** n'envoie plus ses logs ici (retiré par {user}).",
+    "unlink_source": "Ce serveur n'envoie plus ses logs à **{hub}** (délié par {user}).",
+    "template_title": "🗂️ Structure du serveur de logs mise à jour",
+    "template": "{created} salon(s) créé(s), {reused} réutilisé(s), {failed} échec(s)."
+  },
+  "system": {
+    "startup_title": "🟢 Bot démarré",
+    "guilds": "Serveurs",
+    "commit": "Version",
+    "deploy_title": "🚀 Commandes slash déployées",
+    "deploy_global": "{count} commandes déployées globalement (jusqu'à 1 h de propagation).",
+    "deploy_dev": "{count} commandes déployées sur le serveur de développement.",
+    "deploy_failed_title": "❗ Déploiement des commandes échoué",
+    "error_title": "❗ Erreur du bot",
+    "guild_join_title": "➕ Bot ajouté à un serveur",
+    "guild_leave_title": "➖ Bot retiré d'un serveur",
+    "server": "Serveur",
+    "owner": "Propriétaire",
+    "members": "Membres"
+  },
+  "game": {
+    "unknown_player": "Joueur inconnu",
+    "not_linked": "Discord non lié",
+    "environment": "l'environnement",
+    "kill_line": "🔫 {killer}\n💀 {victim}",
+    "kills": "{count} kill(s)",
+    "fields": {
+      "player": "Joueur",
+      "reason": "Raison",
+      "session": "Session",
+      "old": "Avant",
+      "new": "Après",
+      "weapon": "Arme",
+      "distance": "Distance",
+      "headshot": "Headshot",
+      "match": "Partie",
+      "cause": "Cause",
+      "mode": "Mode",
+      "map": "Carte",
+      "players": "Joueurs",
+      "winner": "Vainqueur",
+      "duration": "Durée",
+      "top": "Classement",
+      "staff": "Staff",
+      "origin": "Origine",
+      "discord_outcome": "Sur Discord",
+      "case": "Case",
+      "action": "Action",
+      "target": "Cible",
+      "groups": "Groupes",
+      "details": "Détails",
+      "channel": "Canal",
+      "severity": "Gravité",
+      "resource": "Ressource",
+      "in": "Dans",
+      "event": "Événement"
+    },
+    "titles": {
+      "connect": "🟢 Connexion",
+      "connect_refused": "⛔ Connexion refusée",
+      "disconnect": "🔴 Déconnexion",
+      "account": "🏷️ Compte",
+      "account_created": "🆕 Compte créé",
+      "account_name": "🏷️ Pseudo en jeu",
+      "account_discord_rename": "🔁 Pseudo en jeu → surnom Discord",
+      "kill": "💀 Kill",
+      "death": "☠️ Mort",
+      "match_start": "🏁 Partie lancée",
+      "match_end": "🏆 Fin de partie",
+      "ban": "🔨 Ban (jeu)",
+      "kick": "👢 Kick (jeu)",
+      "warn": "⚠️ Avertissement (jeu)",
+      "unban": "🔓 Débannissement (jeu)",
+      "admin": "🛡️ Action admin",
+      "chat": "💬 Chat",
+      "anticheat": "🚨 Anticheat",
+      "server": "⚙️ Serveur de jeu",
+      "custom": "📝 Événement du gamemode"
+    },
+    "server_events": {
+      "start": "🟢 Pont rs_bridge démarré",
+      "stop": "🟠 Pont rs_bridge arrêté",
+      "restart_scheduled": "⏰ Redémarrage programmé",
+      "shutdown": "⛔ Arrêt du serveur",
+      "announcement": "📢 Annonce",
+      "resource_start": "📦 Ressource démarrée",
+      "resource_stop": "📦 Ressource arrêtée",
+      "error": "❗ Erreur signalée",
+      "online": "🟢 Serveur en ligne",
+      "offline": "🔴 Serveur hors ligne (aucune nouvelle depuis 3 min)"
+    },
+    "outcomes": {
+      "banned": "banni aussi",
+      "unbanned": "débanni aussi",
+      "kicked": "expulsé aussi",
+      "warned": "averti aussi",
+      "recorded": "enregistré (aucune action Discord)"
+    }
+  }
+}

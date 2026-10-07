@@ -25,7 +25,6 @@ export const REMOVED_COMMANDS: Record<string, string> = {
   'br-admin': '/config module:battleroyale',
   language: '/config module:general',
   'language-setup': '/config module:general',
-  template: '/config (module concerné)',
   purge: '/clear messages',
   'clear-salon': '/clear salon',
   profile: '/stat',
@@ -34,6 +33,11 @@ export const REMOVED_COMMANDS: Record<string, string> = {
 export const REMOVED_SUBCOMMANDS: Record<string, string> = {
   'clear serveur': 'retirée (trop destructrice) — /clear salon pour un salon',
   'ticket claim': 'retirée avec le bouton Claim — le staff répond directement dans le ticket',
+  // `/template` est revenue pour `/template logs` (serveur de logs central) ; les anciens modèles de serveur restent supprimés.
+  'template shop': '/config (module concerné)',
+  'template battle-royale': '/config (module concerné)',
+  'template prison': '/config (module concerné)',
+  'template school': '/config (module concerné)',
 };
 /** Variables d'environnement retirées (DEEPL_API_KEY / MYMEMORY_EMAIL sont de nouveau utilisées par la traduction automatique FR → EN). */
 export const REMOVED_ENV: string[] = [];

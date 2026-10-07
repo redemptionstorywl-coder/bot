@@ -79,6 +79,10 @@
     "transfer": "{channel}: the creator {from} left, {to} now manages the channel.",
     "error_title": "⚠️ Temporary voice channels",
     "missing_permissions": "Cannot create or manage a temporary voice channel: the bot is missing permissions ({permissions}). Give it \"Manage Channels\" and \"Move Members\" (server or category).",
-    "error": "Step \"{step}\" failed: {details}"
+    "error": "Step \"{step}\" failed: {details}",
+    "create_title": "🔊 Temporary voice channel created",
+    "create": "{channel} (`{name}`) created for {user}.",
+    "delete_title": "🔇 Temporary voice channel deleted",
+    "delete": "`{name}` of {user} deleted (empty) after {duration}."
   }
 }

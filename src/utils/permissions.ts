@@ -1,4 +1,4 @@
-import { GuildMember, PermissionFlagsBits, PermissionResolvable, PermissionsBitField } from 'discord.js';
+import { GuildMember, PermissionFlagsBits, PermissionResolvable, PermissionsBitField, type Guild, type OverwriteResolvable } from 'discord.js';
 import type { InternalPermission } from '../structures/types';
 import type { ResolvedGuildConfig } from '../services/GuildConfigService';
 import { DEFAULT_TEAM_ROLE_NAMES } from '../config/constants';
@@ -62,4 +62,19 @@ export function canModerate(actor: GuildMember, target: GuildMember): boolean {
   if (actor.guild.ownerId === actor.id) return true;
   if (target.guild.ownerId === target.id) return false;
   return actor.roles.highest.comparePositionTo(target.roles.highest) > 0;
+}
+
+/**
+ * Permissions d'un salon / d'une catégorie privé(e) (logs, serveur de logs central) : invisible pour @everyone,
+ * lisible par les rôles admin / staff / équipe (🛡️ RS Team), écrit par le bot.
+ */
+export function privateChannelOverwrites(guild: Guild, config: Pick<ResolvedGuildConfig, 'adminRoleIds' | 'staffRoleIds'>, botId: string): OverwriteResolvable[] {
+  const readers = new Set<string>([...config.adminRoleIds, ...config.staffRoleIds]);
+  for (const role of guild.roles.cache.values()) if (isTeamRoleName(role.name)) readers.add(role.id);
+  const overwrites: OverwriteResolvable[] = [
+    { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
+    { id: botId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles, PermissionFlagsBits.ReadMessageHistory] },
+  ];
+  for (const id of readers) if (guild.roles.cache.has(id) && id !== guild.roles.everyone.id) overwrites.push({ id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory] });
+  return overwrites;
 }

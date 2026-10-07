@@ -11,6 +11,7 @@ import { flash } from '../../lib/flash';
 import { validate, valid, pageQuery, discordIdSchema } from '../../lib/validate';
 import { LOG_CATEGORY_META, logTitle, logIcon, logCategoryLabel } from '../../lib/logs';
 import { resolveUserProfiles } from '../../lib/names';
+import { logHubService } from '../../../src/services/LogHubService';
 
 const PAGE_SIZE = 25;
 const CATEGORIES = Object.values(LogCategory) as LogCategory[];
@@ -56,6 +57,10 @@ export function createLogsRouter(_client: RedemptionClient): Router {
       const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
       const profiles = await resolveUserProfiles(_client, guild.id, (rows ?? []).flatMap((r) => [r.actorId, r.targetId]));
       const configured = CATEGORIES.filter((c) => config.logChannels[c]).length;
+      // Serveur de logs central : hub relié (source) ou hub lui-même
+      const link = await logHubService.getSourceLink(guild.id).catch(() => null);
+      const hubSelf = await logHubService.getHub(guild.id).catch(() => null);
+      const hub = link ? { linked: true, name: _client.guilds.cache.get(link.hubGuildId)?.name ?? link.hubGuildId, keepLocal: link.keepLocal } : hubSelf ? { linked: false, name: guild.name, keepLocal: true } : null;
       render(res, 'logs', {
         title: 'Logs',
         page: 'logs',
@@ -69,6 +74,7 @@ export function createLogsRouter(_client: RedemptionClient): Router {
         pagination: { page: query.page, pages, total: total ?? 0, pageSize: PAGE_SIZE },
         baseQuery: new URLSearchParams({ ...(query.category ? { category: query.category } : {}), ...(query.q ? { q: query.q } : {}), ...(query.from ? { from: query.from } : {}), ...(query.to ? { to: query.to } : {}) }).toString(),
         moduleEnabled: config.modules.logs,
+        hub,
       });
     }),
   );
@@ -83,8 +89,9 @@ export function createLogsRouter(_client: RedemptionClient): Router {
         flash(req, 'error', 'Salon inconnu : choisissez un salon texte du serveur.');
         return res.redirect(`/guilds/${guild.id}/logs?tab=channels`);
       }
-      for (const category of CATEGORIES) await guildConfigService.setLogChannel(guild.id, category, body.channelId);
-      flash(req, 'success', 'Toutes les catégories de logs sont envoyées dans le même salon.');
+      // Jeu exclu (kills, connexions… : volume élevé, salon dédié)
+      for (const category of CATEGORIES.filter((c) => c !== LogCategory.GAME)) await guildConfigService.setLogChannel(guild.id, category, body.channelId);
+      flash(req, 'success', 'Toutes les catégories de logs (sauf Jeu) sont envoyées dans le même salon.');
       res.redirect(`/guilds/${guild.id}/logs?tab=channels`);
     }),
   );

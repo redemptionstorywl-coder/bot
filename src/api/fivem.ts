@@ -7,9 +7,11 @@ import { fivemService, FiveMError } from '../services/FiveMService';
 import { whitelistService } from '../services/WhitelistService';
 import { battleRoyaleService } from '../services/BattleRoyaleService';
 import { fivemSyncService } from '../services/FiveMSyncService';
+import { gameLogService, GameLogRateError } from '../services/GameLogService';
 import {
   connectionCheckSchema,
   formatZodError,
+  gameLogBatchSchema,
   maintenanceSchema,
   playerJoinSchema,
   playerLeaveSchema,
@@ -97,6 +99,11 @@ function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFun
   }
   if (err instanceof FiveMError) {
     res.status(FIVEM_ERROR_STATUS[err.code]).json({ error: err.code, message: err.message });
+    return;
+  }
+  if (err instanceof GameLogRateError) {
+    res.setHeader('Retry-After', String(err.retryAfterSec));
+    res.status(429).json({ error: 'rate_limited', message: `Trop de logs pour ce serveur, réessayez dans ${err.retryAfterSec}s` });
     return;
   }
   if (err && typeof err === 'object' && 'type' in err && (err as { type?: string }).type === 'entity.parse.failed') {
@@ -309,6 +316,18 @@ export function createFiveMRouter(client: RedemptionClient): Router {
     wrap(async (req, res) => {
       const players = await fivemService.getPlayers(req.server);
       res.json({ ok: true, count: players.length, players });
+    }),
+  );
+
+  // Logs en jeu (rs_bridge server/logs.lua) : lot de 1 à 50 entrées { type, ts, data }, 600 entrées / min / serveur.
+  router.post(
+    `${base}/logs`,
+    authenticate,
+    wrap(async (req, res) => {
+      const entries = gameLogBatchSchema.parse(req.body);
+      gameLogService.takeQuota(req.server.id, entries.length);
+      const accepted = await gameLogService.ingest(req.server, entries);
+      res.status(202).json({ ok: true, accepted });
     }),
   );
 

@@ -5,14 +5,16 @@ import { run as i18n } from './i18n';
 import { run as deadRefs } from './deadrefs';
 import { run as luaRoutes } from './lua-routes';
 import { run as migrations } from './migrations';
+import { run as logRoutes } from './log-routes';
 
 /**
  * `npm run check` — vérifications statiques du projet (aucune base, aucun token Discord requis) :
- * customIds ⇄ handlers, clés de traduction, références mortes, Lua rs_bridge ⇄ API FiveM, migrations ⇄ schéma.
+ * customIds ⇄ handlers, clés de traduction, références mortes, Lua rs_bridge ⇄ API FiveM, migrations ⇄ schéma,
+ * actions de logs ⇄ routes du serveur de logs central.
  * Options : `--verbose` (affiche les notes), `--only=customids,i18n,…`.
  * Chaque vérification se lance aussi seule : `npx tsx scripts/checks/<nom>.ts`.
  */
-const CHECKS: Record<string, () => Promise<CheckResult>> = { customids: customIds, i18n, deadrefs: deadRefs, 'lua-routes': luaRoutes, migrations };
+const CHECKS: Record<string, () => Promise<CheckResult>> = { customids: customIds, i18n, deadrefs: deadRefs, 'lua-routes': luaRoutes, migrations, 'log-routes': logRoutes };
 
 async function main(): Promise<void> {
   const verbose = process.argv.includes('--verbose');

@@ -10,7 +10,7 @@ import { LANGUAGE_CODES, LANGUAGES } from '../../../src/config/constants';
 import { groupedModules, GUILD_KIND_INFO, MODULE_INFO, timezoneList } from '../../lib/modules';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
-import { flash } from '../../lib/flash';
+import { flash, markAudited } from '../../lib/flash';
 import { validate, valid, checkbox, discordIdArray, hexColorSchema, optionalText } from '../../lib/validate';
 import { toggleModuleHandler } from './modules';
 
@@ -81,6 +81,7 @@ export function createSettingsRouter(client: RedemptionClient): Router {
       if (body.kind !== config.kind) await guildConfigService.setKind(guild.id, body.kind);
       await guildConfigService.updateSettings(guild.id, data);
       await autoTranslateService.updateSettings(guild.id, { enabled: body.autoTranslate, layout: body.translateLayout });
+      markAudited(res);
       void loggingService.log({ guildId: guild.id, category: 'SYSTEM', action: 'settings.update', title: 'Paramètres mis à jour depuis le dashboard', actorId: req.session.user?.id ?? null, data: { kind: body.kind, defaultLanguage: body.defaultLanguage, autoTranslate: body.autoTranslate, translateLayout: body.translateLayout } });
       flash(req, 'success', 'Paramètres enregistrés.');
       res.redirect(`/guilds/${guild.id}/settings`);

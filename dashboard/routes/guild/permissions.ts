@@ -8,7 +8,7 @@ import { MODULE_LABELS, type ModuleKey } from '../../../src/config/constants';
 import { MODULE_INFO } from '../../lib/modules';
 import { render } from '../../lib/render';
 import { wrap } from '../../lib/async';
-import { flash } from '../../lib/flash';
+import { flash, markAudited } from '../../lib/flash';
 import { HttpError } from '../../lib/errors';
 import { validate, valid, discordIdArray, checkbox } from '../../lib/validate';
 import { formAction } from '../../lib/serviceErrors';
@@ -76,6 +76,12 @@ export function createPermissionsRouter(client: RedemptionClient): Router {
   function audit(guildId: string, actorId: string | null, title: string, data: Record<string, unknown>): void {
     void loggingService.log({ guildId, category: 'SYSTEM', action: 'commands.permissions', title, actorId, data: { ...data, source: 'dashboard' } });
   }
+
+  // Chaque modification écrit déjà son log `commands.permissions` (audit) : pas de log `dashboard.change` en double.
+  router.use('/permissions', (_req, res, next) => {
+    markAudited(res);
+    next();
+  });
 
   router.get(
     '/permissions',

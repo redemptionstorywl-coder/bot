@@ -13,6 +13,9 @@ import { registerCoreTasks } from './core/tasks';
 import { ticketService } from './services/TicketService';
 import { ticketReminderService } from './services/TicketReminderService';
 import { activityService } from './services/ActivityService';
+import { logHubService } from './services/LogHubService';
+import { logDispatchService } from './services/LogDispatchService';
+import { BRAND } from './config/constants';
 import { startDashboard } from '../dashboard/server';
 
 /**
@@ -52,9 +55,11 @@ async function main(): Promise<void> {
 
   client.once(Events.ClientReady, async () => {
     try {
-      await deployCommands(client, { token: config.DISCORD_TOKEN, clientId: config.CLIENT_ID, devGuildId: config.DEV_GUILD_ID || undefined });
+      const count = await deployCommands(client, { token: config.DISCORD_TOKEN, clientId: config.CLIENT_ID, devGuildId: config.DEV_GUILD_ID || undefined });
+      void logHubService.system(client, 'bot.deploy', (t) => ({ title: t('loghub.system.deploy_title'), description: t(config.DEV_GUILD_ID ? 'loghub.system.deploy_dev' : 'loghub.system.deploy_global', { count }) }));
     } catch (err) {
       logger.error({ err }, 'Échec du déploiement des commandes');
+      void logHubService.system(client, 'bot.error', (t) => ({ title: t('loghub.system.deploy_failed_title'), description: String((err as Error)?.message ?? err).slice(0, 1500), color: BRAND.colors.danger }), 'deploy');
     }
   });
 
@@ -73,6 +78,8 @@ async function main(): Promise<void> {
     await ticketService.flushMessages().catch((err) => logger.warn({ err }, 'Flush des messages de tickets à l’arrêt'));
     await ticketReminderService.flushActivity().catch((err) => logger.warn({ err }, 'Flush de l’activité des tickets à l’arrêt'));
     await activityService.flush().catch((err) => logger.warn({ err }, 'Flush de l’activité à l’arrêt'));
+    // Logs en attente (file groupée) : envoyés avant la déconnexion.
+    await logDispatchService.drain().catch((err) => logger.warn({ err }, 'Envoi des logs en attente à l’arrêt'));
     await dashboard.close().catch(() => null);
     client.destroy();
     await disconnectDatabase();
@@ -80,7 +87,11 @@ async function main(): Promise<void> {
   };
   process.on('SIGINT', () => void shutdown('SIGINT'));
   process.on('SIGTERM', () => void shutdown('SIGTERM'));
-  process.on('unhandledRejection', (reason) => logger.error({ err: reason }, 'Unhandled rejection'));
+  process.on('unhandledRejection', (reason) => {
+    logger.error({ err: reason }, 'Unhandled rejection');
+    const message = (reason instanceof Error ? (reason.stack ?? reason.message) : String(reason)).slice(0, 1500);
+    void logHubService.system(client, 'bot.error', (t) => ({ title: t('loghub.system.error_title'), description: `\`\`\`\n${message}\n\`\`\``, color: BRAND.colors.danger }), `rejection:${message.slice(0, 120)}`);
+  });
   process.on('uncaughtException', (err) => logger.fatal({ err }, 'Uncaught exception'));
 }
 

@@ -142,6 +142,10 @@
             <strong>Redémarrez et vérifiez</strong>
             <p>La console affiche <code>[rs_bridge] Connecté au bot</code> (ou la cause exacte : 401 clé refusée, 404 serveur inconnu). Le statut passe « En ligne » dans l'onglet Serveurs.</p>
           </li>
+          <li>
+            <strong>Logs en jeu (facultatif)</strong>
+            <p>Avec rs_bridge 1.2, les connexions, kills, parties, sanctions et alertes partent dans le serveur de logs central : <code>/template logs</code> sur ce serveur de logs, puis activez ce serveur de jeu (🎮). Réglages : <code>Config.Logs</code> dans <code>config.lua</code>.</p>
+          </li>
         </ol>
       </section>
     </div>
@@ -156,6 +160,7 @@
           <li><span class="method">GET</span><code><%= integration.serverBase %>/whitelist/:identifier</code></li>
           <li><span class="method">POST</span><code><%= integration.serverBase %>/stats</code></li>
           <li><span class="method">POST</span><code><%= integration.serverBase %>/maintenance</code></li>
+          <li><span class="method">POST</span><code><%= integration.serverBase %>/logs</code></li>
           <li><span class="method">GET</span><code><%= integration.base %>/health</code></li>
         </ul>
         <details class="editor-section mt-4">

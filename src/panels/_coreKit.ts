@@ -22,6 +22,7 @@ import type { ModuleKey } from '../config/constants';
 import { embedService } from '../services/EmbedService';
 import { guildConfigService } from '../services/GuildConfigService';
 import type { Translator } from '../services/TranslationService';
+import { configAudit } from '../services/ConfigAuditService';
 
 /**
  * Briques communes des panneaux `/config` « cœur » (general, logs, moderation).
@@ -51,6 +52,7 @@ export function truncate(s: string, max: number): string {
 
 /** Description d'embed : notice éventuelle, puis lignes d'aide (les lignes vides / null sont ignorées). */
 export function withNotice(notice: PanelNotice | undefined, ...lines: (string | null | undefined)[]): string {
+  configAudit.capture(notice);
   const body = lines.filter((l): l is string => Boolean(l)).join('\n\n');
   return truncate(notice ? `${NOTICE_ICON[notice.type]} ${notice.text}${body ? `\n\n${body}` : ''}` : body || '​', 4096);
 }

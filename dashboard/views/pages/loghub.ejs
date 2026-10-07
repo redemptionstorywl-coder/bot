@@ -1,0 +1,146 @@
+<% const b = `/guilds/${guild.id}/log-hub`; %>
+<header class="page-header">
+  <div class="page-heading">
+    <div><%- include('../partials/eyebrow') %><h1 class="page-title row-wrap"><span>Hub de logs</span><% if (isHub) { %><span class="badge badge-success"><span class="dot dot-success"></span>Serveur de logs central</span><% } else if (link) { %><span class="badge badge-muted">Source reliée</span><% } %></h1><p class="page-subtitle">Un serveur Discord qui reçoit une copie de tous les logs de vos serveurs et les logs en jeu, rangés par serveur et par type.</p></div>
+  </div>
+</header>
+
+<% if (link) { %>
+<section class="card">
+  <div class="card-head"><div><h2 class="card-title"><%- icon('link') %>Relié au hub « <%= link.hubName %> »</h2><p class="card-desc">Tous les logs de ce serveur sont copiés dans le hub (section <strong><%= link.label %></strong>). Publication aussi dans les salons de logs de ce serveur : <strong><%= link.keepLocal ? 'oui' : 'non' %></strong> (réglable dans le hub ou dans <code>/config module:logs</code>).</p></div></div>
+  <% if (isAdmin) { %>
+  <div class="danger-zone">
+    <div class="danger-row">
+      <div><div class="danger-row-title">Délier ce serveur du hub</div><div class="danger-row-desc">Ses logs ne seront plus envoyés dans « <%= link.hubName %> ». Les salons du hub sont conservés.</div></div>
+      <form method="post" action="<%= b %>/unlink-self" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-danger" data-confirm="Délier ce serveur du hub « <%= link.hubName %> » ?" data-confirm-title="Délier du hub" data-confirm-label="Délier"><%- icon('x', { size: 16 }) %>Délier</button></form>
+    </div>
+  </div>
+  <% } %>
+</section>
+<% } else if (!isHub) { %>
+<section class="card">
+  <%- include('../partials/empty', { glyph: 'layers', title: 'Ce serveur n’est pas un hub de logs', text: 'Créez un serveur Discord vide, invitez-y le bot (Administrateur, ou Gérer les salons + Gérer les rôles), puis tapez /template logs dans ce serveur et choisissez vos serveurs. Il devient le serveur de logs central ; cette page sert ensuite à le gérer.' }) %>
+</section>
+<% } %>
+
+<% if (isHub) { %>
+<div class="stat-grid">
+  <div class="stat"><span class="stat-label"><%- icon('server', { size: 14 }) %>Serveurs Discord</span><span class="stat-value"><%= sources.length %></span></div>
+  <div class="stat"><span class="stat-label"><%- icon('gamepad', { size: 14 }) %>Serveurs de jeu</span><span class="stat-value"><%= games.length %></span></div>
+  <div class="stat<%= missing ? ' is-warn' : '' %>"><span class="stat-label"><%- icon('hash', { size: 14 }) %>Salons manquants</span><span class="stat-value"><%= missing %></span></div>
+</div>
+
+<% if (running) { %><div class="alert alert-info mt-5"><%- icon('hourglass') %><span class="alert-text">Création des salons en cours… Actualisez la page dans quelques secondes.</span></div><% } %>
+
+<section class="card mt-5">
+  <div class="card-head">
+    <div><h2 class="card-title"><%- icon('wrench') %>Structure</h2><p class="card-desc">Recrée les catégories et salons manquants (supprimés à la main, nouvelle source, nouveau serveur de jeu) et met à jour le sommaire épinglé. Rien n’est dupliqué.</p></div>
+    <% if (isAdmin) { %><form method="post" action="<%= b %>/repair" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-primary"<%= running || !botReady ? ' disabled' : '' %>><%- icon('refresh', { size: 16 }) %>Créer les salons manquants<%= missing ? ` (${missing})` : '' %></button></form><% } %>
+  </div>
+</section>
+
+<section class="card">
+  <div class="card-head"><div><h2 class="card-title"><%- icon('server') %>Serveurs Discord reliés</h2><p class="card-desc">Chaque serveur a trois catégories : modération, messages &amp; membres, serveur &amp; activité. « Aussi en local » garde la publication dans ses propres salons de logs.</p></div></div>
+  <% if (!sources.length) { %>
+    <%- include('../partials/empty', { glyph: 'server', title: 'Aucun serveur relié', text: 'Ajoutez un serveur ci-dessous ou avec /template logs.', compact: true }) %>
+  <% } else { %>
+  <div class="table-wrap">
+    <table class="table table-responsive">
+      <thead><tr><th>Serveur</th><th>Nom de section</th><th>Aussi en local</th><th></th></tr></thead>
+      <tbody>
+        <% for (const s of sources) { %>
+        <tr>
+          <td class="cell-primary"><span class="cell-stack"><span><%= s.emoji %> <%= s.name %></span><% if (!s.present) { %><span class="text-xs text-danger">Le bot n’est plus sur ce serveur</span><% } %><code class="text-xs text-3"><%= s.guildId %></code></span></td>
+          <td data-label="Nom de section">
+            <% if (isAdmin) { %><form method="post" action="<%= b %>/sources/<%= s.guildId %>/label" class="row-3"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input class="input" name="label" value="<%= s.label %>" maxlength="64" aria-label="Nom de section de <%= s.name %>" required><button type="submit" class="btn btn-sm">Renommer</button></form><% } else { %><%= s.label %><% } %>
+          </td>
+          <td data-label="Aussi en local">
+            <form method="post" action="<%= b %>/sources/<%= s.guildId %>/keep-local" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><label class="toggle"><input type="checkbox" name="keepLocal" <%= s.keepLocal ? 'checked' : '' %> data-submit-on-change<%= isAdmin ? '' : ' disabled' %> aria-label="Publier aussi dans les salons de logs de <%= s.name %>"><span class="toggle-track"></span></label></form>
+          </td>
+          <td class="right">
+            <% if (isAdmin) { %><form method="post" action="<%= b %>/sources/<%= s.guildId %>/unlink" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-sm btn-ghost btn-danger-text" data-confirm="Retirer « <%= s.name %> » du hub ? Ses serveurs de jeu sont retirés aussi ; les salons restent en place." data-confirm-title="Retirer une source" data-confirm-label="Retirer"><%- icon('trash', { size: 14 }) %>Retirer</button></form><% } %>
+          </td>
+        </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+  <% if (isAdmin) { %>
+  <form method="post" action="<%= b %>/sources" class="form mt-4">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="hub-add-source">Relier un serveur</label>
+      <div class="row-3">
+        <select class="select" id="hub-add-source" name="sourceGuildId" required<%= candidates.length ? '' : ' disabled' %>>
+          <option value=""><%= candidates.length ? '— Choisir un serveur —' : 'Aucun serveur disponible' %></option>
+          <% for (const c of candidates) { %><option value="<%= c.guildId %>"><%= c.name %></option><% } %>
+        </select>
+        <button type="submit" class="btn btn-primary"<%= candidates.length ? '' : ' disabled' %>><%- icon('plus', { size: 16 }) %>Relier</button>
+      </div>
+      <small class="hint">Seuls les serveurs où vous êtes administrateur ou propriétaire sont proposés (vérifié sur Discord à l’enregistrement). Un serveur ne peut être relié qu’à un seul hub.</small>
+    </div>
+  </form>
+  <% } %>
+</section>
+
+<section class="card">
+  <div class="card-head"><div><h2 class="card-title"><%- icon('gamepad') %>Serveurs de jeu (logs en jeu)</h2><p class="card-desc">Catégorie « 🎮 JEU » : connexions, comptes, kills, parties, sanctions, actions admin, anticheat, serveur. Côté FiveM : rs_bridge 1.2 (server/logs.lua). Le chat n’est envoyé que si « Chat » est activé ici et <code>Config.Logs.Chat = true</code>.</p></div></div>
+  <% if (!games.length) { %>
+    <%- include('../partials/empty', { glyph: 'gamepad', title: 'Aucun serveur de jeu relié', text: 'Les serveurs FiveM déclarés sur un serveur Discord relié peuvent être ajoutés ici.', compact: true }) %>
+  <% } else { %>
+  <div class="table-wrap">
+    <table class="table table-responsive">
+      <thead><tr><th>Serveur de jeu</th><th>Serveur Discord</th><th>Chat</th><th></th></tr></thead>
+      <tbody>
+        <% for (const g of games) { %>
+        <tr>
+          <td class="cell-primary">🎮 <%= g.name %></td>
+          <td data-label="Serveur Discord"><%= g.sourceName %></td>
+          <td data-label="Chat"><form method="post" action="<%= b %>/games/<%= g.id %>/chat" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><label class="toggle"><input type="checkbox" name="chat" <%= g.chat ? 'checked' : '' %> data-submit-on-change<%= isAdmin ? '' : ' disabled' %> aria-label="Chat en jeu de <%= g.name %>"><span class="toggle-track"></span></label></form></td>
+          <td class="right"><% if (isAdmin) { %><form method="post" action="<%= b %>/games/<%= g.id %>/unlink" class="inline-form"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit" class="btn btn-sm btn-ghost btn-danger-text" data-confirm="Retirer les logs en jeu de « <%= g.name %> » ? Les salons restent en place." data-confirm-title="Retirer un serveur de jeu" data-confirm-label="Retirer"><%- icon('trash', { size: 14 }) %>Retirer</button></form><% } %></td>
+        </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+  <% if (isAdmin && gameCandidates.length) { %>
+  <form method="post" action="<%= b %>/games" class="form mt-4">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <div class="field">
+      <label for="hub-add-game">Ajouter un serveur de jeu</label>
+      <div class="row-3">
+        <select class="select" id="hub-add-game" name="serverId" required>
+          <% for (const g of gameCandidates) { %><option value="<%= g.id %>"><%= g.name %> — <%= g.sourceName %></option><% } %>
+        </select>
+        <label class="check"><input type="checkbox" name="chat"><span>Chat</span></label>
+        <button type="submit" class="btn btn-primary"><%- icon('plus', { size: 16 }) %>Ajouter</button>
+      </div>
+    </div>
+  </form>
+  <% } %>
+</section>
+
+<form method="post" action="<%= b %>/routes" class="form" data-dirty-form>
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <section class="card">
+    <div class="card-head"><div><h2 class="card-title"><%- icon('hash') %>Salon de chaque type de log</h2><p class="card-desc">Choisissez un autre salon du hub pour une route. Vide = les logs retombent sur le salon de leur catégorie (puis config-bot) ; « Créer les salons manquants » recrée le salon prévu.</p></div></div>
+    <% if (!sections.length) { %>
+      <%- include('../partials/empty', { glyph: 'hash', title: 'Aucune route', text: botReady ? 'Lancez /template logs pour créer la structure.' : 'Le bot n’est pas connecté à Discord.', compact: true }) %>
+    <% } %>
+    <% for (const section of sections) { %>
+      <h3 class="section-title mt-4"><%= section.title %></h3>
+      <div class="log-map">
+        <% for (const r of section.rows) { const fid = `route-${r.sourceKey}-${r.routeKey}`.replace(/[^a-zA-Z0-9-]/g, '-'); %>
+        <div class="log-map-row">
+          <div class="log-map-label"><div class="grow"><label class="strong text-sm" for="<%= fid %>"><%= r.name %></label><% if (r.missing) { %> <span class="badge badge-warning">manquant</span><% } %><div class="text-xs text-3"><%= r.label %></div></div></div>
+          <%- include('../partials/channel-select', { name: `routes[${r.sourceKey}][${r.routeKey}]`, id: fid, selected: r.channelId, emptyLabel: '— Repli —', placeholder: '— Repli —' }) %>
+        </div>
+        <% } %>
+      </div>
+    <% } %>
+    <% if (sections.length && isAdmin) { %><div class="card-foot dirty-hide"><span></span><button type="submit" class="btn btn-primary">Enregistrer les salons</button></div><% } %>
+  </section>
+</form>
+<% } %>

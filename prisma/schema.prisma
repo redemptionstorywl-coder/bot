@@ -37,6 +37,8 @@ enum LogCategory {
   SCHOOL
   SECURITY
   SYSTEM
+  /// Logs en jeu (FiveM → POST /logs, sanctions et statut des serveurs de jeu)
+  GAME
 }
 
 enum TicketStatus {
@@ -1262,4 +1264,63 @@ model TranslationCache {
 
   @@unique([hash, targetLang])
   @@index([createdAt])
+}
+
+// ──────────────── Serveur de logs central (hub) : /template logs ────────────────
+
+/// Serveur Discord « hub » qui reçoit une copie des logs d'autres serveurs (sources) et des serveurs de jeu.
+model LogHub {
+  guildId          String   @id @db.VarChar(32)
+  /// Message « 📌 sommaire » épinglé par le bot (mis à jour à chaque /template logs)
+  summaryMessageId String?  @db.VarChar(32)
+  createdById      String   @db.VarChar(32)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+/// Serveur Discord source relié à un hub (un seul hub par source, vérifié par LogHubService).
+/// Lien créé uniquement par un administrateur (ou le propriétaire) de la source, ou un propriétaire du bot.
+model LogHubSource {
+  id            Int      @id @default(autoincrement())
+  hubGuildId    String   @db.VarChar(32)
+  sourceGuildId String   @db.VarChar(32)
+  /// Nom des catégories du hub (nom du serveur par défaut, modifiable)
+  label         String   @db.VarChar(64)
+  /// Emoji des catégories du hub
+  emoji         String   @default("📁") @db.VarChar(16)
+  /// Membre qui a relié la source
+  linkedById    String   @db.VarChar(32)
+  /// Continuer à publier aussi dans les salons de logs du serveur source
+  keepLocal     Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  @@unique([sourceGuildId, hubGuildId])
+  @@index([hubGuildId])
+}
+
+/// Serveur de jeu (FiveMServer) dont les logs en jeu sont copiés dans le hub (son serveur Discord doit être une source du hub).
+model LogHubGame {
+  id            Int      @id @default(autoincrement())
+  hubGuildId    String   @db.VarChar(32)
+  fivemServerId Int
+  /// Salon « 💬・chat-jeu » créé et alimenté (Config.Logs.Chat = true côté rs_bridge)
+  chat          Boolean  @default(false)
+  linkedById    String   @db.VarChar(32)
+  createdAt     DateTime @default(now())
+
+  @@unique([fivemServerId, hubGuildId])
+  @@index([hubGuildId])
+}
+
+/// Salon du hub pour une route. sourceKey = ID du serveur source, `game:<FiveMServer.id>` ou `global` ;
+/// routeKey = route fine (mod.sanctions, message.deleted, game.kills…) ou catégorie Discord (category.moderation…).
+model LogRoute {
+  id         Int      @id @default(autoincrement())
+  hubGuildId String   @db.VarChar(32)
+  sourceKey  String   @db.VarChar(48)
+  routeKey   String   @db.VarChar(48)
+  channelId  String   @db.VarChar(32)
+  updatedAt  DateTime @updatedAt
+
+  @@unique([hubGuildId, sourceKey, routeKey])
 }

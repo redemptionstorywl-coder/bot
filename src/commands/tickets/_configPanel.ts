@@ -22,6 +22,7 @@ import { TTLCache } from '../../utils/cache';
 import { embedService } from '../../services/EmbedService';
 import { TicketError, asStringArray, parseEmbedSpec, parseQuestions, ticketQuestionSchema, ticketService, type TicketQuestion } from '../../services/TicketService';
 import type { Translator } from '../../services/TranslationService';
+import { configAudit } from '../../services/ConfigAuditService';
 import { guildConfigService, type ResolvedGuildConfig } from '../../services/GuildConfigService';
 import { REMINDER_PING_MODES, normalizeReminderPing, ticketReminderService, type ReminderPingMode } from '../../services/TicketReminderService';
 import { DEFAULT_CLOSED_CATEGORY_ID } from '../../services/tickets/closeFlow';
@@ -126,6 +127,7 @@ function channelName(guild: Guild, id: string | null | undefined, fallback: stri
 }
 
 function description(notice: PanelNotice | undefined, hint: string): string {
+  configAudit.capture(notice);
   return notice ? `${NOTICE_ICON[notice.type]} ${notice.text}\n\n${hint}` : hint;
 }
 

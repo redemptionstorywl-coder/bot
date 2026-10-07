@@ -10,6 +10,7 @@ import { guildConfigService } from './GuildConfigService';
 import { translationService } from './TranslationService';
 import { fivemService, FiveMError, resolveStatus } from './FiveMService';
 import { battleRoyaleService } from './BattleRoyaleService';
+import { gameLogService } from './GameLogService';
 import { TTLCache } from '../utils/cache';
 import { formatDuration } from '../utils/time';
 import { childLogger } from '../utils/logger';
@@ -309,7 +310,7 @@ export class FiveMSyncService {
         return false;
       });
       if (linkedNow) {
-        await loggingService.log({ guildId: server.guildId, category: LogCategory.BATTLE_ROYALE, action: 'fivem.link.auto', title: '🔗 FiveM — compte lié automatiquement', description: `<@${discordId}> ⇄ \`${license}\` (${cleanName})`, targetId: discordId, data: { license, serverKey: server.key }, skipDatabase: false });
+        await loggingService.log({ guildId: server.guildId, category: LogCategory.BATTLE_ROYALE, action: 'fivem.link.auto', title: '🔗 FiveM — compte lié automatiquement', description: `<@${discordId}> ⇄ \`${license}\` (${cleanName})`, targetId: discordId, data: { license, serverKey: server.key }, skipDatabase: false, game: { serverId: server.id, serverName: server.name } });
       }
       // Pseudo affiché au classement et dans /stat : celui du jeu (compte en jeu, sinon nom FiveM).
       const display = (gameName ?? cleanName).slice(0, 128);
@@ -449,10 +450,15 @@ export class FiveMSyncService {
       if (renamed.count) battleRoyaleService.notifyChange(server.guildId); // pseudo affiché dans le classement en direct
     }
     const guild = this.guild(server.guildId);
-    if (!discordId || !guild) return { discordId, nickname: null };
-    const member = await this.fetchMember(guild, discordId);
-    if (!member) return { discordId, nickname: null };
-    return { discordId, nickname: await this.syncNickname(server, member, input.name, input.id) };
+    const member = discordId && guild ? await this.fetchMember(guild, discordId) : null;
+    const nickname = member ? await this.syncNickname(server, member, input.name, input.id) : null;
+    // Logs en jeu : pseudo du compte (et surnom Discord appliqué)
+    await gameLogService.record(server, {
+      type: 'account',
+      ts: Math.floor(Date.now() / 1000),
+      data: { event: nickname ? 'discord_rename' : 'name', id: input.id ?? null, name: clean ?? input.name, identifiers: input.identifiers, discordId, new: nickname ?? clean ?? input.name },
+    });
+    return { discordId, nickname };
   }
 
   // ───────────── Salon compteur ─────────────
@@ -628,6 +634,21 @@ export class FiveMSyncService {
       }
     }
     if (!outcome) outcome = await record();
+
+    // Logs en jeu : la sanction (et son effet sur Discord) dans la section du serveur de jeu du hub
+    await gameLogService.record(server, {
+      type: sanction.type === 'BAN' ? 'ban' : sanction.type === 'KICK' ? 'kick' : sanction.type === 'WARN' ? 'warn' : 'unban',
+      ts: Math.floor(Date.now() / 1000),
+      data: {
+        target: { identifiers: [...(sanction.identifiers ?? []), ...(sanction.identifier ? [sanction.identifier] : [])], discordId: userId },
+        staff: sanction.staff,
+        reason: sanction.reason,
+        duration: sanction.duration ?? null,
+        discord: outcome.discord,
+        caseNumber: outcome.caseNumber,
+        origin: 'rs_bridge',
+      },
+    });
 
     // Relais vers les AUTRES serveurs FiveM du guild (le serveur d'origine a déjà appliqué la sanction).
     if (sanction.type === 'BAN' || sanction.type === 'UNBAN') {

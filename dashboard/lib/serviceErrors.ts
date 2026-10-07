@@ -9,6 +9,7 @@ import { SchoolError } from '../../src/services/SchoolService';
 import { ShopError } from '../../src/services/ShopService';
 import { FiveMError } from '../../src/services/FiveMService';
 import { BattleRoyaleError } from '../../src/services/BattleRoyaleService';
+import { LogHubError } from '../../src/services/LogHubService';
 import { translationService } from '../../src/services/TranslationService';
 import { childLogger } from '../../src/utils/logger';
 import { HttpError } from './errors';
@@ -64,6 +65,10 @@ export function describeError(err: unknown, guildId?: string | null): DescribedE
     return { status: err.code === 'not_found' ? 404 : 400, message: base, details: err.details && err.code === 'invalid_spec' ? err.details.split('\n') : undefined };
   }
   if (err instanceof ModerationError) return { status: 400, message: translationService.translate('fr', err.key, err.vars, guildId) };
+  if (err instanceof LogHubError) {
+    const forbidden = err.code === 'not_admin' || err.code === 'not_member' || err.code === 'hub_not_admin';
+    return { status: forbidden ? 403 : err.code === 'not_found' ? 404 : 400, message: translationService.translate('fr', `loghub.errors.${err.code}`, err.vars, guildId) };
+  }
   // Modules FiveM / Whitelist / Battle Royale / School / Shop : codes → messages traduits (locales/fr/<module>.json → errors.<code>)
   const coded = describeCodedError(err, guildId);
   if (coded) return coded;
